@@ -29,6 +29,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * Upload from STDOUT
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
+* Split code to re-usable modules, publish on CPAN
 
 ## Planed next version features
 
