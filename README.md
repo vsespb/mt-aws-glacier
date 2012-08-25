@@ -11,18 +11,19 @@ mt-aws-glacier is a client application	 for Glacier.
 
 ## Features
 
+* Does not use any existing AWS library, so can be flexible in implementing advanced features
 * Glacier Multipart upload
 * Multithreaded upload
 * Multipart+Multithreaded upload
 * Multithreaded retrieval, deletion and download
 * Tracking of all uploaded files with a local journal file (opened in append mode only)
-* Checking integrity of local files
+* Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
 
 ## Coming-soon features
 
 * Multipart download (using HTTP Range header)
-* Ability to limit number of archives to retrieve, by size, by traffic/hour
+* Ability to limit amount of archives to retrieve, by size, or by traffic/hour
 * Use journal file as flock() mutex
 * Checking integrity of remote files
 * Upload from STDOUT
@@ -35,10 +36,29 @@ mt-aws-glacier is a client application	 for Glacier.
 ## Important bugs/missed features
 
 * chunk size hardcoded as 2MB
+* Only multipart upload implemented, no plain upload
 * number of children hardcoded
 * Retrieval works as proof-of-concept, so you can't initiate retrieve job twice (until previous job is completed)
 * No way to specify SNS topic 
+* HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
+* Internal refractoring needed, no comments in source yet, unit tests not published
 
+
+## Installation
+
+* Install the following CPAN modules:
+
+				LWP::UserAgent JSON::XS
+		
+that's all
+
+* in case you use HTTPS, also install
+
+				LWP::Protocol::https
+		
+* Some CPAN modules better install as OS packages
+				
+				libjson-xs-perl liblwp-protocol-https-perl liburi-perl
 
 ## Usage
 

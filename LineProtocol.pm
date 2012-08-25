@@ -2,7 +2,6 @@ package LineProtocol;
 
 use strict;
 use warnings;
-use Error;
 
 use JSON::XS;
 
