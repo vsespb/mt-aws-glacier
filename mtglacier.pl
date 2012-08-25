@@ -1,5 +1,24 @@
 #!/usr/bin/perl
 
+# mt-aws-glacier - AWS Glacier sync client
+# Copyright (C) 2012  Victor Efimov
+# vs@vs-dev.com http://vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
@@ -224,14 +243,14 @@ sub process_forks
 	} elsif ($args{action} eq 'restore') {
 		my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $args{files}->{$_}->{archive_id}, relfilename =>$_, filename=> $args{files}->{$_}->{absfilename} } } keys %{$args{files}};
 		@filelist  = splice(@filelist, 0, $args{max_number_of_files});
-		die unless scalar @filelist;
+		die "Nothing to restore" unless scalar @filelist;
 		my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
 		my $R = $P->process_task($args{journal}, $ft);
 		$args{files} = {};
 		die unless $R;
 	} elsif ($args{action} eq 'restore-completed') {
 		my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $args{files}->{$_}->{archive_id}, relfilename =>$_, filename=> $args{files}->{$_}->{absfilename} } } keys %{$args{files}};
-		die unless scalar keys %filelist;
+		die "Nothing to restore" unless scalar keys %filelist;
 		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
 		my $R = $P->process_task($args{journal}, $ft);
 		$args{files} = {};
