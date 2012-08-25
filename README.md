@@ -74,3 +74,15 @@ mt-aws-glacier is a client application	 for Glacier.
 
 				./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
 
+## Test/Play with it
+
+1. create empty dir MYDIR
+
+		./cycletest.sh init MYDIR
+		./cycletest.sh retrieve MYDIR
+		./cycletest.sh restore MYDIR
+
+OR
+
+		./cycletest.sh init MYDIR
+		./cycletest.sh purge MYDIR
