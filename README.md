@@ -64,8 +64,10 @@ that's all
 
 ## Warning
 
-When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
+* When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
 or non-empty vault in amazon console now. Also make sure you have read _all_ AWS Glacier pricing/faq.
+
+* Read their pricing FAQ again, really. Beware of retrieval fee.
 
 ## Usage
  
@@ -115,3 +117,34 @@ OR
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
+		
+		
+## Minimum AWS permissions
+
+something like that
+
+				{
+  				"Statement": [
+    				{
+      				"Effect": "Allow",
+      				"Resource":["arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test1",
+		  				"arn:aws:glacier:us-east-1:XXXXXXXXXXXX:vaults/test1",
+		  				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test2",
+		  				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test3"],
+      				"Action":["glacier:UploadArchive",
+                				"glacier:InitiateMultipartUpload",
+								"glacier:UploadMultipartPart",
+                				"glacier:UploadPart",
+                				"glacier:DeleteArchive",
+								"glacier:ListParts",
+								"glacier:InitiateJob",
+								"glacier:ListJobs",
+								"glacier:GetJobOutput",
+								"glacier:ListMultipartUploads",
+								"glacier:CompleteMultipartUpload"] 
+    				}
+  				]
+				}
+
+
+ 
