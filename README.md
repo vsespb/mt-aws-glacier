@@ -28,6 +28,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * Checking integrity of remote files
 * Upload from STDOUT
 * Some integration with external world, ability to read SNS topics
+* Simplified distribution for Debian/RedHat
 
 ## Planed next version features
 
@@ -56,12 +57,17 @@ that's all
 
 				LWP::Protocol::https
 		
-* Some CPAN modules better install as OS packages
+* Some CPAN modules better install as OS packages (example for Ubuntu/Debian)
 				
 				libjson-xs-perl liblwp-protocol-https-perl liburi-perl
 
-## Usage
+## Warning
 
+When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
+or non-empty vault in amazon console now. Also make sure you have read _all_ AWS Glacier pricing/faq.
+
+## Usage
+ 
 1. Create a directory containing files to backup. Example `/data/backup`
 2. Create config file, say, glacier.cfg
 
@@ -97,6 +103,8 @@ that's all
 ## Test/Play with it
 
 1. create empty dir MYDIR
+2. Watch the source of `cycletest.sh`
+3. Run
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh retrieve MYDIR
