@@ -30,7 +30,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * Ability to limit amount of archives to retrieve, by size, or by traffic/hour
 * Use journal file as flock() mutex
 * Checking integrity of remote files
-* Upload from STDOUT
+* Upload from STDIN
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
 * Split code to re-usable modules, publish on CPAN
