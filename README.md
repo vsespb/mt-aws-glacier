@@ -42,6 +42,7 @@ mt-aws-glacier is a client application	 for Glacier.
 
 ## Important bugs/missed features
 
+* Zero length files are ignored
 * chunk size hardcoded as 2MB
 * Only multipart upload implemented, no plain upload
 * Retrieval works as proof-of-concept, so you can't initiate retrieve job twice (until previous job is completed)

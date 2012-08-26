@@ -99,7 +99,7 @@ if (GetOptions("config=s" => \$config_filename,
 		read_config($config, $config_filename);
 		my $files = read_journal($journal);
 		my $filelist = [];
-		find({ wanted => sub { push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $src) } }, no_chdir => 1}, ($src));
+		find({ wanted => sub { push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $src) } if -s $_ }, no_chdir => 1}, ($src));
 		process_forks(action => "sync", filelist => $filelist, files => $files, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
 	} elsif ($action eq 'purge-vault') {
 		read_config($config, $config_filename);
