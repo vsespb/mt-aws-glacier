@@ -60,6 +60,7 @@ sub finish_task
 		my $scalar = $json->decode( $task->{result}->{response} );
 		my @downloads;
 		my $seen ={};
+		#$scalar->{Marker};
 		for my $job (@{$scalar->{JobList}}) {
 			print "$job->{Completed}|$job->{JobId}|$job->{ArchiveId}\n";
 			if ($job->{Completed}) {

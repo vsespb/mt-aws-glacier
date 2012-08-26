@@ -9,6 +9,10 @@ Amazon AWS Glacier is an archive/backup service with very low storage price. How
 
 mt-aws-glacier is a client application	 for Glacier.
 
+## Version
+
+* Version 0.7 Beta
+
 ## Features
 
 * Does not use any existing AWS library, so can be flexible in implementing advanced features
@@ -16,7 +20,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * Multithreaded upload
 * Multipart+Multithreaded upload
 * Multithreaded retrieval, deletion and download
-* Tracking of all uploaded files with a local journal file (opened in append mode only)
+* Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
 
@@ -40,12 +44,14 @@ mt-aws-glacier is a client application	 for Glacier.
 
 * chunk size hardcoded as 2MB
 * Only multipart upload implemented, no plain upload
-* number of children hardcoded
 * Retrieval works as proof-of-concept, so you can't initiate retrieve job twice (until previous job is completed)
 * No way to specify SNS topic 
 * HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
 * Internal refractoring needed, no comments in source yet, unit tests not published
 
+## Production ready
+
+* Not recomended to use in production until first "Release" version. Currently Beta.
 
 ## Installation
 
@@ -83,7 +89,7 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ AWS
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
-				./mtglacier.pl sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+				./mtglacier.pl sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
     
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
@@ -107,7 +113,7 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ AWS
 ## Test/Play with it
 
 1. create empty dir MYDIR
-2. Watch the source of `cycletest.sh`
+2. Set vault name inside `cycletest.sh`
 3. Run
 
 		./cycletest.sh init MYDIR

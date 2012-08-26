@@ -76,6 +76,7 @@ sub dcs
 
 my ($P) = @_;
 my ($src, $vault, $journal, $max_number_of_files, $multifile);
+my $maxchildren = 10;
 my $config = {};
 my $config_filename;
 
@@ -87,6 +88,7 @@ if (GetOptions("config=s" => \$config_filename,
 				"from-dir:s" => \$src,
 				"to-vault=s" => \$vault,
 				"journal=s" => \$journal,
+				"concurrency:i" => \$maxchildren,
 				"max-number-of-files:i"  => \$max_number_of_files,
 	) && (scalar @ARGV == 1) ) {
 	my $action = shift @ARGV;
@@ -180,11 +182,10 @@ sub process_forks
 	my (%args) = @_;
 	# parent's data
 	my $disp_select = IO::Select->new();
-	my $children_count = 10;
 	my $parent_pid = $$;
 	my $children = {};
 	# child/parent code
-	for my $n (1..$children_count) {
+	for my $n (1..$maxchildren) {
 		my ($ischild, $child_fromchild, $child_tochild) = create_child($children, $disp_select);
 		if ($ischild) {
 			$SIG{INT} = $SIG{TERM} = sub { kill(12, $parent_pid); print STDERR "CHILD($$) SIGINT\n"; exit(1); };
