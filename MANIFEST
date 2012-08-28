@@ -1,0 +1,23 @@
+bin/cycletest.sh
+bin/mtglacier.pl
+Build.PL
+lib/ChildWorker.pm
+lib/FileCreateJob.pm
+lib/FileFinishJob.pm
+lib/FileListDeleteJob.pm
+lib/FileListRetrievalJob.pm
+lib/FileUploadJob.pm
+lib/Glacier.pm
+lib/GlacierRequest.pm
+lib/Job.pm
+lib/JobListProxy.pm
+lib/JobProxy.pm
+lib/LineProtocol.pm
+lib/ParentWorker.pm
+lib/ProxyTask.pm
+lib/RetrievalDownloadJob.pm
+lib/RetrievalFetchJob.pm
+lib/Task.pm
+lib/TreeHash.pm
+MANIFEST			This list of files
+README.md
