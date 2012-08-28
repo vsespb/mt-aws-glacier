@@ -33,7 +33,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * Upload from STDIN
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
-* Split code to re-usable modules, publish on CPAN
+* Split code to re-usable modules, publish on CPAN (Currently there are great existing Glacier modules on CPAN - see Net::Amazon::Glacier by Tim Nordenfur https://metacpan.org/module/Net::Amazon::Glacier ) 
 * Create/Delete vault function
 
 ## Planed next version features
