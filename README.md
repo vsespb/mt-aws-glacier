@@ -48,7 +48,8 @@ mt-aws-glacier is a client application	 for Glacier.
 * Retrieval works as proof-of-concept, so you can't initiate retrieve job twice (until previous job is completed)
 * No way to specify SNS topic 
 * HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
-* Internal refractoring needed, no comments in source yet, unit tests not published
+* Internal refactoring needed, no comments in source yet, unit tests not published
+* Journal file required to restore backup. To be fixed. Will store file metainformation in archive description.
 
 ## Production ready
 
@@ -76,6 +77,8 @@ that's all
 or non-empty vault in amazon console now. Also make sure you have read _all_ AWS Glacier pricing/faq.
 
 * Read their pricing FAQ again, really. Beware of retrieval fee.
+
+* Backup your local journal file. Currently it's impossible to correctly restore backup without journal file
 
 ## Usage
  
