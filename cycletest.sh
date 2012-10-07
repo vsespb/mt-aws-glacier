@@ -43,6 +43,10 @@ dd if=/dev/urandom of=$ROOT/file6 bs=100 count=30
 md5sum $ROOT/* > $DIR/original-md5
 
 	;;
+sync)
+./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
+
+	;;
 retrieve)
 # warning, make sure DIR is correct, avoid disaster!
 rm -rf $ROOT/*
