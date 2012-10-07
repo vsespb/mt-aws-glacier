@@ -20,6 +20,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# VERSION: 0.71beta
+
 use strict;
 use warnings;
 
@@ -77,6 +79,7 @@ sub dcs
 my ($P) = @_;
 my ($src, $vault, $journal, $max_number_of_files, $multifile);
 my $maxchildren = 10;
+my $partsize = 2;
 my $config = {};
 my $config_filename;
 
@@ -89,6 +92,7 @@ if (GetOptions("config=s" => \$config_filename,
 				"to-vault=s" => \$vault,
 				"journal=s" => \$journal,
 				"concurrency:i" => \$maxchildren,
+				"partsize:i" => \$partsize,
 				"max-number-of-files:i"  => \$max_number_of_files,
 	) && (scalar @ARGV == 1) ) {
 	my $action = shift @ARGV;
@@ -96,6 +100,7 @@ if (GetOptions("config=s" => \$config_filename,
 	if ($action eq 'sync') {
 		die "Please specify from-dir" unless -d $src;
 		die "Not a directory" unless -d $src;
+		die "Part size should be power of two" unless ($partsize != 0) && (($partsize & ($partsize - 1)) == 0);
 		read_config($config, $config_filename);
 		my $files = read_journal($journal);
 		my $filelist = [];
@@ -208,7 +213,7 @@ sub process_forks
 			my ($absfilename, $relfilename) = ($_->{absfilename}, $_->{relfilename});
 			next unless -f $absfilename;
 			unless ($args{files}->{$relfilename}) {
-				my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*2));
+				my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
 				my $R = $P->process_task($args{journal}, $ft);
 				die unless $R;
 				$args{files}->{$relfilename} = {archive_id => $R->{archive_id} };
@@ -222,7 +227,7 @@ sub process_forks
 				my ($absfilename, $relfilename) = ($_->{absfilename}, $_->{relfilename});
 				next unless -f $absfilename;
 				unless ($args{files}->{$relfilename}) {
-					my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*2));
+					my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
 					push @joblist, $ft;
 				} else {
 					print "Skip $relfilename\n";
