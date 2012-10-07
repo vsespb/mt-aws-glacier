@@ -46,6 +46,8 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
+		my $filesize = -s $self->{filename};
+		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
 	    open my $fh, "<$self->{filename}";
 	    binmode $fh;
 	    $self->{fh} = $fh;
