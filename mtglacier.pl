@@ -78,8 +78,8 @@ sub dcs
 
 my ($P) = @_;
 my ($src, $vault, $journal, $max_number_of_files, $multifile);
-my $maxchildren = 10;
-my $partsize = 2;
+my $maxchildren = 4;
+my $partsize = 16;
 my $config = {};
 my $config_filename;
 
