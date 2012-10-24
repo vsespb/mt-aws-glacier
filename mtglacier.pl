@@ -20,11 +20,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package main;
 
 use strict;
 use warnings;
 
-our $VERSION = "0.71 beta";
+our $VERSION = "0.71beta";
 
 
 use URI;
@@ -326,6 +327,7 @@ sub read_config
 	return $config;
 }
 
+1;
 
 __END__
 

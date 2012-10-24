@@ -330,6 +330,7 @@ sub perform_lwp
 	
 	for my $i (1..100) {
 		my $ua = LWP::UserAgent->new(timeout => 120);
+		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
 	    my $req = undef;
 	    my $url = "http://$self->{host}$self->{url}";
 		if ($self->{method} eq 'PUT') {
