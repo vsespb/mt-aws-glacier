@@ -40,6 +40,7 @@ use JobListProxy;
 use File::Find ;
 use File::Spec;
 use Getopt::Long;
+use Journal;
 
 
 
@@ -77,14 +78,12 @@ sub dcs
 
 
 my ($P) = @_;
-my ($src, $vault, $journal, $max_number_of_files, $multifile);
+my ($src, $vault, $journal, $max_number_of_files);
 my $maxchildren = 4;
 my $partsize = 16;
 my $config = {};
 my $config_filename;
 
-# featurezed- different implementations of upload
-$multifile = 1;
 	
 
 if (GetOptions("config=s" => \$config_filename,
@@ -102,30 +101,26 @@ if (GetOptions("config=s" => \$config_filename,
 		die "Not a directory" unless -d $src;
 		die "Part size should be power of two" unless ($partsize != 0) && (($partsize & ($partsize - 1)) == 0);
 		read_config($config, $config_filename);
-		my $files = read_journal($journal);
-		my $filelist = [];
-		find({ wanted => sub { push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $src) } if -s $_ }, no_chdir => 1}, ($src));
-		process_forks(action => "sync", filelist => $filelist, files => $files, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
+		my $j = Journal->new(journal_file => $journal, root_dir => $src);
+		process_forks(action => "sync", journal_object => $j, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
 	} elsif ($action eq 'purge-vault') {
 		read_config($config, $config_filename);
-		my $files = read_journal($journal);
-		unless (scalar keys %$files) {
-			print "Nothing to delete\n";
-			exit(0);
-		}
-		process_forks(action => "purge-vault", files => $files, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
+		my $j = Journal->new(journal_file => $journal, root_dir => $src);
+		process_forks(action => "purge-vault", journal_object => $j, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
 	} elsif ($action eq 'restore') {
 		read_config($config, $config_filename);
-		my $files = read_journal($journal);
+		my $j = Journal->new(journal_file => $journal, root_dir => $src);
 		die unless $max_number_of_files;
-		process_forks(action => "restore", files => $files, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal, max_number_of_files => $max_number_of_files);
+		process_forks(action => "restore",journal_object => $j,  key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal, max_number_of_files => $max_number_of_files);
 	} elsif ($action eq 'restore-completed') {
 		read_config($config, $config_filename);
-		my $files = read_journal($journal);
-		process_forks(action => "restore-completed", files => $files, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal, max_number_of_files => $max_number_of_files);
+		my $j = Journal->new(journal_file => $journal, root_dir => $src);
+		process_forks(action => "restore-completed", journal_object => $j, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal, max_number_of_files => $max_number_of_files);
 	} elsif ($action eq 'check-local-hash') {
 		read_config($config, $config_filename);
-		my $files = read_journal($journal);
+		my $j = Journal->new(journal_file => $journal, root_dir => $src);
+		$j->read_journal();
+		my $files = $j->{journal_h};
 		for my $f (keys %$files) {
 			my $file=$files->{$f};
 			my $th = TreeHash->new();
@@ -160,28 +155,6 @@ if (GetOptions("config=s" => \$config_filename,
 
 
 
-
-sub read_journal
-{
-	my ($journal) = @_;
-	my ($files) = ({});
-	return {} unless -s $journal;
-	open F, "<$journal";
-	while (<F>) {
-		chomp;
-		if (/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
-			my ($archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4);
-			$files->{$relfilename} = { archive_id => $archive_id, size => $size, treehash => $treehash, absfilename => File::Spec->rel2abs($relfilename, $src) };
-		} elsif (/^\d+\s+DELETED\s+(\S+)\s+(.*?)$/) {
-			delete $files->{$2} if $files->{$2}; # TODO: exception or warning if $files->{$2}
-		}
-	}
-	close F;
-	return $files;
-}
-
-
-
 sub process_forks
 {
 	my (%args) = @_;
@@ -208,59 +181,58 @@ sub process_forks
 	
 	
 	if ($args{action} eq 'sync') {
-		if (!$multifile) {
-		for (@{ $args{filelist} }) {
+		my $j = $args{journal_object};
+		$j->read_journal();
+		$j->read_new_files();
+		
+		my @joblist;
+		for (@{ $j->{newfiles_a} }) {
 			my ($absfilename, $relfilename) = ($_->{absfilename}, $_->{relfilename});
-			next unless -f $absfilename;
-			unless ($args{files}->{$relfilename}) {
-				my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
-				my $R = $P->process_task($args{journal}, $ft);
-				die unless $R;
-				$args{files}->{$relfilename} = {archive_id => $R->{archive_id} };
-			} else {
-				print "Skip $relfilename\n";
-			}
+			my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
+			push @joblist, $ft;
 		}
-		} else {
-			my @joblist;
-			for (@{ $args{filelist} }) {
-				my ($absfilename, $relfilename) = ($_->{absfilename}, $_->{relfilename});
-				next unless -f $absfilename;
-				unless ($args{files}->{$relfilename}) {
-					my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
-					push @joblist, $ft;
-				} else {
-					print "Skip $relfilename\n";
-				}
-			}
-			if (scalar @joblist) {
-				my $lt = JobListProxy->new(jobs => \@joblist);
-				my $R = $P->process_task($args{journal}, $lt);
-				die unless $R;
-				$args{files}={};
-			}
+		if (scalar @joblist) {
+			my $lt = JobListProxy->new(jobs => \@joblist);
+			my $R = $P->process_task($args{journal}, $lt);
+			die unless $R;
 		}
 	} elsif ($args{action} eq 'purge-vault') {
-		my @filelist = map { {archive_id => $args{files}->{$_}->{archive_id}, relfilename =>$_ } } keys %{$args{files}};
-		my $ft = JobProxy->new(job => FileListDeleteJob->new(archives => \@filelist ));
-		my $R = $P->process_task($args{journal}, $ft);
-		$args{files} = {};
-		die unless $R;
+		my $j = $args{journal_object};
+		$j->read_journal();
+		my $files = $j->{journal_h};
+		if (scalar keys %$files) {
+			my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
+			my $ft = JobProxy->new(job => FileListDeleteJob->new(archives => \@filelist ));
+			my $R = $P->process_task($args{journal}, $ft);
+			die unless $R;
+		} else {
+			print "Nothing to delete\n";
+		}
 	} elsif ($args{action} eq 'restore') {
-		my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $args{files}->{$_}->{archive_id}, relfilename =>$_, filename=> $args{files}->{$_}->{absfilename} } } keys %{$args{files}};
+		my $j = $args{journal_object};
+		$j->read_journal();
+		my $files = $j->{journal_h};
+		my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $files->{$_}->{absfilename} } } keys %{$files};
 		@filelist  = splice(@filelist, 0, $args{max_number_of_files});
-		die "Nothing to restore" unless scalar @filelist;
-		my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
-		my $R = $P->process_task($args{journal}, $ft);
-		$args{files} = {};
-		die unless $R;
+		if (scalar @filelist) {
+			my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
+			my $R = $P->process_task($args{journal}, $ft);
+			die unless $R;
+		} else {
+			print "Nothing to restore\n";
+		}
 	} elsif ($args{action} eq 'restore-completed') {
-		my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $args{files}->{$_}->{archive_id}, relfilename =>$_, filename=> $args{files}->{$_}->{absfilename} } } keys %{$args{files}};
-		die "Nothing to restore" unless scalar keys %filelist;
-		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
-		my $R = $P->process_task($args{journal}, $ft);
-		$args{files} = {};
-		die unless $R;
+		my $j = $args{journal_object};
+		$j->read_journal();
+		my $files = $j->{journal_h};
+		my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $files->{$_}->{absfilename} } } keys %{$files};
+		if (scalar keys %filelist) {
+			my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
+			my $R = $P->process_task($args{journal}, $ft);
+			die unless $R;
+		} else {
+			print "Nothing to restore\n";
+		}
 	} else {
 		die;
 	}
@@ -303,6 +275,7 @@ sub create_child
    $disp_select->add($fromchild);
    $children->{$pid} = { pid => $pid, fromchild => $fromchild, tochild => $tochild };
    
+   print "PID $pid Started worker\n";
    return (0, undef, undef);
   } elsif (defined ($pid)) { # Child
 
