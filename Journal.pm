@@ -25,6 +25,7 @@ sub read_journal
 		chomp;
 		if (/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
 			my ($archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4);
+#			die if $self->{journal_h}->{$relfilename};
 			$self->{journal_h}->{$relfilename} = {
 				archive_id => $archive_id,
 				size => $size,
@@ -47,11 +48,24 @@ sub read_all_files
 	$self->{allfiles_a} = $self->_read_files('all');
 }
 
+sub read_new_files
+{
+	my ($self) = @_;
+	$self->{newfiles_a} = $self->_read_files('new');
+}
+
+sub read_existing_files
+{
+	my ($self) = @_;
+	$self->{existingfiles_a} = $self->_read_files('existing');
+}
+
+
 sub _read_files
 {
 	my ($self, $mode) = @_;
-	my $filelist = [];
 	
+	my $filelist = [];
 	# TODO: find better workaround than "-s"
 	find({ wanted => sub {
 		if ( (-f $_) && (-s $_) ) {
@@ -59,8 +73,8 @@ sub _read_files
 			if
 			(
 				( $mode eq 'all' ) ||
-				( ($mode eq 'new') && (!$self->{journal_h}->{$relfilename}) ) ||
-				( ($mode eq 'existing') && ($self->{journal_h}->{$relfilename}) )
+				( ($mode eq 'new') && (!defined($self->{journal_h}->{$relfilename})) ) ||
+				( ($mode eq 'existing') && (defined($self->{journal_h}->{$relfilename})) )
 			)
 			{
 				push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) }
