@@ -38,13 +38,13 @@ dd if=/dev/urandom of=$ROOT/file4 bs=100 count=1
 dd if=/dev/urandom of=$ROOT/file5 bs=100 count=3
 dd if=/dev/urandom of=$ROOT/file6 bs=100 count=30
 
-./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL --max-number-of-files=1
+./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
 ./mtglacier.pl check-local-hash --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
 md5sum $ROOT/* > $DIR/original-md5
 
 	;;
 sync)
-./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL --max-number-of-files=1
+./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
 
 	;;
 retrieve)
