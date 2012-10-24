@@ -66,11 +66,16 @@ sub _read_files
 	my ($self, $mode, $max_number_of_files) = @_;
 	
 	my $filelist = [];
+	$i = 0;
 	# TODO: find better workaround than "-s"
 	find({ wanted => sub {
 		if ($max_number_of_files && (scalar @$filelist >= $max_number_of_files)) {
 			$File::Find::prune = 1;
 			return;
+		}
+		
+		if (++$i % 1000 == 0) {
+			print "Found $i local files\n";
 		}
 		
 		if ( (-f $_) && (-s $_) ) {
