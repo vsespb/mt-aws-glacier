@@ -20,10 +20,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# VERSION: 0.71beta
 
 use strict;
 use warnings;
+
+our $VERSION = "0.71 beta";
 
 
 use URI;
@@ -75,7 +76,7 @@ sub dcs
 
 
 
-
+print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n";
 
 my ($P) = @_;
 my ($src, $vault, $journal, $max_number_of_files);

@@ -11,7 +11,7 @@ mt-aws-glacier is a client application	 for Glacier.
 
 ## Version
 
-* Version 0.7 Beta
+* Version 0.71 Beta
 
 ## Features
 
