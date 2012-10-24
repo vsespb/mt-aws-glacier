@@ -68,15 +68,15 @@ close F;
 
 my $j = Journal->new(journal_file => $journal_file, root_dir => $dataroot);
 $j->read_journal();
-$j->read_real_files();
+$j->read_all_files();
 
 
 {
 	my @checkfiles = grep { $_->{type} ne 'dir' } @$testfiles;
-	ok((scalar @checkfiles) == scalar @{$j->{realfiles_a}}, "number of planed and real files match");
+	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{realfiles_a}}) {
+	for my $realfile (@{$j->{allfies_a}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
 }

@@ -41,18 +41,35 @@ sub read_journal
 	return;
 }
 
-sub read_real_files
+sub read_all_files
 {
 	my ($self) = @_;
+	$self->{allfiles_a} = $self->_read_files('all');
+}
+
+sub _read_files
+{
+	my ($self, $mode) = @_;
 	my $filelist = [];
 	
 	# TODO: find better workaround than "-s"
-	find(
-		{ wanted => sub { push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) } if ( (-f $_) && (-s $_) ); }, no_chdir => 1 },
-		($self->{root_dir})
-	);
-	$self->{realfiles_a} = $filelist;
+	find({ wanted => sub {
+		if ( (-f $_) && (-s $_) ) {
+			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($_, $self->{root_dir}));
+			if
+			(
+				( $mode eq 'all' ) ||
+				( ($mode eq 'new') && (!$self->{journal_h}->{$relfilename}) ) ||
+				( ($mode eq 'existing') && ($self->{journal_h}->{$relfilename}) )
+			)
+			{
+				push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) }
+			}
+		}
+	}, no_chdir => 1 }, ($self->{root_dir}));
+	$filelist;
 }
+
 
 # sub read_real_files
 # sub get_files_to_sync
