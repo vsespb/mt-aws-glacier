@@ -70,15 +70,26 @@ sub _read_files
 	find({ wanted => sub {
 		if ( (-f $_) && (-s $_) ) {
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($_, $self->{root_dir}));
-			if
-			(
-				( $mode eq 'all' ) ||
-				( ($mode eq 'new') && (!defined($self->{journal_h}->{$relfilename})) ) ||
-				( ($mode eq 'existing') && (defined($self->{journal_h}->{$relfilename})) )
-			)
-			{
-				push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) }
+
+			my $ok = 0;
+			if ($mode eq 'all') {
+				$ok = 1;
+			} elsif ($mode eq 'new') {
+				if (!defined($self->{journal_h}->{$relfilename})) {
+					$ok = 1;
+				} else {
+					print "Skip $relfilename\n";
+				}
+			} elsif ($mode eq 'existing') {
+				if (defined($self->{journal_h}->{$relfilename})) {
+					$ok = 1;
+				} else {
+					print "Not exists $relfilename\n";
+				}
 			}
+			push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) } if $ok;
+			
+			
 		}
 	}, no_chdir => 1 }, ($self->{root_dir}));
 	$filelist;
