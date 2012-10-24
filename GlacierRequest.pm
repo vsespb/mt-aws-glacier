@@ -328,7 +328,7 @@ sub perform_lwp
 {
 	my ($self) = @_;
 	
-	for (1..5) {
+	for my $i (1..100) {
 		my $ua = LWP::UserAgent->new(timeout => 120);
 	    my $req = undef;
 	    my $url = "http://$self->{host}$self->{url}";
@@ -359,7 +359,18 @@ sub perform_lwp
 		}
 
 		if ($resp->code =~ /^(500|408)$/) {
-			sleep 1;
+			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry\n";
+			if ($i <= 5) {
+				sleep 1;
+			} elsif ($i <= 10) {
+				sleep 5;
+			} elsif ($i <= 20) {
+				sleep 15;
+			} elsif ($i <= 50) {
+				sleep 60
+			} else {
+				sleep 180;
+			}
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			return $resp;
 		} else {
