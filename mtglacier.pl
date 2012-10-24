@@ -102,7 +102,7 @@ if (GetOptions("config=s" => \$config_filename,
 		die "Part size should be power of two" unless ($partsize != 0) && (($partsize & ($partsize - 1)) == 0);
 		read_config($config, $config_filename);
 		my $j = Journal->new(journal_file => $journal, root_dir => $src);
-		process_forks(action => "sync", journal_object => $j, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
+		process_forks(action => "sync", journal_object => $j, max_number_of_files => $max_number_of_files, key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal);
 	} elsif ($action eq 'purge-vault') {
 		read_config($config, $config_filename);
 		my $j = Journal->new(journal_file => $journal, root_dir => $src);
@@ -183,7 +183,7 @@ sub process_forks
 	if ($args{action} eq 'sync') {
 		my $j = $args{journal_object};
 		$j->read_journal();
-		$j->read_new_files();
+		$j->read_new_files($args{max_number_of_files});
 		
 		my @joblist;
 		for (@{ $j->{newfiles_a} }) {

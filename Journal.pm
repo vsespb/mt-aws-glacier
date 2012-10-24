@@ -50,8 +50,8 @@ sub read_all_files
 
 sub read_new_files
 {
-	my ($self) = @_;
-	$self->{newfiles_a} = $self->_read_files('new');
+	my ($self, $max_number_of_files) = @_;
+	$self->{newfiles_a} = $self->_read_files('new', $max_number_of_files);
 }
 
 sub read_existing_files
@@ -63,11 +63,16 @@ sub read_existing_files
 
 sub _read_files
 {
-	my ($self, $mode) = @_;
+	my ($self, $mode, $max_number_of_files) = @_;
 	
 	my $filelist = [];
 	# TODO: find better workaround than "-s"
 	find({ wanted => sub {
+		if ($max_number_of_files && (scalar @$filelist >= $max_number_of_files)) {
+			$File::Find::prune = 1;
+			return;
+		}
+		
 		if ( (-f $_) && (-s $_) ) {
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($_, $self->{root_dir}));
 
@@ -87,6 +92,9 @@ sub _read_files
 					print "Not exists $relfilename\n";
 				}
 			}
+			
+			
+			
 			push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) } if $ok;
 			
 			
