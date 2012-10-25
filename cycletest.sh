@@ -47,6 +47,12 @@ sync)
 ./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
 
 	;;
+	
+check)
+./mtglacier.pl check-local-hash --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
+
+	;;
+	
 retrieve)
 # warning, make sure DIR is correct, avoid disaster!
 rm -rf $ROOT/*
