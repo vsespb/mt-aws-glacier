@@ -1,12 +1,12 @@
 
 2012-10-24: v0.72 beta
-			* Some effort to manage mtglacier version information, print version each run. Report version as HTTP UserAgent. 
+			* Some effort to manage mtglacier version information, print version each run. Report version in HTTP UserAgent string. 
 			* Show some progress when reading large local directory listings
 			* Retry with throttling 408/500 HTTP requests. 408 can mean timeout/bad bandwidth. 500 means Amazon not ready yet.
 			* Some old unused code removed
 			* Option --max-number-of-files now works with "sync" and limits number of files to synchronize
-			* More verbose eoutput
-			* For certain commands like Sync read only new filenames into memory (saves memory when working with huge filesets)
+			* More verbose output
+			* For certain commands like Sync read only not-yet-synced filenames into memory (saves memory when working with huge filesets)
 			* Use Journal module to handle journals and file listings + unit test the module
 
 2012-08-28: v0.7 beta
