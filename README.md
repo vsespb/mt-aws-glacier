@@ -71,14 +71,20 @@ that's all
 				
 				libjson-xs-perl liblwp-protocol-https-perl liburi-perl
 
-## Warning
+## Warnings (*MUST READ*)
 
 * When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
 or non-empty vault in amazon console now. Also make sure you have read _all_ AWS Glacier pricing/faq.
 
 * Read their pricing FAQ again, really. Beware of retrieval fee.
 
-* Backup your local journal file. Currently it's impossible to correctly restore backup without journal file
+* *Backup your local journal file*. Currently it's impossible to correctly restore backup without journal file. (*Remote metadata storage will be implemented soon*)
+
+* With low "partsize" option you pay a bit more (Amazon charges for each upload request)
+
+* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500 or even signature expiration errors.
+
+* Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
 
 ## Usage
  
