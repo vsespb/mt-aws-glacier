@@ -94,7 +94,7 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ AWS
 5. Sync your files
 
 				./mtglacier.pl sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
-    
+				
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
@@ -113,6 +113,20 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ AWS
 12. Delete all your files from vault
 
 				./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+
+## Additional command line options
+
+1. "concurrency" (with 'sync' command) - number of parallel upload streams to run. (default 4)
+
+				--concurrency=4
+				
+2. "partsize" (with 'sync' command) - size of file chunk to upload at once, in Megabytes. (default 16)
+
+				--partsize=16
+				
+3. "max-number-of-files" (with 'sync' or 'restore' commands) - limit number of files to sync/restore. Program will finish when reach this limit.
+
+				--max-number-of-files=100
 
 ## Test/Play with it
 
