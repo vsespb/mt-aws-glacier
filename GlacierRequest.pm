@@ -39,6 +39,8 @@ sub add_header
     push @{$self->{headers}}, { name => $name, value => $value};
 }
 
+
+
 sub new
 {
     my ($class, %args) = @_;
@@ -51,14 +53,9 @@ sub new
     $self->{account_id} = '-';
     $self->{host} = "$self->{service}.$self->{region}.amazonaws.com";
 
-    my $now = time();
-	$self->{date8601} = strftime("%Y%m%dT%H%M%SZ", gmtime($now));
-	$self->{date} = strftime("%Y%m%d", gmtime($now));
-     
     $self->{headers} = [];
-    
+   
     $self->add_header('Host', $self->{host});
-    $self->add_header('x-amz-date', $self->{date8601});
     $self->add_header('x-amz-glacier-version', '2012-06-01') if $self->{service} eq 'glacier';
     
     return $self;                                                                                                                                                                                                                                                                     
@@ -187,33 +184,47 @@ sub init_upload_multipart_part
 
 
 
-sub _gen_canonical_url
-{
-	my ($self) = @_;
-	my $canonical_headers = join ("\n", map { lc($_->{name}).":".trim($_->{value}) } sort { $a->{name} cmp $b->{name} } @{$self->{headers}});
-	$self->{signed_headers} = join (';', map { lc($_->{name}) } sort { $a->{name} cmp $b->{name} } @{$self->{headers}});
-	
-	my $bodyhash = $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('');
-	$self->{canonical_url} = "$self->{method}\n$self->{url}\n\n$canonical_headers\n\n$self->{signed_headers}\n$bodyhash";
-	
-	$self->{canonical_url_hash} = sha256_hex($self->{canonical_url})
-}
-
-
 sub _sign
 {
 	my ($self) = @_;
 	
-	my $credentials = "$self->{date}/$self->{region}/$self->{service}/aws4_request";
-
-	$self->{string_to_sign} = "AWS4-HMAC-SHA256\n$self->{date8601}\n$credentials\n$self->{canonical_url_hash}";
-
-	my ($kSigning, $kSigning_hex) = get_signature_key($self->{secret}, $self->{date}, $self->{region}, $self->{service});
-	$self->{signature} = hmac_hex($kSigning, $self->{string_to_sign});
+    my $now = time();
+    
+    $self->{last_request_time} = $now;
+    
+	my $date8601 = strftime("%Y%m%dT%H%M%SZ", gmtime($now));
+	my $datestr = strftime("%Y%m%d", gmtime($now));
+     
+    
+	$self->{req_headers} = [
+    	{ name => 'x-amz-date', value => $date8601 },
+    ];
 	
-	my $auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$self->{signed_headers}, Signature=$self->{signature}";
+	
+	# getting canonical URL
+	
+	my @all_headers = sort { $a->{name} cmp $b->{name} } (@{$self->{headers}}, @{$self->{req_headers}});
+	my $canonical_headers = join ("\n", map { lc($_->{name}).":".trim($_->{value}) } @all_headers);
+	my $signed_headers = join (';', map { lc($_->{name}) } @all_headers);
+	
+	my $bodyhash = $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('');
+	my $canonical_url = "$self->{method}\n$self->{url}\n\n$canonical_headers\n\n$signed_headers\n$bodyhash";
+	
+	my $canonical_url_hash = sha256_hex($canonical_url);
+	
+	# /getting canonical URL
+	
+	my $credentials = "$datestr/$self->{region}/$self->{service}/aws4_request";
 
-	$self->add_header('Authorization', $auth);
+	my $string_to_sign = "AWS4-HMAC-SHA256\n$date8601\n$credentials\n$canonical_url_hash";
+
+	my ($kSigning, $kSigning_hex) = get_signature_key($self->{secret}, $datestr, $self->{region}, $self->{service});
+	my $signature = hmac_hex($kSigning, $string_to_sign);
+	
+	my $auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature";
+	$auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature" if rand() > 0.2;
+
+	push @{$self->{req_headers}}, { name => 'Authorization', value => $auth};
 }
 
 sub upload_archive
@@ -221,8 +232,6 @@ sub upload_archive
 	my ($class, $region, $key, $secret, $vault, $dataref) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_upload_archive(vault => $vault, dataref => $dataref);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp ? $resp->header('X-Amz-Archive-Id') : undef;
 }
@@ -232,8 +241,6 @@ sub create_multipart_upload
 	my ($class, $region, $key, $secret, $vault, $size) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_create_multipart_upload(vault => $vault, partsize => $size);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp ? $resp->header('X-Amz-Multipart-Upload-Id') : $resp; # TODO: lowercase source headers!
 }
@@ -243,8 +250,6 @@ sub delete_archive
 	my ($class, $region, $key, $secret, $vault, $archive_id) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_delete_archive(vault => $vault, archive_id => $archive_id);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp;
 }
@@ -254,8 +259,6 @@ sub retrieve_archive
 	my ($class, $region, $key, $secret, $vault, $archive_id) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_retrieve_archive(vault => $vault, archive_id => $archive_id);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp;
 }
@@ -264,8 +267,6 @@ sub retrieval_fetch_job
 	my ($class, $region, $key, $secret, $vault) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_retrieval_fetch_job(vault => $vault);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp->decoded_content;
 }
@@ -275,8 +276,6 @@ sub retrieval_download_job
 	my ($class, $region, $key, $secret, $vault, $jobid, $filename) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_retrieval_download_job(vault => $vault, jobid => $jobid, filename => $filename);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp->decoded_content;
 }
@@ -287,8 +286,6 @@ sub upload_part
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	
 	$req->init_upload_multipart_part(vault => $vault, dataref=>$dataref, offset=>$offset, uploadid=>$uploadid, part_final_hash => $part_final_hash);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp;
 }
@@ -298,8 +295,6 @@ sub finish_multipart_upload
 	my ($class, $region, $key, $secret, $vault, $uploadid, $size, $treehash) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
 	$req->init_finish_multipart_upload(vault => $vault, uploadid=>$uploadid, size => $size, treehash => $treehash);
-	$req->_gen_canonical_url();
-	$req->_sign();
 	my $resp = $req->perform_lwp();
 	return $resp->header('X-Amz-Archive-Id');
 }
@@ -329,6 +324,8 @@ sub perform_lwp
 	my ($self) = @_;
 	
 	for my $i (1..100) {
+		$self->_sign();	
+		
 		my $ua = LWP::UserAgent->new(timeout => 120);
 		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
 	    my $req = undef;
@@ -347,8 +344,9 @@ sub perform_lwp
 		     $req = HTTP::Request::Common::GET( $url);
 		} else {
 			die;
-		}	
-	    for ( @{$self->{headers}} ) {
+		}
+		
+	    for ( @{$self->{headers}}, @{$self->{req_headers}} ) {
 	    	$req->header( $_->{name}, $_->{value} );
 	    }
 
