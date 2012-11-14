@@ -385,28 +385,6 @@ sub perform_lwp
 	return undef;
 }
 
-sub perform_socket
-{
-	my ($self) = @_;
-	use IO::Socket::INET;
-	$|=1;
-	my $socket = IO::Socket::INET->new(PeerAddr => $self->{host}, PeerPort => 80, Proto => 'tcp', Blocking => 1);
-	$socket->autoflush(1);
-	if ($self->{method} eq 'PUT') {
-		snd($socket, "PUT $self->{url} HTTP/1.0\n");
-	    for ( @{$self->{headers}} ) {
-	    	snd($socket, "$_->{name}: $_->{value}\n");
-	    }
-	    snd($socket, "\n");
-	    snd($socket, ${$self->{dataref}});
-	    snd($socket, "\n");
-	    while (<$socket>) {
-	    	print $_;
-	    }
-	}
-
-}
-
 sub snd
 {
 	my ($socket, $str) = @_;
