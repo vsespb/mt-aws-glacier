@@ -1,4 +1,9 @@
 
+2012-11-15: v0.73 beta
+			* Sign request right before sending to network. Fixing the following 1) when request is retried due to 408/500 error,
+			we resign it, thus timestamp won't expire 2) put all heavy operations like SHA calculation before signature/timestamp
+			calculation
+			* Some legacy code removed
 2012-10-24: v0.72 beta
 			* Some effort to manage mtglacier version information, print version each run. Report version in HTTP UserAgent string. 
 			* Show some progress when reading large local directory listings
