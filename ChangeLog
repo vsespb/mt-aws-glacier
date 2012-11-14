@@ -1,4 +1,8 @@
 
+2012-11-15: v0.74 beta
+			* Improved CPU usage apprx 30% - 1) SHA256 was calculated twice sometimes 2) In case data chunk < 1 MB we can use that TreeHash is equal to SHA256
+			* Debug code removed, which were causing failing requests in 20% cases
+			* Some refactoring
 2012-11-15: v0.73 beta
 			* Sign request right before sending to network. Fixing the following 1) when request is retried due to 408/500 error,
 			we resign it, thus timestamp won't expire 2) put all heavy operations like SHA calculation before signature/timestamp

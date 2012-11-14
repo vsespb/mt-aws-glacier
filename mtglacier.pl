@@ -25,7 +25,7 @@ package main;
 use strict;
 use warnings;
 
-our $VERSION = "0.73beta";
+our $VERSION = "0.74beta";
 
 
 use URI;
