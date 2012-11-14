@@ -222,7 +222,6 @@ sub _sign
 	my $signature = hmac_hex($kSigning, $string_to_sign);
 	
 	my $auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature";
-	$auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature" if rand() > 0.2;
 
 	push @{$self->{req_headers}}, { name => 'Authorization', value => $auth};
 }
