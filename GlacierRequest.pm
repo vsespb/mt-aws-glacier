@@ -61,21 +61,6 @@ sub new
     return $self;                                                                                                                                                                                                                                                                     
 }                      
 
-sub init_upload_archive
-{
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{dataref} = $args{dataref} || die;
-   
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/archives";
-    $self->{method} = 'POST';
-	$self->add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
-	$self->add_header('Content-Length', length(${$self->{dataref}}));
-	$self->add_header('x-amz-content-sha256', sha256_hex(${$self->{dataref}}));
-	$self->add_header('x-amz-sha256-tree-hash', treehash(${$self->{dataref}}));
-}
-
 sub init_create_multipart_upload
 {
     my ($self, %args) = @_;
@@ -409,13 +394,6 @@ sub hmac_hex
 	my ($key, $msg) = @_;
 	my $h =	hmac_sha256_hex($msg, $key);
 	return $h;
-}
-
-sub treehash
-{
-	my ($data) = @_;
-	return sha256_hex($data) if length($data) <= 1048576;
-	return undef;
 }
 
 sub trim
