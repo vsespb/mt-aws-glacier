@@ -298,25 +298,6 @@ sub finish_multipart_upload
 	return $resp->header('X-Amz-Archive-Id');
 }
 
-sub __perform_multipart_upload
-{
-	my ($class, $key, $secret, $vault, $dataref, $partsize) = @_;
-	
-	my $start = 0;
-	my $len = length($$dataref);
-	my $th = TreeHash->new();
-	my $uploadid = $class->create_multipart_upload($key, $secret, $vault, $partsize);
-	while ($start < $len) {
-		my $part = substr($$dataref, $start, $partsize);
-		$th->eat_data(\$part);
-		my $r = $class->upload_part($key, $secret, $vault, $uploadid, \$part, $start);
-		$start += $partsize;
-	}
-	$th->calc_tree();
-	my $hash = $th->get_final_hash();
-	return $class->finish_multipart_upload($key, $secret, $vault, $uploadid, $len, $hash);
-}
-
 
 sub perform_lwp
 {
