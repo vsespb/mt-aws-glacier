@@ -170,18 +170,32 @@ sub init_upload_multipart_part
     die unless defined($args{offset});
     $self->{offset} = $args{offset};
     $self->{part_final_hash}=$args{part_final_hash};
+    die unless defined($self->{part_final_hash});
     $self->{uploadid} = $args{uploadid} || die;
+    
+    $self->_calc_data_hash;
    
     $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$self->{uploadid}";
     $self->{method} = 'PUT';
 	$self->add_header('Content-Type', 'application/octet-stream');
 	$self->add_header('Content-Length', length(${$self->{dataref}}));
-	$self->add_header('x-amz-content-sha256', sha256_hex(${$self->{dataref}}));
+	$self->add_header('x-amz-content-sha256', $self->{data_sha256});
 	$self->add_header('x-amz-sha256-tree-hash', $self->{part_final_hash});
 	 my ($start, $end) = ($self->{offset}, $self->{offset}+length(${$self->{dataref}})-1 );
 	$self->add_header('Content-Range', "bytes ${start}-${end}/*");
 }
 
+
+sub _calc_data_hash
+{
+	my ($self) = @_;
+
+	if (length(${$self->{dataref}}) <= 1048576) {
+		$self->{data_sha256} = $self->{part_final_hash};
+	} else {
+		$self->{data_sha256} = sha256_hex(${$self->{dataref}});
+	}
+}
 
 
 sub _sign
@@ -207,7 +221,7 @@ sub _sign
 	my $canonical_headers = join ("\n", map { lc($_->{name}).":".trim($_->{value}) } @all_headers);
 	my $signed_headers = join (';', map { lc($_->{name}) } @all_headers);
 	
-	my $bodyhash = $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('');
+	my $bodyhash = $self->{data_sha256} ? $self->{data_sha256} : sha256_hex('');
 	my $canonical_url = "$self->{method}\n$self->{url}\n\n$canonical_headers\n\n$signed_headers\n$bodyhash";
 	
 	my $canonical_url_hash = sha256_hex($canonical_url);
