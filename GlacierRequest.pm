@@ -206,9 +206,11 @@ sub _sign
 	my $canonical_headers = join ("\n", map { lc($_->{name}).":".trim($_->{value}) } @all_headers);
 	my $signed_headers = join (';', map { lc($_->{name}) } @all_headers);
 	
-	my $bodyhash = $self->{data_sha256} ? $self->{data_sha256} : sha256_hex('');
-	my $canonical_url = "$self->{method}\n$self->{url}\n\n$canonical_headers\n\n$signed_headers\n$bodyhash";
+	my $bodyhash = $self->{data_sha256} ?
+		$self->{data_sha256} :
+		( $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('') );
 	
+	my $canonical_url = "$self->{method}\n$self->{url}\n\n$canonical_headers\n\n$signed_headers\n$bodyhash";
 	my $canonical_url_hash = sha256_hex($canonical_url);
 	
 	# /getting canonical URL
