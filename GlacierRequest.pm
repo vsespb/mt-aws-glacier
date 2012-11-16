@@ -308,7 +308,7 @@ sub perform_lwp
 		my $ua = LWP::UserAgent->new(timeout => 120);
 		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
 	    my $req = undef;
-	    my $url = "http://$self->{host}$self->{url}";
+	    my $url = "https://$self->{host}$self->{url}";
 		if ($self->{method} eq 'PUT') {
 		    $req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
 		} elsif ($self->{method} eq 'POST') {
@@ -330,11 +330,18 @@ sub perform_lwp
 	    }
 
 		my $resp = undef;
-		if ($self->{content_file}) {
-	    	$resp = $ua->request($req, $self->{content_file});
-		} else {
-	    	$resp = $ua->request($req);
-		}
+		print "PID $$ REQUEST\n";
+		
+		eval {
+			local $SIG{PIPE} = sub { print("SIGPIPE, exit eval() block", 3); };
+			if ($self->{content_file}) {
+		    	$resp = $ua->request($req, $self->{content_file});
+			} else {
+		    	$resp = $ua->request($req);
+			}
+		};
+		
+		print "PID $$ /REQUEST\n";
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry\n";

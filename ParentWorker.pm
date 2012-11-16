@@ -70,7 +70,9 @@ sub wait_worker
     for my $fh (@ready) {
       if (eof($fh)) {
         $self->{disp_select}->remove($fh);
-        die "Unexpeced EOF in Pipe";
+#        die "Unexpeced EOF in Pipe";
+        print STDERR "Z-Unexpeced EOF in Pipe\n";
+         while(wait() != -1) { print STDERR "wait \$\?=$? ${^CHILD_ERROR_NATIVE} \n";};
         next; 
       }
       my ($pid, $taskid, $data) = get_response($fh);

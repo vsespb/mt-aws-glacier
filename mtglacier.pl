@@ -49,34 +49,6 @@ use Journal;
 
 
 
-$SIG{__DIE__} = sub {
-	if ($^S == 0) {
-		print STDERR "DIE outside EVAL block [$^S]\n";
-		for my $s (0..$#_) { dcs("Fatal Error: $^S $_[$s]"); };
-		exit(1); 
-	} else {
-		print STDERR "DIE inside EVAL block\n";;
-		for my $s (0..$#_) { dcs("Fatal Error: $^S $_[$s]"); };
-	}
-};
-sub dcs
-{
-  my ($p1, $p2) = @_;
-  # get call stack^
-  my $cs='';
-  for (my $i=1; $i<20; $i++) {
-    my ($package, $filename, $line, $subroutine,
-        $hasargs, $wantarray, $evaltext, $is_require) = caller($i);
-    last if ( ! defined($package) );
-    $cs = "\n$subroutine($filename:$line)" . $cs;
-  }
-  $cs = "Call stack: $cs\n";
-  print STDERR $cs.$p1;
-}
-
-
-
-
 print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n";
 
 my ($P) = @_;
@@ -168,17 +140,31 @@ sub process_forks
 	for my $n (1..$maxchildren) {
 		my ($ischild, $child_fromchild, $child_tochild) = create_child($children, $disp_select);
 		if ($ischild) {
-			$SIG{INT} = $SIG{TERM} = sub { kill(12, $parent_pid); print STDERR "CHILD($$) SIGINT\n"; exit(1); };
-			$SIG{USR2} = sub { exit(0); };
+#			$SIG{INT} = $SIG{TERM} = sub { kill(12, $parent_pid); print STDERR "CHILD($$) SIGINT\n"; exit(1); };
+#			$SIG{USR2} = sub { exit(0); };
+#	$SIG{INT} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "INT PARENT Exit\n"; exit(1); };
+#	$SIG{TERM} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "TERM PARENT Exit\n"; exit(1); };
+#	$SIG{CHLD} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "CHLD PARENT Exit\n"; exit(1); };
+
+$SIG{__DIE__} = sub { print STDERR "CHILD DIE $$ \n"; };
+	$SIG{PIPE} = sub { print STDERR "CHILD PIPE!\n"; exit(1); };
 			# child code
 			my $C = ChildWorker->new(region => $config->{region}, key => $config->{key}, secret => $config->{secret}, vault => $args{vault}, fromchild => $child_fromchild, tochild => $child_tochild);
 			$C->process();
+			print "AHAAAAAA!\n";
+			die;
 			kill(2, $parent_pid);
 			exit(1);
 		}
 	}
-	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "PARENT Exit\n"; exit(1); };
-	$SIG{USR2} = sub {  $SIG{CHLD}='IGNORE';print STDERR "PARENT SIGUSR2\n"; exit(1); };
+	#$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "PARENT Exit\n"; exit(1); };
+	
+#	$SIG{INT} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "INT PARENT Exit\n"; exit(1); };
+#	$SIG{TERM} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "TERM PARENT Exit\n"; exit(1); };
+#	$SIG{CHLD} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %$children) ; print STDERR "CHLD PARENT Exit\n"; exit(1); };
+	
+#	$SIG{USR2} = sub {  $SIG{CHLD}='IGNORE';print STDERR "PARENT SIGUSR2\n"; exit(1); };
+
 	my $P = ParentWorker->new(children => $children, disp_select => $disp_select);
 	
 	
@@ -240,11 +226,12 @@ sub process_forks
 	}
 	
 	
-	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
+	print STDERR "AHA0!\n";
+#	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
 	kill (12, keys %$children);
 	while(wait() != -1) { print STDERR "wait\n";};
 	print STDERR "OK DONE\n";
-	exit(0);
+
 }
 
 
@@ -280,6 +267,8 @@ sub create_child
    print "PID $pid Started worker\n";
    return (0, undef, undef);
   } elsif (defined ($pid)) { # Child
+
+
 
    $fromchild->writer();
    $fromchild->autoflush(1);

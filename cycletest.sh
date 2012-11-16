@@ -34,17 +34,17 @@ init)
 # warning, make sure DIR is correct, avoid disaster!
 rm -rf $DIR/*
 mkdir $ROOT
-dd if=/dev/urandom of=$ROOT/file4 bs=100 count=1
-dd if=/dev/urandom of=$ROOT/file5 bs=100 count=3
-dd if=/dev/urandom of=$ROOT/file6 bs=100 count=30
+dd if=/dev/urandom of=$ROOT/file4 bs=100 count=2
+dd if=/dev/urandom of=$ROOT/file5 bs=100 count=2
+dd if=/dev/urandom of=$ROOT/file6 bs=100 count=2
 
-./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
+./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL --partsize=2
 ./mtglacier.pl check-local-hash --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
 md5sum $ROOT/* > $DIR/original-md5
 
 	;;
 sync)
-./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL
+./mtglacier.pl sync --config=glacier.cfg --from-dir $ROOT --to-vault=$VAULT -journal=$JOURNAL --concurrency=30 --partsize=1
 
 	;;
 	

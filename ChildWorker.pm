@@ -53,6 +53,7 @@ sub process
 	    for my $fh (@ready) {
 			if (eof($fh)) {
 				$disp_select->remove($fh);
+				print "PID $$ X-EXITS!!\n";
 				return;
 			}
 			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
@@ -102,6 +103,7 @@ sub process
 			send_response($fromchild, $taskid, $result);
 	    }
 	}
+	print "CANT READ\n";
 }
 
 
