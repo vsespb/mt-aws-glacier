@@ -91,7 +91,7 @@ sub process
 				$result = { journal_entry => time()." RETRIEVE_JOB $data->{archive_id}" };
 				$console_out = "Retrieve Archive $data->{archive_id}";
 			} elsif ($action eq 'retrieval_fetch_job') {
-				my $r = GlacierRequest->retrieval_fetch_job($self->{region}, $self->{key}, $self->{secret}, $self->{vault});
+				my $r = GlacierRequest->retrieval_fetch_job($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{marker});
 				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Retrieve Job List";

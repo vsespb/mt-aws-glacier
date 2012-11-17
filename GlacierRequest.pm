@@ -116,6 +116,10 @@ sub init_retrieval_fetch_job
     $self->{vault} = $args{vault} || die;
    
     $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
+
+    $self->{params} = { completed => 'true' };
+    $self->{params}->{marker} = $args{marker} if $args{marker};
+    
     $self->{method} = 'GET';
 }
 
@@ -210,7 +214,10 @@ sub _sign
 		$self->{data_sha256} :
 		( $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('') );
 	
-	my $canonical_url = "$self->{method}\n$self->{url}\n\n$canonical_headers\n\n$signed_headers\n$bodyhash";
+	$self->{params_s} = $self->{params} ? join ('&', map { "$_=$self->{params}->{$_}" } sort keys %{$self->{params}}) : ""; # TODO: proper URI encode
+	my $canonical_query_string = $self->{params_s};
+	
+	my $canonical_url = "$self->{method}\n$self->{url}\n$canonical_query_string\n$canonical_headers\n\n$signed_headers\n$bodyhash";
 	my $canonical_url_hash = sha256_hex($canonical_url);
 	
 	# /getting canonical URL
@@ -264,9 +271,9 @@ sub retrieve_archive
 }
 sub retrieval_fetch_job
 {
-	my ($class, $region, $key, $secret, $vault) = @_;
+	my ($class, $region, $key, $secret, $vault, $marker) = @_;
 	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_retrieval_fetch_job(vault => $vault);
+	$req->init_retrieval_fetch_job(vault => $vault, marker=> $marker);
 	my $resp = $req->perform_lwp();
 	return $resp->decoded_content;
 }
@@ -311,6 +318,7 @@ sub perform_lwp
 		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
 	    my $req = undef;
 	    my $url = "http://$self->{host}$self->{url}";
+	    $url .= "?$self->{params_s}" if $self->{params_s};
 		if ($self->{method} eq 'PUT') {
 		    $req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
 		} elsif ($self->{method} eq 'POST') {

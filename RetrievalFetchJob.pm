@@ -36,6 +36,8 @@ sub new
     bless $self, $class;
     $self->{archives}||die;
     $self->{raised} = 0;
+    $self->{downloads} ||= [];
+    $self->{seen} ||= {};
     return $self;
 }
 
@@ -47,7 +49,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		return ("ok", Task->new(id => "retrieval_fetch_job",action=>"retrieval_fetch_job", data => { } ));
+		return ("ok", Task->new(id => "retrieval_fetch_job",action=>"retrieval_fetch_job", data => { marker => $self->{marker} } ));
 	}
 }
 
@@ -58,23 +60,23 @@ sub finish_task
 	if ($self->{raised}) {
 		my $json = JSON::XS->new->allow_nonref;
 		my $scalar = $json->decode( $task->{result}->{response} );
-		my @downloads;
-		my $seen ={};
-		#$scalar->{Marker};
 		for my $job (@{$scalar->{JobList}}) {
-			print "$job->{Completed}|$job->{JobId}|$job->{ArchiveId}\n";
+			#print "$job->{Completed}|$job->{JobId}|$job->{ArchiveId}\n";
 			if ($job->{Completed}) {
 				if (my $a = $self->{archives}->{$job->{ArchiveId}}) {
-					if (!$seen->{ $job->{ArchiveId} }) {
-						$seen->{ $job->{ArchiveId} }=1;
+					if (!$self->{seen}->{ $job->{ArchiveId} }) {
+						$self->{seen}->{ $job->{ArchiveId} }=1;
 						$a->{jobid} = $job->{JobId};
-						push @downloads, $a;
+						push @{$self->{downloads}}, $a;
 					}
 				}
 			}
 		}
-		if (scalar @downloads) {
-			return ("ok replace", RetrievalDownloadJob->new(archives=>\@downloads)); #TODO
+		
+		if ($scalar->{Marker}) {
+			return ("ok replace", RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) );
+		} elsif (scalar @{$self->{downloads}}) {
+			return ("ok replace", RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO
 		} else {
 			return ("done");
 		}
