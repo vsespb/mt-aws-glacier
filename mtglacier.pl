@@ -25,7 +25,7 @@ package main;
 use strict;
 use warnings;
 
-our $VERSION = "0.74beta";
+our $VERSION = "0.75beta";
 
 
 use URI;
@@ -112,7 +112,7 @@ if (GetOptions("config=s" => \$config_filename,
 	} elsif ($action eq 'restore') {
 		read_config($config, $config_filename);
 		my $j = Journal->new(journal_file => $journal, root_dir => $src);
-		die unless $max_number_of_files;
+		die "You must specify number of files to restore" unless $max_number_of_files;
 		process_forks(action => "restore",journal_object => $j,  key => $config->{key}, secret => $config->{secret}, vault => $vault, journal => $journal, max_number_of_files => $max_number_of_files);
 	} elsif ($action eq 'restore-completed') {
 		read_config($config, $config_filename);
