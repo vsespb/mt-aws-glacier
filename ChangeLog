@@ -1,3 +1,8 @@
+2012-11-21: v0.76 beta
+			* Retrieval work improved: Can use more than just 50 first retrieval jobs (walking job list pagination). Requesting only
+			completed job list,	so use fewer requests.
+			* Fixed bug when restore process crashed after successful finishing (only happened when concurrency=1)
+			* Documentation fixes: Installation instructions improved. Help/Contribute section added. 
 2012-11-17: v0.75 beta
 			* Bug fixed when signature not calculated right with retrieve requests (bug found in 0.74 after SHA256 optimization)
 			* Increased internal limit for maximum in-progress files while uploading (was 3 now 30)

@@ -1,6 +1,6 @@
 mt-aws-glacier
 ==============
-Perl Multithreaded multipart sync to Amazon AWS Glacier service.
+Perl Multithreaded multipart sync to Amazon Glacier service.
 
 ## Intro
 
@@ -11,7 +11,7 @@ mt-aws-glacier is a client application	 for Glacier.
 
 ## Version
 
-* Version 0.75 beta
+* Version 0.76 beta
 
 ## Features
 
@@ -48,7 +48,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * No way to specify SNS topic 
 * HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
 * Some internal refactoring needed
-* Journal file required to restore backup. To be fixed. Will store file metainformation in archive description.
+* Journal file **required to restore backup**. To be fixed. Will store file metainformation in archive description.
 
 ## Production ready
 
