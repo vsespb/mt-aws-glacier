@@ -64,16 +64,16 @@ Install the following CPAN modules:
 
 * **LWP::UserAgent** (or Debian package **libwww-perl**)
 * **JSON::XS** (or Debian package **libjson-xs-perl**)
-* **LWP::Protocol::https** (or Debian package **liblwp-protocol-https-perl**) ( *is only needed in case you are going to use HTTPS* )
 * **URI** (or Debian package **liburi-perl**)
 		
-Install using *cpan*:
-
-				cpan -i LWP::UserAgent JSON::XS URI  LWP::Protocol::https 
-
-Install using *apt-get*:
+Install using *apt-get* (easier, more reliable way):
 				
-				apt-get install libwww-perl libjson-xs-perl liburi-perl  liblwp-protocol-https-perl
+				apt-get install libwww-perl libjson-xs-perl liburi-perl
+				
+Install using *cpan* (if you like Perl and want use latest versions of libraries):
+
+				cpan -i LWP::UserAgent JSON::XS URI 
+
 
 ## Warnings ( *MUST READ* )
 
