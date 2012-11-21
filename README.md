@@ -4,8 +4,8 @@ Perl Multithreaded multipart sync to Amazon AWS Glacier service.
 
 ## Intro
 
-Amazon AWS Glacier is an archive/backup service with very low storage price. However with some caveats in usage and archive retrieval prices.
-[Read more about Amazon AWS Glacier](http://aws.amazon.com/glacier/) 
+Amazon Glacier is an archive/backup service with very low storage price. However with some caveats in usage and archive retrieval prices.
+[Read more about Amazon Glacier](http://aws.amazon.com/glacier/) 
 
 mt-aws-glacier is a client application	 for Glacier.
 
@@ -15,7 +15,7 @@ mt-aws-glacier is a client application	 for Glacier.
 
 ## Features
 
-* Does not use any existing AWS library, so can be flexible in implementing advanced features
+* Does not use any existing Amazon Glacier library, so can be flexible in implementing advanced features
 * Glacier Multipart upload
 * Multithreaded upload
 * Multipart+Multithreaded upload
@@ -45,10 +45,9 @@ mt-aws-glacier is a client application	 for Glacier.
 * Zero length files are ignored
 * chunk size hardcoded as 2MB
 * Only multipart upload implemented, no plain upload
-* Retrieval works as proof-of-concept, so you can't initiate retrieve job twice (until previous job is completed)
 * No way to specify SNS topic 
 * HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
-* Internal refactoring needed, no comments in source yet, unit tests not published
+* Some internal refactoring needed
 * Journal file required to restore backup. To be fixed. Will store file metainformation in archive description.
 
 ## Production ready
@@ -78,7 +77,7 @@ Install using *cpan* (if you like Perl and want use latest versions of libraries
 ## Warnings ( *MUST READ* )
 
 * When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
-or non-empty vault in amazon console now. Also make sure you have read _all_ AWS Glacier pricing/faq.
+or non-empty vault in amazon console now. Also make sure you have read _all_ Amazon Glacier pricing/faq.
 
 * Read their pricing FAQ again, really. Beware of retrieval fee.
 
@@ -153,8 +152,14 @@ OR
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
 		
+
+## Help/contribute this project
+
+* If you are using it and like it, please "Star" it on github, this way you'll help promote the project
+* Please report any bugs or issues (using GitHub issues)
+* If you wan't to contribute to the source code, please contact me first and describe what you want to do
 		
-## Minimum AWS permissions
+## Minimum Amazon Glacier permissions:
 
 something like that
 
