@@ -5,9 +5,11 @@ Perl Multithreaded multipart sync to Amazon Glacier service.
 ## Intro
 
 Amazon Glacier is an archive/backup service with very low storage price. However with some caveats in usage and archive retrieval prices.
-[Read more about Amazon Glacier](http://aws.amazon.com/glacier/) 
+[Read more about Amazon Glacier][amazon glacier] 
 
 mt-aws-glacier is a client application	 for Glacier.
+
+[amazon glacier]:http://aws.amazon.com/glacier/
 
 ## Version
 
@@ -33,8 +35,10 @@ mt-aws-glacier is a client application	 for Glacier.
 * Upload from STDIN
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
-* Split code to re-usable modules, publish on CPAN (Currently there are great existing Glacier modules on CPAN - see Net::Amazon::Glacier by Tim Nordenfur https://metacpan.org/module/Net::Amazon::Glacier ) 
+* Split code to re-usable modules, publish on CPAN (Currently there are great existing Glacier modules on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*) 
 * Create/Delete vault function
+
+[Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier 
 
 ## Planed next version features
 
@@ -79,7 +83,7 @@ Install using *cpan* (if you like Perl and want use latest versions of libraries
 * When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
 or non-empty vault in amazon console now. Also make sure you have read _all_ Amazon Glacier pricing/faq.
 
-* Read their pricing FAQ again, really. Beware of retrieval fee.
+* Read their pricing [FAQ][Amazon Glacier faq] again, really. Beware of retrieval fee.
 
 * *Backup your local journal file*. Currently it's impossible to correctly restore backup without journal file. ( *Remote metadata storage will be implemented soon* )
 
@@ -88,6 +92,8 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 * With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500 or even signature expiration errors.
 
 * Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
+
+[Amazon Glacier faq]:http://aws.amazon.com/glacier/faqs/#How_will_I_be_charged_when_retrieving_large_amounts_of_data_from_Amazon_Glacier
 
 ## Usage
  
@@ -187,5 +193,5 @@ something like that
 				}
 
 
-[![tracking pixel](https://mt-aws.com/mt-aws-glacier-transp.gif "t1")](http://mt-aws.com/)
+[![mt-aws-glacier tracking pixel](https://mt-aws.com/mt-aws-glacier-transp.gif "mt-aws-glacier tracking pixel")](http://mt-aws.com/)
  
