@@ -155,8 +155,8 @@ OR
 
 ## Help/contribute this project
 
-* If you are using it and like it, please "Star" it on github, this way you'll help promote the project
-* Please report any bugs or issues (using GitHub issues)
+* If you are using it and like it, please "Star" it on GitHUb, this way you'll help promote the project
+* Please report any bugs or issues (using GitHub issues). Well, any feedback is welcomed.
 * If you wan't to contribute to the source code, please contact me first and describe what you want to do
 		
 ## Minimum Amazon Glacier permissions:
