@@ -5,7 +5,7 @@ use warnings;
 use Test::Simple tests => 43;
 use lib qw/../;
 use Journal;
-use File::Path qw(make_path remove_tree);
+use File::Path;
 use TreeHash;
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
@@ -13,8 +13,8 @@ my $tmproot = "$mtroot/journal-1";
 my $dataroot = "$tmproot/dataL1/dataL2";
 my $journal_file = "$tmproot/journal";
 
-remove_tree($tmproot) if ($tmproot) && (-d $tmproot);
-make_path($dataroot);
+rmtree($tmproot) if ($tmproot) && (-d $tmproot);
+mkpath($dataroot);
 
 
 my $testfiles1 = [
@@ -40,7 +40,7 @@ test_existing_files($testfiles1);
 sub test_journal
 {
 	my ($testfiles) = @_;
-	make_path($dataroot);
+	mkpath($dataroot);
 	create_journal_v07($testfiles);
 	
 	my $j = Journal->new(journal_file => $journal_file, root_dir => $dataroot);
@@ -56,13 +56,13 @@ sub test_journal
 		ok ($jf->{archive_id} eq $cf->{archive_id}, "archive id matches"	);
 		ok ($jf->{absfilename} eq File::Spec->rel2abs($cf->{filename}, $dataroot), "absfilename match"); # actually better test in real
 	}
-	remove_tree($tmproot) if ($tmproot) && (-d $tmproot);
+	rmtree($tmproot) if ($tmproot) && (-d $tmproot);
 }
 
 sub test_real_files
 {
 	my ($testfiles) = @_;
-	make_path($dataroot);
+	mkpath($dataroot);
 	create_files($testfiles);
 	
 	my $j = Journal->new(journal_file => $journal_file, root_dir => $dataroot);
@@ -75,13 +75,13 @@ sub test_real_files
 	for my $realfile (@{$j->{allfiles_a}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	remove_tree($tmproot) if ($tmproot) && (-d $tmproot);
+	rmtree($tmproot) if ($tmproot) && (-d $tmproot);
 }
 
 sub test_all_files
 {
 	my ($testfiles) = @_;
-	make_path($dataroot);
+	mkpath($dataroot);
 	create_journal_v07($testfiles);
 	create_files($testfiles);
 	
@@ -95,14 +95,14 @@ sub test_all_files
 	for my $realfile (@{$j->{allfiles_a}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	remove_tree($tmproot) if ($tmproot) && (-d $tmproot);
+	rmtree($tmproot) if ($tmproot) && (-d $tmproot);
 }
 
 
 sub test_new_files
 {
 	my ($testfiles) = @_;
-	make_path($dataroot);
+	mkpath($dataroot);
 	create_journal_v07($testfiles);
 	create_files($testfiles);
 	my $j = Journal->new(journal_file => $journal_file, root_dir => $dataroot);
@@ -116,13 +116,13 @@ sub test_new_files
 	for my $realfile (@{$j->{newfiles_a}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	remove_tree($tmproot) if ($tmproot) && (-d $tmproot);
+	rmtree($tmproot) if ($tmproot) && (-d $tmproot);
 }
 
 sub test_existing_files
 {
 	my ($testfiles) = @_;
-	make_path($dataroot);
+	mkpath($dataroot);
 	create_journal_v07($testfiles);
 	create_files($testfiles);
 	my $j = Journal->new(journal_file => $journal_file, root_dir => $dataroot);
@@ -136,7 +136,7 @@ sub test_existing_files
 	for my $realfile (@{$j->{existingfiles_a}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	remove_tree($tmproot) if ($tmproot) && (-d $tmproot);
+	rmtree($tmproot) if ($tmproot) && (-d $tmproot);
 }
 
 sub create_files
@@ -145,7 +145,7 @@ sub create_files
 	for my $testfile (@$testfiles) {
 		$testfile->{fullname} = "$dataroot/$testfile->{filename}";
 		if ($testfile->{type} eq 'dir') {
-			make_path($testfile->{fullname});
+			mkpath($testfile->{fullname});
 		} elsif (($testfile->{type} eq 'normalfile') && (
 		     (!defined($mode)) ||
 		     ( ($mode eq 'skip') && !$testfile->{skip} )

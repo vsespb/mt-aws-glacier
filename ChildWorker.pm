@@ -25,7 +25,7 @@ use GlacierRequest;
 use strict;
 use warnings;
 use File::Basename;
-use File::Path qw/make_path/;
+use File::Path;
 
 sub new
 {
@@ -81,7 +81,7 @@ sub process
 				$result = { journal_entry => time()." DELETED $data->{archive_id} $data->{relfilename}" };
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
-				make_path(dirname($data->{filename}));
+				mkpath(dirname($data->{filename}));
 				my $r = GlacierRequest->retrieval_download_job($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{jobid}, $data->{filename});
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
