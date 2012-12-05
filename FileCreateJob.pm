@@ -31,8 +31,8 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->{filename}||die;
-    $self->{relfilename}||die;
+    defined($self->{filename})||die;
+    defined($self->{relfilename})||die;
     $self->{partsize}||die;
     $self->{raised} = 0;
     return $self;

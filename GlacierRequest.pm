@@ -129,7 +129,7 @@ sub init_retrieval_download_job
     
     $self->{vault} = $args{vault} || die;
     $self->{jobid} = $args{jobid} || die;
-    $self->{filename} = $args{filename} || die;
+    $self->{filename} = $args{filename} || die; # this is absolute filename, so it can't start with "0"
    
     $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$self->{jobid}/output";
     $self->{content_file} = $self->{filename};
