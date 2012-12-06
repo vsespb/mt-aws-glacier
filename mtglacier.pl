@@ -99,7 +99,7 @@ if (GetOptions("config=s" => \$config_filename,
 				"max-number-of-files:i"  => \$max_number_of_files,
 	) && (scalar @ARGV == 1) ) {
 	my $action = shift @ARGV;
-	
+
 	if ($action eq 'sync') {
 		die "Please specify from-dir" unless -d $src;
 		die "Not a directory" unless -d $src;

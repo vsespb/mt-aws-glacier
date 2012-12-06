@@ -83,7 +83,7 @@ sub _read_files
 			print "Found $i local files\n";
 		}
 		
-		my $filename = utf8::is_utf8($_) ? $_ : decode("UTF-8", $_, 1);
+		my $filename = decode("UTF-8", $_, 1);
 		
 		if ( (-f $filename) && (-s $filename) ) {
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
