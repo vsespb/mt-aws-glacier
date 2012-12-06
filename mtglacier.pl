@@ -45,6 +45,7 @@ use File::Find ;
 use File::Spec;
 use Getopt::Long;
 use Journal;
+use Encode;
 
 
 
@@ -99,6 +100,10 @@ if (GetOptions("config=s" => \$config_filename,
 				"max-number-of-files:i"  => \$max_number_of_files,
 	) && (scalar @ARGV == 1) ) {
 	my $action = shift @ARGV;
+	
+	$config_filename = decode("UTF-8", $config_filename, 1);
+	$src = decode("UTF-8", $src, 1);
+	$journal = decode("UTF-8", $journal, 1);
 
 	if ($action eq 'sync') {
 		die "Please specify from-dir" unless -d $src;

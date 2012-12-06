@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
+
 use File::Find ;
 use File::Spec;
 use Encode;
@@ -83,8 +84,7 @@ sub _read_files
 			print "Found $i local files\n";
 		}
 		
-		my $filename = decode("UTF-8", $_, 1);
-		
+		my $filename = $_;
 		if ( (-f $filename) && (-s $filename) ) {
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
 
@@ -111,7 +111,10 @@ sub _read_files
 			
 			
 		}
+	}, preprocess => sub {
+		map { decode("UTF-8", $_, 1) } @_;
 	}, no_chdir => 1 }, ($self->{root_dir}));
+	
 	$filelist;
 }
 
