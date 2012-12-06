@@ -34,7 +34,7 @@ our @EXPORT = qw/encode_data decode_data/;
 our @EXPORT_OK = qw/escape unescape/;
 
 # yes, a module, so we can unit-test it (JSON and YAML have different serialization implementeation)
-my $json_coder = JSON::XS->new->ascii->allow_nonref;
+my $json_coder = JSON::XS->new->utf8->allow_nonref;
 
 sub decode_data
 {
