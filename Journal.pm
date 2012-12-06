@@ -24,7 +24,7 @@ sub read_journal
 	my ($self) = @_;
 	my $files = {};
 	return unless -s $self->{journal_file};
-	open F, "<$self->{journal_file}";
+	open (F, "<:encoding(UTF-8)", $self->{journal_file});
 	while (<F>) {
 		chomp;
 		if (/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {

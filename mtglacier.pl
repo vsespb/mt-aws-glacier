@@ -25,6 +25,7 @@ package main;
 use strict;
 use warnings;
 use utf8;
+use open qw/:std :utf8/;
 
 our $VERSION = "0.77beta";
 
@@ -307,7 +308,7 @@ sub read_config
 {
 	my ($config, $filename) = @_;
 	die "config file not found $filename" unless -f $filename;
-	open F, "<$filename";
+	open (F, "<:encoding(UTF-8)", $filename);
 	while (<F>) {
 		chomp;
 		chop if /\r$/; # windows CRLF format

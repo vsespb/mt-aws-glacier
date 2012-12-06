@@ -152,7 +152,7 @@ sub create_files
 		     ( ($mode eq 'skip') && !$testfile->{skip} )
 		     ))
 		{
-			open F, ">$testfile->{fullname}";
+			open (F, ">:encoding(UTF-8)", $testfile->{fullname});
 			print F $testfile->{content};
 			close F;
 		}
@@ -164,7 +164,7 @@ sub create_files
 sub create_journal_v07
 {
 	my ($testfiles, $mode) = @_;
-	open F, ">$journal_file";
+	open (F, ">:encoding(UTF-8)", "$journal_file");
 	my $t = time() - (scalar @$testfiles)*2;
 	for my $testfile (@$testfiles) {
 		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {

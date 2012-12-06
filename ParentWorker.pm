@@ -83,7 +83,7 @@ sub wait_worker
 	  delete $task_list->{$taskid};
 	  
 	  if ($task->{result}->{journal_entry}) {
-	  	open F, ">>$journal";
+	  	open (F, ">>:encoding(UTF-8)", $journal);
 		print F $task->{result}->{journal_entry}."\n";
 		close F;
 	  }
