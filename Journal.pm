@@ -6,6 +6,7 @@ use utf8;
 
 use File::Find ;
 use File::Spec;
+use Encode;
 
 sub new
 {
@@ -82,8 +83,10 @@ sub _read_files
 			print "Found $i local files\n";
 		}
 		
-		if ( (-f $_) && (-s $_) ) {
-			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($_, $self->{root_dir}));
+		my $filename = utf8::is_utf8($_) ? $_ : decode("UTF-8", $_, 1);
+		
+		if ( (-f $filename) && (-s $filename) ) {
+			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
 
 			my $ok = 0;
 			if ($mode eq 'all') {
@@ -104,7 +107,7 @@ sub _read_files
 			
 			
 			
-			push @$filelist, { absfilename => $_, relfilename => File::Spec->abs2rel($_, $self->{root_dir}) } if $ok;
+			push @$filelist, { absfilename => $filename, relfilename => File::Spec->abs2rel($filename, $self->{root_dir}) } if $ok;
 			
 			
 		}
