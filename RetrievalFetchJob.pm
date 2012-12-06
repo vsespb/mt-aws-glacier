@@ -22,6 +22,7 @@ package RetrievalFetchJob;
 
 use strict;
 use warnings;
+use utf8;
 use base qw/Job/;
 use FileUploadJob;
 use RetrievalDownloadJob;

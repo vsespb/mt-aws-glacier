@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use utf8;
 use Test::Simple tests => 43;
 use lib qw/../;
 use Journal;

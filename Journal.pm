@@ -1,5 +1,9 @@
 package Journal;
 
+use strict;
+use warnings;
+use utf8;
+
 use File::Find ;
 use File::Spec;
 
@@ -66,7 +70,7 @@ sub _read_files
 	my ($self, $mode, $max_number_of_files) = @_;
 	
 	my $filelist = [];
-	$i = 0;
+	my $i = 0;
 	# TODO: find better workaround than "-s"
 	find({ wanted => sub {
 		if ($max_number_of_files && (scalar @$filelist >= $max_number_of_files)) {

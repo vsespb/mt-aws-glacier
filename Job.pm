@@ -22,6 +22,7 @@ package Job;
 
 use strict;
 use warnings;
+use utf8;
 use Task;
 
 

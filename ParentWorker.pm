@@ -20,9 +20,10 @@
 
 package ParentWorker;
 
-use LineProtocol;
 use strict;
 use warnings;
+use utf8;
+use LineProtocol;
 
 sub new
 {

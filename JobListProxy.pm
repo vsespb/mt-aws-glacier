@@ -21,6 +21,7 @@ package JobListProxy;
 
 use strict;
 use warnings;
+use utf8;
 use ProxyTask;
 
 sub new

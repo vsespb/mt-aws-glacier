@@ -24,6 +24,7 @@ use LineProtocol;
 use GlacierRequest;
 use strict;
 use warnings;
+use utf8;
 use File::Basename;
 use File::Path;
 
