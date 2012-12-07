@@ -13,7 +13,7 @@ mt-aws-glacier is a client application	 for Glacier.
 
 ## Version
 
-* Version 0.77 beta
+* Version 0.78 beta
 
 ## Features
 
@@ -25,6 +25,7 @@ mt-aws-glacier is a client application	 for Glacier.
 * Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
+* UTF-8 support
 
 ## Coming-soon features
 

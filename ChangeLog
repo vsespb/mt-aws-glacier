@@ -1,3 +1,5 @@
+2012-12-07: v0.78 beta
+			* Full internal UTF-8 support introduced. Can use wide characters in filenames, command line options
 2012-12-05: v0.77 beta
 			* Replace File::Path::make_path with legacy method File::Path::mkpath so it's compatible now with older perl distribution (File::Path 1.08 CentOS 5.8)
 			* fixed problem when relative filenames start with "0" character
