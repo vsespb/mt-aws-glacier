@@ -1,0 +1,4 @@
+#!/bin/sh
+cover -delete
+./test.t
+cover cover_db -report=html
