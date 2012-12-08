@@ -177,6 +177,12 @@ sub create_journal_v0
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash($testfile->{content});
 			print F $t." CREATED $testfile->{archive_id} $testfile->{filesize} $testfile->{final_hash} $testfile->{filename}\n";
+		} elsif (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created_and_deleted')) {
+			$testfile->{archive_id} = get_random_archive_id($t);
+			$testfile->{filesize} = length($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			print F $t." CREATED $testfile->{archive_id} $testfile->{filesize} $testfile->{final_hash} $testfile->{filename}\n";
+			print F ($t+1)." DELETED $testfile->{archive_id} $testfile->{filename}\n";
 		}
 		$t++;
 	}
@@ -190,12 +196,19 @@ sub create_journal_vA
 	open (F, ">:encoding(UTF-8)", $self->{journal_file});
 	my $t = time() - (scalar @{$self->{testfiles}})*2;
 	my $ft = $t - 1000;
+	my $dt = $t + 1;
 	for my $testfile (@{$self->{testfiles}}) {
 		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash($testfile->{content});
 			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
+		} elsif (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created_and_deleted')) {
+			$testfile->{archive_id} = get_random_archive_id($t);
+			$testfile->{filesize} = length($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
+			print F "A\t$dt\tDELETED\t$testfile->{archive_id}\t$testfile->{filename}\n";
 		}
 		$t++;
 	}

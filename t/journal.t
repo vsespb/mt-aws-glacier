@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 74;
+use Test::Simple tests => 76;
 use lib qw/../;
 use Journal;
 use File::Path;
@@ -25,6 +25,7 @@ my $testfiles1 = [
 { type => 'dir', filename => 'dirA' },
 { type => 'normalfile', filename => 'dirA/file1', content => 'dAf1a', journal => 'created' },
 { type => 'normalfile', filename => 'dirA/file2', content => 'dAf2aa', skip=>1},
+{ type => 'normalfile', filename => 'dirA/file3', content => 'dAf2aacc', skip=>1, journal=>'created_and_deleted'},
 { type => 'dir', filename => 'dirB' },
 { type => 'normalfile', filename => 'dirB/file1', content => 'dBf1aaa', skip=>1 , journal => 'created'},
 { type => 'normalfile', filename => 'dirB/file2', content => 'dBf2aaaa' , journal => 'created'},
