@@ -77,12 +77,12 @@ sub test_all_files
 	my ($self) = @_;
 	mkpath($self->{dataroot});
 	$self->create_journal();
-	$self->create_files();
+	$self->create_files('skip');
 	
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_all_files();
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' } @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} } @{$self->{testfiles}};
 	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
@@ -98,14 +98,14 @@ sub test_new_files
 	my ($self) = @_;
 	mkpath($self->{dataroot});
 	$self->create_journal();
-	$self->create_files();
+	$self->create_files('skip');
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal();
 	$j->read_new_files();
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' && (!$_->{journal} || $_->{journal} ne 'created') } @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
 	ok((scalar @checkfiles) == scalar @{$j->{newfiles_a}}, "number of planed and real files match");
-	
+
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
 	for my $realfile (@{$j->{newfiles_a}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
@@ -118,12 +118,12 @@ sub test_existing_files
 	my ($self) = @_;
 	mkpath($self->{dataroot});
 	$self->create_journal();
-	$self->create_files();
+	$self->create_files('skip');
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal();
 	$j->read_existing_files();
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' && $_->{journal} && $_->{journal} eq 'created' } @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};
 	ok((scalar @checkfiles) == scalar @{$j->{existingfiles_a}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 86;
+use Test::Simple tests => 74;
 use lib qw/../;
 use Journal;
 use File::Path;
