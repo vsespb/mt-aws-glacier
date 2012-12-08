@@ -14,7 +14,7 @@ binmode Test::Simple->builder->output, ":utf8";
 binmode Test::Simple->builder->failure_output, ":utf8";
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
-my $tmproot = "$mtroot/журнал-1";
+my $tmproot = "$mtroot/журнал-utf";
 my $dataroot = "$tmproot/dataL1/данныеL2";
 my $journal_file = "$tmproot/journal";
 

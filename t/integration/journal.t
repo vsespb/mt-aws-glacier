@@ -12,7 +12,7 @@ use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is m
 
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
-my $tmproot = "$mtroot/journal-1";
+my $tmproot = "$mtroot/journal-plain";
 my $dataroot = "$tmproot/dataL1/dataL2";
 my $journal_file = "$tmproot/journal";
 
