@@ -46,7 +46,7 @@ sub read_journal
 				absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
 			};
 		} elsif (/^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
-			delete $self->{journal_h}->{$2} if $self->{journal_h}->{$2}; # TODO: exception or warning if $files->{$2}
+			delete $self->{journal_h}->{$3} if $self->{journal_h}->{$3}; # TODO: exception or warning if $files->{$2}
 			
 		# Journal version '0'
 		
