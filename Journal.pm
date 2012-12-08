@@ -8,6 +8,7 @@ use utf8;
 use File::Find ;
 use File::Spec;
 use Encode;
+use Carp;
 
 sub new
 {
@@ -17,6 +18,9 @@ sub new
     $self->{journal_file} || die;
     $self->{root_dir} || die;
     $self->{journal_h} = {};
+    
+    $self->{output_version} = '0';
+    
     return $self;
 }
 
@@ -29,7 +33,24 @@ sub read_journal
 	open (F, "<:encoding(UTF-8)", $self->{journal_file});
 	while (<F>) {
 		chomp;
-		if (/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
+		
+		# Journal version 'A'
+		
+		if (/^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/) {
+			my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) = ($1,$2,$3,$4,$5,$6);
+			$self->{journal_h}->{$relfilename} = {
+				archive_id => $archive_id,
+				size => $size,
+				mtime => $mtime,
+				treehash => $treehash,
+				absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
+			};
+		} elsif (/^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
+			delete $self->{journal_h}->{$2} if $self->{journal_h}->{$2}; # TODO: exception or warning if $files->{$2}
+			
+		# Journal version '0'
+		
+		} elsif (/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
 			my ($archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4);
 #			die if $self->{journal_h}->{$relfilename};
 			$self->{journal_h}->{$relfilename} = {
@@ -47,6 +68,23 @@ sub read_journal
 	close F;
 	return;
 }
+
+sub add_entry
+{
+	my ($self, $e) = @_;
+	if ($e->{type} eq 'CREATED') {
+		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
+		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id filesize mtime final_hash relfilename/);
+		if ($self->{output_version} eq 'A') {
+			print "A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{filesize}\t$e->{mtime}\t$e->{final_hash}\t$e->{relfilename}";
+		} elsif ($self->{output_version} eq '0') {
+			print "$e->{time} CREATED $e->{archive_id} $e->{filesize} $e->{final_hash} $e->{relfilename}";
+		} else {
+			confess "Unexpected else";
+		}
+	}
+}
+
 
 sub read_all_files
 {
@@ -118,13 +156,6 @@ sub _read_files
 	$filelist;
 }
 
-
-# sub read_real_files
-# sub get_files_to_sync
-
-# sub checl_journal
-
-# sub add_entry
 
 
 

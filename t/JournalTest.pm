@@ -8,12 +8,14 @@ use Journal;
 use File::Path;
 use TreeHash;
 use Test::Simple;
+use Carp;
 
 
 sub new
 {
     my ($class, %args) = @_;
     my $self = \%args;
+    defined($self->{create_journal_version})||confess;
     bless $self, $class;
     return $self;
 }
@@ -33,7 +35,7 @@ sub test_journal
 {
 	my ($self) = @_;
 	mkpath($self->{dataroot});
-	$self->create_journal_v07();
+	$self->create_journal();
 	
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal();
@@ -74,7 +76,7 @@ sub test_all_files
 {
 	my ($self) = @_;
 	mkpath($self->{dataroot});
-	$self->create_journal_v07();
+	$self->create_journal();
 	$self->create_files();
 	
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
@@ -95,7 +97,7 @@ sub test_new_files
 {
 	my ($self) = @_;
 	mkpath($self->{dataroot});
-	$self->create_journal_v07();
+	$self->create_journal();
 	$self->create_files();
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal();
@@ -115,7 +117,7 @@ sub test_existing_files
 {
 	my ($self) = @_;
 	mkpath($self->{dataroot});
-	$self->create_journal_v07();
+	$self->create_journal();
 	$self->create_files();
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal();
@@ -151,8 +153,20 @@ sub create_files
 }
 
 
+sub create_journal
+{
+	my ($self, $mode) = @_;
+	if ($self->{create_journal_version} eq 'A') {
+		$self->create_journal_vA($mode);
+	} elsif ($self->{create_journal_version} eq '0') {
+		$self->create_journal_v0($mode);
+	} else {
+		confess;
+	}
+}
+
 # creating journal for v0.7beta
-sub create_journal_v07
+sub create_journal_v0
 {
 	my ($self, $mode) = @_;
 	open (F, ">:encoding(UTF-8)", $self->{journal_file});
@@ -163,6 +177,25 @@ sub create_journal_v07
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash($testfile->{content});
 			print F $t." CREATED $testfile->{archive_id} $testfile->{filesize} $testfile->{final_hash} $testfile->{filename}\n";
+		}
+		$t++;
+	}
+	close F;
+}
+
+# creating journal for v0.7beta
+sub create_journal_vA
+{
+	my ($self, $mode) = @_;
+	open (F, ">:encoding(UTF-8)", $self->{journal_file});
+	my $t = time() - (scalar @{$self->{testfiles}})*2;
+	my $ft = $t - 1000;
+	for my $testfile (@{$self->{testfiles}}) {
+		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {
+			$testfile->{archive_id} = get_random_archive_id($t);
+			$testfile->{filesize} = length($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
 		}
 		$t++;
 	}

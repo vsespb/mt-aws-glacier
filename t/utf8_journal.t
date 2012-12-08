@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 43;
+use Test::Simple tests => 86;
 use lib qw/../;
 use Journal;
 use File::Path;
@@ -37,7 +37,9 @@ my $testfiles1 = [
 
 ];
 
-my $J = JournalTest->new(mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
-$J->test_all();
+for my $jv (qw/0 A/) {
+	my $J = JournalTest->new(create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
+	$J->test_all();
+}
 
 1;
