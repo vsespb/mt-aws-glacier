@@ -18,11 +18,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 package TreeHash;
+
+
 
 use strict;
 use warnings;
 use Digest::SHA qw/sha256/;
+
+
 
 sub new
 {
@@ -30,6 +35,7 @@ sub new
     my $self = \%args;
     $self->{tree} = [];
     $self->{pending} = {};
+    $self->{unit} ||= 1048576;
     $self->{processed_size} = 0; # MB
     bless $self, $class;
     return $self;
@@ -40,7 +46,7 @@ sub eat_file
 {
 	my ($self, $fh) = @_;
 	while (1) {
-		my $r = sysread($fh, my $data, 1048576);
+		my $r = sysread($fh, my $data, $self->{unit});
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {
@@ -54,7 +60,7 @@ sub eat_file
 sub eat_data
 {
 	my ($self, $dataref)  = @_;
-	my $mb = 1048576;
+	my $mb = $self->{unit};
 	my $n = length($$dataref);
 	my $i = 0;
 	while ($i < $n) {
