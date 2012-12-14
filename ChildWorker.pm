@@ -27,6 +27,7 @@ use warnings;
 use utf8;
 use File::Basename;
 use File::Path;
+use Carp;
 
 sub new
 {
@@ -63,7 +64,7 @@ sub process
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
 				my $uploadid = GlacierRequest->create_multipart_upload($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{partsize});
-				return undef unless $uploadid;
+				confess unless $uploadid;
 				$result = { upload_id => $uploadid };
 				$console_out = "Created an upload_id $uploadid";
 			} elsif ($action eq "upload_part") {
