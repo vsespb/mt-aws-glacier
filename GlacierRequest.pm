@@ -37,40 +37,40 @@ our @EXPORT_OK = qw/get_signature_key/;
 sub add_header
 {
 	my ($self, $name, $value) = @_;
-    push @{$self->{headers}}, { name => $name, value => $value};
+	push @{$self->{headers}}, { name => $name, value => $value};
 }
 
 
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{secret} || die;
-    $self->{key} || die;
-    $self->{region}||die;
-    $self->{service} ||= 'glacier';
-    $self->{account_id} = '-';
-    $self->{host} = "$self->{service}.$self->{region}.amazonaws.com";
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{secret} || die;
+	$self->{key} || die;
+	$self->{region}||die;
+	$self->{service} ||= 'glacier';
+	$self->{account_id} = '-';
+	$self->{host} = "$self->{service}.$self->{region}.amazonaws.com";
 
-    $self->{headers} = [];
+	$self->{headers} = [];
    
-    $self->add_header('Host', $self->{host});
-    $self->add_header('x-amz-glacier-version', '2012-06-01') if $self->{service} eq 'glacier';
-    
-    return $self;                                                                                                                                                                                                                                                                     
+	$self->add_header('Host', $self->{host});
+	$self->add_header('x-amz-glacier-version', '2012-06-01') if $self->{service} eq 'glacier';
+	
+	return $self;                                                                                                                                                                                                                                                                     
 }                      
 
 sub init_create_multipart_upload
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{partsize} = $args{partsize} || die;
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
+	$self->{partsize} = $args{partsize} || die;
    
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads";
-    $self->{method} = 'POST';
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads";
+	$self->{method} = 'POST';
 
 	$self->add_header('x-amz-part-size', $self->{partsize});
 	$self->add_header('x-amz-archive-description', 'mtglacier archive');
@@ -79,27 +79,27 @@ sub init_create_multipart_upload
 
 sub init_delete_archive
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{archive_id} = $args{archive_id} || die;
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
+	$self->{archive_id} = $args{archive_id} || die;
    
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/archives/$self->{archive_id}";
-    $self->{method} = 'DELETE';
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/archives/$self->{archive_id}";
+	$self->{method} = 'DELETE';
 }
 
 sub init_retrieve_archive
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{archive_id} = $args{archive_id} || die;
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
+	$self->{archive_id} = $args{archive_id} || die;
    
 	$self->add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
-    $self->{method} = 'POST';
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
+	$self->{method} = 'POST';
 
-    my $body = <<"END";
+	my $body = <<"END";
 {
   "Type": "archive-retrieval",
   "ArchiveId": "$self->{archive_id}"
@@ -107,45 +107,45 @@ sub init_retrieve_archive
 END
 
 	#  add "SNSTopic": "sometopic"
-    $self->{dataref} = \$body;
+	$self->{dataref} = \$body;
 }
 
 sub init_retrieval_fetch_job
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
    
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
 
-    $self->{params} = { completed => 'true' };
-    $self->{params}->{marker} = $args{marker} if $args{marker};
-    
-    $self->{method} = 'GET';
+	$self->{params} = { completed => 'true' };
+	$self->{params}->{marker} = $args{marker} if $args{marker};
+	
+	$self->{method} = 'GET';
 }
 
 sub init_retrieval_download_job
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{jobid} = $args{jobid} || die;
-    $self->{filename} = $args{filename} || die; # this is absolute filename, so it can't start with "0"
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
+	$self->{jobid} = $args{jobid} || die;
+	$self->{filename} = $args{filename} || die; # this is absolute filename, so it can't start with "0"
    
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$self->{jobid}/output";
-    $self->{content_file} = $self->{filename};
-    $self->{method} = 'GET';
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$self->{jobid}/output";
+	$self->{content_file} = $self->{filename};
+	$self->{method} = 'GET';
 }
 
 sub init_finish_multipart_upload
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{uploadid} = $args{uploadid} || die;
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
+	$self->{uploadid} = $args{uploadid} || die;
    
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$self->{uploadid}";
-    $self->{method} = 'POST';
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$self->{uploadid}";
+	$self->{method} = 'POST';
 	$self->add_header('x-amz-sha256-tree-hash', $args{treehash});
 	$self->add_header('x-amz-archive-size', $args{size});
 	undef $self->{dataref};	
@@ -153,20 +153,20 @@ sub init_finish_multipart_upload
 
 sub init_upload_multipart_part
 {
-    my ($self, %args) = @_;
-    
-    $self->{vault} = $args{vault} || die;
-    $self->{dataref} = $args{dataref} || die;
-    die unless defined($args{offset});
-    $self->{offset} = $args{offset};
-    $self->{part_final_hash}=$args{part_final_hash};
-    die unless defined($self->{part_final_hash});
-    $self->{uploadid} = $args{uploadid} || die;
-    
-    $self->_calc_data_hash;
+	my ($self, %args) = @_;
+	
+	$self->{vault} = $args{vault} || die;
+	$self->{dataref} = $args{dataref} || die;
+	die unless defined($args{offset});
+	$self->{offset} = $args{offset};
+	$self->{part_final_hash}=$args{part_final_hash};
+	die unless defined($self->{part_final_hash});
+	$self->{uploadid} = $args{uploadid} || die;
+	
+	$self->_calc_data_hash;
    
-    $self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$self->{uploadid}";
-    $self->{method} = 'PUT';
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$self->{uploadid}";
+	$self->{method} = 'PUT';
 	$self->add_header('Content-Type', 'application/octet-stream');
 	$self->add_header('Content-Length', length(${$self->{dataref}}));
 	$self->add_header('x-amz-content-sha256', $self->{data_sha256});
@@ -192,17 +192,17 @@ sub _sign
 {
 	my ($self) = @_;
 	
-    my $now = time();
-    
-    $self->{last_request_time} = $now;
-    
+	my $now = time();
+	
+	$self->{last_request_time} = $now;
+	
 	my $date8601 = strftime("%Y%m%dT%H%M%SZ", gmtime($now));
 	my $datestr = strftime("%Y%m%d", gmtime($now));
-     
-    
+	 
+	
 	$self->{req_headers} = [
-    	{ name => 'x-amz-date', value => $date8601 },
-    ];
+		{ name => 'x-amz-date', value => $date8601 },
+	];
 	
 	
 	# getting canonical URL
@@ -337,15 +337,15 @@ sub perform_lwp
 			die;
 		}
 		
-	    for ( @{$self->{headers}}, @{$self->{req_headers}} ) {
-	    	$req->header( $_->{name}, $_->{value} );
-	    }
+		for ( @{$self->{headers}}, @{$self->{req_headers}} ) {
+			$req->header( $_->{name}, $_->{value} );
+		}
 
 		my $resp = undef;
 		if ($self->{content_file}) {
-	    	$resp = $ua->request($req, $self->{content_file});
+			$resp = $ua->request($req, $self->{content_file});
 		} else {
-	    	$resp = $ua->request($req);
+			$resp = $ua->request($req);
 		}
 
 		if ($resp->code =~ /^(500|408)$/) {
@@ -365,9 +365,9 @@ sub perform_lwp
 			return $resp;
 		} else {
 			print "Error:\n";
-		  	print $req->dump;
-		    print $resp->dump;
-		    print "\n";
+			print $req->dump;
+			print $resp->dump;
+			print "\n";
 			return undef;
 		}
 	}
