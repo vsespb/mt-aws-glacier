@@ -317,21 +317,22 @@ sub perform_lwp
 		
 		my $ua = LWP::UserAgent->new(timeout => 120);
 		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
-	    my $req = undef;
-	    my $url = "http://$self->{host}$self->{url}";
-	    $url .= "?$self->{params_s}" if $self->{params_s};
+		my $req = undef;
+		my $url = "http://$self->{host}$self->{url}";
+		$url = "http://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
+		$url .= "?$self->{params_s}" if $self->{params_s};
 		if ($self->{method} eq 'PUT') {
-		    $req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
+			$req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
 		} elsif ($self->{method} eq 'POST') {
-			 if ($self->{dataref}) {
-			     $req = HTTP::Request::Common::POST( $url, Content_Type => 'form-data', Content=>${$self->{dataref}});
-			 } else {
-			     $req = HTTP::Request::Common::POST( $url );
-			 }
+			if ($self->{dataref}) {
+				$req = HTTP::Request::Common::POST( $url, Content_Type => 'form-data', Content=>${$self->{dataref}});
+			} else {
+				$req = HTTP::Request::Common::POST( $url );
+			}
 		} elsif ($self->{method} eq 'DELETE') {
-		     $req = HTTP::Request::Common::DELETE( $url);
+			$req = HTTP::Request::Common::DELETE( $url);
 		} elsif ($self->{method} eq 'GET') {
-		     $req = HTTP::Request::Common::GET( $url);
+			$req = HTTP::Request::Common::GET( $url);
 		} else {
 			die;
 		}
