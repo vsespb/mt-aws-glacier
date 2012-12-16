@@ -12,62 +12,88 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{journal_file} || die;
-    $self->{root_dir} || die;
-    $self->{journal_h} = {};
-    
-    $self->{output_version} = '0';
-    
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{journal_file} || die;
+	$self->{root_dir} || die;
+	$self->{journal_h} = {};
+	
+	$self->{output_version} = '0';
+	
+	return $self;
 }
 
+#
+# Reading journal
+#
+
 # sub read_journal
+
 sub read_journal
 {
 	my ($self) = @_;
-	my $files = {};
 	return unless -s $self->{journal_file};
 	open (F, "<:encoding(UTF-8)", $self->{journal_file});
 	while (<F>) {
 		chomp;
-		
-		# Journal version 'A'
-		
-		if (/^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/) {
-			my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) = ($1,$2,$3,$4,$5,$6);
-			$self->{journal_h}->{$relfilename} = {
-				archive_id => $archive_id,
-				size => $size,
-				mtime => $mtime,
-				treehash => $treehash,
-				absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
-			};
-		} elsif (/^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
-			delete $self->{journal_h}->{$3} if $self->{journal_h}->{$3}; # TODO: exception or warning if $files->{$2}
-			
-		# Journal version '0'
-		
-		} elsif (/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
-			my ($archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4);
-#			die if $self->{journal_h}->{$relfilename};
-			$self->{journal_h}->{$relfilename} = {
-				archive_id => $archive_id,
-				size => $size,
-				treehash => $treehash,
-				absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
-			};
-		} elsif (/^\d+\s+DELETED\s+(\S+)\s+(.*?)$/) {
-			delete $self->{journal_h}->{$2} if $self->{journal_h}->{$2}; # TODO: exception or warning if $files->{$2}
-		} else {
-#			die;
-		}
+		$self->process_line($_);
 	}
 	close F;
 	return;
 }
+
+sub process_line
+{
+	my ($self, $line) = @_;
+		# Journal version 'A'
+	
+	if ($line =~ /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/) {
+		my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) = ($1,$2,$3,$4,$5,$6);
+		$self->_add_file($relfilename, {
+			time => $time,
+			archive_id => $archive_id,
+			size => $size,
+			mtime => $mtime,
+			treehash => $treehash,
+			absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
+		});
+	} elsif ($line =~ /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
+		$self->_delete_file($3);
+		
+	# Journal version '0'
+	
+	} elsif ($line =~ /^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
+		my ($archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4);
+		#die if $self->{journal_h}->{$relfilename};
+		$self->_add_file($relfilename, {
+			archive_id => $archive_id,
+			size => $size,
+			treehash => $treehash,
+			absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
+		});
+	} elsif ($line =~ /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/) {
+		$self->_delete_file($2);
+	} else {
+		#die;
+	}
+}
+
+sub _add_file
+{
+	my ($self, $relfilename, $args) = @_;
+	$self->{journal_h}->{$relfilename} = $args;
+}
+
+sub _delete_file
+{
+	my ($self, $relfilename) = @_;
+	delete $self->{journal_h}->{$relfilename} if $self->{journal_h}->{$relfilename}; # TODO: exception or warning if $files->{$2}
+}
+
+#
+# Wrting journal
+#
 
 sub add_entry
 {
@@ -85,6 +111,9 @@ sub add_entry
 	}
 }
 
+#
+# Reading file listing
+#
 
 sub read_all_files
 {
