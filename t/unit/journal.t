@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 15;
+use Test::Simple tests => 17;
 use lib qw{.. ../..};
 use Journal;
 use Test::MockModule;
@@ -19,8 +19,10 @@ my $data = {
 	absfilename => File::Spec->rel2abs($relfilename, $rootdir)
 };
 
-
+#
 # Test parsing line of Journal version 'A'
+#
+
 # CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 {
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
@@ -49,7 +51,11 @@ my $data = {
 		ok($filename eq $relfilename);
 }
 
+#
 # Test parsing line of Journal version '0'
+#
+
+# CREATED /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/
 {
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
@@ -61,6 +67,20 @@ my $data = {
 		$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $relfilename");
 		ok($args);
 		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash absfilename/;
+}
+
+# DELETED /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/
+{
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my ($filename);
+		
+		(my $mock = Test::MockModule->new('Journal'))->
+			mock('_delete_file', sub {	(undef, $filename) = @_;	});
+		
+		$J->process_line("$data->{time} DELETED $data->{archive_id} $relfilename");
+		ok($filename);
+		ok($filename eq $relfilename);
 }
 
 1;
