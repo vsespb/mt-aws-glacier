@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 6;
+use Test::Simple tests => 7;
 use lib qw{.. ../..};
 use Journal;
 use Test::MockModule;
@@ -22,13 +22,16 @@ my $data = {
 
 {
 	
-		my $j = Test::MockModule->new('Journal');
-		$j->mock('_add_file', sub {
-			my ($self, $relfilename, $args) = @_;
-			ok( $args->{$_} eq $data->{$_}) for qw/archive_id size time mtime treehash absfilename/;
-		});
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my ($args);
+		
+		(my $mock = Test::MockModule->new('Journal'))->
+			mock('_add_file', sub {	(undef, undef, $args) = @_;	});
+		
 		$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$relfilename");
+		ok($args);
+		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash absfilename/;
 }
 
 1;
