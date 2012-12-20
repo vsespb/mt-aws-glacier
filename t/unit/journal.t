@@ -3,7 +3,8 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 17;
+use Test::More tests => 17;
+use Test::Deep;
 use lib qw{.. ../..};
 use Journal;
 use Test::MockModule;
@@ -35,6 +36,8 @@ my $data = {
 		$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$relfilename");
 		ok($args);
 		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash absfilename/;
+		cmp_deeply($args, superhashof($data));
+		is_deeply($J->{used_versions}, {'A'=>1});
 }
 
 # DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
@@ -49,6 +52,7 @@ my $data = {
 		$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$relfilename");
 		ok($filename);
 		ok($filename eq $relfilename);
+		is_deeply($J->{used_versions}, {'A'=>1});
 }
 
 #
@@ -67,6 +71,8 @@ my $data = {
 		$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $relfilename");
 		ok($args);
 		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash absfilename/;
+		
+		is_deeply($J->{used_versions}, {'0'=>1});
 }
 
 # DELETED /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/
@@ -81,6 +87,7 @@ my $data = {
 		$J->process_line("$data->{time} DELETED $data->{archive_id} $relfilename");
 		ok($filename);
 		ok($filename eq $relfilename);
+		is_deeply($J->{used_versions}, {'0'=>1});
 }
 
 1;
