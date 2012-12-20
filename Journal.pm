@@ -19,6 +19,7 @@ sub new
 	$self->{root_dir} || die;
 	$self->{journal_h} = {};
 	
+	$self->{used_versions} = {};
 	$self->{output_version} = '0';
 	
 	return $self;
@@ -58,8 +59,10 @@ sub process_line
 			treehash => $treehash,
 			absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
 		});
+		$self->{used_versions}->{A} = 1;
 	} elsif ($line =~ /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
 		$self->_delete_file($3);
+		$self->{used_versions}->{A} = 1;
 		
 	# Journal version '0'
 	
@@ -73,8 +76,10 @@ sub process_line
 			treehash => $treehash,
 			absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
 		});
+		$self->{used_versions}->{0} = 1;
 	} elsif ($line =~ /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/) {
 		$self->_delete_file($2);
+		$self->{used_versions}->{0} = 1;
 	} else {
 		#die;
 	}
