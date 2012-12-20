@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 13;
+use Test::Simple tests => 15;
 use lib qw{.. ../..};
 use Journal;
 use Test::MockModule;
@@ -21,6 +21,7 @@ my $data = {
 
 
 # Test parsing line of Journal version 'A'
+# CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 {
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
@@ -34,9 +35,22 @@ my $data = {
 		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash absfilename/;
 }
 
+# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
+{
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my ($filename);
+		
+		(my $mock = Test::MockModule->new('Journal'))->
+			mock('_delete_file', sub {	(undef, $filename) = @_;	});
+		
+		$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$relfilename");
+		ok($filename);
+		ok($filename eq $relfilename);
+}
+
 # Test parsing line of Journal version '0'
 {
-	#/^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my ($args);

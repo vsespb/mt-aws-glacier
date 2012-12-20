@@ -63,10 +63,11 @@ sub process_line
 		
 	# Journal version '0'
 	
-	} elsif ($line =~ /^\d+\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
-		my ($archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4);
+	} elsif ($line =~ /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
+		my ($time, $archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4,$5);
 		#die if $self->{journal_h}->{$relfilename};
 		$self->_add_file($relfilename, {
+			time => $time,
 			archive_id => $archive_id,
 			size => $size,
 			treehash => $treehash,
