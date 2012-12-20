@@ -147,7 +147,8 @@ sub _read_files
 	my $filelist = [];
 	my $i = 0;
 	# TODO: find better workaround than "-s"
-	find({ wanted => sub {
+	$File::Find::prune = 0;
+	File::Find::find({ wanted => sub {
 		if ($max_number_of_files && (scalar @$filelist >= $max_number_of_files)) {
 			$File::Find::prune = 1;
 			return;
@@ -158,37 +159,46 @@ sub _read_files
 		}
 		
 		my $filename = $_;
-		if ( (-f $filename) && (-s $filename) ) {
+		if ($self->_is_file_exists($filename)) {
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
-
-			my $ok = 0;
-			if ($mode eq 'all') {
-				$ok = 1;
-			} elsif ($mode eq 'new') {
-				if (!defined($self->{journal_h}->{$relfilename})) {
-					$ok = 1;
-				} else {
-					print "Skip $relfilename\n";
-				}
-			} elsif ($mode eq 'existing') {
-				if (defined($self->{journal_h}->{$relfilename})) {
-					$ok = 1;
-				} else {
-					print "Not exists $relfilename\n";
-				}
+			
+			if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
+				push @$filelist, { absfilename => $filename, relfilename => File::Spec->abs2rel($filename, $self->{root_dir}) };
 			}
-			
-			
-			
-			push @$filelist, { absfilename => $filename, relfilename => File::Spec->abs2rel($filename, $self->{root_dir}) } if $ok;
-			
-			
 		}
 	}, preprocess => sub {
 		map { decode("UTF-8", $_, 1) } @_;
 	}, no_chdir => 1 }, ($self->{root_dir}));
 	
 	$filelist;
+}
+
+sub _is_file_exists
+{
+	my ($self, $filename) = @_;
+	(-f $filename) && (-s $filename);
+}
+
+sub _can_read_filename_for_mode
+{
+	my ($self, $relfilename, $mode) = @_;
+	my $ok = 0;
+	if ($mode eq 'all') {
+		$ok = 1;
+	} elsif ($mode eq 'new') {
+		if (!defined($self->{journal_h}->{$relfilename})) {
+			$ok = 1;
+		} else {
+			print "Skip $relfilename\n";
+		}
+	} elsif ($mode eq 'existing') {
+		if (defined($self->{journal_h}->{$relfilename})) {
+			$ok = 1;
+		} else {
+			print "Not exists $relfilename\n";
+		}
+	}
+	$ok;
 }
 
 
