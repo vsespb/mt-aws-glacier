@@ -8,10 +8,12 @@ use Carp;
 use File::Path;
 use Data::Dumper;
 use JSON::XS;
+use lib qw{.. ../..};
+use TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
 use 5.010;
 
-my $children_count = 1;
+my $children_count = 20;
 my $daemon = HTTP::Daemon->new(LocalHost => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1) || die;
 my $json_coder = JSON::XS->new->utf8->allow_nonref;
 
@@ -46,11 +48,97 @@ sub child_worker
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->header('x-amz-multipart-upload-id', $upload_id);
 		return $resp;
+		#		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
+		#				die "Part size should be power of two" unless ($partsize != 0) && (($partsize & ($partsize - 1)) == 0);
 	} elsif (($data->{method} eq 'PUT') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads/(.*?)$!)) {
-		my ($account, $vault, $upload_id) = ($1,$2);
+		my ($account, $vault, $upload_id) = ($1,$2,$3);
 		defined($account)||croak;
 		defined($vault)||croak;
 		defined($upload_id)||croak;
+		
+		croak unless $data->{headers}->{'content-type'} eq 'application/octet-stream';
+		croak unless $data->{headers}->{'content-length'} > 0;
+		croak unless defined($data->{headers}->{'x-amz-content-sha256'});
+		croak unless defined($data->{headers}->{'x-amz-sha256-tree-hash'});
+		croak unless defined($data->{headers}->{'content-range'});
+		
+		croak unless $data->{headers}->{'content-range'} =~ /^bytes (\d+)\-(\d+)\/\*$/;
+		my ($start, $finish) = ($1,$2);
+		croak unless $finish >= $start;
+		my $len = $start - $finish + 1;
+		
+		my $archive = fetch($account, $vault, 'upload', $upload_id, 'archive')->{archive};
+		
+		#croak if ($archive->{partsize} != $len);
+		
+		croak unless sha256_hex(${$data->{bodyref}}) eq $data->{headers}->{'x-amz-content-sha256'};
+		
+		my $part_th = TreeHash->new();
+		$part_th->eat_data($data->{bodyref});
+		$part_th->calc_tree();
+		my $th = $part_th->get_final_hash();
+		
+		croak "$th ne ".$data->{headers}->{'x-amz-sha256-tree-hash'} unless $th eq $data->{headers}->{'x-amz-sha256-tree-hash'};
+		
+		store_binary($account, $vault, 'upload', $upload_id, "part_${start}_${finish}", $data->{bodyref});
+		my $resp = HTTP::Response->new(201, "Fine");
+		return $resp;
+		
+	} elsif (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads/(.*?)$!)) {
+		my ($account, $vault, $upload_id) = ($1,$2,$3);
+		defined($account)||croak;
+		defined($vault)||croak;
+		defined($upload_id)||croak;
+		
+		croak unless defined($data->{headers}->{'x-amz-archive-size'});
+		my $len = $data->{headers}->{'x-amz-archive-size'};
+		croak unless defined($data->{headers}->{'x-amz-sha256-tree-hash'});
+		my $treehash = $data->{headers}->{'x-amz-sha256-tree-hash'};
+		
+		my $bpath = basepath($account, $vault, 'upload', $upload_id);
+		
+		my $parts = {};
+		while (<$bpath/part_*>) {
+			/part_(\d+)_(\d+)$/;
+			my ($start, $finish) = ($1, $2);
+			$parts->{$start} = { finish => $finish, filename => $_ };
+		}
+		
+		my $currstart = 0;
+		
+		my @parts_a;
+		while ($currstart < $len) {
+			my $p = $parts->{$currstart}||croak "Part $currstart not found (len = $len)";
+			push @parts_a, $p->{filename};
+			$currstart = $p->{finish}+1;
+			croak if $currstart > $len;
+		}
+		
+		my $archive_id = gen_id();
+		my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
+		
+		my $part_th = TreeHash->new();
+		
+		open OUT, ">$archive_path" || croak $archive_path;
+		binmode OUT;
+		for my $f (@parts_a) {
+			open IN, "<$f";
+			binmode IN;
+			sysread(IN, my $buf, -s $f);
+			close IN;
+			$part_th->eat_data(\$buf);
+			syswrite OUT, $buf;
+		}
+		close OUT;
+		$part_th->calc_tree();
+		my $th = $part_th->get_final_hash();
+		
+		croak unless $th eq $treehash;
+		
+		my $resp = HTTP::Response->new(200, "Fine");
+		$resp->header('x-amz-archive-id', $archive_id);
+		return $resp;
+		
 	} else {
 		confess;
 	}
@@ -109,7 +197,8 @@ sub parse_request
 	
 	# MISC
 	
-	my $bodyhash = sha256_hex($request->content);
+	my $bodyref = \$request->content;
+	my $bodyhash = sha256_hex($$bodyref);
 	my $date8601 = $request->header('x-amz-date');
 	defined($date8601)||croak;
 	defined($headers_hash->{'x-amz-date'})||croak;
@@ -126,7 +215,19 @@ sub parse_request
 	my $signature = hmac_hex($kSigning, $string_to_sign);
 	croak unless $signature eq $data{'Signature'};
 
-	{ method => $method, params => $params, url => $baseurl, headers => $headers_hash};
+	{ method => $method, params => $params, url => $baseurl, headers => $headers_hash, bodyref => $bodyref};
+}
+
+
+sub basepath
+{
+	my ($account, $vault, $idtype, $id, $key) = @_;
+	my $root_dir = $account;
+	$root_dir = '_default' if $root_dir eq '-';
+	my $path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
+	mkpath($path);
+	$path .= "/$key" if defined($key);
+	$path;
 }
 
 sub store
@@ -142,6 +243,38 @@ sub store
 		print F $json_coder->encode($data{$k});
 		close F;
 	}
+}
+
+sub store_binary
+{
+	my ($account, $vault, $idtype, $id, $name, $dataref) = @_;
+	my $root_dir = $account;
+	$root_dir = '_default' if $root_dir eq '-';
+	my $full_path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
+	mkpath($full_path);
+	confess if -f "$full_path/$name";
+	open (F, ">", "$full_path/$name");
+	binmode F;
+	print F $$dataref;
+	close F;
+}
+
+sub fetch
+{
+	my ($account, $vault, $idtype, $id, @data) = @_;
+	my $root_dir = $account;
+	$root_dir = '_default' if $root_dir eq '-';
+	my $full_path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
+	my $result = {};
+	for my $k (@data) {
+		confess unless -f "$full_path/$k";
+		open (F, "<:encoding(UTF-8)", "$full_path/$k");
+		my @adata = <F>;
+		my $sdata = join('', @adata);
+		close F;
+		$result->{$k} = $json_coder->decode($sdata);
+	}
+	return $result;
 }
 
 sub gen_id
