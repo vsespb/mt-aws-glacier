@@ -143,7 +143,6 @@ sub child_worker
 		
 		croak unless $th eq $treehash;
 		
-		print "FINISH\n";
 		store($account, $vault, 'archive', $archive_id, archive => { 
 			partsize => $archive_upload->{partsize}||confess,
 			description => $archive_upload->{description}||confess,
@@ -199,7 +198,7 @@ sub child_worker
 		defined($account)||croak;
 		defined($vault)||croak;
 		
-		my $limit = 2;
+		my $limit = 50;
 		my @jobs;
 		if (defined($data->{params}->{marker})) {
 			my $jobsref = fetch($account, $vault, 'job-listing-markers', $data->{params}->{marker}, 'marker')->{marker}||confess;
@@ -208,7 +207,6 @@ sub child_worker
 			my $bpath = basepath($account, $vault, 'jobs');
 			while (<$bpath/*>) {
 				my $j = fetch_raw("$_/job");
-				print Dumper($j);
 				push @jobs, {
 					Action => 'ArchiveRetrieval',
 					ArchiveId => $j->{archive_id}||confess,
@@ -224,6 +222,27 @@ sub child_worker
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->content(get_next_jobs($account, $vault, $limit, @jobs));
 		return $resp;
+
+	} elsif (($data->{method} eq 'GET') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs/(.*?)/output$!)) {
+		my ($account, $vault, $job_id) = ($1,$2,$3);
+		defined($account)||croak;
+		defined($vault)||croak;
+		defined($job_id)||croak;
+
+		my $job = fetch($account, $vault, 'jobs', $job_id, 'job')->{job}||croak;
+		my $archive_id = $job->{archive_id}||confess;
+		my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak;
+		my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
+
+		print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
+		open (IN, "<$archive_path")||confess;
+		binmode IN;
+		sysread(IN, my $buf, -s $archive_path);
+		close IN;
+
+		my $resp = HTTP::Response->new(200, "Fine");
+		$resp->content($buf);
+		return $resp;
 		
 	} else {
 		confess;
@@ -235,11 +254,8 @@ sub child_worker
 sub get_next_jobs
 {
 	my ($account, $vault, $limit, @jobs) = @_;
-	print "JOBS0:".Dumper(\@jobs);
 	my @active_jobs = splice @jobs, 0, $limit;
 	my $response_body;
-	print "JOBS1: $limit".Dumper(\@jobs);
-	print "JOBS2 activejobs:".Dumper(\@active_jobs);
 	if (@jobs) {
 		my $marker_id = gen_id();
 		store($account, $vault, 'job-listing-markers', $marker_id, marker => \@jobs);
@@ -259,7 +275,7 @@ sub get_next_jobs
 sub parse_request
 {
 	my ($request) = @_;
-	print $$.$request->dump;
+#	print $$.$request->dump;
 	
 	my $method = $request->method();
 	my $url = $request->url();
@@ -317,7 +333,6 @@ sub parse_request
 
     # QUERY_STRING
     	
-    	print Dumper($params);
 	my $canonical_query_string = $params ? join ('&', map { "$_=$params->{$_}" } sort keys %{$params}) : ""; # TODO: proper URI encode
 	my $canonical_url = "$method\n$baseurl\n$canonical_query_string\n$canonical_headers\n\n$signed_headers\n$bodyhash";
 	my $canonical_url_hash = sha256_hex($canonical_url);
@@ -340,7 +355,8 @@ sub basepath
 	$path .= "/$id" if defined($id);
 	mkpath($path);
 	$path .= "/$key" if defined($key);
-	$path;
+	print "RETURN [$path]\n";
+	return $path;
 }
 
 sub store
@@ -350,7 +366,6 @@ sub store
 		my $path = basepath($account, $vault, $idtype, $id, $k);
 		open (F, ">:encoding(UTF-8)", $path);
 		print F $json_coder->encode($data{$k});
-		print "STORED $path:\n".$json_coder->encode($data{$k})."\n";
 		close F;
 	}
 }
