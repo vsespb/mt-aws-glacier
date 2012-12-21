@@ -5,6 +5,7 @@ use warnings;
 use strict;
 use HTTP::Daemon;
 use Carp;
+use POSIX;
 use File::Path;
 use Data::Dumper;
 use JSON::XS;
@@ -18,6 +19,7 @@ my $daemon = HTTP::Daemon->new(LocalHost => '127.0.0.1',	LocalPort => 9901, Reus
 my $json_coder = JSON::XS->new->utf8->allow_nonref;
 
 my $config = { key=>'AKIAJ2QN54K3SOFABCDE', secret => 'jhuYh6d73hdhGndk1jdHJHdjHghDjDkkdkKDkdkd'};
+my $seq_n = 0;
 
 $ARGV[0]||die "Specify temporary folder";
 
@@ -37,6 +39,7 @@ sleep(10000);
 sub child_worker
 {
 	my $data = parse_request(@_);
+	# CREATE MULTIPART UPLOAD
 	if (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads$!)) {
 		my ($account, $vault) = ($1,$2);
 		defined($account)||croak;
@@ -50,6 +53,7 @@ sub child_worker
 		return $resp;
 		#		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
 		#				die "Part size should be power of two" unless ($partsize != 0) && (($partsize & ($partsize - 1)) == 0);
+	# MULTIPART UPLOAD PART
 	} elsif (($data->{method} eq 'PUT') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads/(.*?)$!)) {
 		my ($account, $vault, $upload_id) = ($1,$2,$3);
 		defined($account)||croak;
@@ -83,7 +87,8 @@ sub child_worker
 		store_binary($account, $vault, 'upload', $upload_id, "part_${start}_${finish}", $data->{bodyref});
 		my $resp = HTTP::Response->new(201, "Fine");
 		return $resp;
-		
+	
+	# FINISH MULTIPART UPLOAD	
 	} elsif (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads/(.*?)$!)) {
 		my ($account, $vault, $upload_id) = ($1,$2,$3);
 		defined($account)||croak;
@@ -95,6 +100,7 @@ sub child_worker
 		croak unless defined($data->{headers}->{'x-amz-sha256-tree-hash'});
 		my $treehash = $data->{headers}->{'x-amz-sha256-tree-hash'};
 		
+		my $archive_upload = fetch($account, $vault, 'upload', $upload_id, 'archive')->{archive};
 		my $bpath = basepath($account, $vault, 'upload', $upload_id);
 		
 		my $parts = {};
@@ -133,10 +139,90 @@ sub child_worker
 		$part_th->calc_tree();
 		my $th = $part_th->get_final_hash();
 		
+		# TODO: copy archive metadata as well!
+		
 		croak unless $th eq $treehash;
+		
+		print "FINISH\n";
+		store($account, $vault, 'archive', $archive_id, archive => { 
+			partsize => $archive_upload->{partsize}||confess,
+			description => $archive_upload->{description}||confess,
+			treehash => $treehash,
+			archive_size => $len,
+		});
 		
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->header('x-amz-archive-id', $archive_id);
+		return $resp;
+	
+	# CREATE JOB (to restore file, for example)	
+	} elsif (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs$!)) {
+		my ($account, $vault) = ($1,$2);
+		defined($account)||croak;
+		defined($vault)||croak;
+		
+		croak unless defined($data->{headers}->{'content-type'});
+		croak unless $data->{headers}->{'content-type'} eq 'application/x-www-form-urlencoded; charset=utf-8';
+		
+		my $json_coder = JSON::XS->new->allow_nonref;
+		my $postdata = $json_coder->decode(${$data->{bodyref}});
+		
+		if ($postdata->{Type} eq 'archive-retrieval') {
+			my $archive_id = $postdata->{ArchiveId};
+			defined($archive_id)||croak;
+			croak unless scalar keys %$postdata == 2; # TODO deep comparsion
+			
+			my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||confess;
+			store($account, $vault, 'archive', $archive_id, retrieved => { retrieved => 1}); # TODO: remove
+
+			my $job_id = gen_id();
+			my $now = time();
+			store($account, $vault, 'jobs', $job_id, job => {
+				type => 'archive-retrieval',
+				id => $job_id,
+				archive_id => $archive_id,
+				archive_size => $archive->{archive_size}||confess,
+				treehash => $archive->{treehash}||confess,
+				completion_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+				creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+			});
+			
+			my $resp = HTTP::Response->new(201, "Fine");
+			return $resp;
+			
+		} else {
+			croak;
+		}
+	# LIST JOBS (to restore file, for example)	
+	} elsif (($data->{method} eq 'GET') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs$!)) {
+		my ($account, $vault) = ($1,$2);
+		defined($account)||croak;
+		defined($vault)||croak;
+		
+		my $limit = 2;
+		my @jobs;
+		if (defined($data->{params}->{marker})) {
+			my $jobsref = fetch($account, $vault, 'job-listing-markers', $data->{params}->{marker}, 'marker')->{marker}||confess;
+			@jobs = @$jobsref;
+		} else {
+			my $bpath = basepath($account, $vault, 'jobs');
+			while (<$bpath/*>) {
+				my $j = fetch_raw("$_/job");
+				print Dumper($j);
+				push @jobs, {
+					Action => 'ArchiveRetrieval',
+					ArchiveId => $j->{archive_id}||confess,
+					ArchiveSizeInBytes => $j->{archive_size}||confess,
+					ArchiveSHA256TreeHash => $j->{treehash}||confess,
+					Completed => 'true',
+					CompletionDate => $j->{completion_date}||confess,
+					CreationDate => $j->{creation_date}||confess,
+					JobId => $j->{id}||confess,
+				};
+			}
+		}
+		my $resp = HTTP::Response->new(200, "Fine");
+		$resp->content(get_next_jobs($account, $vault, $limit, @jobs));
 		return $resp;
 		
 	} else {
@@ -145,6 +231,30 @@ sub child_worker
 	confess;
 }
 
+
+sub get_next_jobs
+{
+	my ($account, $vault, $limit, @jobs) = @_;
+	print "JOBS0:".Dumper(\@jobs);
+	my @active_jobs = splice @jobs, 0, $limit;
+	my $response_body;
+	print "JOBS1: $limit".Dumper(\@jobs);
+	print "JOBS2 activejobs:".Dumper(\@active_jobs);
+	if (@jobs) {
+		my $marker_id = gen_id();
+		store($account, $vault, 'job-listing-markers', $marker_id, marker => \@jobs);
+		$response_body = $json_coder->encode({
+			JobList => \@active_jobs,
+			Marker => $marker_id,
+		});
+	} else {
+		$response_body = $json_coder->encode({
+			JobList => \@active_jobs,
+		});
+	}
+	
+	$response_body;
+}
 
 sub parse_request
 {
@@ -190,7 +300,8 @@ sub parse_request
 	my ($baseurl, $params);
 	if ($url =~ m!^([^\?]+)\?(.*)$!) {
 		$baseurl = $1;
-		$params = \map { my ($k,$v) = split('=', $_); $k => $v } split('&', $2);
+		my %h = map { my ($k,$v) = split('=', $_); $k => $v } split('&', $2);
+		$params = \%h;
 	} else {
 		$baseurl = $url;
 	}
@@ -206,6 +317,7 @@ sub parse_request
 
     # QUERY_STRING
     	
+    	print Dumper($params);
 	my $canonical_query_string = $params ? join ('&', map { "$_=$params->{$_}" } sort keys %{$params}) : ""; # TODO: proper URI encode
 	my $canonical_url = "$method\n$baseurl\n$canonical_query_string\n$canonical_headers\n\n$signed_headers\n$bodyhash";
 	my $canonical_url_hash = sha256_hex($canonical_url);
@@ -224,7 +336,8 @@ sub basepath
 	my ($account, $vault, $idtype, $id, $key) = @_;
 	my $root_dir = $account;
 	$root_dir = '_default' if $root_dir eq '-';
-	my $path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
+	my $path = "$ARGV[0]$root_dir/$vault/$idtype";
+	$path .= "/$id" if defined($id);
 	mkpath($path);
 	$path .= "/$key" if defined($key);
 	$path;
@@ -233,14 +346,11 @@ sub basepath
 sub store
 {
 	my ($account, $vault, $idtype, $id, %data) = @_;
-	my $root_dir = $account;
-	$root_dir = '_default' if $root_dir eq '-';
-	my $full_path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
-	mkpath($full_path);
 	for my $k (keys %data) {
-		confess if -f "$full_path/$k";
-		open (F, ">:encoding(UTF-8)", "$full_path/$k");
+		my $path = basepath($account, $vault, $idtype, $id, $k);
+		open (F, ">:encoding(UTF-8)", $path);
 		print F $json_coder->encode($data{$k});
+		print "STORED $path:\n".$json_coder->encode($data{$k})."\n";
 		close F;
 	}
 }
@@ -248,41 +358,39 @@ sub store
 sub store_binary
 {
 	my ($account, $vault, $idtype, $id, $name, $dataref) = @_;
-	my $root_dir = $account;
-	$root_dir = '_default' if $root_dir eq '-';
-	my $full_path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
-	mkpath($full_path);
-	confess if -f "$full_path/$name";
-	open (F, ">", "$full_path/$name");
+	my $path = basepath($account, $vault, $idtype, $id, $name);
+	open (F, ">", $path);
 	binmode F;
-	print F $$dataref;
+	syswrite F, $$dataref;
 	close F;
 }
 
 sub fetch
 {
 	my ($account, $vault, $idtype, $id, @data) = @_;
-	my $root_dir = $account;
-	$root_dir = '_default' if $root_dir eq '-';
-	my $full_path = "$ARGV[0]$root_dir/$vault/$idtype/$id";
 	my $result = {};
 	for my $k (@data) {
-		confess unless -f "$full_path/$k";
-		open (F, "<:encoding(UTF-8)", "$full_path/$k");
-		my @adata = <F>;
-		my $sdata = join('', @adata);
-		close F;
-		$result->{$k} = $json_coder->decode($sdata);
+		my $path = basepath($account, $vault, $idtype, $id, $k);
+		$result->{$k} = fetch_raw($path);
 	}
 	return $result;
 }
 
+sub fetch_raw
+{
+	my ($path) = @_;
+	open (F, "<:encoding(UTF-8)", $path);
+	sysread(F, my $buf, -s $path);
+	$json_coder->decode($buf);
+}
+
 sub gen_id
 {
-	$$."_".time()."_".substr(rand(), 2,10);
+	sprintf("%011d_%05d_%05d_%s", time(), ++$seq_n, $$, substr(rand(), 2,10));
 }
 
 
+# TODO: use code from common codebase, make sure it's tested
 sub get_signature_key
 {
 	my ($secret, $date, $region, $service) = @_;
