@@ -199,6 +199,6 @@ my $data = {
 }
 
 # preprocess sub should decode to utf8
-
+# should call _can_read_filename_for_mode
 
 1;
