@@ -130,6 +130,8 @@ if (GetOptions("config=s" => \$config_filename,
 		my $j = Journal->new(journal_file => $journal, root_dir => $src);
 		$j->read_journal();
 		my $files = $j->{journal_h};
+		
+		my ($error_hash, $error_size, $error_missed, $no_error) = (0,0,0,0);
 		for my $f (keys %$files) {
 			my $file=$files->{$f};
 			my $th = TreeHash->new();
@@ -143,16 +145,22 @@ if (GetOptions("config=s" => \$config_filename,
 				if (-s $file->{absfilename} == $file->{size}) {
 					if ($treehash eq $files->{$f}->{treehash}) {
 						print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
+						++$no_error;
 					} else {
 						print "TREEHASH MISSMATCH $f\n";
+						++$error_hash;
 					}
 				} else {
 						print "SIZE MISSMATCH $f\n";
+						+$error_size;
 				}
 			} else {
 					print "MISSED $f\n";
+					++$error_missed;
 			}
 		}
+		print "TOTALS:\n$no_error OK\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+		exit(1) if $error_hash || $error_size || $error_missed;
 	} else {
 		die "Wrong usage";
 	}
