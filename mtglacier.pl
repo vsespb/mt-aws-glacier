@@ -152,7 +152,7 @@ if (GetOptions("config=s" => \$config_filename,
 					}
 				} else {
 						print "SIZE MISSMATCH $f\n";
-						+$error_size;
+						++$error_size;
 				}
 			} else {
 					print "MISSED $f\n";
