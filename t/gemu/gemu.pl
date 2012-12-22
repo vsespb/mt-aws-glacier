@@ -205,7 +205,7 @@ sub child_worker
 			@jobs = @$jobsref;
 		} else {
 			my $bpath = basepath($account, $vault, 'jobs');
-			while (<$bpath/*>) {
+			while (<$bpath/*>) { #TODO: sort
 				my $j = fetch_raw("$_/job");
 				push @jobs, {
 					Action => 'ArchiveRetrieval',
@@ -222,7 +222,7 @@ sub child_worker
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->content(get_next_jobs($account, $vault, $limit, @jobs));
 		return $resp;
-
+	# DOWNLOAD FILE
 	} elsif (($data->{method} eq 'GET') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs/(.*?)/output$!)) {
 		my ($account, $vault, $job_id) = ($1,$2,$3);
 		defined($account)||croak;
@@ -231,7 +231,7 @@ sub child_worker
 
 		my $job = fetch($account, $vault, 'jobs', $job_id, 'job')->{job}||croak;
 		my $archive_id = $job->{archive_id}||confess;
-		my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak;
+		my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak; # TODO: what if archive already deleted?
 		my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
 
 		print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
@@ -243,7 +243,16 @@ sub child_worker
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->content($buf);
 		return $resp;
-		
+	# DELETE FILE 	
+	} elsif (($data->{method} eq 'DELETE') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/archives/(.*?)$!)) {
+		my ($account, $vault, $archive_id) = ($1,$2,$3);
+		defined($account)||croak;
+		defined($vault)||croak;
+		defined($archive_id)||croak;
+		my $bpath = basepath($account, $vault, 'archive', $archive_id)||croak;
+		rmtree($bpath) if -d $bpath && $bpath =~ m!archive/\d!;
+		my $resp = HTTP::Response->new(200, "Fine");
+		return $resp;
 	} else {
 		confess;
 	}
