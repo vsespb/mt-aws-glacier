@@ -50,7 +50,7 @@ my %options = (
 # TODO: deprecated options should be removed from result
 my %commands = (
 'sync'              => { req => [qw/config journal dir vault/],                 optional => [qw/partsize concurrency max-number-of-files/]},
-'purge-vault'       => { req => [qw/config journal vault dir/],                    optional => [qw/concurrency/], },
+'purge-vault'       => { req => [qw/config journal vault /],                    optional => [qw/concurrency/], deprecated => [qw/from-dir/] },
 'restore'           => { req => [qw/config journal dir vault max-number-of-files/], },
 'restore-completed' => { req => [qw/config journal vault dir/],                 optional => [qw/concurrency/]},
 'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },

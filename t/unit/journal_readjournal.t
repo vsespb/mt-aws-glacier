@@ -17,7 +17,7 @@ my $data = {
 	'time' => 1355666755,
 	mtime => 1355566755,
 	treehash => '1368761bd826f76cae8b8a74b3aae210b476333484c2d612d061d52e36af631a',
-	absfilename => File::Spec->rel2abs($relfilename, $rootdir)
+#	absfilename => File::Spec->rel2abs($relfilename, $rootdir)
 };
 
 #
@@ -28,14 +28,15 @@ my $data = {
 {
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
-		my ($args);
+		my ($args, $filename);
 		
 		(my $mock = Test::MockModule->new('Journal'))->
-			mock('_add_file', sub {	(undef, undef, $args) = @_;	});
+			mock('_add_file', sub {	(undef, $filename, $args) = @_;	});
 		
 		$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$relfilename");
 		ok($args);
-		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash absfilename/;
+		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash/;
+		ok( $J->absfilename($filename) eq File::Spec->rel2abs($relfilename, $rootdir));
 		cmp_deeply($args, superhashof($data));
 		is_deeply($J->{used_versions}, {'A'=>1});
 }
@@ -63,14 +64,15 @@ my $data = {
 {
 		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
-		my ($args);
+		my ($args, $filename);
 		
 		(my $mock = Test::MockModule->new('Journal'))->
-			mock('_add_file', sub {	(undef, undef, $args) = @_;	});
+			mock('_add_file', sub {	(undef, $filename, $args) = @_;	});
 		
 		$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $relfilename");
 		ok($args);
-		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash absfilename/;
+		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
+		ok( $J->absfilename($filename) eq File::Spec->rel2abs($relfilename, $rootdir));
 		
 		is_deeply($J->{used_versions}, {'0'=>1});
 }

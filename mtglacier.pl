@@ -115,7 +115,7 @@ if ($action eq 'sync') {
 	
 	my @joblist;
 	for (@{ $j->{newfiles_a} }) {
-		my ($absfilename, $relfilename) = ($_->{absfilename}, $_->{relfilename});
+		my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
 		my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
 		push @joblist, $ft;
 	}
@@ -150,7 +150,8 @@ if ($action eq 'sync') {
 	
 	$j->read_journal();
 	my $files = $j->{journal_h};
-	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $files->{$_}->{absfilename} } } keys %{$files};
+	# TODO: refactor
+	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	@filelist  = splice(@filelist, 0, $options->{max_number_of_files});
 	if (scalar @filelist) {
 		my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
@@ -168,7 +169,8 @@ if ($action eq 'sync') {
 	
 	$j->read_journal();
 	my $files = $j->{journal_h};
-	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $files->{$_}->{absfilename} } } keys %{$files};
+	# TODO: refactor
+	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	if (scalar keys %filelist) {
 		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
 		my $R = $FE->process_task($ft);
@@ -186,14 +188,15 @@ if ($action eq 'sync') {
 	for my $f (keys %$files) {
 		my $file=$files->{$f};
 		my $th = TreeHash->new();
-		if (-f $file->{absfilename}) {
-			open my $F, "<$file->{absfilename}";
+		my $absfilename = $j->absfilename($f);
+		if (-f $absfilename ) {
+			open my $F, "<", $absfilename;
 			binmode $F;
 			$th->eat_file($F);
 			close $F;
 			$th->calc_tree();
 			my $treehash = $th->get_final_hash();
-			if (-s $file->{absfilename} == $file->{size}) {
+			if (-s $absfilename == $file->{size}) {
 				if ($treehash eq $files->{$f}->{treehash}) {
 					print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
 					++$no_error;

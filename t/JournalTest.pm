@@ -48,7 +48,7 @@ sub test_journal
 		ok ($jf->{size} == $cf->{filesize}, "file size match $jf->{size} == $cf->{filesize}");
 		ok ($jf->{treehash} eq $cf->{final_hash}, "treehash matches"	);
 		ok ($jf->{archive_id} eq $cf->{archive_id}, "archive id matches"	);
-		ok ($jf->{absfilename} eq File::Spec->rel2abs($cf->{filename}, $self->{dataroot}), "absfilename match"); # actually better test in real
+		ok ($j->absfilename($cf->{filename}) eq File::Spec->rel2abs($cf->{filename}, $self->{dataroot}), "absfilename match"); # actually better test in real
 	}
 	rmtree($self->{tmproot}) if ($self->{tmproot}) && (-d $self->{tmproot});
 }
