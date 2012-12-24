@@ -31,6 +31,7 @@ sub new
     my $self = \%args;
     $self->{children}||die;
     $self->{disp_select}||die;
+    $self->{options}||die;
     @{$self->{freeworkers}} = keys %{$self->{children}};
     bless $self, $class;
     return $self;
@@ -38,7 +39,7 @@ sub new
 
 sub process_task
 {
-	my ($self, $journal, $ft) = @_;
+	my ($self, $ft) = @_;
 	my $task_list = {};
 	while (1) {
 		if ( @{$self->{freeworkers}} ) {
@@ -47,7 +48,7 @@ sub process_task
 				if (scalar keys %{$self->{children}} == scalar @{$self->{freeworkers}}) {
 					die;
 				}
-				my $r = $self->wait_worker($task_list, , $journal, $ft);
+				my $r = $self->wait_worker($task_list, $ft);
 				return $r if $r;
 			} elsif ($result eq 'ok') {
 				my $worker_pid = shift @{$self->{freeworkers}};
@@ -58,7 +59,7 @@ sub process_task
 				die;
 			}
 		} else {
-			my $r = $self->wait_worker($task_list, $journal, $ft);
+			my $r = $self->wait_worker($task_list, $ft);
 			return $r if $r;
 		}
 	}
@@ -66,7 +67,7 @@ sub process_task
 
 sub wait_worker
 {
-	my ($self, $task_list, $journal, $ft) = @_;
+	my ($self, $task_list, $ft) = @_;
 	my @ready = $self->{disp_select}->can_read();
     for my $fh (@ready) {
       if (eof($fh)) {
@@ -83,9 +84,10 @@ sub wait_worker
 	  delete $task_list->{$taskid};
 	  
 	  if ($task->{result}->{journal_entry}) {
-	  	open (F, ">>:encoding(UTF-8)", $journal);
-		print F $task->{result}->{journal_entry}."\n";
-		close F;
+die; #TODO: that should not be here!
+	  	#open (F, ">>:encoding(UTF-8)", $journal);
+		#print F $task->{result}->{journal_entry}."\n";
+		#close F;
 	  }
 	  
 	  if ($result eq 'done') {

@@ -21,6 +21,7 @@
 package ConfigEngine;
 
 use Getopt::Long qw/GetOptionsFromArray/;
+use Encode;
 use Carp;
 
 
@@ -49,8 +50,8 @@ my %options = (
 # TODO: deprecated options should be removed from result
 my %commands = (
 'sync'              => { req => [qw/config journal dir vault/],                 optional => [qw/partsize concurrency max-number-of-files/]},
-'purge-vault'       => { req => [qw/config journal vault /],                    optional => [qw/concurrency/], deprecated => [qw/from-dir/] },
-'restore'           => { req => [qw/config journal vault max-number-of-files/],                                deprecated => [qw/from-dir/] },
+'purge-vault'       => { req => [qw/config journal vault dir/],                    optional => [qw/concurrency/], },
+'restore'           => { req => [qw/config journal dir vault max-number-of-files/], },
 'restore-completed' => { req => [qw/config journal vault dir/],                 optional => [qw/concurrency/]},
 'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },
 );
@@ -113,10 +114,13 @@ sub parse_options
 	#die join(';',@getopts);
 	my %result; # TODO: deafult hash, config from file
 	
-	return (["Error parsing options"], @warnings ? \@warnings : undef, undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
+	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
+	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
-	return (["Please specify config"], @warnings ? \@warnings : undef, undef) unless $result{config};
+	return (["Please specify config"], @warnings ? \@warnings : undef) unless $result{config};
+	
+	
 	my $config_result = $self->read_config($result{config});
 	my %merged = %$config_result;
 	@merged{keys %result} = values %result;
@@ -132,7 +136,7 @@ sub parse_options
 				delete $result{$o};
 			} else {
 				if ($result{ $deprecations{$o} }) {
-					return (["$o specified, while $deprecations{$o} already defined"], @warnings ? \@warnings : undef, undef);
+					return (["$o specified, while $deprecations{$o} already defined"], @warnings ? \@warnings : undef);
 				} else {
 					push @warnings, "$o deprecated, use $deprecations{$o} instead";
 					$result{ $deprecations{$o} } = delete $result{$o};
@@ -142,7 +146,7 @@ sub parse_options
 	}
 
 	for my $o (@{$command_ref->{req}}) {
-		return (["Please specify $o"], @warnings ? \@warnings : undef, undef) unless $result{$o};
+		return (["Please specify $o"], @warnings ? \@warnings : undef) unless $result{$o};
 	}
 
 	for my $o (keys %result) {
@@ -150,12 +154,12 @@ sub parse_options
 			for my $v (@$validations) {
 				my ($message, $test) = @$v;
 				$_ = $result{$o};
-				return (["$message"], @warnings ? \@warnings : undef, undef) unless ($test->());
+				return (["$message"], @warnings ? \@warnings : undef) unless ($test->());
 			}
 		}
 	}
 	
-	return (undef, @warnings ? \@warnings : undef, \%result);
+	return (undef, @warnings ? \@warnings : undef, $command, \%result);
 }
 	
 sub read_config

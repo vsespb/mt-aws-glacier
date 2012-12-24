@@ -47,12 +47,10 @@ sub new
 	my ($class, %args) = @_;
 	my $self = \%args;
 	bless $self, $class;
-	$self->{secret} || die;
-	$self->{key} || die;
-	$self->{region}||die;
+	$self->{options} || die;
 	$self->{service} ||= 'glacier';
 	$self->{account_id} = '-';
-	$self->{host} = "$self->{service}.$self->{region}.amazonaws.com";
+	$self->{host} = "$self->{service}.$self->{options}->{region}.amazonaws.com";
 
 	$self->{headers} = [];
    
@@ -223,86 +221,86 @@ sub _sign
 	
 	# /getting canonical URL
 	
-	my $credentials = "$datestr/$self->{region}/$self->{service}/aws4_request";
+	my $credentials = "$datestr/$self->{options}->{region}/$self->{service}/aws4_request";
 
 	my $string_to_sign = "AWS4-HMAC-SHA256\n$date8601\n$credentials\n$canonical_url_hash";
 
-	my ($kSigning, $kSigning_hex) = get_signature_key($self->{secret}, $datestr, $self->{region}, $self->{service});
+	my ($kSigning, $kSigning_hex) = get_signature_key($self->{options}->{secret}, $datestr, $self->{options}->{region}, $self->{service});
 	my $signature = hmac_hex($kSigning, $string_to_sign);
 	
-	my $auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature";
+	my $auth = "AWS4-HMAC-SHA256 Credential=$self->{options}->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature";
 
 	push @{$self->{req_headers}}, { name => 'Authorization', value => $auth};
 }
 
 sub upload_archive
 {
-	my ($class, $region, $key, $secret, $vault, $dataref) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_upload_archive(vault => $vault, dataref => $dataref);
+	my ($class, $options, $dataref) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_upload_archive(vault => $options->{vault}, dataref => $dataref);
 	my $resp = $req->perform_lwp();
 	return $resp ? $resp->header('X-Amz-Archive-Id') : undef;
 }
 
 sub create_multipart_upload
 {
-	my ($class, $region, $key, $secret, $vault, $size) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_create_multipart_upload(vault => $vault, partsize => $size);
+	my ($class, $options, $size) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_create_multipart_upload(vault => $options->{vault}, partsize => $size);
 	my $resp = $req->perform_lwp();
 	return $resp ? $resp->header('X-Amz-Multipart-Upload-Id') : $resp; # TODO: lowercase source headers!
 }
 
 sub delete_archive
 {
-	my ($class, $region, $key, $secret, $vault, $archive_id) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_delete_archive(vault => $vault, archive_id => $archive_id);
+	my ($class, $options, $archive_id) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_delete_archive(vault => $options->{vault}, archive_id => $archive_id);
 	my $resp = $req->perform_lwp();
 	return $resp;
 }
 
 sub retrieve_archive
 {
-	my ($class, $region, $key, $secret, $vault, $archive_id) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_retrieve_archive(vault => $vault, archive_id => $archive_id);
+	my ($class, $options, $archive_id) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_retrieve_archive(vault => $options->{vault}, archive_id => $archive_id);
 	my $resp = $req->perform_lwp();
 	return $resp;
 }
 sub retrieval_fetch_job
 {
-	my ($class, $region, $key, $secret, $vault, $marker) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_retrieval_fetch_job(vault => $vault, marker=> $marker);
+	my ($class, $options, $marker) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_retrieval_fetch_job(vault => $options->{vault}, marker=> $marker);
 	my $resp = $req->perform_lwp();
 	return $resp->decoded_content;
 }
 
 sub retrieval_download_job
 {
-	my ($class, $region, $key, $secret, $vault, $jobid, $filename) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_retrieval_download_job(vault => $vault, jobid => $jobid, filename => $filename);
+	my ($class, $options, $jobid, $filename) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_retrieval_download_job(vault => $options->{vault}, jobid => $jobid, filename => $filename);
 	my $resp = $req->perform_lwp();
 	return $resp->decoded_content;
 }
 
 sub upload_part
 {
-	my ($class, $region, $key, $secret, $vault, $uploadid, $dataref, $offset, $part_final_hash) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
+	my ($class, $options, $uploadid, $dataref, $offset, $part_final_hash) = @_;
+	my $req = $class->new(options => $options);
 	
-	$req->init_upload_multipart_part(vault => $vault, dataref=>$dataref, offset=>$offset, uploadid=>$uploadid, part_final_hash => $part_final_hash);
+	$req->init_upload_multipart_part(vault => $options->{vault}, dataref=>$dataref, offset=>$offset, uploadid=>$uploadid, part_final_hash => $part_final_hash);
 	my $resp = $req->perform_lwp();
 	return $resp;
 }
 
 sub finish_multipart_upload
 {
-	my ($class, $region, $key, $secret, $vault, $uploadid, $size, $treehash) = @_;
-	my $req = $class->new(region => $region, key => $key, secret => $secret);
-	$req->init_finish_multipart_upload(vault => $vault, uploadid=>$uploadid, size => $size, treehash => $treehash);
+	my ($class, $options, $uploadid, $size, $treehash) = @_;
+	my $req = $class->new(options => $options);
+	$req->init_finish_multipart_upload(vault => $options->{vault}, uploadid=>$uploadid, size => $size, treehash => $treehash);
 	my $resp = $req->perform_lwp();
 	return $resp->header('X-Amz-Archive-Id');
 }
