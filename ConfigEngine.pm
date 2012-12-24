@@ -28,25 +28,31 @@ use strict;
 use warnings;
 use utf8;
 
+
+my %deprecations = (
+'from-dir'            => 'dir' ,
+'to-dir'              => 'dir' ,
+'to-vault'            => 'vault',
+);
 	
 my %options = (
-'config'              => { },
-'from-dir'            => { deprecated_in_favour => 'dir' },
-'dir'                 => { },
-'vault'               => { },
-'to-vault'            => { deprecated_in_favour => 'vault' },
-'journal'             => { },
+'config'              => { type => 's' },
+'journal'             => { type => 's' }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
+'dir'                 => { type => 's' },
+'vault'               => { type => 's' },
 'concurrency'         => { type => 'i', validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
 'partsize'            => { type => 'i', validate => [ ['Part size must be power of two'   => sub { ($_ != 0) && (($_ & ($_ - 1)) == 0)}], ] },
 'max-number-of-files' => { type => 'i'},
 );
 
+# TODO: from-dir is optional, it warns that dir should be used. however from-dir is deprecated for this command!
+# TODO: deprecated options should be removed from result
 my %commands = (
-'sync'              => { req => [qw/config journal dir vault/],                optional => [qw/partsize concurrency max-number-of-files/]},
-'purge-vault'       => { req => [qw/config journal vault/],                     optional => [qw/concurrency/] },
-'restore'           => { req => [qw/config journal vault max-number-of-files/]},
-'restore-completed' => { req => [qw/config journal vault max-number-of-files/]},
-'check-local-hash'  => { req => [qw/config journal to-vault/] },
+'sync'              => { req => [qw/config journal dir vault/],                 optional => [qw/partsize concurrency max-number-of-files/]},
+'purge-vault'       => { req => [qw/config journal vault /],                    optional => [qw/concurrency/], deprecated => [qw/from-dir/] },
+'restore'           => { req => [qw/config journal vault max-number-of-files/],                                deprecated => [qw/from-dir/] },
+'restore-completed' => { req => [qw/config journal vault dir/],                 optional => [qw/concurrency/]},
+'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },
 );
 
 
@@ -59,59 +65,84 @@ sub new
 }
 
 
+sub get_options_and_config
+{
+	my ($self, @argv) = (@_);
+	my ($errors, $warnings, $result) = $self->{parse_options};
+
+	for (@$warnings) {
+		warn "WARNING: $_";;
+	}	
+	if ($errors) {
+		die $errors->[0];
+	}
+	
+	$result->{config};
+}
 
 sub parse_options
 {
 	my ($self, @argv) = (@_);
 
 	my (@warnings);
-	my %deprecation;
+	my %reverse_deprecations;
 	
-	for my $o (keys %options) {
-		if ($options{$o}->{deprecated_in_favour}) {
-			$deprecation{ $options{$o}->{deprecated_in_favour} } ||= [];
-			push @{ $deprecation{ $options{$o}->{deprecated_in_favour} } }, $o;
-		}
+	for my $o (keys %deprecations) {
+		$reverse_deprecations{ $deprecations{$o} } ||= [];
+		push @{ $reverse_deprecations{ $deprecations{$o} } }, $o;
 	}
 
 	my $command = shift @argv;
 	my $command_ref = $commands{$command};
 	
 	my @getopts;
-	for my $o ( @{$command_ref->{req}}, @{$command_ref->{optional}} ) {
+	for my $o ( @{$command_ref->{req}}, @{$command_ref->{optional}}, @{$command_ref->{deprecated}} ) {
 		my $option = $options{$o};
 		my $type = $option->{type}||'s';
-		my $opt_spec = join ('|', $option->{spec}||$o, @{ $option->{alias}||[] });
+		my $opt_spec = join ('|', $o, @{ $option->{alias}||[] });
 		push @getopts, "$opt_spec=$type";
 		
-		if ($deprecation{$o}) {
-			for my $dep_o (@{ $deprecation{$o} }) {
-				my $dep_option= $options{$dep_o};
-				my $type = $dep_option->{type}||'s';
-				my $opt_spec = join ('|', $dep_option->{spec}||$dep_o, @{ $dep_option->{alias}||[] });
-				push @getopts, "$opt_spec=$type";
+		if ($reverse_deprecations{$o}) {
+			my $type = $option->{type}||'s';
+			for my $dep_o (@{ $reverse_deprecations{$o} }) {
+				push @getopts, "$dep_o=$type";
 			}
 		}
 	}
 
+	#die join(';',@getopts);
 	my %result; # TODO: deafult hash, config from file
 	
-	return (["Error parsing options"], \@warnings, undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
+	return (["Error parsing options"], @warnings ? \@warnings : undef, undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
 
+	# Special config handling
+	return (["Please specify config"], @warnings ? \@warnings : undef, undef) unless $result{config};
+	my $config_result = $self->read_config($result{config});
+	my %merged = %$config_result;
+	@merged{keys %result} = values %result;
+	%result = %merged;
+	
 
-	for my $o (keys %options) {
-		if ($options{$o}->{deprecated_in_favour} && $result{$o}) {
-			push @warnings, "$o deprecated, use $options{$o}->{deprecated_in_favour} instead";
-			if ($result{ $options{$o}->{deprecated_in_favour} }) {
-				return (["$o specified, while $options{$o}->{deprecated_in_favour} already defined"], \@warnings, undef);
+	#use Data::Dumper;print Dumper(\%result);
+
+	for my $o (keys %deprecations) {
+		if ($result{$o}) {
+			if (grep { $_ eq $o } @{ $command_ref->{deprecated} }) {
+				push @warnings, "$o is not needed for this command";
+				delete $result{$o};
 			} else {
-				$result{ $options{$o}->{deprecated_in_favour} } = delete $result{$o};
+				if ($result{ $deprecations{$o} }) {
+					return (["$o specified, while $deprecations{$o} already defined"], @warnings ? \@warnings : undef, undef);
+				} else {
+					push @warnings, "$o deprecated, use $deprecations{$o} instead";
+					$result{ $deprecations{$o} } = delete $result{$o};
+				}
 			}
 		}
 	}
 
 	for my $o (@{$command_ref->{req}}) {
-		return (["Please specify $o"], \@warnings, undef) unless $result{$o};
+		return (["Please specify $o"], @warnings ? \@warnings : undef, undef) unless $result{$o};
 	}
 
 	for my $o (keys %result) {
@@ -119,12 +150,35 @@ sub parse_options
 			for my $v (@$validations) {
 				my ($message, $test) = @$v;
 				$_ = $result{$o};
-				return (["$message"], \@warnings, undef) unless ($test->());
+				return (["$message"], @warnings ? \@warnings : undef, undef) unless ($test->());
 			}
 		}
 	}
 	
-	return (undef, \@warnings, \%result);
+	return (undef, @warnings ? \@warnings : undef, \%result);
 }
 	
+sub read_config
+{
+	my ($self, $filename) = @_;
+	die "config file not found $filename" unless -f $filename;
+	open (F, "<:encoding(UTF-8)", $filename);
+	my %newconfig;
+	while (<F>) {
+		chomp;
+		chop if /\r$/; # windows CRLF format
+		next if /^\s*$/;
+		next if /^\s*\#/;
+		my ($name, $value) = split(/\=/, $_);
+		$name =~ s/^\s*//;
+		$name =~ s/\s*$//;
+		$value =~ s/^\s*//;
+		$value =~ s/\s*$//;
+		
+		$newconfig{$name} = $value;
+	}
+	close F;
+	return \%newconfig;
+}
+
 1;
