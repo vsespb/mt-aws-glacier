@@ -85,7 +85,9 @@ if (0) {
 	'sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3'
 	));
 	ok( !$errors && $warnings, "v0.78 regressiong in sync, error/warnings");
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', concurrency => 3, journal => 'journal.log'}, 'v0.78 regressiong in sync');
+	#print Dumper($result);
+	#print Dumper({key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', concurrency => 3, journal => 'journal.log'});
+	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', concurrency => 3, partsize => 16, journal => 'journal.log'}, 'v0.78 regressiong in sync');
 	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in sync');
 }
 
@@ -94,7 +96,7 @@ if (0) {
 	'sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log'
 	));
 	ok( !$errors && $warnings, "v0.78 regressiong in sync, error/warnings");
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in sync');
+	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', concurrency => 3, partsize => 16, config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in sync');
 	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in sync');
 }
 
@@ -112,7 +114,7 @@ if (0) {
 	'restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log --max-number-of-files=10'
 	));
 	ok( !$errors && $warnings, "v0.78 regressiong in restore, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log', 'max-number-of-files' => 10}, 'v0.78 regressiong in restore');
+	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', concurrency => 3, config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log', 'max-number-of-files' => 10}, 'v0.78 regressiong in restore');
 	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in restore');
 }
 
@@ -128,7 +130,7 @@ if (0) {
 	'restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
 	));
 	ok( !$errors && $warnings, "v0.78 regressiong in restore-completed, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in restore-completed');
+	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault',  concurrency => 3, config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in restore-completed');
 	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in restore-completed');
 }
 
@@ -137,7 +139,7 @@ if (0) {
 	'purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
 	));
 	ok( !$errors && $warnings, "v0.78 regressiong in purge-vault, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', journal => 'journal.log'}, 'v0.78 regressiong in purge-vault');
+	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault',  concurrency => 3, config=>'glacier.cfg', journal => 'journal.log'}, 'v0.78 regressiong in purge-vault');
 	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], 'v0.78 regressiong in purge-vault');
 }
 
