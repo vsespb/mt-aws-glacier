@@ -41,18 +41,18 @@ my %options = (
 'journal'             => { type => 's' }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
-'concurrency'         => { type => 'i', validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
-'partsize'            => { type => 'i', validate => [ ['Part size must be power of two'   => sub { ($_ != 0) && (($_ & ($_ - 1)) == 0)}], ] },
+'concurrency'         => { type => 'i', default => 3, validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
+'partsize'            => { type => 'i', default => 16, validate => [ ['Part size must be power of two'   => sub { ($_ != 0) && (($_ & ($_ - 1)) == 0)}], ] },
 'max-number-of-files' => { type => 'i'},
 );
 
 # TODO: from-dir is optional, it warns that dir should be used. however from-dir is deprecated for this command!
 # TODO: deprecated options should be removed from result
 my %commands = (
-'sync'              => { req => [qw/config journal dir vault/],                 optional => [qw/partsize concurrency max-number-of-files/]},
-'purge-vault'       => { req => [qw/config journal vault /],                    optional => [qw/concurrency/], deprecated => [qw/from-dir/] },
+'sync'              => { req => [qw/config journal dir vault concurrency partsize/],                 optional => [qw/max-number-of-files/]},
+'purge-vault'       => { req => [qw/config journal vault concurrency/],                    optional => [qw//], deprecated => [qw/from-dir/] },
 'restore'           => { req => [qw/config journal dir vault max-number-of-files/], },
-'restore-completed' => { req => [qw/config journal vault dir/],                 optional => [qw/concurrency/]},
+'restore-completed' => { req => [qw/config journal vault dir concurrency/],                 optional => [qw//]},
 'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },
 );
 
@@ -146,7 +146,13 @@ sub parse_options
 	}
 
 	for my $o (@{$command_ref->{req}}) {
-		return (["Please specify $o"], @warnings ? \@warnings : undef) unless $result{$o};
+		unless ($result{$o}) {
+			if (defined($options{$o}->{default})) { # Options from config are used here!
+				$result{$o} = $options{$o}->{default};
+			} else {
+				return (["Please specify $o"], @warnings ? \@warnings : undef);
+			}
+		}
 	}
 
 	for my $o (keys %result) {
