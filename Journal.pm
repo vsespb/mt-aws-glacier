@@ -1,3 +1,23 @@
+# mt-aws-glacier - AWS Glacier sync client
+# Copyright (C) 2012  Victor Efimov
+# vs@vs-dev.com http://vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package Journal;
 
 use strict;
@@ -16,7 +36,6 @@ sub new
 	my $self = \%args;
 	bless $self, $class;
 	$self->{journal_file} || die;
-	$self->{root_dir} || die;
 	$self->{journal_h} = {};
 	
 	$self->{used_versions} = {};
@@ -57,7 +76,6 @@ sub process_line
 			size => $size,
 			mtime => $mtime,
 			treehash => $treehash,
-			absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
 		});
 		$self->{used_versions}->{A} = 1;
 	} elsif ($line =~ /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
@@ -74,7 +92,6 @@ sub process_line
 			archive_id => $archive_id,
 			size => $size,
 			treehash => $treehash,
-			absfilename => File::Spec->rel2abs($relfilename, $self->{root_dir})
 		});
 		$self->{used_versions}->{0} = 1;
 	} elsif ($line =~ /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/) {
@@ -144,6 +161,7 @@ sub _read_files
 {
 	my ($self, $mode, $max_number_of_files) = @_;
 	
+	confess unless defined($self->{root_dir});
 	my $filelist = [];
 	my $i = 0;
 	# TODO: find better workaround than "-s"
@@ -171,6 +189,13 @@ sub _read_files
 	}, no_chdir => 1 }, ($self->{root_dir}));
 	
 	$filelist;
+}
+
+sub absfilename
+{
+	my ($self, $relfilename) = @_;
+	confess unless defined($self->{root_dir});
+	return File::Spec->rel2abs($relfilename, $self->{root_dir});
 }
 
 sub _is_file_exists

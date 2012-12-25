@@ -28,6 +28,7 @@ use utf8;
 use File::Basename;
 use File::Path;
 use Carp;
+use IO::Select;
 
 sub new
 {
@@ -35,10 +36,7 @@ sub new
     my $self = \%args;
     $self->{fromchild}||die;
     $self->{tochild}||die;
-    $self->{key}||die;
-    $self->{region}||die;
-    $self->{secret}||die;
-    $self->{vault}||die;
+    $self->{options}||die;
     bless $self, $class;
     return $self;
 }
@@ -63,37 +61,38 @@ sub process
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
-				my $uploadid = GlacierRequest->create_multipart_upload($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{partsize});
+				my $uploadid = GlacierRequest->create_multipart_upload($self->{options}, $data->{partsize}); # TODO: partsize confusing, need use another name for option partsize
 				confess unless $uploadid;
 				$result = { upload_id => $uploadid };
 				$console_out = "Created an upload_id $uploadid";
 			} elsif ($action eq "upload_part") {
-				my $r = GlacierRequest->upload_part($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
+				my $r = GlacierRequest->upload_part($self->{options}, $data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
 				return undef unless $r;
 				$result = { uploaded => $data->{start} } ;
 				$console_out = "Uploaded part for $data->{filename} at offset [$data->{start}]";
 			} elsif ($action eq 'finish_upload') {
-				my $archive_id = GlacierRequest->finish_multipart_upload($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{upload_id}, $data->{filesize}, $data->{final_hash});
+				# TODO: move vault to task, not to options!
+				my $archive_id = GlacierRequest->finish_multipart_upload($self->{options}, $data->{upload_id}, $data->{filesize}, $data->{final_hash});
 				return undef unless $archive_id;
 				$result = { final_hash => $data->{final_hash}, archive_id => $archive_id, journal_entry => time()." CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}" };
 				$console_out = "Finished $data->{filename} hash [$data->{final_hash}] archive_id [$archive_id]";
 			} elsif ($action eq 'delete_archive') {
-				my $r = GlacierRequest->delete_archive($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{archive_id});
+				my $r = GlacierRequest->delete_archive($self->{options}, $data->{archive_id});
 				return undef unless $r;
 				$result = { journal_entry => time()." DELETED $data->{archive_id} $data->{relfilename}" };
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
 				mkpath(dirname($data->{filename}));
-				my $r = GlacierRequest->retrieval_download_job($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{jobid}, $data->{filename});
+				my $r = GlacierRequest->retrieval_download_job($self->{options}, $data->{jobid}, $data->{filename});
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
 			} elsif ($action eq 'retrieve_archive') {
-				my $r = GlacierRequest->retrieve_archive($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{archive_id});
+				my $r = GlacierRequest->retrieve_archive($self->{options}, $data->{archive_id});
 				return undef unless $r;
 				$result = { journal_entry => time()." RETRIEVE_JOB $data->{archive_id}" };
 				$console_out = "Retrieve Archive $data->{archive_id}";
 			} elsif ($action eq 'retrieval_fetch_job') {
-				my $r = GlacierRequest->retrieval_fetch_job($self->{region}, $self->{key}, $self->{secret}, $self->{vault}, $data->{marker});
+				my $r = GlacierRequest->retrieval_fetch_job($self->{options}, $data->{marker});
 				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Retrieve Job List";
