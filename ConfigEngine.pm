@@ -66,21 +66,6 @@ sub new
 }
 
 
-sub get_options_and_config
-{
-	my ($self, @argv) = (@_);
-	my ($errors, $warnings, $result) = $self->{parse_options};
-
-	for (@$warnings) {
-		warn "WARNING: $_";;
-	}	
-	if ($errors) {
-		die $errors->[0];
-	}
-	
-	$result->{config};
-}
-
 sub parse_options
 {
 	my ($self, @argv) = (@_);
@@ -122,9 +107,17 @@ sub parse_options
 	
 	
 	my $config_result = $self->read_config($result{config});
-	my %merged = %$config_result;
+	
+	my (%source, %merged);
+	
+	@merged{keys %$config_result} = values %$config_result;
+	$source{$_} = 'config' for (keys %$config_result);
+
 	@merged{keys %result} = values %result;
-	%result = %merged;
+	$source{$_} = 'command' for (keys %result);
+
+
+	%result =%merged;
 	
 
 	#use Data::Dumper;print Dumper(\%result);
@@ -135,8 +128,8 @@ sub parse_options
 				push @warnings, "$o is not needed for this command";
 				delete $result{$o};
 			} else {
-				if ($result{ $deprecations{$o} }) {
-					return (["$o specified, while $deprecations{$o} already defined"], @warnings ? \@warnings : undef);
+				if ($result{ $deprecations{$o} } && $source{ $deprecations{$o} } eq 'command') {
+					return (["$o specified, while $deprecations{$o} already defined "], @warnings ? \@warnings : undef);
 				} else {
 					push @warnings, "$o deprecated, use $deprecations{$o} instead";
 					$result{ $deprecations{$o} } = delete $result{$o};

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 9;
+use Test::More tests => 13;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -11,6 +11,10 @@ use Test::MockModule;
 use Data::Dumper;
 
 no warnings 'redefine';
+
+#
+# This time we test both current config and current code together
+#
 
 local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
@@ -69,13 +73,37 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	ok( !$errors && !$warnings && $result && $result->{vault} eq 'newvault', "should use vault from config" );
 }
 
-if (0) {
+{
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
 	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log'
 	));
-	print "ZZZ:".Dumper({errors => $errors, warnings => $warnings, result => $result});
-	ok( !$errors && !$warnings && $result && $result->{vault} eq 'myvault', "should override vault in command line when deprecated-name is used in command line" );
+	ok( !$errors && $warnings && $result && $result->{vault} eq 'myvault', "should override vault in command line when deprecated-name is used in command line" );
+}
+
+{
+	my $cfg;
+	local *ConfigEngine::read_config = sub { $cfg };
+
+	$cfg = { key=>'mykey', secret => 'mysecret', region => 'myregion' };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log'
+	));
+	ok($result->{concurrency} == 4, 'we assume default value is 4');
+
+	$cfg = { key=>'mykey', secret => 'mysecret', region => 'myregion', concurrency => 5 };
+	($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log --concurrency=6'
+	));
+	ok($result->{concurrency} == 6, 'command line option should override config');
+
+	$cfg = { key=>'mykey', secret => 'mysecret', region => 'myregion', concurrency => 5 };
+	($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log'
+	));
+	ok($result->{concurrency} == 5, 'but config option should override default');
+
+
 }
 
 
