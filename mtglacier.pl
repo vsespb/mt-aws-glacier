@@ -126,7 +126,7 @@ if ($action eq 'sync') {
 		die unless $R;
 	}
 } elsif ($action eq 'purge-vault') {
-	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	my $j = Journal->new(journal_file => $options->{journal});
 	
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
