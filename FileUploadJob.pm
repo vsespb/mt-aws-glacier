@@ -35,6 +35,7 @@ sub new
     defined($self->{filename})||die;
     defined($self->{relfilename})||die;
     $self->{partsize}||die;
+    $self->{mtime}||die;
     $self->{upload_id}||die;
     $self->{fh}||die;
     $self->{all_raised} = 0;
@@ -75,7 +76,8 @@ sub get_task
 		} else {
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
-				return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
+				# TODO: why do we have to have two FileFinishJob->new ??
+				return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
 			} else {
 				return ("wait");
 			}
@@ -90,7 +92,7 @@ sub finish_task
 	delete $self->{uploadparts}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{uploadparts}} == 0) {
 		# TODO: $self->{filename} LOG ONLY
-		return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
+		return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
 	} else {
 		return ("ok");
 	}

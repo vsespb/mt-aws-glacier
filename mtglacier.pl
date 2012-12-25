@@ -44,6 +44,7 @@ use File::Spec;
 use Journal;
 use ConfigEngine;
 use ForkEngine;
+use Carp;
 
 
 
@@ -83,7 +84,7 @@ sub dcs
 print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n";
 
 my ($P) = @_;
-my ($src, $vault, $journal, $max_number_of_files);
+my ($src, $vault, $journal);
 my $maxchildren = 4;
 my $partsize = 16;
 my $config = {};
@@ -91,6 +92,7 @@ my $config_filename;
 
 
 my ($errors, $warnings, $action, $options) = ConfigEngine->new()->parse_options(@ARGV);
+
 
 for (@$warnings) {
 	warn "WARNING: $_";;
@@ -100,7 +102,6 @@ if ($errors) {
 }
 
 
-use Data::Dumper;print Dumper($options);
 
 
 if ($action eq 'sync') {
@@ -111,7 +112,7 @@ if ($action eq 'sync') {
 	$FE->start_children();
 	
 	$j->read_journal();
-	$j->read_new_files($options->{max_number_of_files});
+	$j->read_new_files($options->{'max-number-of-files'});
 	
 	my @joblist;
 	for (@{ $j->{newfiles_a} }) {
@@ -121,7 +122,7 @@ if ($action eq 'sync') {
 	}
 	if (scalar @joblist) {
 		my $lt = JobListProxy->new(jobs => \@joblist);
-		my $R = $FE->{parent_worker}->process_task($lt);
+		my $R = $FE->{parent_worker}->process_task($lt, $j);
 		die unless $R;
 	}
 } elsif ($action eq 'purge-vault') {
@@ -135,7 +136,7 @@ if ($action eq 'sync') {
 	if (scalar keys %$files) {
 		my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
 		my $ft = JobProxy->new(job => FileListDeleteJob->new(archives => \@filelist ));
-		my $R = $P->process_task($ft);
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
 		print "Nothing to delete\n";
@@ -143,8 +144,8 @@ if ($action eq 'sync') {
 	
 } elsif ($action eq 'restore') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
-	#die "You must specify number of files to restore" unless $max_number_of_files;
-	
+	confess unless $options->{'max-number-of-files'};
+			
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
@@ -152,10 +153,10 @@ if ($action eq 'sync') {
 	my $files = $j->{journal_h};
 	# TODO: refactor
 	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
-	@filelist  = splice(@filelist, 0, $options->{max_number_of_files});
+	@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
 	if (scalar @filelist) {
 		my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
-		my $R = $FE->process_task($ft);
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
 		print "Nothing to restore\n";
@@ -173,7 +174,7 @@ if ($action eq 'sync') {
 	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	if (scalar keys %filelist) {
 		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
-		my $R = $FE->process_task($ft);
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
 		print "Nothing to restore\n";

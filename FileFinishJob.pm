@@ -20,6 +20,7 @@
 
 package FileFinishJob;
 
+
 use strict;
 use warnings;
 use utf8;
@@ -33,6 +34,7 @@ sub new
     bless $self, $class;
     $self->{upload_id}||die;
     $self->{filesize}||die;
+    $self->{mtime}||die;
     defined($self->{filename})||die;
     defined($self->{relfilename})||die;
     $self->{th}||die;
@@ -53,6 +55,7 @@ sub get_task
 		return ("ok", Task->new(id => "finish_upload",action=>"finish_upload", data => {
 			upload_id => $self->{upload_id},
 			filesize => $self->{filesize},
+			mtime => $self->{mtime},
 			filename => $self->{filename},
 			relfilename => $self->{relfilename},
 			final_hash => $self->{final_hash}

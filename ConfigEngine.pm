@@ -51,7 +51,7 @@ my %options = (
 my %commands = (
 'sync'              => { req => [qw/config journal dir vault concurrency partsize/],                 optional => [qw/max-number-of-files/]},
 'purge-vault'       => { req => [qw/config journal vault concurrency/],                    optional => [qw//], deprecated => [qw/from-dir/] },
-'restore'           => { req => [qw/config journal dir vault max-number-of-files/], },
+'restore'           => { req => [qw/config journal dir vault max-number-of-files concurrency/], },
 'restore-completed' => { req => [qw/config journal vault dir concurrency/],                 optional => [qw//]},
 'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },
 );

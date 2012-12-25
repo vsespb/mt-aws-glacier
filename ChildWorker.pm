@@ -74,12 +74,29 @@ sub process
 				# TODO: move vault to task, not to options!
 				my $archive_id = GlacierRequest->finish_multipart_upload($self->{options}, $data->{upload_id}, $data->{filesize}, $data->{final_hash});
 				return undef unless $archive_id;
-				$result = { final_hash => $data->{final_hash}, archive_id => $archive_id, journal_entry => time()." CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}" };
+				$result = {
+					final_hash => $data->{final_hash},
+					archive_id => $archive_id,
+					journal_entry => {
+						type=> 'CREATED',
+						archive_id => $archive_id,
+						size => $data->{filesize},
+						mtime => $data->{mtime},
+						treehash => $data->{final_hash},
+						relfilename => $data->{relfilename}
+					},
+				};
 				$console_out = "Finished $data->{filename} hash [$data->{final_hash}] archive_id [$archive_id]";
 			} elsif ($action eq 'delete_archive') {
 				my $r = GlacierRequest->delete_archive($self->{options}, $data->{archive_id});
 				return undef unless $r;
-				$result = { journal_entry => time()." DELETED $data->{archive_id} $data->{relfilename}" };
+				$result = {
+					journal_entry => {
+						type=> 'DELETED',
+						archive_id => $data->{archive_id},
+						relfilename => $data->{relfilename}
+						}
+				};
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
 				mkpath(dirname($data->{filename}));
@@ -89,7 +106,12 @@ sub process
 			} elsif ($action eq 'retrieve_archive') {
 				my $r = GlacierRequest->retrieve_archive($self->{options}, $data->{archive_id});
 				return undef unless $r;
-				$result = { journal_entry => time()." RETRIEVE_JOB $data->{archive_id}" };
+				$result = {
+					journal_entry => {
+						type=> 'RETRIEVE_JOB',
+						archive_id => $data->{archive_id},
+						}
+				};
 				$console_out = "Retrieve Archive $data->{archive_id}";
 			} elsif ($action eq 'retrieval_fetch_job') {
 				my $r = GlacierRequest->retrieval_fetch_job($self->{options}, $data->{marker});

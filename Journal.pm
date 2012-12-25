@@ -39,7 +39,7 @@ sub new
 	$self->{journal_h} = {};
 	
 	$self->{used_versions} = {};
-	$self->{output_version} = '0';
+	$self->{output_version} = 'A' unless defined($self->{output_version});
 	
 	return $self;
 }
@@ -121,19 +121,41 @@ sub _delete_file
 sub add_entry
 {
 	my ($self, $e) = @_;
+	
+	confess unless $self->{output_version} eq 'A';
+	
+	# TODO: time should be ascending?
+	my $now = $self->_time();
 	if ($e->{type} eq 'CREATED') {
 		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
-		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id filesize mtime final_hash relfilename/);
-		if ($self->{output_version} eq 'A') {
-			print "A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{filesize}\t$e->{mtime}\t$e->{final_hash}\t$e->{relfilename}";
-		} elsif ($self->{output_version} eq '0') {
-			print "$e->{time} CREATED $e->{archive_id} $e->{filesize} $e->{final_hash} $e->{relfilename}";
-		} else {
-			confess "Unexpected else";
-		}
+		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id size mtime treehash relfilename/);
+		$self->_write_line("A\t$now\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$e->{relfilename}");
+	} elsif ($e->{type} eq 'DELETED') {
+		#  DELETED $data->{archive_id} $data->{relfilename}
+		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id relfilename/);
+		$self->_write_line("A\t$now\tDELETED\t$e->{archive_id}\t$e->{relfilename}");
+	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
+		#  RETRIEVE_JOB $data->{archive_id}
+		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id/);
+		$self->_write_line("A\t$now\tRETRIEVE_JOB\t$e->{archive_id}");
+	} else {
+		confess "Unexpected else";
 	}
 }
 
+sub _write_line
+{
+	my ($self, $line) = @_;
+  	open (F, ">>:encoding(UTF-8)", $self->{journal_file}) || croak;
+	print F $line."\n";
+	close F;
+	# TODO: fsync()
+}
+
+sub _time
+{
+	time();
+}
 #
 # Reading file listing
 #
