@@ -23,5 +23,6 @@ $harness->runtests(
     'unit/journal_readjournal.t',
     'unit/journal_writejournal.t',
     'unit/journal_readfiles.t',
-    'unit/config_engine_parse.t'
+    'unit/config_engine_parse.t',
+    'integration/config_engine_v078.t',
 );

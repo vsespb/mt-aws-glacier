@@ -41,7 +41,7 @@ my %options = (
 'journal'             => { type => 's' }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
-'concurrency'         => { type => 'i', default => 3, validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
+'concurrency'         => { type => 'i', default => 4, validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
 'partsize'            => { type => 'i', default => 16, validate => [ ['Part size must be power of two'   => sub { ($_ != 0) && (($_ & ($_ - 1)) == 0)}], ] },
 'max-number-of-files' => { type => 'i'},
 );
@@ -154,12 +154,11 @@ sub parse_options
 			}
 		}
 	}
-
 	for my $o (keys %result) {
 		if (my $validations = $options{$o}{validate}) {
 			for my $v (@$validations) {
 				my ($message, $test) = @$v;
-				$_ = $result{$o};
+				local $_ = $result{$o};
 				return (["$message"], @warnings ? \@warnings : undef) unless ($test->());
 			}
 		}

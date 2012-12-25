@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 28;
+use Test::More tests => 9;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -78,69 +78,5 @@ if (0) {
 	ok( !$errors && !$warnings && $result && $result->{vault} eq 'myvault', "should override vault in command line when deprecated-name is used in command line" );
 }
 
-# v0.78 regressions test
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in sync, error/warnings");
-	#print Dumper($result);
-	#print Dumper({key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', concurrency => 3, journal => 'journal.log'});
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', concurrency => 3, partsize => 16, journal => 'journal.log'}, 'v0.78 regressiong in sync');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in sync');
-}
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in sync, error/warnings");
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', concurrency => 3, partsize => 16, config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in sync');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in sync');
-}
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in check-local-hash, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in sync');
-	is_deeply($warnings, ['to-vault is not needed for this command','from-dir deprecated, use dir instead'], 'v0.78 regressiong in check-local-hash');
-}
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log --max-number-of-files=10'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in restore, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', concurrency => 3, config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log', 'max-number-of-files' => 10}, 'v0.78 regressiong in restore');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in restore');
-}
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log '
-	));
-	ok( $errors, "v0.78 regressiong in restore, error/warnings" );
-}
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in restore-completed, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault',  concurrency => 3, config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in restore-completed');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in restore-completed');
-}
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in purge-vault, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault',  concurrency => 3, config=>'glacier.cfg', journal => 'journal.log'}, 'v0.78 regressiong in purge-vault');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], 'v0.78 regressiong in purge-vault');
-}
 
 1;
