@@ -46,13 +46,14 @@ MTIME is filename Epoch (Unix time) timestamp
 =cut
 
 # yes, a module, so we can unit-test it (JSON and YAML have different serialization implementeation)
-my $meta_coder = JSON::XS->new->utf8->allow_nonref;
+my $meta_coder = JSON::XS->new->utf8->max_depth(1)->max_size(1024);
 
 sub meta_decode
 {
   my ($str) = @_;
   my ($marker, $b64) = split(' ', $str);
   if ($marker eq 'mt1') {
+  	return (undef, undef) unless length($b64) <= 1024;
   	return _decode_json(_decode_b64($b64));
   } else {
   	return (undef, undef);

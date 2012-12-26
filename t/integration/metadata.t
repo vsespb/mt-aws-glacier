@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 119;
+use Test::More tests => 120;
 use Test::Deep;
 use lib qw{.. ../..};
 use MetaData;
@@ -11,6 +11,7 @@ use MetaData;
 use Test::MockModule;
 use MIME::Base64 qw/encode_base64url/;
 use Encode;
+use JSON::XS;
 use Data::Dumper;
 
 no warnings 'redefine';
@@ -111,6 +112,10 @@ no warnings 'redefine';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": -1}')), 'should return undef if filename missed';
+	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
+	ok defined MetaData::meta_decode('mt1   '.encode_base64url('{ "filename": "a", "mtime": 1}')), 'should allow few spaces';
+	ok defined MetaData::meta_decode("mt1\t\t".encode_base64url('{ "filename": "a", "mtime": 1}')), 'should allow tabs';
+	ok defined MetaData::meta_decode(" \tmt1\t\t ".encode_base64url('{ "filename": "a", "mtime": 1}')), 'should allow leading spaces';
 	
 	eval { MetaData::meta_decode('zzz') };
 	ok $@ eq '', 'should not override eval code';
@@ -128,8 +133,8 @@ no warnings 'redefine';
 	ok !defined MetaData::meta_encode(undef, 4), 'should catche missed filename';
 	ok defined MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
 	ok !defined MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
-	ok defined MetaData::meta_encode('я' x 128, 0), 'should aalow 128 UTF characters';
-	ok defined MetaData::meta_encode('z' x 256, 0), 'should aalow 256 ASCII characters';
+	ok defined MetaData::meta_encode('я' x 128, 0), 'should allow 128 UTF characters';
+	ok defined MetaData::meta_encode('z' x 256, 0), 'should allow 256 ASCII characters';
 }
 
 1;
