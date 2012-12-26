@@ -55,7 +55,7 @@ sub get_task
 	    open my $fh, "<$self->{filename}";
 	    binmode $fh;
 	    $self->{fh} = $fh;
-		return ("ok", Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}} ));
+		return ("ok", Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}
 }
 

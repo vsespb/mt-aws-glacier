@@ -20,6 +20,7 @@ $harness->runtests(
     'integration/utf8_line_protocol.t',
     'integration/utf8.t',
     'integration/t_treehash.t',
+    'integration/metadata.t',
     'unit/journal_readjournal.t',
     'unit/journal_writejournal.t',
     'unit/journal_readfiles.t',

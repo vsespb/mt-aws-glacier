@@ -61,7 +61,8 @@ sub process
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
-				my $uploadid = GlacierRequest->create_multipart_upload($self->{options}, $data->{partsize}); # TODO: partsize confusing, need use another name for option partsize
+				 # TODO: partsize confusing, need use another name for option partsize
+				my $uploadid = GlacierRequest->create_multipart_upload($self->{options}, $data->{partsize}, $data->{relfilename}, $data->{mtime});
 				confess unless $uploadid;
 				$result = { upload_id => $uploadid };
 				$console_out = "Created an upload_id $uploadid";

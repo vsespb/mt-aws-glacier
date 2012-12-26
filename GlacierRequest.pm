@@ -27,7 +27,9 @@ use POSIX;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use TreeHash;
-use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
+use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
+use MetaData;
+use Carp;
 
 require Exporter;
 use base qw/Exporter/;
@@ -64,14 +66,21 @@ sub init_create_multipart_upload
 {
 	my ($self, %args) = @_;
 	
+	# TODO: rework somehow
 	$self->{vault} = $args{vault} || die;
 	$self->{partsize} = $args{partsize} || die;
-   
+	$self->{relfilename} = $args{relfilename};
+	defined($self->{relfilename})||die;
+	$self->{mtime} = $args{mtime};
+	defined($self->{mtime})||die;
+	
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads";
 	$self->{method} = 'POST';
 
 	$self->add_header('x-amz-part-size', $self->{partsize});
-	$self->add_header('x-amz-archive-description', 'mtglacier archive');
+	$self->{description} = MetaData::meta_encode($self->{relfilename}, $self->{mtime});
+	confess unless defined($self->{description});
+	$self->add_header('x-amz-archive-description', $self->{description});
 	
 }
 
@@ -244,9 +253,9 @@ sub upload_archive
 
 sub create_multipart_upload
 {
-	my ($class, $options, $size) = @_;
+	my ($class, $options, $size, $relfilename, $mtime) = @_;
 	my $req = $class->new(options => $options);
-	$req->init_create_multipart_upload(vault => $options->{vault}, partsize => $size);
+	$req->init_create_multipart_upload(vault => $options->{vault}, partsize => $size, relfilename => $relfilename, mtime => $mtime);
 	my $resp = $req->perform_lwp();
 	return $resp ? $resp->header('X-Amz-Multipart-Upload-Id') : $resp; # TODO: lowercase source headers!
 }
