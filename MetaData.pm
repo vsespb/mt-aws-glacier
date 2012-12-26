@@ -27,6 +27,8 @@ use Encode;
 
 use MIME::Base64 qw/encode_base64url decode_base64url/;
 use JSON::XS;
+use POSIX;
+use Time::Local;
 
 =pod
 
@@ -34,12 +36,14 @@ MT-AWS-GLACIER metadata format (x-amz-archive-description field).
 
 Version 'mt1'
 
-x-amz-archive-description = 'mt1' <space> base64url(json({'filename': utf8(FILENAME), 'mtime': MTIME}))
+x-amz-archive-description = 'mt1' <space> base64url(json({'filename': utf8(FILENAME), 'mtime': ISO8601}))
 
 base64url algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
 json can contain UTF-8 not-escaped characters
 json won't contain linefeed
-MTIME is filename Epoch (Unix time) timestamp
+ISO8601 is a file modify time (mtime) is the following format YYYYMMDDTHHMMSSZ (only UTC timezone)
+
+When decoding ISO8601, leap seconds are not supported, when encoding it's not stored (as it's actually not stored in filesystem)
 
 
 
@@ -79,8 +83,9 @@ sub _decode_json
 		return (undef, undef);
 	} else {
 		return (undef, undef) unless defined($h->{filename}) && defined($h->{mtime});
-		return (undef, undef) unless $h->{mtime} >= 0;
-		return ($h->{filename}, $h->{mtime});
+		my $iso8601 = _parse_iso8601($h->{mtime});
+		return undef unless $iso8601;
+		return ($h->{filename}, $iso8601);
 	}
 }
 
@@ -106,9 +111,19 @@ sub _encode_json
 	my ($relfilename, $mtime) = @_;
 	
 	$meta_coder->encode({
-		mtime => $mtime+0,
+		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
 		filename => $relfilename
 	}),
+}
+
+sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
+{
+	my ($str) = @_;
+	return undef unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
+	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
+	$sec = 59 if $sec == 60; # TODO: dirty workaround to avoid dealing with leap seconds
+	my $res = eval { timegm($sec,$min,$hour,$day,$month - 1,$year) };
+	return ($@ ne ' ') ? $res : undef;
 }
 
 1;

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 120;
+use Test::More tests => 148;
 use Test::Deep;
 use lib qw{.. ../..};
 use MetaData;
@@ -13,6 +13,8 @@ use MIME::Base64 qw/encode_base64url/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
+use POSIX;
+use DateTime;
 
 no warnings 'redefine';
 
@@ -70,8 +72,8 @@ no warnings 'redefine';
 		my $result = MetaData::_encode_json($_->[0], $_->[1]);
 		my $recoded = JSON::XS->new->utf8->allow_nonref->decode($result);
 		ok ($result !~ /[\r\n]/m, 'no linefeed');
-		ok( $result =~ /\:\s*$_->[1]/, "result should contain mtime as numeric");
-		is_deeply($recoded, { mtime => $_->[1], filename => $_->[0]}, "jsone string should be json with correct filename and mtime");
+##		ok( $result =~ /\:\s*$_->[1]/, "result should contain mtime as numeric");
+		is_deeply($recoded, { mtime => to_iso8601($_->[1]), filename => $_->[0]}, "jsone string should be json with correct filename and mtime");
 		my $result_decoded =decode("UTF-8", $result, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 		ok ($result_decoded =~ /\Q$_->[0]\E/m, "json string should contain UTF without escapes");
 		
@@ -84,11 +86,11 @@ no warnings 'redefine';
 # test meta_encode/meta_decode with fixtures
 {
 	for (
-		['file', 1352924178, 'mt1 eyJmaWxlbmFtZSI6ImZpbGUiLCJtdGltZSI6MTM1MjkyNDE3OH0'],
-		['file/a',1351924178, 'mt1 eyJmaWxlbmFtZSI6ImZpbGUvYSIsIm10aW1lIjoxMzUxOTI0MTc4fQ'],
-		['file/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6ImZpbGUvYS9iL2MvZCIsIm10aW1lIjoxMzUyMTI0MTc4fQ'],
-		['директория/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vYS9iL2MvZCIsIm10aW1lIjoxMzUyMTI0MTc4fQ'],
-		['директория/файл',1352124178, 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vw5HChMOQwrDDkMK5w5DCuyIsIm10aW1lIjoxMzUyMTI0MTc4fQ'],
+		['file', 1352924178, 'mt1 eyJmaWxlbmFtZSI6ImZpbGUiLCJtdGltZSI6IjIwMTIxMTE0VDIwMTYxOFoifQ'],
+		['file/a',1351924178, 'mt1 eyJmaWxlbmFtZSI6ImZpbGUvYSIsIm10aW1lIjoiMjAxMjExMDNUMDYyOTM4WiJ9'],
+		['file/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6ImZpbGUvYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
+		['директория/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
+		['директория/файл',1352124178, 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vw5HChMOQwrDDkMK5w5DCuyIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
 	) {
 		ok $_->[2] eq MetaData::meta_encode($_->[0], $_->[1]), "check meta_encode";
 		
@@ -98,24 +100,25 @@ no warnings 'redefine';
 	}
 }
 
-
 # test error catch while decoding
 {
 	ok !defined MetaData::meta_decode('zzz'), 'should return undef if no marker present';
 	ok !defined MetaData::meta_decode('mt1 zzz'), 'should return undef if utf is broken';
 	ok !defined MetaData::meta_decode('mt1 !!!!'), 'should return undef if base64 is broken';
 	ok !defined MetaData::meta_decode('mt1 z+z'), 'should return undef if base64 is broken';
-	ok defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": 1}').'=='), 'should allow base64 padding';
-	ok defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": 1}').'='), 'should allow base64 padding';
+	ok defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
+	ok defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('ff')), 'should return undef if json is broken';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": -1}')), 'should return undef if filename missed';
+	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
 	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
-	ok defined MetaData::meta_decode('mt1   '.encode_base64url('{ "filename": "a", "mtime": 1}')), 'should allow few spaces';
-	ok defined MetaData::meta_decode("mt1\t\t".encode_base64url('{ "filename": "a", "mtime": 1}')), 'should allow tabs';
-	ok defined MetaData::meta_decode(" \tmt1\t\t ".encode_base64url('{ "filename": "a", "mtime": 1}')), 'should allow leading spaces';
+	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
+	
+	ok defined MetaData::meta_decode('mt1   '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
+	ok defined MetaData::meta_decode("mt1\t\t".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
+	ok defined MetaData::meta_decode(" \tmt1\t\t ".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
 	
 	eval { MetaData::meta_decode('zzz') };
 	ok $@ eq '', 'should not override eval code';
@@ -135,6 +138,55 @@ no warnings 'redefine';
 	ok !defined MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
 	ok defined MetaData::meta_encode('я' x 128, 0), 'should allow 128 UTF characters';
 	ok defined MetaData::meta_encode('z' x 256, 0), 'should allow 256 ASCII characters';
+}
+
+# test _parse_iso8601
+{
+	for (
+		['20121225T100000Z', 1356429600],
+		['20130101T000000Z', 1356998400],
+		['20120229T000000Z', 1330473600],
+		['20130228T000000Z', 1362009600],
+		['20130228T235959Z', 1362095999],
+		['20120630T235959Z', 1341100799], # leap second
+		['20120701T000000Z', 1341100800], # after leap second
+		['20081231T235959Z', 1230767999], # before leap second
+#		['20081231T235960Z', 1230768000], # leap second is broken
+		['20090101T000000Z', 1230768000], # after leap second
+	) {
+		my $result = MetaData::_parse_iso8601($_->[0]);
+		ok($result == $_->[1], 'should parse iso8601');
+		
+		my $dt = DateTime->from_epoch( epoch => $_->[1] );
+		my $dt_8601 = sprintf("%04d%02d%02dT%02d%02d%02dZ", $dt->year, $dt->month, $dt->day, $dt->hour, $dt->min, $dt->sec);
+		ok( $_->[0] eq $dt_8601, 'iso8601 should be correct string');
+	}
+}
+
+# test different formats _parse_iso8601
+{
+	for (
+		['20121225T100000Z', 1356429600],
+		['20130101t000000Z', 1356998400],
+		['20120229 T 000000Z', 1330473600],
+		['2013-02-28T00:00:00Z', 1362009600],
+		['20130228 t 235959z', 1362095999],
+		['20120630T23:59:59  Z', 1341100799], # leap second
+		['  20120701 T 000000 Z', 1341100800], # after leap second
+		['2008 12 31 T 23 59 59Z', 1230767999], # before leap second
+		['2009 01-01T 00:00 00 z', 1230768000], # after leap second
+		['2009 01-01T 00:00 00.123 z', 1230768000],
+		['2009 01-01T 00:00 00,1234 z', 1230768000],
+	) {
+		my $result = MetaData::_parse_iso8601($_->[0]);
+		ok($result == $_->[1], 'should parse iso8601');
+	}
+}
+
+
+sub to_iso8601
+{
+	strftime("%Y%m%dT%H%M%SZ", gmtime(shift));
 }
 
 1;
