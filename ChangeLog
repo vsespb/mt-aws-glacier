@@ -1,5 +1,5 @@
 current snapshot
-	* Store Amazon Glacier metadata (x-amz-archive-description) when uploading file implemented (using custom format) 
+	* Storing Amazon Glacier metadata (x-amz-archive-description) when upload files implemented (using custom format).
 	* More verbose output for check-local-hash command
 	* Internal: Huge testsuite improvements
 	* Internal: Refactored: command-line options processing, Glacier requests code, main program 
