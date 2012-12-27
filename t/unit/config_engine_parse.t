@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 13;
+use Test::More tests => 22;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
