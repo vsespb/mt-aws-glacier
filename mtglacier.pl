@@ -81,7 +81,7 @@ sub dcs
 
 
 
-print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n";
+print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 
 my ($P) = @_;
 my ($src, $vault, $journal);
@@ -97,7 +97,7 @@ for (@$warnings) {
 	warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
 }	
 if ($errors) {
-	print STDERR $errors->[0]."\n";
+	print STDERR "ERROR: ".$errors->[0]."( use --help for help )\n\n";
 	exit(1);
 }
 
@@ -250,6 +250,32 @@ if ($action eq 'sync') {
 		$m//='';
 		print "$m\t$f\n";
 	}
+} elsif ($action eq 'help') {
+	print <<"END";
+Usage: mtglacier.pl COMMAND [OPTION]...
+
+Common options:
+	--config - config file
+	--journal - journal file (append only)
+	--from-dir - source local directory
+	--to-vault - Glacier vault name
+	--concurrency - number of parallel workers to run
+	--max-number-of-files - max number of files to sync/restore
+Commands:
+	sync
+		--partsize - Glacier multipart upload part size
+	purge-vault
+	restore
+	restore-completed
+	check-local-hash
+	
+Config format (text file):
+	key=YOURKEY                                                                                                                                                                                                                                                      
+	secret=YOURSECRET                                                                                                                                                                                                                               
+	region=us-east-1 #eu-west-1, us-east-1 etc
+
+END
+
 } else {
 	die "Wrong usage";
 }
