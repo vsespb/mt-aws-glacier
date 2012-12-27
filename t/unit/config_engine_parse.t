@@ -16,6 +16,9 @@ no warnings 'redefine';
 # This time we test both current config and current code together
 #
 
+my $max_concurrency = 30;
+my $too_big_concurrency = $max_concurrency+1;
+
 local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
 #	print Dumper({errors => $errors, warnings => $warnings, result => $result});
@@ -36,7 +39,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 
 {
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'sync --dir x --config y -journal z -to-va va -conc 11 --partsize=8 '
+	"sync --dir x --config y -journal z -to-va va -conc $too_big_concurrency --partsize=8 "
 	));
 	ok( $errors && $errors->[0] =~ /Max concurrency/, 'check concurrency range');
 }

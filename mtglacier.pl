@@ -94,7 +94,7 @@ my ($errors, $warnings, $action, $options) = ConfigEngine->new()->parse_options(
 
 
 for (@$warnings) {
-	warn "WARNING: $_";;
+	warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
 }	
 if ($errors) {
 	die $errors->[0];

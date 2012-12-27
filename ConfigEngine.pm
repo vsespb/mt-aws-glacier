@@ -42,7 +42,7 @@ my %options = (
 	'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
-'concurrency'         => { type => 'i', default => 4, validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
+'concurrency'         => { type => 'i', default => 4, validate => [ ['Max concurrency is 30,  Min is 1' => sub { $_ >= 1 && $_ <= 30 }],  ] },
 'partsize'            => { type => 'i', default => 16, validate => [ ['Part size must be power of two'   => sub { ($_ != 0) && (($_ & ($_ - 1)) == 0)}], ] },
 'max-number-of-files' => { type => 'i'},
 );
