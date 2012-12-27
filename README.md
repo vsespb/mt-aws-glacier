@@ -25,19 +25,20 @@ mt-aws-glacier is a client application	 for Glacier.
 * Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
+* File name and modification times are stored as Glacier metadata
 * UTF-8 support
 
 ## Coming-soon features
 
 * Multipart download (using HTTP Range header)
-* Ability to limit amount of archives to retrieve, by size, or by traffic/hour
 * Use journal file as flock() mutex
 * Checking integrity of remote files
 * Upload from STDIN
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
-* Split code to re-usable modules, publish on CPAN (Currently there are great existing Glacier modules on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*) 
-* Create/Delete vault function
+* Split code to re-usable modules, publishing on CPAN (Currently there are great existing Glacier modules on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*) 
+* Create/Delete vault functions
+
 
 [Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier 
 
@@ -48,12 +49,9 @@ mt-aws-glacier is a client application	 for Glacier.
 ## Important bugs/missed features
 
 * Zero length files are ignored
-* chunk size hardcoded as 2MB
 * Only multipart upload implemented, no plain upload
 * No way to specify SNS topic 
 * HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
-* Some internal refactoring needed
-* Journal file **required to restore backup**. To be fixed. Will store file metainformation in archive description.
 
 ## Production ready
 
@@ -90,9 +88,12 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 * With low "partsize" option you pay a bit more (Amazon charges for each upload request)
 
-* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500 or even signature expiration errors.
+* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
 
 * Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
+
+* For backup created with older versions (0.7x) of mt-aws-glacier, Journal file **required to restore backup**.
+
 
 [Amazon Glacier faq]:http://aws.amazon.com/glacier/faqs/#How_will_I_be_charged_when_retrieving_large_amounts_of_data_from_Amazon_Glacier
 
