@@ -80,7 +80,9 @@ sub parse_options
 	}
 
 	my $command = shift @argv;
+	return (["Please specify command"], undef) unless $command;
 	my $command_ref = $commands{$command};
+	return (["Unknown command"], undef) unless $command_ref;
 	
 	my @getopts;
 	for my $o ( @{$command_ref->{req}}, @{$command_ref->{optional}}, @{$command_ref->{deprecated}} ) {
@@ -104,7 +106,7 @@ sub parse_options
 	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
-	return (["Please specify config"], @warnings ? \@warnings : undef) unless $result{config};
+	return (["Please specify --config"], @warnings ? \@warnings : undef) unless $result{config};
 	
 	
 	my $config_result = $self->read_config($result{config});
@@ -144,7 +146,7 @@ sub parse_options
 			if (defined($options{$o}->{default})) { # Options from config are used here!
 				$result{$o} = $options{$o}->{default};
 			} else {
-				return (["Please specify $o"], @warnings ? \@warnings : undef);
+				return (["Please specify --$o"], @warnings ? \@warnings : undef);
 			}
 		}
 	}

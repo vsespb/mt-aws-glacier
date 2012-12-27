@@ -97,7 +97,8 @@ for (@$warnings) {
 	warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
 }	
 if ($errors) {
-	die $errors->[0];
+	print STDERR $errors->[0]."\n";
+	exit(1);
 }
 
 
