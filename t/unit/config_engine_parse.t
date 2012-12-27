@@ -85,6 +85,40 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 }
 
 {
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	''
+	));
+	ok( $errors && $errors->[0] eq 'Please specify command', "should catch missing command" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'--myvault x'
+	));
+	ok( $errors, "should catch missing command even if there are options" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'synx'
+	));
+	ok( $errors && $errors->[0] eq 'Unknown command', "should catch unknown command" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	for (qw! help -help --help ---help!, qq!  --help !, qq! -help !) {
+		my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+		$_
+		));
+		ok( !$errors && !$warnings && !$result && $command eq 'help', "should catch help [[$_]]" );
+	}
+}
+
+{
 	my $cfg;
 	local *ConfigEngine::read_config = sub { $cfg };
 

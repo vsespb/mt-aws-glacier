@@ -81,6 +81,7 @@ sub parse_options
 
 	my $command = shift @argv;
 	return (["Please specify command"], undef) unless $command;
+	return (undef, undef, 'help', undef) if $command =~ /\bhelp\b/i;
 	my $command_ref = $commands{$command};
 	return (["Unknown command"], undef) unless $command_ref;
 	
