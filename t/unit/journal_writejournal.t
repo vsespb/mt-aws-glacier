@@ -20,6 +20,7 @@ my $data = {
 	mtime => 1355566755,
 	relfilename => 'def/abc',
 	treehash => '1368761bd826f76cae8b8a74b3aae210b476333484c2d612d061d52e36af631a',
+	jobid => '6JpQ39WaMaD8O2N5BU5ieEPyAwtGLNdmNmYvomLjvD4JpivO3GwfCWs_sDnla6gl1Y9v-ceUdqU-pqaaz8FgOqc-yxZG'
 };
 
 #
@@ -64,8 +65,8 @@ my $data = {
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		
-		$J->add_entry({ type=> 'RETRIEVE_JOB', archive_id => $data->{archive_id}});
-		ok($line eq "A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}");
+		$J->add_entry({ type=> 'RETRIEVE_JOB', archive_id => $data->{archive_id}, job_id => $data->{jobid}});
+		ok($line eq "A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{jobid}");
 }
 
 1;
