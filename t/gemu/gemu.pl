@@ -231,6 +231,7 @@ sub child_worker
 			my $job_id = gen_id();
 			store($account, $vault, 'jobs', $job_id,
 				job => {
+					id => $job_id,
 					type => 'inventory-retrieval',
 					completion_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 					creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
@@ -260,16 +261,28 @@ sub child_worker
 			while (<$bpath/*>) { #TODO: sort
 				my $j = fetch_raw("$_/job");
 				
-				push @jobs, {
-					Action => 'ArchiveRetrieval',
-					ArchiveId => $j->{archive_id}||confess("1 archive_id"),
-					ArchiveSizeInBytes => $j->{archive_size}||confess("2 archive size"),
-					ArchiveSHA256TreeHash => $j->{treehash}||confess("3 treehash"),
-					Completed => 'true',
-					CompletionDate => $j->{completion_date}||confess("4 completion date"),
-					CreationDate => $j->{creation_date}||confess("5 creation date"),
-					JobId => $j->{id}||confess("6 job id"),
-				} if $j->{type} eq 'archive-retrieval';
+				if ($j->{type} eq 'archive-retrieval') {
+					push @jobs, {
+						Action => 'ArchiveRetrieval',
+						ArchiveId => $j->{archive_id}||confess("1 archive_id"),
+						ArchiveSizeInBytes => $j->{archive_size}||confess("2 archive size"),
+						ArchiveSHA256TreeHash => $j->{treehash}||confess("3 treehash"),
+						Completed => 'true',
+						CompletionDate => $j->{completion_date}||confess("4 completion date"),
+						CreationDate => $j->{creation_date}||confess("5 creation date"),
+						JobId => $j->{id}||confess("6 job id"),
+					} ;
+				} elsif ($j->{type} eq 'inventory-retrieval') {
+					push @jobs, {
+						Action => 'InventoryRetrieval',
+						Completed => 'true',
+						CompletionDate => $j->{completion_date}||confess("4 completion date"),
+						CreationDate => $j->{creation_date}||confess("5 creation date"),
+						JobId => $j->{id}||confess("6 job id"),
+					} ;
+				} else {
+					croak;
+				}
 			}
 		}
 		my $resp = HTTP::Response->new(200, "Fine");
