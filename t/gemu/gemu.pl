@@ -46,6 +46,7 @@ sub child_worker
 		defined($account)||croak;
 		defined($vault)||croak;
 		my $partsize = $data->{headers}->{'x-amz-part-size'}||croak;
+		croak unless $partsize >=1024 && ($partsize % 1048576 == 0) && (   ($partsize != 0) && (($partsize & ($partsize - 1)) == 0)   );
 		
 		
 		my $description = $data->{headers}->{'x-amz-archive-description'}||croak;
@@ -72,11 +73,12 @@ sub child_worker
 		croak unless $data->{headers}->{'content-range'} =~ /^bytes (\d+)\-(\d+)\/\*$/;
 		my ($start, $finish) = ($1,$2);
 		croak unless $finish >= $start;
-		my $len = $start - $finish + 1;
+		my $len = $finish - $start + 1;
 		
 		my $archive = fetch($account, $vault, 'upload', $upload_id, 'archive')->{archive};
 		
-		#croak if ($archive->{partsize} != $len);
+		croak "$data->{headers}->{'content-length'} != $len" if ($data->{headers}->{'content-length'} != $len);
+		croak "$archive->{partsize} > $len" if ($len > $archive->{partsize});
 		
 		croak unless sha256_hex(${$data->{bodyref}}) eq $data->{headers}->{'x-amz-content-sha256'};
 		
@@ -107,9 +109,16 @@ sub child_worker
 		my $bpath = basepath($account, $vault, 'upload', $upload_id);
 		
 		my $parts = {};
+		my $last_part = 0;
 		while (<$bpath/part_*>) {
 			/part_(\d+)_(\d+)$/;
 			my ($start, $finish) = ($1, $2);
+			my $len = $finish - $start + 1;
+			
+			confess "$archive_upload->{partsize} > $len" if ($len > $archive_upload->{partsize});
+			croak "previous part was smaller than partsize" if $last_part;
+			$last_part = 1 if ($len < $archive_upload->{partsize});
+			
 			$parts->{$start} = { finish => $finish, filename => $_ };
 		}
 		
@@ -191,7 +200,7 @@ sub child_worker
 				creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 			});
 			
-			my $resp = HTTP::Response->new(201, "Fine");
+			my $resp = HTTP::Response->new(202, "Accepted");
 			$resp->header('x-amz-job-id', $job_id);
 			return $resp;
 			
@@ -229,7 +238,7 @@ sub child_worker
 			);
 			store_binary($account, $vault, 'jobs', $job_id, 'output', \$output); # TODO: by ref
 			
-			my $resp = HTTP::Response->new(201, "Fine");
+			my $resp = HTTP::Response->new(202, "Accepted");
 			$resp->header('x-amz-job-id', $job_id);
 			return $resp;
 		} else {
