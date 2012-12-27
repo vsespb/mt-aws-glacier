@@ -37,7 +37,7 @@ my $data = {
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		
-		$J->add_entry({ type=> 'CREATED', mtime => $data->{mtime}, archive_id => $data->{archive_id}, size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
+		$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => $data->{mtime}, archive_id => $data->{archive_id}, size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
 		ok($line eq "A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
 }
 
@@ -51,7 +51,7 @@ my $data = {
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		
-		$J->add_entry({ type=> 'DELETED', archive_id => $data->{archive_id}, relfilename => $data->{relfilename} });
+		$J->add_entry({ type=> 'DELETED', time => $data->{time}, archive_id => $data->{archive_id}, relfilename => $data->{relfilename} });
 		ok($line eq "A\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
 }
 
@@ -65,7 +65,7 @@ my $data = {
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		
-		$J->add_entry({ type=> 'RETRIEVE_JOB', archive_id => $data->{archive_id}, job_id => $data->{jobid}});
+		$J->add_entry({ type=> 'RETRIEVE_JOB', time => $data->{time}, archive_id => $data->{archive_id}, job_id => $data->{jobid}});
 		ok($line eq "A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{jobid}");
 }
 

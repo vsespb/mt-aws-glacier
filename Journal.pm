@@ -125,19 +125,19 @@ sub add_entry
 	confess unless $self->{output_version} eq 'A';
 	
 	# TODO: time should be ascending?
-	my $now = $self->_time();
+
 	if ($e->{type} eq 'CREATED') {
 		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
-		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id size mtime treehash relfilename/);
-		$self->_write_line("A\t$now\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$e->{relfilename}");
+		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id size mtime treehash relfilename/);
+		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$e->{relfilename}");
 	} elsif ($e->{type} eq 'DELETED') {
 		#  DELETED $data->{archive_id} $data->{relfilename}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id relfilename/);
-		$self->_write_line("A\t$now\tDELETED\t$e->{archive_id}\t$e->{relfilename}");
+		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$e->{relfilename}");
 	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
 		#  RETRIEVE_JOB $data->{archive_id}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id job_id/);
-		$self->_write_line("A\t$now\tRETRIEVE_JOB\t$e->{archive_id}\t$e->{job_id}");
+		$self->_write_line("A\t$e->{time}\tRETRIEVE_JOB\t$e->{archive_id}\t$e->{job_id}");
 	} else {
 		confess "Unexpected else";
 	}
@@ -152,10 +152,6 @@ sub _write_line
 	# TODO: fsync()
 }
 
-sub _time
-{
-	time();
-}
 #
 # Reading file listing
 #

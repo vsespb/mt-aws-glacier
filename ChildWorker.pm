@@ -82,6 +82,7 @@ sub process
 					archive_id => $archive_id,
 					journal_entry => {
 						type=> 'CREATED',
+						'time' => $req->{last_request_time},
 						archive_id => $archive_id,
 						size => $data->{filesize},
 						mtime => $data->{mtime},
@@ -97,6 +98,7 @@ sub process
 				$result = {
 					journal_entry => {
 						type=> 'DELETED',
+						'time' => $req->{last_request_time},
 						archive_id => $data->{archive_id},
 						relfilename => $data->{relfilename}
 						}
@@ -116,6 +118,7 @@ sub process
 				$result = {
 					journal_entry => {
 						type=> 'RETRIEVE_JOB',
+						'time' => $req->{last_request_time},
 						archive_id => $data->{archive_id},
 						job_id => $r,
 						}
