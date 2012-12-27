@@ -55,7 +55,7 @@ sub get_task
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {
-			my $part_th = TreeHash->new(); #TODO: we can sha twice for same data chunk here
+			my $part_th = TreeHash->new(); #TODO: We calc sha twice for same data chunk here
 			$part_th->eat_data(\$data);
 			$part_th->calc_tree();
 			
