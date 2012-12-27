@@ -56,24 +56,26 @@ sub process
 				return;
 			}
 			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
-			
 			my $result = undef;
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
 				 # TODO: partsize confusing, need use another name for option partsize
-				my $uploadid = GlacierRequest->create_multipart_upload($self->{options}, $data->{partsize}, $data->{relfilename}, $data->{mtime});
+				my $req = GlacierRequest->new($self->{options});
+				my $uploadid = $req->create_multipart_upload($data->{partsize}, $data->{relfilename}, $data->{mtime});
 				confess unless $uploadid;
 				$result = { upload_id => $uploadid };
 				$console_out = "Created an upload_id $uploadid";
 			} elsif ($action eq "upload_part") {
-				my $r = GlacierRequest->upload_part($self->{options}, $data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->upload_part($data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
 				return undef unless $r;
 				$result = { uploaded => $data->{start} } ;
 				$console_out = "Uploaded part for $data->{filename} at offset [$data->{start}]";
 			} elsif ($action eq 'finish_upload') {
 				# TODO: move vault to task, not to options!
-				my $archive_id = GlacierRequest->finish_multipart_upload($self->{options}, $data->{upload_id}, $data->{filesize}, $data->{final_hash});
+				my $req = GlacierRequest->new($self->{options});
+				my $archive_id = $req->finish_multipart_upload($data->{upload_id}, $data->{filesize}, $data->{final_hash});
 				return undef unless $archive_id;
 				$result = {
 					final_hash => $data->{final_hash},
@@ -89,7 +91,8 @@ sub process
 				};
 				$console_out = "Finished $data->{filename} hash [$data->{final_hash}] archive_id [$archive_id]";
 			} elsif ($action eq 'delete_archive') {
-				my $r = GlacierRequest->delete_archive($self->{options}, $data->{archive_id});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->delete_archive($data->{archive_id});
 				return undef unless $r;
 				$result = {
 					journal_entry => {
@@ -101,11 +104,14 @@ sub process
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
 				mkpath(dirname($data->{filename}));
-				my $r = GlacierRequest->retrieval_download_job($self->{options}, $data->{jobid}, $data->{filename});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
+				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
 			} elsif ($action eq 'retrieve_archive') {
-				my $r = GlacierRequest->retrieve_archive($self->{options}, $data->{archive_id});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieve_archive( $data->{archive_id});
 				return undef unless $r;
 				$result = {
 					journal_entry => {
@@ -115,8 +121,9 @@ sub process
 				};
 				$console_out = "Retrieve Archive $data->{archive_id}";
 			} elsif ($action eq 'retrieval_fetch_job') {
-				my $r = GlacierRequest->retrieval_fetch_job($self->{options}, $data->{marker});
-				return undef unless $r;
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_fetch_job($data->{marker});
+				confess unless $r;
 				$result = { response => $r };
 				$console_out = "Retrieve Job List";
 			} else {
