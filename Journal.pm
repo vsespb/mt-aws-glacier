@@ -136,8 +136,8 @@ sub add_entry
 		$self->_write_line("A\t$now\tDELETED\t$e->{archive_id}\t$e->{relfilename}");
 	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
 		#  RETRIEVE_JOB $data->{archive_id}
-		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id/);
-		$self->_write_line("A\t$now\tRETRIEVE_JOB\t$e->{archive_id}");
+		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id job_id/);
+		$self->_write_line("A\t$now\tRETRIEVE_JOB\t$e->{archive_id}\t$e->{job_id}");
 	} else {
 		confess "Unexpected else";
 	}

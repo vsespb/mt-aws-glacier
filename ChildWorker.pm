@@ -117,6 +117,7 @@ sub process
 					journal_entry => {
 						type=> 'RETRIEVE_JOB',
 						archive_id => $data->{archive_id},
+						job_id => $r,
 						}
 				};
 				$console_out = "Retrieve Archive $data->{archive_id}";

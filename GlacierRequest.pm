@@ -157,7 +157,7 @@ END
 	$self->{dataref} = \$body;
 	
 	my $resp = $self->perform_lwp();
-	return $resp ? 1 : undef;
+	return $resp ? $resp->header('x-amz-job-id') : undef;
 }
 
 sub retrieve_inventory
