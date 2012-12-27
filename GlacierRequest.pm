@@ -33,6 +33,7 @@ use Carp;
 
 
 
+
 sub new
 {
 	my ($class, $options) = @_;
@@ -323,20 +324,22 @@ sub perform_lwp
 		} else {
 			confess;
 		}
-		
 		for ( @{$self->{headers}}, @{$self->{req_headers}} ) {
 			$req->header( $_->{name}, $_->{value} );
 		}
-
 		my $resp = undef;
+
+		my ($t0, $t1) = (time(), undef);
 		if ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
 		} else {
 			$resp = $ua->request($req);
 		}
+		$t1 = time();
+		my $dt = $t1-$t0;
 
 		if ($resp->code =~ /^(500|408)$/) {
-			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry\n";
+			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
 			if ($i <= 5) {
 				sleep 1;
 			} elsif ($i <= 10) {
@@ -360,6 +363,7 @@ sub perform_lwp
 	}
 	return undef;
 }
+
 
 sub get_signature_key
 {
