@@ -339,6 +339,7 @@ sub parse_request
 	defined($date8601)||croak;
 	defined($headers_hash->{'x-amz-date'})||croak;
 	
+	# TODO: check $date8601 vs current time !
 
     # QUERY_STRING
     	
