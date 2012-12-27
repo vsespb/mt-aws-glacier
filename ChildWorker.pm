@@ -60,7 +60,7 @@ sub process
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
-				 # TODO: partsize confusing, need use another name for option partsize
+				 # TODO: partsize confusing, need use another name for option partsize. partsize Amazon Upload partsize vs Download 'Range' partsize
 				my $req = GlacierRequest->new($self->{options});
 				my $uploadid = $req->create_multipart_upload($data->{partsize}, $data->{relfilename}, $data->{mtime});
 				confess unless $uploadid;
