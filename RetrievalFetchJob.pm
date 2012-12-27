@@ -63,7 +63,7 @@ sub finish_task
 		my $scalar = $json->decode( $task->{result}->{response} );
 		for my $job (@{$scalar->{JobList}}) {
 			#print "$job->{Completed}|$job->{JobId}|$job->{ArchiveId}\n";
-			if ($job->{Completed}) {
+			if ($job->{Action} eq 'ArchiveRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
 				if (my $a = $self->{archives}->{$job->{ArchiveId}}) {
 					if (!$self->{seen}->{ $job->{ArchiveId} }) {
 						$self->{seen}->{ $job->{ArchiveId} }=1;
