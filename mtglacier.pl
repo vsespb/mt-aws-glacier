@@ -86,7 +86,6 @@ print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov h
 my ($P) = @_;
 my ($src, $vault, $journal);
 my $maxchildren = 4;
-my $partsize = 16;
 my $config = {};
 my $config_filename;
 
@@ -106,6 +105,9 @@ if ($errors) {
 
 if ($action eq 'sync') {
 	die "Not a directory $options->{dir}" unless -d $options->{dir};
+	
+	my $partsize = delete $options->{partsize};
+	
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	
 	my $FE = ForkEngine->new(options => $options);
@@ -217,6 +219,34 @@ if ($action eq 'sync') {
 	}
 	print "TOTALS:\n$no_error OK\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
 	exit(1) if $error_hash || $error_size || $error_missed;
+} elsif ($action eq 'retrieve-inventory') {
+	my $req = GlacierRequest->new($options);
+	my $r = $req->retrieve_inventory();
+	print $r->dump;
+} elsif ($action eq 'download-inventory') {
+	my $req = GlacierRequest->new($options);
+	my $r = $req->download_inventory($options->{'job-id'}, $options->{'output-journal'});
+	
+	my $STR = $r->content;
+	
+	open F, ">_str";
+	binmode F;
+	print F $STR;
+	close F;
+	
+	my $data = JSON::XS->new->allow_nonref->utf8->decode($STR);
+	for (@{$data->{'ArchiveList'}}) {
+		print $_->{ArchiveId};
+		print "\t";
+		print $_->{ArchiveDescription};
+		print "\t";
+		print $_->{CreationDate};
+		print "\t";
+		print $_->{SHA256TreeHash};
+		print "\t";
+		my ($f, $m) = MetaData::meta_decode($_->{ArchiveDescription});
+		print "$m\t$f\n";
+	}
 } else {
 	die "Wrong usage";
 }

@@ -40,7 +40,6 @@ sub new
 	bless $self, $class;
 	
 	defined($self->{$_} = $options->{$_})||confess for (qw/vault region key secret/);
-	$self->{$_} = $options->{$_} for (qw/partsize/);
 	
 	$self->{service} ||= 'glacier';
 	$self->{account_id} = '-';
@@ -62,21 +61,21 @@ sub add_header
 
 sub create_multipart_upload
 {
-	my ($self, $size, $relfilename, $mtime) = @_;
+	my ($self, $partsize, $relfilename, $mtime) = @_;
 	
 	defined($relfilename)||confess;
 	defined($mtime)||confess;
-	defined($self->{partsize})||confess;
+	$partsize||confess;
 	
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads";
 	$self->{method} = 'POST';
 
-	$self->add_header('x-amz-part-size', $self->{partsize});
+	$self->add_header('x-amz-part-size', $partsize);
 	defined($self->{description} = MetaData::meta_encode($relfilename, $mtime))||confess; #TODO: gracefull error in case filename too big
 	$self->add_header('x-amz-archive-description', $self->{description});
 	
 	my $resp = $self->perform_lwp();
-	return $resp ? $resp->header('X-Amz-Multipart-Upload-Id') : undef; # TODO: lowercase source headers!
+	return $resp ? $resp->header('x-amz-multipart-upload-id') : undef;
 }
 
 sub upload_part
@@ -118,7 +117,7 @@ sub finish_multipart_upload
 	$self->add_header('x-amz-archive-size', $size);
 
 	my $resp = $self->perform_lwp();
-	return $resp ? $resp->header('X-Amz-Archive-Id') : undef;
+	return $resp ? $resp->header('x-amz-archive-id') : undef;
 }
 
 
@@ -160,6 +159,28 @@ END
 	return $resp ? 1 : undef;
 }
 
+sub retrieve_inventory
+{
+	my ($self) = @_;
+	
+	$self->add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
+	$self->{method} = 'POST';
+
+	#  add "SNSTopic": "sometopic"
+	my $body = <<"END";
+{
+  "Type": "inventory-retrieval",
+  "Format": "JSON"
+}
+END
+
+	$self->{dataref} = \$body;
+	
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp : undef;
+}
+
 sub retrieval_fetch_job
 {
 	my ($self, $marker) = @_;
@@ -176,6 +197,7 @@ sub retrieval_fetch_job
 }
 
 
+# TODO: rename
 sub retrieval_download_job
 {
 	my ($self, $jobid, $filename) = @_;
@@ -191,6 +213,19 @@ sub retrieval_download_job
 	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
 }
 
+
+sub download_inventory
+{
+	my ($self, $jobid) = @_;
+
+	$jobid||confess;
+   
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
+	$self->{method} = 'GET';
+
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp : undef; # $resp->decoded_content is undefined here as content_file used
+}
 
 
 
@@ -258,16 +293,6 @@ sub _sign
 
 	push @{$self->{req_headers}}, { name => 'Authorization', value => $auth};
 }
-
-sub upload_archive
-{
-	my ($class, $options, $dataref) = @_;
-	my $req = $class->new(options => $options);
-	$req->init_upload_archive(vault => $options->{vault}, dataref => $dataref);
-	my $resp = $req->perform_lwp();
-	return $resp ? $resp->header('X-Amz-Archive-Id') : undef;
-}
-
 
 
 sub perform_lwp

@@ -39,6 +39,7 @@ my %deprecations = (
 my %options = (
 'config'              => { type => 's' },
 'journal'             => { type => 's' }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
+	'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
 'concurrency'         => { type => 'i', default => 4, validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
@@ -46,14 +47,14 @@ my %options = (
 'max-number-of-files' => { type => 'i'},
 );
 
-# TODO: from-dir is optional, it warns that dir should be used. however from-dir is deprecated for this command!
-# TODO: deprecated options should be removed from result
 my %commands = (
 'sync'              => { req => [qw/config journal dir vault concurrency partsize/],                 optional => [qw/max-number-of-files/]},
 'purge-vault'       => { req => [qw/config journal vault concurrency/],                    optional => [qw//], deprecated => [qw/from-dir/] },
 'restore'           => { req => [qw/config journal dir vault max-number-of-files concurrency/], },
 'restore-completed' => { req => [qw/config journal vault dir concurrency/],                 optional => [qw//]},
 'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },
+	'retrieve-inventory' => { req => [qw/config vault/],                 optional => [qw//]},
+	'download-inventory' => { req => [qw/config vault job-id/],                 optional => [qw//]},
 );
 
 
@@ -157,6 +158,7 @@ sub parse_options
 		}
 	}
 	
+
 	return (undef, @warnings ? \@warnings : undef, $command, \%result);
 }
 	
