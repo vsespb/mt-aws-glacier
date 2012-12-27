@@ -125,6 +125,7 @@ if ($action eq 'sync') {
 		my $R = $FE->{parent_worker}->process_task($lt, $j);
 		die unless $R;
 	}
+	$FE->terminate_children();
 } elsif ($action eq 'purge-vault') {
 	my $j = Journal->new(journal_file => $options->{journal});
 	
@@ -141,7 +142,7 @@ if ($action eq 'sync') {
 	} else {
 		print "Nothing to delete\n";
 	}
-	
+	$FE->terminate_children();
 } elsif ($action eq 'restore') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	confess unless $options->{'max-number-of-files'};
@@ -161,7 +162,7 @@ if ($action eq 'sync') {
 	} else {
 		print "Nothing to restore\n";
 	}
-	
+	$FE->terminate_children();
 } elsif ($action eq 'restore-completed') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	
@@ -179,7 +180,7 @@ if ($action eq 'sync') {
 	} else {
 		print "Nothing to restore\n";
 	}
-	
+	$FE->terminate_children();
 } elsif ($action eq 'check-local-hash') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	$j->read_journal();
@@ -219,10 +220,6 @@ if ($action eq 'sync') {
 } else {
 	die "Wrong usage";
 }
-
-
-
-
 
 
 1;
