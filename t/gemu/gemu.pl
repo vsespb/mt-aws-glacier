@@ -109,24 +109,25 @@ sub child_worker
 		my $bpath = basepath($account, $vault, 'upload', $upload_id);
 		
 		my $parts = {};
-		my $last_part = 0;
 		while (<$bpath/part_*>) {
 			/part_(\d+)_(\d+)$/;
 			my ($start, $finish) = ($1, $2);
 			my $len = $finish - $start + 1;
 			
 			confess "$archive_upload->{partsize} > $len" if ($len > $archive_upload->{partsize});
-			croak "previous part was smaller than partsize" if $last_part;
-			$last_part = 1 if ($len < $archive_upload->{partsize});
 			
-			$parts->{$start} = { finish => $finish, filename => $_ };
+			$parts->{$start} = { start => $start, finish => $finish, size => $len, filename => $_ };
 		}
 		
 		my $currstart = 0;
 		
 		my @parts_a;
+		my $last_part = 0;
 		while ($currstart < $len) {
+			croak "previous part was smaller than partsize" if $last_part;
 			my $p = $parts->{$currstart}||croak "Part $currstart not found (len = $len)";
+			confess "$archive_upload->{partsize} > $len" if ($p->{size} > $archive_upload->{partsize});
+			$last_part = 1 if ($p->{size} < $archive_upload->{partsize});
 			push @parts_a, $p->{filename};
 			$currstart = $p->{finish}+1;
 			croak if $currstart > $len;
@@ -270,6 +271,7 @@ sub child_worker
 						Completed => 'true',
 						CompletionDate => $j->{completion_date}||confess("4 completion date"),
 						CreationDate => $j->{creation_date}||confess("5 creation date"),
+						StatusCode => "Succeeded",
 						JobId => $j->{id}||confess("6 job id"),
 					} ;
 				} elsif ($j->{type} eq 'inventory-retrieval') {
@@ -278,6 +280,7 @@ sub child_worker
 						Completed => 'true',
 						CompletionDate => $j->{completion_date}||confess("4 completion date"),
 						CreationDate => $j->{creation_date}||confess("5 creation date"),
+						StatusCode => "Succeeded",
 						JobId => $j->{id}||confess("6 job id"),
 					} ;
 				} else {
