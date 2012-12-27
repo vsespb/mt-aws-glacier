@@ -12,6 +12,7 @@ use JSON::XS;
 use lib qw{.. ../..};
 use TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
+use Time::Local;
 use 5.010;
 
 my $children_count = 20;
@@ -45,6 +46,8 @@ sub child_worker
 		defined($account)||croak;
 		defined($vault)||croak;
 		my $partsize = $data->{headers}->{'x-amz-part-size'}||croak;
+		
+		
 		my $description = $data->{headers}->{'x-amz-archive-description'}||croak;
 		my $upload_id = gen_id(); # TODO: upload ID not archive ID!
 		store($account, $vault, 'upload', $upload_id, archive => { partsize => $partsize, description => $description});
@@ -61,7 +64,7 @@ sub child_worker
 		defined($upload_id)||croak;
 		
 		croak unless $data->{headers}->{'content-type'} eq 'application/octet-stream';
-		croak unless $data->{headers}->{'content-length'} > 0;
+		croak unless $data->{headers}->{'content-length'} > 0; # TODO: check length equal to partsize!
 		croak unless defined($data->{headers}->{'x-amz-content-sha256'});
 		croak unless defined($data->{headers}->{'x-amz-sha256-tree-hash'});
 		croak unless defined($data->{headers}->{'content-range'});
@@ -144,6 +147,8 @@ sub child_worker
 		croak unless $th eq $treehash;
 		
 		store($account, $vault, 'archive', $archive_id, archive => { 
+			id => $archive_id,
+			creation_timestamp => time(),
 			partsize => $archive_upload->{partsize}||confess,
 			description => $archive_upload->{description}||confess,
 			treehash => $treehash,
@@ -187,8 +192,46 @@ sub child_worker
 			});
 			
 			my $resp = HTTP::Response->new(201, "Fine");
+			$resp->header('x-amz-job-id', $job_id);
 			return $resp;
 			
+		} elsif ($postdata->{Type} eq 'inventory-retrieval') {
+			my $now = time();
+			
+			
+			my $bpath = basepath($account, $vault, 'archive');
+			my $data = {
+				"VaultARN" => "arn:aws:glacier:us-east-1:$account:vaults/$vault", # TODO: correct string with region
+				"InventoryDate" => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+				"ArchiveList" => [],
+			};
+			my $archive_list = $data->{"ArchiveList"};
+			while (<$bpath/*>) { #TODO: sort
+				my $a = fetch_raw("$_/archive");
+				push @$archive_list, {
+					ArchiveId => $a->{id}||confess,
+					ArchiveDescription => $a->{description}||confess, # TODO: what if '0' ?
+					CreationDate => strftime("%Y%m%dT%H%M%SZ", gmtime($a->{creation_timestamp}||confess)),
+					Size => $a->{archive_size}||confess, # TODO if 0 ?
+					SHA256TreeHash => $a->{treehash}||confess,
+				};
+			}
+			
+			my $output = JSON::XS->new->allow_nonref->ascii->pretty->encode($data);
+			
+			my $job_id = gen_id();
+			store($account, $vault, 'jobs', $job_id,
+				job => {
+					type => 'inventory-retrieval',
+					completion_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+					creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+				},
+			);
+			store_binary($account, $vault, 'jobs', $job_id, 'output', \$output); # TODO: by ref
+			
+			my $resp = HTTP::Response->new(201, "Fine");
+			$resp->header('x-amz-job-id', $job_id);
+			return $resp;
 		} else {
 			croak;
 		}
@@ -230,19 +273,30 @@ sub child_worker
 		defined($job_id)||croak;
 
 		my $job = fetch($account, $vault, 'jobs', $job_id, 'job')->{job}||croak;
-		my $archive_id = $job->{archive_id}||confess;
-		my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak; # TODO: what if archive already deleted?
-		my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
 
-		print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
-		open (IN, "<$archive_path")||confess;
-		binmode IN;
-		sysread(IN, my $buf, -s $archive_path);
-		close IN;
-
-		my $resp = HTTP::Response->new(200, "Fine");
-		$resp->content($buf);
-		return $resp;
+		if ($job->{type} eq 'archive-retrieval') {
+			my $archive_id = $job->{archive_id}||confess;
+			my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak; # TODO: what if archive already deleted?
+			my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
+	
+			print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
+			open (IN, "<$archive_path")||confess;
+			binmode IN;
+			sysread(IN, my $buf, -s $archive_path);
+			close IN;
+	
+			my $resp = HTTP::Response->new(200, "Fine");
+			$resp->content($buf);
+			return $resp;
+		} elsif ($job->{type} eq 'inventory-retrieval'){
+			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
+			defined($output)||croak;
+			my $resp = HTTP::Response->new(200, "Fine");
+			$resp->content($$output);
+			return $resp;
+		} else {
+			croak;
+		}
 	# DELETE FILE 	
 	} elsif (($data->{method} eq 'DELETE') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/archives/(.*?)$!)) {
 		my ($account, $vault, $archive_id) = ($1,$2,$3);
@@ -401,11 +455,23 @@ sub fetch
 	return $result;
 }
 
+sub fetch_binary
+{
+	my ($account, $vault, $idtype, $id, $name) = @_;
+	my $path = basepath($account, $vault, $idtype, $id, $name);
+	open (F, "<:encoding(UTF-8)", $path);
+	sysread(F, my $buf, -s $path);
+	close F;
+	return undef unless defined($buf);
+	\$buf;
+}
+
 sub fetch_raw
 {
 	my ($path) = @_;
 	open (F, "<:encoding(UTF-8)", $path);
 	sysread(F, my $buf, -s $path);
+	close F;
 	$json_coder->decode($buf);
 }
 
