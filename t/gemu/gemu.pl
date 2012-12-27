@@ -259,16 +259,17 @@ sub child_worker
 			my $bpath = basepath($account, $vault, 'jobs');
 			while (<$bpath/*>) { #TODO: sort
 				my $j = fetch_raw("$_/job");
+				
 				push @jobs, {
 					Action => 'ArchiveRetrieval',
-					ArchiveId => $j->{archive_id}||confess,
-					ArchiveSizeInBytes => $j->{archive_size}||confess,
-					ArchiveSHA256TreeHash => $j->{treehash}||confess,
+					ArchiveId => $j->{archive_id}||confess("1 archive_id"),
+					ArchiveSizeInBytes => $j->{archive_size}||confess("2 archive size"),
+					ArchiveSHA256TreeHash => $j->{treehash}||confess("3 treehash"),
 					Completed => 'true',
-					CompletionDate => $j->{completion_date}||confess,
-					CreationDate => $j->{creation_date}||confess,
-					JobId => $j->{id}||confess,
-				};
+					CompletionDate => $j->{completion_date}||confess("4 completion date"),
+					CreationDate => $j->{creation_date}||confess("5 creation date"),
+					JobId => $j->{id}||confess("6 job id"),
+				} if $j->{type} eq 'archive-retrieval';
 			}
 		}
 		my $resp = HTTP::Response->new(200, "Fine");
