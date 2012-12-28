@@ -77,7 +77,7 @@ sub finish_task
 		if ($scalar->{Marker}) {
 			return ("ok replace", RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) );
 		} elsif (scalar @{$self->{downloads}}) {
-			return ("ok replace", RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO
+			return ("ok replace", RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
 		} else {
 			return ("done");
 		}
