@@ -70,6 +70,7 @@ sub process_line
 	
 	if ($line =~ /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/) {
 		my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) = ($1,$2,$3,$4,$5,$6);
+		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		$self->_add_file($relfilename, {
 			time => $time,
 			archive_id => $archive_id,
@@ -86,6 +87,7 @@ sub process_line
 	
 	} elsif ($line =~ /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
 		my ($time, $archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4,$5);
+		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		#die if $self->{journal_h}->{$relfilename};
 		$self->_add_file($relfilename, {
 			time => $time,
@@ -129,11 +131,13 @@ sub add_entry
 	if ($e->{type} eq 'CREATED') {
 		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
 		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id size mtime treehash relfilename/);
-		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$e->{relfilename}");
+		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
+		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$filename");
 	} elsif ($e->{type} eq 'DELETED') {
 		#  DELETED $data->{archive_id} $data->{relfilename}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id relfilename/);
-		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$e->{relfilename}");
+		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
+		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$filename");
 	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
 		#  RETRIEVE_JOB $data->{archive_id}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id job_id/);
@@ -199,7 +203,9 @@ sub _read_files
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
 			
 			if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
-				push @$filelist, { absfilename => $filename, relfilename => File::Spec->abs2rel($filename, $self->{root_dir}) };
+				my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
+				confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
+				push @$filelist, { absfilename => $filename, relfilename => $relfilename };
 			}
 		}
 	}, preprocess => sub {
