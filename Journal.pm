@@ -216,6 +216,18 @@ sub absfilename
 	return File::Spec->rel2abs($relfilename, $self->{root_dir});
 }
 
+# Class method
+# Does not work with directory names
+sub sanity_relative_filename
+{
+	my ($filename) = @_;
+	$filename =~ s!^/!!;
+	return undef if $filename =~ m![\r\n\t]!g;
+	$filename = File::Spec->catdir( map {return undef if m!^\.\.?$!; $_; } split('/', File::Spec->canonpath($filename)) );
+	return undef if $filename eq '';
+	return $filename;
+}
+
 sub _is_file_exists
 {
 	my ($self, $filename) = @_;
