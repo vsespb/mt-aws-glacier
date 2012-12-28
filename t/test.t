@@ -26,5 +26,6 @@ $harness->runtests(
     'unit/journal_readfiles.t',
     'unit/journal_sanity.t',
     'unit/config_engine_parse.t',
+    'unit/u_treehash.t',
     'integration/config_engine_v078.t',
 );

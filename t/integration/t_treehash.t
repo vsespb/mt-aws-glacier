@@ -3,8 +3,8 @@
 
 use strict;
 use warnings;
-use Test::Simple tests => 31*7*3 + 4*3*3;
-use lib qw/../;
+use Test::Simple tests => 714;
+use lib qw{.. ../..};
 use TreeHash;
 
 
@@ -491,7 +491,22 @@ for my $i (1..31) {
 		$th->eat_data($dataref);
     	$th->calc_tree();
     	my $hash = $th->get_final_hash();
-#    	print "$size => '$hash',\n";
+    	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
+	}
+}
+}
+
+# check lso how it works for non-ref
+for my $chunksize (qw/200/) {
+for my $i (qw/1 2 29/) {
+	for my $j (qw/-1 0 1/) {
+		my $size = $i*$chunksize+$j;
+		my $dataref = get_pseudo_random_array($size);
+		my $data = $$dataref;
+		my $th = TreeHash->new(unit => $chunksize);
+		$th->eat_data($data);
+    	$th->calc_tree();
+    	my $hash = $th->get_final_hash();
     	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
 	}
 }

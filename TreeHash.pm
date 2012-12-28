@@ -26,6 +26,7 @@ package TreeHash;
 use strict;
 use warnings;
 use Digest::SHA qw/sha256/;
+use Carp;
 
 
 
@@ -59,22 +60,53 @@ sub eat_file
 
 sub eat_data
 {
-	my ($self, $dataref)  = @_;
+	my $self = $_[0];
+	my $dataref = (ref($_[1]) eq '') ? \$_[1] : $_[1];
 	my $mb = $self->{unit};
 	my $n = length($$dataref);
-	my $i = 0;
-	while ($i < $n) {
-		my $part = substr($$dataref, $i, $mb);
-		$self->_eat_data_one_mb(\$part);
-		$i += $mb
+	# TODO: we should preserve last chunk of data actually, if it's smaller that chunk. (or create new method)
+	if ($n <= $mb) {
+		$self->_eat_data_one_mb($dataref);
+	} else {
+		my $i = 0;
+		while ($i < $n) {
+			my $part = substr($$dataref, $i, $mb);
+			$self->_eat_data_one_mb(\$part);
+			$i += $mb
+		}
 	}
+}
+
+sub eat_another_treehash
+{
+	my ($self, $th) = @_;
+	croak unless $th->isa("TreeHash");
+	$self->{tree}->[0] ||= [];
+	my $cnt = scalar @{ $self->{tree}->[0] };
+	my $newstart = $cnt ? $self->{tree}->[0]->[$cnt - 1]->{finish} + 1 : 0;
+	
+	push @{$self->{tree}->[0]}, map {
+		$newstart++;
+		{ joined => 9, start => $newstart-1, finish => $newstart-1, hash => $_->{hash} };
+	} @{$th->{tree}->[0]};
 }
 
 
 sub _eat_data_one_mb
 {
-	my ($self, $dataref)  = @_;
+	my $self = $_[0];
+	my $dataref = (ref($_[1]) eq '') ? \$_[1] : $_[1];
 	$self->{tree}->[0] ||= [];
+	
+	if ($self->{last_chunk}) {
+		croak "Previous chunk of data was less than 1MiB";
+	}
+	if (length($$dataref) > $self->{unit}) {
+		croak "data chunk exceed 1MiB".length($$dataref);
+	} elsif (length($$dataref) < $self->{unit}) {
+		$self->{last_chunk} = 1;
+	}
+	
 	push @{ $self->{tree}->[0] }, { joined => 0, start => $self->{processed_size}, finish => $self->{processed_size}, hash => sha256($$dataref) };
 	$self->{processed_size}++;
 }
