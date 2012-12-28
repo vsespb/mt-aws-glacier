@@ -84,8 +84,6 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 * Read their pricing [FAQ][Amazon Glacier faq] again, really. Beware of retrieval fee.
 
-* *Backup your local journal file*. Currently it's impossible to correctly restore backup without journal file. ( *Remote metadata storage will be implemented soon* )
-
 * With low "partsize" option you pay a bit more (Amazon charges for each upload request)
 
 * With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
