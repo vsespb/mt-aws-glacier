@@ -329,14 +329,13 @@ sub perform_lwp
 		}
 		my $resp = undef;
 
-		my ($t0, $t1) = (time(), undef);
+		my $t0 = time();
 		if ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
 		} else {
 			$resp = $ua->request($req);
 		}
-		$t1 = time();
-		my $dt = $t1-$t0;
+		my $dt = time()-$t0;
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
