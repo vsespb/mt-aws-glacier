@@ -3,7 +3,7 @@
 
 use strict;
 use warnings;
-use Test::Simple tests => 714;
+use Test::Simple tests => 1065;
 use lib qw{.. ../..};
 use TreeHash;
 
@@ -494,6 +494,27 @@ for my $i (1..31) {
     	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
 	}
 }
+}
+
+for my $chunksize (qw/200/) {
+	for my $i ((1..33),  qw/255 256 257 4095 4096 4097/) {
+		for my $j (qw/-1 0 1/) {
+			my $size = $i*$chunksize+$j;
+			my $dataref = get_pseudo_random_array($size);
+			
+			my $th = TreeHash->new(unit => $chunksize);
+			$th->eat_data($dataref);
+	    	$th->calc_tree();
+	    	my $hash = $th->get_final_hash();
+
+			my $threc = TreeHash->new(unit => $chunksize);
+			$threc->eat_data($dataref);
+	    	$threc->calc_tree_recursive();
+	    	my $hashrec = $th->get_final_hash();
+	    	
+	    	ok( $hash eq $hashrec, "comparing test recursive and normal" );
+		}
+	}
 }
 
 # check lso how it works for non-ref

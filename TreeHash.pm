@@ -38,6 +38,7 @@ package TreeHash;
 use strict;
 use warnings;
 use Digest::SHA qw/sha256/;
+use List::Util qw/max/;
 use Carp;
 
 
@@ -148,62 +149,56 @@ sub calc_tree
 	}
 }
 
-# 
-#
-#
 
-sub _treehash
+sub calc_tree_recursive
+{
+	my ($self) = @_;
+	my %h = map { $_->{start} => $_ } @{$self->{tree}->[0]};
+	$self->{max} = max keys %h;
+	$self->{by_position} = \%h;
+	
+	$self->{treehash_recursive_tree} = $self->_treehash_recursive();
+}
+
+sub _treehash_recursive
 {
 	my ($self, $a, $b) = @_;
 	if (defined($a)) {
-		print "get $a,$b\t";
 		if ($a == $b) {
-			print "ok\n";
-			return $self->_find($a);
+			return $self->{by_position}->{$a}->{hash};
 		} else {
-				my $mp = maxpower($b-$a+1);
-				my $middle1 = $mp+$a-1;
-				my $middle2 = $middle1 + 1 ;
-				print "call ($a,$middle1) ($middle2,$b) -- $mp\n";
-				return sha256 ($self->_treehash($a, $middle1 ).$self->_treehash($middle2, $b));
+				my $middle = _maxpower($b-$a) + $a;
+				return sha256 ($self->_treehash_recursive($a, $middle - 1 ).$self->_treehash_recursive($middle, $b));
 		}
 	} else {
-		return $self->_treehash(0,$self->_max());
+		return $self->_treehash_recursive(0,$self->{max});
 	}
 }
 
-sub maxpower
+sub _maxpower
 {
 	my ($x) = @_;
 	die if $x == 0;
-	for (0..31) {
-		my $n = 2**$_;
-#		return 2**$_ if $n == $x;
-		return 2**($_-1)  if ($n >= $x);
-	}
+    $x |= $x >> 1;
+    $x |= $x >> 2;
+    $x |= $x >> 4;
+    $x |= $x >> 8;
+    $x |= $x >> 16;
+    $x >>= 1;
+    $x++;
+    return $x;
 }
 
-use List::Util qw/max first/;
 
-sub _find
-{
-	my ($self, $a) = @_;
-	(first { $_->{start} == $a } @{$self->{tree}->[0]} )->{hash};
-}
-sub _max
-{
-	my ($self) = @_;
-	max map { $_->{start} } @{$self->{tree}->[0]} ;
-}
 
 sub get_final_hash
 {
 	my ($self)  = @_;
-	my $ok = $self->{tree}->[ $#{$self->{tree}} ]->[0]->{hash};
-	my $new = $self->_treehash();
-	die "$ok, $new" unless $ok eq $new;
-	#die "OK!";
-	return unpack('H*', $self->{tree}->[ $#{$self->{tree}} ]->[0]->{hash} );
+	if (defined $self->{treehash_recursive_tree}) {
+		return unpack('H*', $self->{treehash_recursive_tree} );
+	} else {
+		return unpack('H*', $self->{tree}->[ $#{$self->{tree}} ]->[0]->{hash} );
+	}
 }
 
 

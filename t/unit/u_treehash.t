@@ -11,7 +11,6 @@ use Data::Dumper;
 
 
 
-
 {
 	my $s = "Hello, world! ".('x' x 100);
 	
@@ -144,6 +143,16 @@ use Data::Dumper;
 		$th_simple->calc_tree();
 	};
 	ok ($@ ne '', "Should warn that previous chunk of data was less than 1MiB");
+}
+
+sub maxpower_test
+{
+	my ($x) = @_;
+	die if $x == 0;
+	for (0..31) {
+		my $n = 2**$_;
+		return 2**($_-1)  if ($n >= $x);
+	}
 }
 
 1;
