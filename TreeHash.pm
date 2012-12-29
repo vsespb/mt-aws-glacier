@@ -19,6 +19,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+# 1) eat_data() for data
+# 2) eat_1mb for data
+# 3) define_hash
+#
+
+
+# treehash() = treehash(1,7) = sha ( treehash(1,4), teehash(5,7))
+# treehash(1,4) = treehash(1,2).treehash(3,4)
+# treehash(1,
+#
+
+
 package TreeHash;
 
 
@@ -136,10 +148,61 @@ sub calc_tree
 	}
 }
 
+# 
+#
+#
+
+sub _treehash
+{
+	my ($self, $a, $b) = @_;
+	if (defined($a)) {
+		print "get $a,$b\t";
+		if ($a == $b) {
+			print "ok\n";
+			return $self->_find($a);
+		} else {
+				my $mp = maxpower($b-$a+1);
+				my $middle1 = $mp+$a-1;
+				my $middle2 = $middle1 + 1 ;
+				print "call ($a,$middle1) ($middle2,$b) -- $mp\n";
+				return sha256 ($self->_treehash($a, $middle1 ).$self->_treehash($middle2, $b));
+		}
+	} else {
+		return $self->_treehash(0,$self->_max());
+	}
+}
+
+sub maxpower
+{
+	my ($x) = @_;
+	die if $x == 0;
+	for (0..31) {
+		my $n = 2**$_;
+#		return 2**$_ if $n == $x;
+		return 2**($_-1)  if ($n >= $x);
+	}
+}
+
+use List::Util qw/max first/;
+
+sub _find
+{
+	my ($self, $a) = @_;
+	(first { $_->{start} == $a } @{$self->{tree}->[0]} )->{hash};
+}
+sub _max
+{
+	my ($self) = @_;
+	max map { $_->{start} } @{$self->{tree}->[0]} ;
+}
 
 sub get_final_hash
 {
 	my ($self)  = @_;
+	my $ok = $self->{tree}->[ $#{$self->{tree}} ]->[0]->{hash};
+	my $new = $self->_treehash();
+	die "$ok, $new" unless $ok eq $new;
+	#die "OK!";
 	return unpack('H*', $self->{tree}->[ $#{$self->{tree}} ]->[0]->{hash} );
 }
 

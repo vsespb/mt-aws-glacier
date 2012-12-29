@@ -10,7 +10,7 @@ use TreeHash;
 use Data::Dumper;
 
 
-#die TreeHash::maxpower(16);
+
 
 {
 	my $s = "Hello, world! ".('x' x 100);
@@ -18,7 +18,6 @@ use Data::Dumper;
 	my $th = TreeHash->new(unit => 7);
 	$th->eat_data(\$s);
 	$th->calc_tree();
-	
 	my $th2 = TreeHash->new(unit => 7);
 	$th2->eat_data($s);
 	$th2->calc_tree();
