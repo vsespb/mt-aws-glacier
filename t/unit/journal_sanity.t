@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 59;
+use Test::More tests => 82;
 use Test::Deep;
 use lib qw{.. ../..};
 use Journal;
@@ -74,6 +74,33 @@ ok ( !defined Journal::sanity_relative_filename("a\n"), "should not allow line")
 ok ( !defined Journal::sanity_relative_filename("ф\nb"), "should not allow line");
 ok ( !defined Journal::sanity_relative_filename("a\rb"), "should not carriage return");
 ok ( !defined Journal::sanity_relative_filename("a\tb"), "should not allow tab");
+
+
+ok ( ! defined Journal::sanity_relative_filename('//'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//..'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//../a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//../../a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//.././a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//../ф'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//.'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//ф'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//./a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//./ф'), "should deny two slashes");
+
+ok ( ! defined Journal::sanity_relative_filename('//'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//..'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//../a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//.'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//a'), "should deny two slashes");
+ok ( ! defined Journal::sanity_relative_filename('//./a'), "should deny two slashes");
+
+ok ( Journal::sanity_relative_filename('\\\\') eq '\\\\', "should allow backslash");
+ok ( Journal::sanity_relative_filename('\\\\..') eq '\\\\..', "should allow backslash");
+ok ( Journal::sanity_relative_filename('\\\\..\\a') eq '\\\\..\\a', "should allow backslash");
+ok ( Journal::sanity_relative_filename('\\\\.') eq '\\\\.', "should allow backslash");
+ok ( Journal::sanity_relative_filename('\\\\a') eq '\\\\a', "should allow backslash");
+ok ( Journal::sanity_relative_filename('\\\\.\\a') eq '\\\\.\\a', "should allow backslash");
 
 1;
 

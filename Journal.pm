@@ -227,6 +227,7 @@ sub absfilename
 sub sanity_relative_filename
 {
 	my ($filename) = @_;
+	return undef if $filename =~ m!^//!g;
 	$filename =~ s!^/!!;
 	return undef if $filename =~ m![\r\n\t]!g;
 	$filename = File::Spec->catdir( map {return undef if m!^\.\.?$!; $_; } split('/', File::Spec->canonpath($filename)) );
