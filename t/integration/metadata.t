@@ -9,7 +9,7 @@ use lib qw{.. ../..};
 use MetaData;
 
 use Test::MockModule;
-use MIME::Base64 qw/encode_base64url/;
+use MIME::Base64 qw/encode_base64url encode_base64/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
@@ -19,7 +19,7 @@ use DateTime;
 no warnings 'redefine';
 
 
-# test _encode_b64/_decode_b64
+# test _encode_b64/_decode_b64 and UTF8
 {
 	for (
 		qq!{"c":"d","a":"b"}!,
@@ -32,17 +32,79 @@ no warnings 'redefine';
 		qq!тест test!,
 		qq!тест=test!,
 	) {
-		my $result = MetaData::_encode_b64($_);
+		my $result = MetaData::_encode_b64(MetaData::_encode_utf8($_));
 		ok ($result eq encode_base64url(encode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)), 'match base64 encode');
 		ok ($result !~ /[\r\n]/m, 'does not contain linefeed');
 		ok ($result !~ /[\+\/\=]/m, 'does not contain + and /');
-		ok (MetaData::_decode_b64($result) eq $_, 'reverse decodable');
+		my $redecoded = MetaData::_decode_utf8(MetaData::_decode_b64($result));
+		
+		#ok(utf8::is_utf8($_), "source should be utf8 $_");
+		ok(utf8::is_utf8($redecoded), "recoded should be utf8");
+		
+		ok ($redecoded eq $_, 'reverse decodable');
 	}
 }
 
 
+# test _encode_b64 dash and underscore
+{
+	for (
+		qq!aaa_!,
+		qq!bbb-!,
+		qq!aa_-!,
+		qq!bb-_!,
+	) {
+		my $str = MetaData::_decode_b64($_);
+		my $rebase64 = MetaData::_encode_b64($str);
+		ok ($rebase64 eq $_, "use dash and underscore $_ $str");
+	}
+}
 
-# test _encode_b64/_decode_b64 with raw fixtures
+# test _encode_b64/_decode_b64 padding
+{
+	for (
+		qq!a!,
+		qq!bb!,
+		qq!ccc!,
+		qq!dddd!,
+		qq!eeeee!,
+		qq!ffffff!,
+	) {
+		my $base64url = MetaData::_encode_b64($_);
+		ok ($base64url !~ /=/g, "_enocde_b64 should not pad base64 $_");
+		ok (MetaData::_decode_b64($base64url) eq $_, "_decode_b64 should work without padding $_ $base64url");
+		
+	}
+}
+
+# test _decode_b64 should add padding
+{
+	for (
+		qq!a!,
+		qq!bb!,
+		qq!ccc!,
+		qq!dddd!,
+		qq!eeeee!,
+		qq!ffffff!,
+	) {
+		my $last_arg;
+		my $base64 = encode_base64($_, "");
+		my $base64url = MetaData::_encode_b64($_);
+		local *MIME::Base64::decode_base64 = sub { ($last_arg) = @_;};
+		MetaData::_decode_b64($base64url);
+		ok ($last_arg eq $base64, "$last_arg eq $base64");
+	}
+}
+
+# test _encode_b64/_decode_b64 EOL
+{
+	my $base64 = MetaData::_encode_b64('x' x 1024);
+	ok ($base64 !~ /[\r\n]/m, 'does not contain linefeed');
+}
+
+
+
+# test _encode_b64/_decode_b64 and UTF-8 with raw fixtures 
 {
 	for (
 		['{"c":"d","a":"b"}', 'eyJjIjoiZCIsImEiOiJiIn0'],
@@ -55,10 +117,12 @@ no warnings 'redefine';
 		['тест test', '0YLQtdGB0YIgdGVzdA'],
 		['тест=test', '0YLQtdGB0YI9dGVzdA'],
 	) {
-		ok (MetaData::_encode_b64($_->[0]) eq $_->[1], 'base64 match fixture');
-		ok (MetaData::_decode_b64($_->[1]) eq $_->[0], 'fixture match base64');
+		ok (MetaData::_encode_b64(MetaData::_encode_utf8($_->[0])) eq $_->[1], 'base64 match fixture');
+		ok (MetaData::_decode_utf8(MetaData::_decode_b64($_->[1])) eq $_->[0], 'fixture match base64');
 	}
 }
+
+
 
 # test _encode_json/_decode_json
 {

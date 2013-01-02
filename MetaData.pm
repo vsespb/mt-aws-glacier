@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use Encode;
 
-use MIME::Base64 qw/encode_base64url decode_base64url/;
+use MIME::Base64;
 use JSON::XS;
 use POSIX;
 use Time::Local;
@@ -58,7 +58,7 @@ sub meta_decode
   my ($marker, $b64) = split(' ', $str);
   if ($marker eq 'mt1') {
   	return (undef, undef) unless length($b64) <= 1024;
-  	return _decode_json(_decode_b64($b64));
+  	return _decode_json(_decode_utf8(_decode_b64($b64)));
   } else {
   	return (undef, undef);
   }
@@ -68,7 +68,19 @@ sub _decode_b64
 {
 	my ($str) = @_;
 	my $res = eval {
-		decode("UTF-8", decode_base64url($str), Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
+		$str =~ tr{-_}{+/};
+		my $padding_n = length($str) % 4;
+		$str .= ('=' x (4 - $padding_n) ) if $padding_n;
+		MIME::Base64::decode_base64($str);
+	};
+	return $@ eq '' ? $res : undef;
+}
+
+sub _decode_utf8
+{
+	my ($str) = @_;
+	my $res = eval {
+		decode("UTF-8", $str, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
 	};
 	return $@ eq '' ? $res : undef;
 }
@@ -95,7 +107,7 @@ sub meta_encode
 {
 	my ($relfilename, $mtime) = @_;
 	return undef unless defined($mtime) && defined($relfilename) && $mtime >= 0;
-	my $res = "mt1 "._encode_b64(_encode_json($relfilename, $mtime));
+	my $res = "mt1 "._encode_b64(_encode_utf8(_encode_json($relfilename, $mtime)));
 	return undef if length($res) > 1024;
 	return $res;
 }
@@ -103,8 +115,18 @@ sub meta_encode
 sub _encode_b64
 {
 	my ($str) = @_;
-	return encode_base64url(encode("UTF-8",$str,Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
+	my $res = MIME::Base64::encode_base64($str,'');
+	$res =~ s/=+\z//;
+	$res =~ tr{+/}{-_};
+	return $res;
 }
+
+sub _encode_utf8
+{
+	my ($str) = @_;
+	return encode("UTF-8",$str,Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+}
+
 
 sub _encode_json
 {
