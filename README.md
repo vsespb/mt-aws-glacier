@@ -7,13 +7,15 @@ Perl Multithreaded multipart sync to Amazon Glacier service.
 Amazon Glacier is an archive/backup service with very low storage price. However with some caveats in usage and archive retrieval prices.
 [Read more about Amazon Glacier][amazon glacier] 
 
-mt-aws-glacier is a client application	 for Glacier.
+mt-aws-glacier is a client application for Glacier.
 
 [amazon glacier]:http://aws.amazon.com/glacier/
 
 ## Version
 
-* Version 0.80 beta
+* Version 0.81 beta (See [ChangeLog][mt-aws glacier changelog])
+
+[mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
 ## Features
 
@@ -193,5 +195,5 @@ something like that
 				}
 
 
-[![mt-aws-glacier tracking pixel](https://mt-aws.com/mt-aws-glacier-transp.gif "mt-aws-glacier tracking pixel")](http://mt-aws.com/)
+[![mt-aws glacier tracking pixel](https://mt-aws.com/mt-aws-glacier-transp.gif "mt-aws glacier tracking pixel")](http://mt-aws.com/)
  

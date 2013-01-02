@@ -1,3 +1,9 @@
+2013-01-02: v0.81 beta
+	* Error handling when parsing command line implemented + --help command
+	* Security - considering filenames coming from "external" sources (from Glacier and from Journal file) as unsecure. Sanitize/check it.
+	* Some internal changes to TreeHash implementing (does not affect working code, but needs for future enhancements)
+	* Dependency removed - MIME::Base64::encode_base64url (implemented in 2010 in MIME::Base64), This function is re-implemented. So we can use older versions of this module.
+	
 2012-12-27: v0.80 beta
 	* Storing Amazon Glacier metadata (x-amz-archive-description) when upload files implemented (using custom format).
 	* More verbose output for check-local-hash command
