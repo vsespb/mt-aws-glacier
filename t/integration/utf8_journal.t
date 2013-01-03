@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Simple tests => 76;
-use lib qw/../;
+use lib qw{.. ../..};
 use Journal;
 use File::Path;
 use JournalTest;

@@ -8,6 +8,7 @@ use Journal;
 use File::Path;
 use TreeHash;
 use Test::Simple;
+use Encode;
 use Carp;
 
 
@@ -175,12 +176,12 @@ sub create_journal_v0
 		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
-			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
 			print F $t." CREATED $testfile->{archive_id} $testfile->{filesize} $testfile->{final_hash} $testfile->{filename}\n";
 		} elsif (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created_and_deleted')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
-			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
 			print F $t." CREATED $testfile->{archive_id} $testfile->{filesize} $testfile->{final_hash} $testfile->{filename}\n";
 			print F ($t+1)." DELETED $testfile->{archive_id} $testfile->{filename}\n";
 		}
@@ -201,12 +202,12 @@ sub create_journal_vA
 		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
-			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
 			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
 		} elsif (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created_and_deleted')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
-			$testfile->{final_hash} = scalar_treehash($testfile->{content});
+			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
 			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
 			print F "A\t$dt\tDELETED\t$testfile->{archive_id}\t$testfile->{filename}\n";
 		}

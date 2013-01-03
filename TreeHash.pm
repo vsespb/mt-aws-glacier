@@ -110,7 +110,9 @@ sub _eat_data_one_mb
 	my $self = $_[0];
 	my $dataref = (ref($_[1]) eq '') ? \$_[1] : $_[1];
 	$self->{tree}->[0] ||= [];
+	croak $$dataref if utf8::is_utf8($$dataref);
 	
+
 	if ($self->{last_chunk}) {
 		croak "Previous chunk of data was less than 1MiB";
 	}
