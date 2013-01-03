@@ -13,7 +13,6 @@ use lib qw{.. ../..};
 use TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
 use Time::Local;
-use 5.010;
 
 my $children_count = 20;
 my $daemon = HTTP::Daemon->new(LocalHost => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1) || die;
