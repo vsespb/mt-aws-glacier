@@ -246,8 +246,8 @@ if ($action eq 'sync') {
 		print $_->{SHA256TreeHash};
 		print "\t";
 		my ($f, $m) = MetaData::meta_decode($_->{ArchiveDescription});
-		$f//='';
-		$m//='';
+		$f||='';
+		$m||='';
 		print "$m\t$f\n";
 	}
 } elsif ($action eq 'help') {
