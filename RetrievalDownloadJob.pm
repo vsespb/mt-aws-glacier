@@ -24,6 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use base qw/Job/;
+use File::stat;
+
 
 sub new
 {
@@ -47,7 +49,7 @@ sub get_task
 		if (scalar @{$self->{archives}}) {
 			my $archive = shift @{$self->{archives}};
 			my $task = Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
-				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}, jobid => $archive->{jobid}
+				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid}
 			});
 			$self->{pending}->{$archive->{jobid}}=1;
 			$self->{all_raised} = 1 unless scalar @{$self->{archives}};
@@ -62,6 +64,9 @@ sub get_task
 sub finish_task
 {
 	my ($self, $task) = @_;
+	my $mtime = $task->{data}{mtime};
+	utime $mtime, $mtime, $task->{data}{filename} if $mtime;
+	
 	delete $self->{pending}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{pending}} == 0) {
 		return ("done");

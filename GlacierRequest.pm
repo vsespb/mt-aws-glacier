@@ -207,7 +207,7 @@ sub retrieval_download_job
 	defined($filename)||confess;
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	$self->{content_file} = $filename;
+	$self->{content_file} = $filename; # TODO: use temp filename for transactional behaviour
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();

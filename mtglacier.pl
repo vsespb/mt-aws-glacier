@@ -44,6 +44,7 @@ use Journal;
 use ConfigEngine;
 use ForkEngine;
 use Carp;
+use File::stat;
 
 
 
@@ -174,7 +175,7 @@ if ($action eq 'sync') {
 	$j->read_journal();
 	my $files = $j->{journal_h};
 	# TODO: refactor
-	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
+	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	if (scalar keys %filelist) {
 		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
 		my $R = $FE->{parent_worker}->process_task($ft, $j);
@@ -188,7 +189,7 @@ if ($action eq 'sync') {
 	$j->read_journal();
 	my $files = $j->{journal_h};
 	
-	my ($error_hash, $error_size, $error_missed, $no_error) = (0,0,0,0);
+	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error) = (0,0,0,0,0);
 	for my $f (keys %$files) {
 		my $file=$files->{$f};
 		my $th = TreeHash->new();
@@ -196,10 +197,14 @@ if ($action eq 'sync') {
 		if (-f $absfilename ) {
 			open my $F, "<", $absfilename;
 			binmode $F;
-			$th->eat_file($F);
+			$th->eat_file($F); # TODO: don't calc tree hash if size differs!
 			close $F;
 			$th->calc_tree();
 			my $treehash = $th->get_final_hash();
+			if (defined($file->{mtime}) && (my $actual_mtime = stat($absfilename)->mtime) != $file->{mtime}) {
+				print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
+				++$error_mtime;
+			}
 			if (-s $absfilename == $file->{size}) {
 				if ($treehash eq $files->{$f}->{treehash}) {
 					print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
@@ -217,7 +222,8 @@ if ($action eq 'sync') {
 				++$error_missed;
 		}
 	}
-	print "TOTALS:\n$no_error OK\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+	print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+	print "($error_mtime of them have File Modification Time altered)\n";
 	exit(1) if $error_hash || $error_size || $error_missed;
 } elsif ($action eq 'retrieve-inventory') {
 	my $req = GlacierRequest->new($options);
