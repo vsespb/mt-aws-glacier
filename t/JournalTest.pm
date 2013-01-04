@@ -229,6 +229,7 @@ sub get_random_archive_id
 sub scalar_treehash
 {
 	my ($str) = @_;
+	confess if utf8::is_utf8($str);
 	my $th = TreeHash->new();
 	$th->eat_data(\$str);
 	$th->calc_tree();

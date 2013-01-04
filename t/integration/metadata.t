@@ -9,7 +9,7 @@ use lib qw{.. ../..};
 use MetaData;
 
 use Test::MockModule;
-use MIME::Base64 qw/encode_base64url encode_base64/;
+use MIME::Base64 3.11 qw/encode_base64url encode_base64/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
