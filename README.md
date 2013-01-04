@@ -68,15 +68,14 @@ Install the following CPAN modules:
 
 * **LWP::UserAgent** (or Debian package **libwww-perl**)
 * **JSON::XS** (or Debian package **libjson-xs-perl**)
-* **URI** (or Debian package **liburi-perl**)
 		
 Install using *apt-get* (easier, more reliable way):
 				
-				apt-get install libwww-perl libjson-xs-perl liburi-perl
+				apt-get install libwww-perl libjson-xs-perl
 				
 Install using *cpan* (if you like Perl and want use latest versions of libraries):
 
-				cpan -i LWP::UserAgent JSON::XS URI 
+				cpan -i LWP::UserAgent JSON::XS
 
 
 ## Warnings ( *MUST READ* )

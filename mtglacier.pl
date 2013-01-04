@@ -30,7 +30,6 @@ use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is m
 our $VERSION = "0.81beta";
 
 
-use URI;
 use ParentWorker;
 use ChildWorker;
 use JobProxy;
