@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
