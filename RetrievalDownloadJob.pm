@@ -65,7 +65,7 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	my $mtime = $task->{data}{mtime};
-	utime $mtime, $mtime, $task->{data}{filename} if $mtime;
+	utime $mtime, $mtime, $task->{data}{filename} if defined $mtime; # TODO: is that good that one process writes file and another one change it's mtime?
 	
 	delete $self->{pending}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{pending}} == 0) {
