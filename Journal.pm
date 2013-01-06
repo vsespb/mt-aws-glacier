@@ -68,7 +68,7 @@ sub process_line
 	my ($self, $line) = @_;
 		# Journal version 'A'
 	
-	if ($line =~ /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/) {
+	if ($line =~ /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t([+-]?\d+)\t(\S+)\t(.*?)$/) {
 		my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) = ($1,$2,$3,$4,$5,$6);
 		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		$self->_add_file($relfilename, {
@@ -100,7 +100,7 @@ sub process_line
 		$self->_delete_file($2);
 		$self->{used_versions}->{0} = 1;
 	} else {
-		#die;
+		confess;
 	}
 }
 

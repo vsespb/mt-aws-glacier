@@ -51,7 +51,7 @@ my $testfiles1 = [
 { type => 'normalfile', filename => 'каталогA/file3', content => 'тест1', skip=>1, journal=>'created_and_deleted'},
 { type => 'dir', filename => 'dirB' },
 { type => 'normalfile', filename => 'dirB/file1', content => 'dBf1aaa',skip=>1 , journal => 'created'},
-{ type => 'normalfile', filename => 'dirB/file2', content => 'dBf2aaaa' , journal => 'created'},
+{ type => 'normalfile', filename => 'dirB/file2', content => 'dBf2aaaa' , journal => 'created', mtime => -1969112105 },
 { type => 'dir', filename => 'dirB/dirB1' },
 { type => 'normalfile', filename => 'dirB/dirB1/file1', content => 'тест2', skip=>1},
 { type => 'normalfile', filename => 'dirB/dirB1/file2', content => 'dB1f2bbbbaa' , journal => 'created'},

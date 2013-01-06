@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 180;
+use Test::More tests => 184;
 use Test::Deep;
 use lib qw{.. ../..};
 use MetaData;
@@ -215,7 +215,7 @@ no warnings 'redefine';
 
 # test error cacth while encoding
 {
-	ok !defined MetaData::meta_encode('filename', -1), 'should catche negative mtime';
+	ok defined MetaData::meta_encode('filename', -1), 'should not catch negative mtime';
 	ok !defined MetaData::meta_encode('filename'), 'should catche missed mtime';
 	ok !defined MetaData::meta_encode(undef, 4), 'should catche missed filename';
 	ok defined MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
@@ -237,13 +237,15 @@ no warnings 'redefine';
 		['20081231T235959Z', 1230767999], # before leap second
 #		['20081231T235960Z', 1230768000], # leap second is broken
 		['20090101T000000Z', 1230768000], # after leap second
+		['19070809T082454Z', -1969112106], # negative value
+		['19070809T084134Z', -1969111106], # negative value
 	) {
 		my $result = MetaData::_parse_iso8601($_->[0]);
 		ok($result == $_->[1], 'should parse iso8601');
 		
 		my $dt = DateTime->from_epoch( epoch => $_->[1] );
 		my $dt_8601 = sprintf("%04d%02d%02dT%02d%02d%02dZ", $dt->year, $dt->month, $dt->day, $dt->hour, $dt->min, $dt->sec);
-		ok( $_->[0] eq $dt_8601, 'iso8601 should be correct string');
+		ok( $_->[0] eq $dt_8601, "iso8601 $dt_8601 should be correct string");
 	}
 }
 

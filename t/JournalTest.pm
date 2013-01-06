@@ -219,6 +219,7 @@ sub create_journal_vA
 	my $ft = $t - 1000;
 	my $dt = $t + 1;
 	for my $testfile (@{$self->{testfiles}}) {
+		$ft = $testfile->{mtime} if defined $testfile->{mtime};
 		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});

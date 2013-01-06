@@ -106,7 +106,7 @@ sub _decode_json
 sub meta_encode
 {
 	my ($relfilename, $mtime) = @_;
-	return undef unless defined($mtime) && defined($relfilename) && $mtime >= 0;
+	return undef unless defined($mtime) && defined($relfilename);
 	my $res = "mt1 "._encode_b64(_encode_utf8(_encode_json($relfilename, $mtime)));
 	return undef if length($res) > 1024;
 	return $res;
