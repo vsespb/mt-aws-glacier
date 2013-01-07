@@ -78,10 +78,14 @@ sub process_line
 			mtime => $mtime,
 			treehash => $treehash,
 		});
-		$self->{used_versions}->{A} = 1;
+		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
 	} elsif ($line =~ /^A\t(\d{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
 		$self->_delete_file($3);
-		$self->{used_versions}->{A} = 1;
+		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
+	} elsif ($line =~ /^A\t(\d{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
+		my ($time, $archive_id, $job_id) = ($1,$2,$3);
+		$self->_retrieve_job($time, $archive_id, $job_id);
+		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
 		
 	# Journal version '0'
 	
@@ -95,10 +99,14 @@ sub process_line
 			size => $size,
 			treehash => $treehash,
 		});
-		$self->{used_versions}->{0} = 1;
-	} elsif ($line =~ /^\d{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) {
+		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
+	} elsif ($line =~ /^\d{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
 		$self->_delete_file($2);
-		$self->{used_versions}->{0} = 1;
+		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
+	} elsif ($line =~ /^(\d{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
+		my ($time, $archive_id) = ($1,$2);
+		$self->_retrieve_job($time, $archive_id);
+		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} else {
 		#confess;
 	}
@@ -114,6 +122,11 @@ sub _delete_file
 {
 	my ($self, $relfilename) = @_;
 	delete $self->{journal_h}->{$relfilename} if $self->{journal_h}->{$relfilename}; # TODO: exception or warning if $files->{$2}
+}
+
+sub _retrieve_job
+{
+	my ($time, $archive_id, $job_id) = @_;
 }
 
 #
