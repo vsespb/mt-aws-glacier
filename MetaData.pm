@@ -68,7 +68,6 @@ Note, that according to this spec. Same (FILENAME,MTIME) values can produce diff
 
 =cut
 
-# yes, a module, so we can unit-test it (JSON and YAML have different serialization implementeation)
 my $meta_coder = JSON::XS->new->utf8->max_depth(1)->max_size(1024);
 
 sub meta_decode
