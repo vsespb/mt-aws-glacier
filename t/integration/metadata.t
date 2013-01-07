@@ -34,7 +34,7 @@ use Encode;
 use JSON::XS;
 use Data::Dumper;
 use POSIX;
-use DateTime;
+use DateTime; #TODO: rewrite using core Time::Piece https://github.com/azumakuniyuki/perl-benchmark-collection/blob/master/module/datetime-vs-time-piece.pl
 
 no warnings 'redefine';
 
