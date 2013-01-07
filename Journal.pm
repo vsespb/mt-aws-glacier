@@ -100,7 +100,7 @@ sub process_line
 		$self->_delete_file($2);
 		$self->{used_versions}->{0} = 1;
 	} else {
-		confess;
+		#confess;
 	}
 }
 
