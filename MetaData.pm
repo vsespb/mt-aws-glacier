@@ -36,16 +36,35 @@ MT-AWS-GLACIER metadata format (x-amz-archive-description field).
 
 Version 'mt1'
 
-x-amz-archive-description = 'mt1' <space> base64url(json({'filename': utf8(FILENAME), 'mtime': ISO8601}))
+x-amz-archive-description = 'mt1' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
 
-base64url algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
-json can contain UTF-8 not-escaped characters
-json won't contain linefeed
-ISO8601 is a file modify time (mtime) is the following format YYYYMMDDTHHMMSSZ (only UTC timezone)
+Input data:
 
-When decoding ISO8601, leap seconds are not supported, when encoding it's not stored (as it's actually not stored in filesystem)
+FILENAME (character string)
+	Is a relative filename (no leading slash). Filename is taken from file system and treated as a character sequence
+	with known encoding.
+MTIME (time)
+	is file last modification time with 1 second resolution. Can be below Y1970.
+	Internal representation is epoch time, so it can be any valid epoch time, including negative values. On some system it's
+	32bit signed, another are 64bit signed, for some filesystems it's 34 bit signed etc.
 
+Function definitions:
 
+base64url() input - byte sequence, output - byte sequence
+	Is Base64 URL algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
+	basically it's bade64 but with '=' padding removed and characters '+', '/' replaced with '-', '_' resp.
+
+json_utf8() - input - Hash, output - byte sequence
+	JSON string in UTF-8 representation. Can contain not-escaped UTF-8 characters. Will not contain linefeed. Hash objects are unordered.
+
+isoO8601() - input - time, output - character string
+	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC filezone. No leap seconds supported.
+	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
+
+{'filename': FILENAME, 'mtime': iso8601(MTIME)}
+	Hash with two keys: 'filename' and 'mtime'. Correspond to JSON 'Object'.
+
+Note, that according to this spec. Same (FILENAME,MTIME) values can produce different x-amz-archive-description, as JSON hash is unordered.
 
 =cut
 
