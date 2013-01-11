@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -27,12 +27,13 @@ use utf8;
 
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',
+    exec => ['perl'],
     merge           => 1,
  #   verbosity       => 1,
     normalize       => 1,
     color           => 1,
     jobs			=> 8,
-#    switches	=> '-MDevel::Cover'
+    switches	=> '-MDevel::Cover'
 });
 $harness->runtests(
     'integration/journal.t',
@@ -48,5 +49,6 @@ $harness->runtests(
     'unit/journal_sanity.t',
     'unit/config_engine_parse.t',
     'unit/u_treehash.t',
+    'unit/metadata.t',
     'integration/config_engine_v078.t',
 );

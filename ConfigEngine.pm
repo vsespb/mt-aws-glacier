@@ -100,11 +100,10 @@ sub parse_options
 		}
 	}
 
-	#die join(';',@getopts);
 	my %result; # TODO: deafult hash, config from file
 	
 	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
-	return (["Extra argument in command line: $argv[0]"], @warnings ? \@warnings : undef) if @argv; # TODO: unit test
+	return (["Extra argument in command line: $argv[0]"], @warnings ? \@warnings : undef) if @argv;
 	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
@@ -124,8 +123,6 @@ sub parse_options
 
 	%result =%merged;
 	
-
-	#use Data::Dumper;print Dumper(\%result);
 
 	for my $o (keys %deprecations) {
 		if ($result{$o}) {
