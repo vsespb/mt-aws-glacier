@@ -38,6 +38,7 @@ use FileListDeleteJob;
 use FileListRetrievalJob;
 use RetrievalFetchJob;
 use JobListProxy;
+use RetrieveInventoryJob;
 use File::Find ;
 use File::Spec;
 use Journal;
@@ -235,9 +236,18 @@ if ($action eq 'sync') {
 	print "($error_mtime of them have File Modification Time altered)\n";
 	exit(1) if $error_hash || $error_size || $error_missed;
 } elsif ($action eq 'retrieve-inventory') {
-	my $req = GlacierRequest->new($options);
-	my $r = $req->retrieve_inventory();
-	print $r->dump;
+	#my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+			
+	my $FE = ForkEngine->new(options => $options);
+	$FE->start_children();
+	
+	#$j->read_journal(should_exist => 1);
+	#$j->open_for_write();
+	
+	my $ft = JobProxy->new(job => RetrieveInventoryJob->new());
+	my $R = $FE->{parent_worker}->process_task($ft, undef);
+	#$j->close_for_write();
+	$FE->terminate_children();
 } elsif ($action eq 'download-inventory') {
 	my $req = GlacierRequest->new($options);
 	my $r = $req->download_inventory($options->{'job-id'}, $options->{'output-journal'});

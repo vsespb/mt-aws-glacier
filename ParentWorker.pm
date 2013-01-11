@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use LineProtocol;
+use Carp;
 
 sub new
 {
@@ -83,7 +84,10 @@ sub wait_worker
 		my ($result) = $ft->finish_task($task);
 		delete $task_list->{$taskid};
 	
-		$journal->add_entry($task->{result}->{journal_entry}) if ($task->{result}->{journal_entry});
+		if ($task->{result}->{journal_entry}) {
+			confess unless defined $journal;
+			$journal->add_entry($task->{result}->{journal_entry});
+		}
 		  
 		if ($result eq 'done') {
 			return $task->{result};

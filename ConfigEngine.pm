@@ -81,7 +81,7 @@ my %commands = (
 'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
 'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/], optional => [qw//]},
 'check-local-hash'  => { req => [@config_opts, qw/journal dir/], deprecated => [qw/to-vault/] },
-	'retrieve-inventory' => { req => [@config_opts, qw/vault/], optional => [qw//]},
+'retrieve-inventory' => { req => [@config_opts, qw/vault concurrency/], optional => [qw//]},
 	'download-inventory' => { req => [@config_opts, qw/vault job-id/], optional => [qw//]},
 );
 

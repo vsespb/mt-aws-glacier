@@ -179,7 +179,7 @@ END
 	$self->{dataref} = \$body;
 	
 	my $resp = $self->perform_lwp();
-	return $resp ? $resp : undef;
+	return $resp ? $resp->header('x-amz-job-id') : undef;
 }
 
 sub retrieval_fetch_job

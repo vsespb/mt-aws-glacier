@@ -130,6 +130,12 @@ sub process
 				confess unless $r;
 				$result = { response => $r };
 				$console_out = "Retrieve Job List";
+			} elsif ($action eq 'retrieve_inventory_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieve_inventory();
+				confess unless $r;
+				$result = { job_id => $r };
+				$console_out = "Retrieve Inventory, job id $r";
 			} else {
 				die $action;
 			}
