@@ -181,7 +181,7 @@ sub _write_line
 {
 	my ($self, $line) = @_;
 	confess unless $self->{append_file};
-	print { $self->{append_file} } $line."\n";
+	confess unless print { $self->{append_file} } $line."\n";
 	close F;
 	# TODO: fsync()
 }

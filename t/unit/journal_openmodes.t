@@ -143,6 +143,13 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 {
 	remove($file);
 	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	eval { $J->_write_line($fixture); };
+	ok($@ ne '', "write to closed file should die");
+}
+
+{
+	remove($file);
+	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
 	eval { $J->close_for_write; };
 	ok($@ ne '', "close for write should die if file was not opened");
 }
