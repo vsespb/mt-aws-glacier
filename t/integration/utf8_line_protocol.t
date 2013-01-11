@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use lib qw/../;
+use lib qw{.. ../..};
 use LineProtocol;
 use Test::Simple tests => 3;
 
