@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 24;
+use Test::More tests => 29;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -90,6 +90,15 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 
 {
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result)= ConfigEngine->new()->parse_options(split(' ',
+	'purge-vault --key=newkey -secret=newsecret --region newregion  --vault=myvault -journal=journal.log'
+	));
+	ok( !$errors && !$warnings && $result && $result->{key} eq 'newkey' && $result->{secret} eq 'newsecret' && $result->{region} eq 'newregion', "should work without config" );
+}
+
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
 	'purge-vault --config=glacier.cfg  -journal=journal.log'
 	));
@@ -135,6 +144,39 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	));
 	ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option" );
 }
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify --config with "secret" option or --secret', "should catch missed secret" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --key a --region b --dir x -journal z -to-va va -conc 9 --partsize=3'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify --config with "secret" option or --secret', "should catch missed secret without config" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => "mysecret", region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --config a --region b --dir x -to-va va -conc 9 --partsize=4'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify --journal', "should catch missed journal with config ");
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => "mysecret", region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --key a --secret b --region c --dir x -to-va va -conc 9 --partsize=4'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify --journal', "should catch missed journal without config ");
+}
+
 
 {
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };

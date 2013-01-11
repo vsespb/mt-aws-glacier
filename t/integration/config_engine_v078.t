@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 160;
+use Test::More tests => 178;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -62,6 +62,68 @@ for (
 		journal => 'journal.log',
 	}, "$_ result");
 	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+}
+
+
+for (
+	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
+	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log!,
+	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
+	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
+){
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ', $_));
+	ok( !$errors, "should understand line without config $_");
+	is_deeply($result, {
+		key=>'mykey',
+		secret => 'mysecret',
+		region => 'myregion',
+		vault=>'myvault',
+		dir => '/data/backup',
+		concurrency => $default_concurrency,
+		partsize => $default_partsize,
+		journal => 'journal.log',
+	}, "$_ result");
+}
+
+for (
+	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
+	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log!,
+	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
+	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
+){
+	local *ConfigEngine::read_config = sub { { secret => 'mysecret' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ', $_));
+	ok( !$errors, "should understand part of config $_");
+	is_deeply($result, {
+		key=>'mykey',
+		secret => 'mysecret',
+		region => 'myregion',
+		config => 'glacier.cfg',
+		vault=>'myvault',
+		dir => '/data/backup',
+		concurrency => $default_concurrency,
+		partsize => $default_partsize,
+		journal => 'journal.log',
+	}, "$_ result");
+}
+
+for (
+	qq!sync --config=glacier.cfg --key=mykey --secret=newsecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
+){
+	local *ConfigEngine::read_config = sub { { secret => 'mysecret' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ', $_));
+	ok( !$errors, "command line should override config $_");
+	is_deeply($result, {
+		key=>'mykey',
+		secret => 'newsecret',
+		region => 'myregion',
+		config => 'glacier.cfg',
+		vault=>'myvault',
+		dir => '/data/backup',
+		concurrency => $default_concurrency,
+		partsize => $default_partsize,
+		journal => 'journal.log',
+	}, "$_ result");
 }
 
 for (
