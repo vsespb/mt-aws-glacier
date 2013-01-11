@@ -52,7 +52,7 @@ my %options = (
 		if ($command =~ /^(sync|purge\-vault|restore)$/) {
 			return (-f $value && -w $value && ! -d $value) || (! -d $value); # TODO: more strict test + actualyy create empty journal file when sync + unit test this
 		} else {
-			return -r $value;
+			return 1;
 		}
 	},	 ],
 ] },
@@ -76,13 +76,13 @@ my %options = (
 );
 
 my %commands = (
-'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/],                 optional => [qw/max-number-of-files/]},
-'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/],                    optional => [qw//], deprecated => [qw/from-dir/] },
+'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/], optional => [qw/max-number-of-files/]},
+'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/], optional => [qw//], deprecated => [qw/from-dir/] },
 'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
-'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/],                 optional => [qw//]},
-'check-local-hash'  => { req => [@config_opts, qw/journal dir/],                                                      deprecated => [qw/to-vault/] },
-	'retrieve-inventory' => { req => [@config_opts, qw/vault/],                 optional => [qw//]},
-	'download-inventory' => { req => [@config_opts, qw/vault job-id/],                 optional => [qw//]},
+'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/], optional => [qw//]},
+'check-local-hash'  => { req => [@config_opts, qw/journal dir/], deprecated => [qw/to-vault/] },
+	'retrieve-inventory' => { req => [@config_opts, qw/vault/], optional => [qw//]},
+	'download-inventory' => { req => [@config_opts, qw/vault job-id/], optional => [qw//]},
 );
 
 

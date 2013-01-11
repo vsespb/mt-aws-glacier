@@ -57,7 +57,8 @@ sub read_journal
 	confess unless defined $args{should_exist};
 	confess unless length($self->{journal_file});
 	confess if -d $self->{journal_file};
-	open (F, "<:encoding(UTF-8)", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess;
+	# TODO: croak here and elsewhere when checking for open files
+	open (F, "<:encoding(UTF-8)", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess; # TODO: this break coverage
 	while (<F>) {
 		chomp;
 		$self->process_line($_);
