@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Test::Deep;
 use File::Path;
 use lib qw{.. ../..};

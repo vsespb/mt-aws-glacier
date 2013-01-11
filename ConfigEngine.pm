@@ -49,7 +49,7 @@ my %options = (
 		}
 	},
 	'Journal file not writable' => sub { my ($command, $results, $value) = @_;
-		if ($command eq 'sync') {
+		if ($command =~ /^(sync|purge\-vault|restore)$/) {
 			return (-f $value && -w $value && ! -d $value) || (! -d $value); # TODO: more strict test + actualyy create empty journal file when sync + unit test this
 		} else {
 			return -r $value;
