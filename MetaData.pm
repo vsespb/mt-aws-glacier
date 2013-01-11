@@ -52,7 +52,7 @@ Function definitions:
 
 base64url() input - byte sequence, output - byte sequence
 	Is Base64 URL algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
-	basically it's bade64 but with '=' padding removed and characters '+', '/' replaced with '-', '_' resp.
+	basically it's base64 but with '=' padding removed, characters '+', '/' replaced with '-', '_' resp. and no new lines.
 
 json_utf8() - input - Hash, output - byte sequence
 	JSON string in UTF-8 representation. Can contain not-escaped UTF-8 characters. Will not contain linefeed. Hash objects are unordered.
@@ -68,7 +68,9 @@ Note, that according to this spec. Same (FILENAME,MTIME) values can produce diff
 
 =cut
 
-my $meta_coder = JSON::XS->new->utf8->max_depth(1)->max_size(1024);
+my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
+	JSON::XS->new->utf8->max_depth(1)->max_size(1024) : # some additional abuse-protection
+	JSON::XS->new->utf8; # it's still protected by length checking below
 
 sub meta_decode
 {
@@ -97,6 +99,7 @@ sub _decode_b64
 sub _decode_utf8
 {
 	my ($str) = @_;
+	return undef unless defined $str;
 	my $res = eval {
 		decode("UTF-8", $str, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
 	};
@@ -106,6 +109,7 @@ sub _decode_utf8
 sub _decode_json
 {
 	my ($str) = @_;
+	return undef unless defined $str;
 	my $h = eval { 
 		$meta_coder->decode($str)
 	};

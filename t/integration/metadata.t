@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 184;
+use Test::More tests => 188;
 use Test::Deep;
 use lib qw{.. ../..};
 use MetaData;
@@ -35,6 +35,7 @@ use JSON::XS;
 use Data::Dumper;
 use POSIX;
 use DateTime; #TODO: rewrite using core Time::Piece https://github.com/azumakuniyuki/perl-benchmark-collection/blob/master/module/datetime-vs-time-piece.pl
+use Test::Spec;
 
 no warnings 'redefine';
 
@@ -269,6 +270,17 @@ no warnings 'redefine';
 	}
 }
 
+
+# check catching for undef - warning duplicate test found in unit tests
+{
+	my $called;
+	local *MetaData::decode = sub { $called = 1 };
+	ok defined MetaData::_decode_utf8 encode("UTF-8", "тест");
+	ok ($called, "_decode_utf8 calls MetaData::decode (which is Encode::decode)");
+	$called = 0;
+	ok !defined MetaData::_decode_utf8 undef;
+	ok !$called, "_decode_utf8 retruns undef even without calling Encode::decode";
+}
 
 sub to_iso8601
 {
