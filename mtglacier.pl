@@ -114,7 +114,7 @@ if ($action eq 'sync') {
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 0);
 	$j->read_new_files($options->{'max-number-of-files'});
 	
 	my @joblist;
@@ -135,7 +135,7 @@ if ($action eq 'sync') {
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 	if (scalar keys %$files) {
 		my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
@@ -153,7 +153,7 @@ if ($action eq 'sync') {
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 	# TODO: refactor
 	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
@@ -172,7 +172,7 @@ if ($action eq 'sync') {
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 	# TODO: refactor
 	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
@@ -186,7 +186,7 @@ if ($action eq 'sync') {
 	$FE->terminate_children();
 } elsif ($action eq 'check-local-hash') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 	
 	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error) = (0,0,0,0,0);

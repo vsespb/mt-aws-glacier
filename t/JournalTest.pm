@@ -59,7 +59,7 @@ sub test_journal
 	$self->create_journal();
 	
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	
 	my @checkfiles = grep { $_->{type} eq 'normalfile' && $_->{journal} && $_->{journal} eq 'created' } @{$self->{testfiles}};
 	ok(( scalar @checkfiles == scalar keys %{ $j->{journal_h} } ), "journal - number of planed and real files match");
@@ -121,7 +121,7 @@ sub test_new_files
 	$self->create_journal();
 	$self->create_files('skip');
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	$j->read_new_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
@@ -141,7 +141,7 @@ sub test_existing_files
 	$self->create_journal();
 	$self->create_files('skip');
 	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	$j->read_existing_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};

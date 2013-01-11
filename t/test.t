@@ -50,5 +50,6 @@ $harness->runtests(
     'unit/config_engine_parse.t',
     'unit/u_treehash.t',
     'unit/metadata.t',
+    'unit/journal_openmodes.t',
     'integration/config_engine_v078.t',
 );

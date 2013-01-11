@@ -52,9 +52,11 @@ sub new
 
 sub read_journal
 {
-	my ($self) = @_;
-	return unless -s $self->{journal_file};
-	open (F, "<:encoding(UTF-8)", $self->{journal_file});
+	my ($self, %args) = @_;
+	confess unless defined $args{should_exist};
+	confess unless length($self->{journal_file});
+	confess if -d $self->{journal_file};
+	open (F, "<:encoding(UTF-8)", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess;
 	while (<F>) {
 		chomp;
 		$self->process_line($_);
