@@ -215,6 +215,19 @@ sub retrieval_download_job
 }
 
 
+sub retrieval_download_to_memory
+{
+	my ($self, $jobid) = @_;
+
+	$jobid||confess;
+   
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
+	$self->{method} = 'GET';
+
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp->decoded_content : undef;
+}
+
 sub download_inventory
 {
 	my ($self, $jobid) = @_;

@@ -39,6 +39,7 @@ use FileListRetrievalJob;
 use RetrievalFetchJob;
 use JobListProxy;
 use RetrieveInventoryJob;
+use InventoryFetchJob;
 use File::Find ;
 use File::Spec;
 use Journal;
@@ -249,31 +250,41 @@ if ($action eq 'sync') {
 	#$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'download-inventory') {
-	my $req = GlacierRequest->new($options);
-	my $r = $req->download_inventory($options->{'job-id'}, $options->{'output-journal'});
 	
-	my $STR = $r->content;
+	my $j = Journal->new(journal_file => $options->{'new-journal'});
+			
+	my $FE = ForkEngine->new(options => $options);
+	$FE->start_children();
 	
-	open F, ">_str";
-	binmode F;
-	print F $STR;
-	close F;
 	
-	my $data = JSON::XS->new->allow_nonref->utf8->decode($STR);
-	for (@{$data->{'ArchiveList'}}) {
-		print $_->{ArchiveId};
-		print "\t";
-		print $_->{ArchiveDescription};
-		print "\t";
-		print $_->{CreationDate};
-		print "\t";
-		print $_->{SHA256TreeHash};
-		print "\t";
-		my ($f, $m) = MetaData::meta_decode($_->{ArchiveDescription});
-		$f||='';
-		$m||='';
-		print "$m\t$f\n";
+	my $ft = JobProxy->new(job => InventoryFetchJob->new());
+	my $R = $FE->{parent_worker}->process_task($ft, undef);
+
+	$j->open_for_write();
+
+	my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});
+	my $now = time();
+	
+	for my $item (@{$data->{'ArchiveList'}}) {
+		
+		my ($relfilename, $mtime) = MetaData::meta_decode($item->{ArchiveDescription});
+		$relfilename = $item->{ArchiveId} unless defined $relfilename;
+		$mtime = $now unless defined $mtime;
+		
+		my $creation_time = MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
+		#time archive_id size mtime treehash relfilename
+		$j->add_entry({
+			type => 'CREATED',
+			relfilename => $relfilename,
+			time => $creation_time,
+			archive_id => $item->{ArchiveId},
+			size => $item->{Size},
+			mtime => $mtime,
+			treehash => $item->{SHA256TreeHash},
+		});		
 	}
+	$j->close_for_write();
+	$FE->terminate_children();
 } elsif ($action eq 'help') {
 	print <<"END";
 Usage: mtglacier.pl COMMAND [OPTION]...

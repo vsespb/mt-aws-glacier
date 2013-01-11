@@ -111,6 +111,12 @@ sub process
 				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
+			} elsif ($action eq 'inventory_download_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_download_to_memory($data->{job_id});
+				return undef unless $r;
+				$result = { response => $r };
+				$console_out = "Download inventory in JSON format";
 			} elsif ($action eq 'retrieve_archive') {
 				my $req = GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_archive( $data->{archive_id});
@@ -130,6 +136,12 @@ sub process
 				confess unless $r;
 				$result = { response => $r };
 				$console_out = "Retrieve Job List";
+			} elsif ($action eq 'inventory_fetch_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_fetch_job($data->{marker});
+				confess unless $r;
+				$result = { response => $r };
+				$console_out = "Retrieve Job List for inventory retrieval";
 			} elsif ($action eq 'retrieve_inventory_job') {
 				my $req = GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_inventory();
