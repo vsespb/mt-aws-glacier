@@ -29,6 +29,7 @@ use File::Find ;
 use File::Spec;
 use Encode;
 use Carp;
+use IO::Handle;
 
 sub new
 {
@@ -63,6 +64,20 @@ sub read_journal
 	}
 	close F;
 	return;
+}
+
+sub open_for_write
+{
+	my ($self) = @_;
+  	open ($self->{append_file}, ">>:encoding(UTF-8)", $self->{journal_file}) || confess $self->{journal_file};
+  	$self->{append_file}->autoflush();
+}
+
+sub close_for_write
+{
+	my ($self) = @_;
+	confess unless $self->{append_file};
+	close $self->{append_file};
 }
 
 sub process_line
@@ -165,8 +180,8 @@ sub add_entry
 sub _write_line
 {
 	my ($self, $line) = @_;
-  	open (F, ">>:encoding(UTF-8)", $self->{journal_file}) || croak;
-	print F $line."\n";
+	confess unless $self->{append_file};
+	print { $self->{append_file} } $line."\n";
 	close F;
 	# TODO: fsync()
 }

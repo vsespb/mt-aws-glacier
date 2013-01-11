@@ -116,6 +116,7 @@ if ($action eq 'sync') {
 	
 	$j->read_journal(should_exist => 0);
 	$j->read_new_files($options->{'max-number-of-files'});
+	$j->open_for_write();
 	
 	my @joblist;
 	for (@{ $j->{newfiles_a} }) {
@@ -128,6 +129,7 @@ if ($action eq 'sync') {
 		my $R = $FE->{parent_worker}->process_task($lt, $j);
 		die unless $R;
 	}
+	$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'purge-vault') {
 	my $j = Journal->new(journal_file => $options->{journal});
@@ -136,6 +138,8 @@ if ($action eq 'sync') {
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 1);
+	$j->open_for_write();
+	
 	my $files = $j->{journal_h};
 	if (scalar keys %$files) {
 		my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
@@ -145,6 +149,7 @@ if ($action eq 'sync') {
 	} else {
 		print "Nothing to delete\n";
 	}
+	$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'restore') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
@@ -154,6 +159,8 @@ if ($action eq 'sync') {
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 1);
+	$j->open_for_write();
+	
 	my $files = $j->{journal_h};
 	# TODO: refactor
 	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
@@ -165,6 +172,7 @@ if ($action eq 'sync') {
 	} else {
 		print "Nothing to restore\n";
 	}
+	$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'restore-completed') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
@@ -173,6 +181,7 @@ if ($action eq 'sync') {
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 1);
+	
 	my $files = $j->{journal_h};
 	# TODO: refactor
 	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};

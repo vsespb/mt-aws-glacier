@@ -3,9 +3,9 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 10;
+use Test::More tests => 15;
 use Test::Deep;
-use File::Path qw/mkpath/;
+use File::Path;
 use lib qw{.. ../..};
 use Journal;
 use Test::MockModule;
@@ -17,6 +17,8 @@ my $rootdir = 'def';
 my $file = "$mtroot/journal_open_mode";
 my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 
+
+# checking when reading journal
 
 {
 	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
@@ -109,11 +111,47 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 	}
 }
 
+# checking when writing journal
+{
+	remove($file);
+	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	$J->open_for_write();
+	$J->_write_line($fixture);
+	ok -s $file, "should write to file, even without closing file";
+}
+
+{
+	remove($file);
+	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	$J->open_for_write();
+	$J->_write_line($fixture);
+	$J->close_for_write;
+	ok( -s $file, "close for write should work");
+}
+
+{
+	use bytes;
+	no bytes;
+	create($file, $fixture);
+	ok -s $file == bytes::length($fixture) + length("\n"), "assume length";
+	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	$J->open_for_write();
+	$J->_write_line($fixture);
+	ok -s $file == 2* ( bytes::length($fixture) + length("\n") ), "should append";
+}
+
+{
+	remove($file);
+	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	eval { $J->close_for_write; };
+	ok($@ ne '', "close for write should die if file was not opened");
+}
+
 sub create
 {
 	my ($file, $content) = @_;
 	open F, ">:encoding(UTF-8)", $file;
-	print F $content if defined $content;
+	print F $content."\n" if defined $content;
 	close F;
 	
 }
