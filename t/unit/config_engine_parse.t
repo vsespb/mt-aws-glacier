@@ -23,12 +23,15 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 29;
+use Test::More tests => 31;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
 use Test::MockModule;
+use Carp;
 use Data::Dumper;
+
+my $mtroot = '/tmp/mt-aws-glacier-tests';
 
 no warnings 'redefine';
 
@@ -200,6 +203,30 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 		));
 		ok( !$errors && !$warnings && !$result && $command eq 'help', "should catch help [[$_]]" );
 	}
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my $file = "$mtroot/journal_t_1";
+	unlink $file || confess if -e $file;
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
+	));
+	ok( $errors && $errors->[0] =~ /Journal file not found/i, "should catch non existing journal $errors->[0]" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my $file = "$mtroot/journal_t_1";
+	unlink $file || confess if -e $file;
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
+	));
+	ok( !$errors, "should allow non-existing journal for sync" );
 }
 
 {
