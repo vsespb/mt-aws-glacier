@@ -40,7 +40,7 @@ my %deprecations = (
 	
 my %options = (
 'config'              => { type => 's' },
-'journal'             => { type => 's' }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
+'journal'             => { type => 's', validate => [ ['Journal file not exist' => sub {-r } ], ] }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
 	'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
@@ -164,7 +164,7 @@ sub parse_options
 		}
 	}
 	for my $o (keys %result) {
-		if (my $validations = $options{$o}{validate}) {
+		if (my $validations = $self->{override_validations}->{$o} || $options{$o}{validate}) {
 			for my $v (@$validations) {
 				my ($message, $test) = @$v;
 				local $_ = $result{$o};
@@ -176,6 +176,8 @@ sub parse_options
 
 	return (undef, @warnings ? \@warnings : undef, $command, \%result);
 }
+
+
 	
 sub read_config
 {
