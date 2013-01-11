@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 150;
+use Test::More tests => 160;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -100,7 +100,17 @@ for (
 	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
 }
 
-
+for (
+	qq!sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra!,
+	qq!sync --from-dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra!,
+	qq!sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=3!,
+	qq!sync sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3!,
+	qq!sync --dir x --config y -journal z -to-va va extra -conc 9 --partsize=3!,
+){
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ', $_));
+	ok( $errors && !$result, "$_ - should catch non option");
+	ok( $errors->[0] =~ /Extra argument/, "$_ - should catch non option $errors->[0]");
+}
 for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --max-number-of-files=42!,
 	qq!sync --max-number-of-files=42 --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log!,

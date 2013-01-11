@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 22;
+use Test::More tests => 24;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -126,6 +126,22 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	'synx'
 	));
 	ok( $errors && $errors->[0] eq 'Unknown command', "should catch unknown command" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra'
+	));
+	ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=3'
+	));
+	ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option 2" );
 }
 
 {
