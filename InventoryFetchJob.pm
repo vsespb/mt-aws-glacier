@@ -54,11 +54,12 @@ sub get_task
 sub finish_task
 {
 	my ($self, $task) = @_;
+	
 	if ($self->{raised}) {
 		my $json = JSON::XS->new->allow_nonref;
 		my $scalar = $json->decode( $task->{result}->{response} );
 		for my $job (@{$scalar->{JobList}}) {
-			#print "$job->{Completed}|$job->{JobId}|$job->{ArchiveId}\n";
+			#print "$job->{Completed}|$job->{JobId}\n";
 			if ($job->{Action} eq 'InventoryRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
 				return ("ok replace", InventoryDownloadJob->new(job_id => $job->{JobId}));
 			}

@@ -259,7 +259,11 @@ if ($action eq 'sync') {
 	
 	my $ft = JobProxy->new(job => InventoryFetchJob->new());
 	my $R = $FE->{parent_worker}->process_task($ft, undef);
-
+	# here we can have response from both JobList or Inventory output..
+	# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
+	# Inventory retriebal has key 'ArchiveList'
+	# TODO: implement it more clear way on level of Job/Tasks object
+	
 	$j->open_for_write();
 
 	my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});
