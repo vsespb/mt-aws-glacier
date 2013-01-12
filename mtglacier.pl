@@ -237,6 +237,7 @@ if ($action eq 'sync') {
 	print "($error_mtime of them have File Modification Time altered)\n";
 	exit(1) if $error_hash || $error_size || $error_missed;
 } elsif ($action eq 'retrieve-inventory') {
+	$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 	#my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 			
 	my $FE = ForkEngine->new(options => $options);
@@ -250,7 +251,7 @@ if ($action eq 'sync') {
 	#$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'download-inventory') {
-	
+	$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 	my $j = Journal->new(journal_file => $options->{'new-journal'});
 			
 	my $FE = ForkEngine->new(options => $options);
@@ -264,6 +265,7 @@ if ($action eq 'sync') {
 	# Inventory retriebal has key 'ArchiveList'
 	# TODO: implement it more clear way on level of Job/Tasks object
 	
+	croak if -s $options->{'new-journal'}; # TODO: fix race condition between this and opening file
 	$j->open_for_write();
 
 	my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});

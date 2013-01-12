@@ -49,8 +49,18 @@ my %options = (
 		}
 	},
 	'Journal file not writable' => sub { my ($command, $results, $value) = @_;
-		if ($command =~ /^(sync|purge\-vault|restore)$/) {
+		if ($command =~ /^(sync|purge\-vault|restore|download\-inventory)$/) {
 			return (-f $value && -w $value && ! -d $value) || (! -d $value); # TODO: more strict test + actualyy create empty journal file when sync + unit test this
+		} else {
+			return 1;
+		}
+	} ],
+] },
+'new-journal'             => { type => 's', validate => [
+	[
+	'Journal file not empty - please provide empty file no write new journal' => sub { my ($command, $results, $value) = @_;
+		if ($command eq 'download-inventory') {
+			return ! -s $value;
 		} else {
 			return 1;
 		}
@@ -81,8 +91,8 @@ my %commands = (
 'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
 'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/], optional => [qw//]},
 'check-local-hash'  => { req => [@config_opts, qw/journal dir/], deprecated => [qw/to-vault/] },
-'retrieve-inventory' => { req => [@config_opts, qw/vault concurrency/], optional => [qw//]},
-'download-inventory' => { req => [@config_opts, qw/vault concurrency new-journal/], optional => [qw//]},
+'retrieve-inventory' => { req => [@config_opts, qw/vault/], optional => [qw//]},
+'download-inventory' => { req => [@config_opts, qw/vault new-journal/], optional => [qw//]},
 );
 
 
