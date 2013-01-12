@@ -1,3 +1,11 @@
+2013-01-12: v0.82 beta
+	* retrieve-inventory/download-inventory commands added. You can now restore journal file from scratch, from Amazon Glacier metadata
+	* Now when downloading files from glacier - restore original modification time
+	* Fixed - File modification time - date before 1970 were not working
+	* Improvement in error checking command line parameters
+	* Error checking added for read/write availability of journal file
+	* Internal: improvements to unit tests
+	
 2013-01-02: v0.81 beta
 	* Error handling when parsing command line implemented + --help command
 	* Security - considering filenames coming from "external" sources (from Glacier and from Journal file) as unsecure. Sanitize/check it.

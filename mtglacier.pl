@@ -27,7 +27,7 @@ use warnings;
 use utf8;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
-our $VERSION = "0.81beta";
+our $VERSION = "0.82beta";
 
 
 use ParentWorker;
@@ -309,7 +309,9 @@ Commands:
 	restore
 	restore-completed
 	check-local-hash
-	
+	retrieve-inventory
+	download-inventory
+		--new-journal - Write inventory as new journal
 Config format (text file):
 	key=YOURKEY                                                                                                                                                                                                                                                      
 	secret=YOURSECRET                                                                                                                                                                                                                               

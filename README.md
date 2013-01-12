@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.81 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.82 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -28,6 +28,7 @@ mt-aws-glacier is a client application for Glacier.
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
 * File name and modification times are stored as Glacier metadata
+* Ability to re-create journal file from Amazon Glacier metadata
 * UTF-8 support
 
 ## Coming-soon features
@@ -121,7 +122,7 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 				./mtglacier.pl restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log --max-number-of-files=10
     
-10. Wait 4+ hours
+10. Wait 4+ hours for Amazon Glacier to complete archive retrieval
 11. Download restored files back to backup location
 
 				./mtglacier.pl restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
@@ -129,6 +130,25 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 12. Delete all your files from vault
 
 				./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+
+## Restoring journal
+
+In case you lost your journal file, you can restore it from Amazon Glacier metadata
+
+1. Run retrieve-inventory command
+
+				./mtglacier.pl retrieve-inventory --config=glacier.cfg --vault=myvault
+
+2. Wait 4+ hours for Amazon Glacier to complete inventory retrieval
+
+3. Download inventroy and export it to new journal:
+
+ 				./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault -new-journal=new-journal.log
+
+
+For files created by mt-aws-glacier version 0.8x and higher original filenames will be restored. For other files archive_id will be used as filename. See Amazon Glacier metadata format for mt-aws-glacier here: [Amazon Glacier metadata format used by mt-aws glacier][Amazon Glacier metadata format used by mt-aws glacier]
+
+[Amazon Glacier metadata format used by mt-aws glacier]:https://github.com/vsespb/mt-aws-glacier/blob/86031708866c7b444b6f8efa4900f42536c91c5a/MetaData.pm#L35
 
 ## Additional command line options
 
