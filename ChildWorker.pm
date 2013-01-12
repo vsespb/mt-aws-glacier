@@ -116,7 +116,7 @@ sub process
 				my $r = $req->retrieval_download_to_memory($data->{job_id});
 				return undef unless $r;
 				$result = { response => $r };
-				$console_out = "Download inventory in JSON format";
+				$console_out = "Downloaded inventory in JSON format";
 			} elsif ($action eq 'retrieve_archive') {
 				my $req = GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_archive( $data->{archive_id});
@@ -129,25 +129,25 @@ sub process
 						job_id => $r,
 						}
 				};
-				$console_out = "Retrieve Archive $data->{archive_id}";
+				$console_out = "Retrieved Archive $data->{archive_id}";
 			} elsif ($action eq 'retrieval_fetch_job') {
 				my $req = GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_fetch_job($data->{marker});
 				confess unless $r;
 				$result = { response => $r };
-				$console_out = "Retrieve Job List";
+				$console_out = "Retrieved Job List";
 			} elsif ($action eq 'inventory_fetch_job') {
 				my $req = GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_fetch_job($data->{marker});
 				confess unless $r;
 				$result = { response => $r };
-				$console_out = "Retrieve Job List for inventory retrieval";
+				$console_out = "Fetched job list for inventory retrieval";
 			} elsif ($action eq 'retrieve_inventory_job') {
 				my $req = GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_inventory();
 				confess unless $r;
 				$result = { job_id => $r };
-				$console_out = "Retrieve Inventory, job id $r";
+				$console_out = "Retrieved Inventory, job id $r";
 			} else {
 				die $action;
 			}
