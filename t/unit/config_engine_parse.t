@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 31;
+use Test::More tests => 33;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -197,7 +197,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 
 {
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
-	for (qw! help -help --help ---help!, qq!  --help !, qq! -help !) {
+	for (qw! help -help --help ---help!, qq!  --help !, qq! -help !, qq!h!, qq!-h!) {
 		my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 		$_
 		));
