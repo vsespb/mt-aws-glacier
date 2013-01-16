@@ -135,13 +135,13 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 In case you lost your journal file, you can restore it from Amazon Glacier metadata
 
-1. Run retrieve-inventory command
+1. Run retrieve-inventory command. This will request Amazon Glacier to prepare vault inventory.
 
 				./mtglacier.pl retrieve-inventory --config=glacier.cfg --vault=myvault
 
-2. Wait 4+ hours for Amazon Glacier to complete inventory retrieval
+2. Wait 4+ hours for Amazon Glacier to complete inventory retrieval (also note that you will get only ~24h old inventory..)
 
-3. Download inventroy and export it to new journal:
+3. Download inventory and export it to new journal (this sometimes can be pretty slow even if inventory is small, wait a few minutes):
 
  				./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault -new-journal=new-journal.log
 
