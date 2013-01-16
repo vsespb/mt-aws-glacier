@@ -45,7 +45,7 @@ mt-aws-glacier is a client application for Glacier.
 
 [Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier 
 
-## Planed next version features
+## Planned next version features
 
 * Amazon S3 support
 
@@ -58,7 +58,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Production ready
 
-* Not recomended to use in production until first "Release" version. Currently Beta.
+* Not recommended to use in production until first "Release" version. Currently Beta.
 
 ## Installation/System requirements
 
@@ -120,16 +120,16 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
 
-				./mtglacier.pl restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log --max-number-of-files=10
+				./mtglacier.pl restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=10
     
 10. Wait 4+ hours for Amazon Glacier to complete archive retrieval
 11. Download restored files back to backup location
 
-				./mtglacier.pl restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+				./mtglacier.pl restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
     
 12. Delete all your files from vault
 
-				./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+				./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
 
 ## Restoring journal
 
@@ -143,7 +143,7 @@ In case you lost your journal file, you can restore it from Amazon Glacier metad
 
 3. Download inventory and export it to new journal (this sometimes can be pretty slow even if inventory is small, wait a few minutes):
 
- 				./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault -new-journal=new-journal.log
+ 				./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log
 
 
 For files created by mt-aws-glacier version 0.8x and higher original filenames will be restored. For other files archive_id will be used as filename. See Amazon Glacier metadata format for mt-aws-glacier here: [Amazon Glacier metadata format used by mt-aws glacier][Amazon Glacier metadata format used by mt-aws glacier]
@@ -184,11 +184,11 @@ OR
 
 * If you are using it and like it, please "Star" it on GitHUb, this way you'll help promote the project
 * Please report any bugs or issues (using GitHub issues). Well, any feedback is welcomed.
-* If you wan't to contribute to the source code, please contact me first and describe what you want to do
+* If you want to contribute to the source code, please contact me first and describe what you want to do
 		
 ## Minimum Amazon Glacier permissions:
 
-something like that
+Something like this:
 
 				{
   				"Statement": [
