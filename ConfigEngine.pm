@@ -56,7 +56,7 @@ my %options = (
 		}
 	} ],
 ] },
-'new-journal'             => { type => 's', validate => [
+'new-journal'             => { type => 's', validate =>
 	[
 	'Journal file not empty - please provide empty file no write new journal' => sub { my ($command, $results, $value) = @_;
 		if ($command eq 'download-inventory') {
@@ -65,23 +65,23 @@ my %options = (
 			return 1;
 		}
 	},	 ],
-] },
+},
 	'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
 'key'                 => { type => 's' },
 'secret'              => { type => 's' },
 'region'              => { type => 's' },
-'concurrency'         => { type => 'i', default => 4, validate => [
+'concurrency'         => { type => 'i', default => 4, validate =>
 	['Max concurrency is 30,  Min is 1' => sub { my ($command, $results, $value) = @_;
 		$value >= 1 && $value <= 30
 	}],
-] },
-'partsize'            => { type => 'i', default => 16, validate => [
+},
+'partsize'            => { type => 'i', default => 16, validate =>
 	['Part size must be power of two'   => sub { my ($command, $results, $value) = @_;
 		($value != 0) && (($value & ($value - 1)) == 0)
 	}],
-] },
+},
 'max-number-of-files' => { type => 'i'},
 );
 
@@ -202,7 +202,8 @@ sub parse_options
 	}
 	for my $o (keys %result) {
 		if (my $validations = $self->{override_validations}->{$o} || $options{$o}{validate}) {
-			for my $v (@$validations) {
+			my $validations_array = ref $validations->[0] eq 'ARRAY' ? $validations : [ $validations ];
+			for my $v (@$validations_array) {
 				my ($message, $test) = @$v;
 				return (["$message"], @warnings ? \@warnings : undef) unless ($test->($command, \%result, $result{$o}));
 			}
