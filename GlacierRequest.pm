@@ -352,6 +352,7 @@ sub perform_lwp
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
+			print $resp->dump;
 			if ($i <= 5) {
 				sleep 1;
 			} elsif ($i <= 10) {
