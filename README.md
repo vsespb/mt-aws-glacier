@@ -69,14 +69,14 @@ Install the following CPAN modules:
 
 * **LWP::UserAgent** (or Debian package **libwww-perl**)
 * **JSON::XS** (or Debian package **libjson-xs-perl**)
-		
+
 Install using *apt-get* (easier, more reliable way):
-				
-				apt-get install libwww-perl libjson-xs-perl
-				
+
+		apt-get install libwww-perl libjson-xs-perl
+
 Install using *cpan* (if you like Perl and want use latest versions of libraries):
 
-				cpan -i LWP::UserAgent JSON::XS
+		cpan -i LWP::UserAgent JSON::XS
 
 
 ## Warnings ( *MUST READ* )
@@ -102,34 +102,34 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 1. Create a directory containing files to backup. Example `/data/backup`
 2. Create config file, say, glacier.cfg
 
-				key=YOURKEY                                                                                                                                                                                                                                                      
-				secret=YOURSECRET                                                                                                                                                                                                                               
-				region=us-east-1 #eu-west-1, us-east-1 etc
+		key=YOURKEY
+		secret=YOURSECRET
+		region=us-east-1 #eu-west-1, us-east-1 etc
 
 3. Create a vault in specified region, using Amazon Console (`myvault`)
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
-				./mtglacier.pl sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
-				
+		./mtglacier.pl sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
+
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
-				./mtglacier.pl check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+		./mtglacier.pl check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
     
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
 
-				./mtglacier.pl restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=10
-    
+		./mtglacier.pl restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=10
+
 10. Wait 4+ hours for Amazon Glacier to complete archive retrieval
 11. Download restored files back to backup location
 
-				./mtglacier.pl restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
-    
+		./mtglacier.pl restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+
 12. Delete all your files from vault
 
-				./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
 
 ## Restoring journal
 
@@ -137,13 +137,13 @@ In case you lost your journal file, you can restore it from Amazon Glacier metad
 
 1. Run retrieve-inventory command. This will request Amazon Glacier to prepare vault inventory.
 
-				./mtglacier.pl retrieve-inventory --config=glacier.cfg --vault=myvault
+		./mtglacier.pl retrieve-inventory --config=glacier.cfg --vault=myvault
 
 2. Wait 4+ hours for Amazon Glacier to complete inventory retrieval (also note that you will get only ~24h old inventory..)
 
 3. Download inventory and export it to new journal (this sometimes can be pretty slow even if inventory is small, wait a few minutes):
 
- 				./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log
+		./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log
 
 
 For files created by mt-aws-glacier version 0.8x and higher original filenames will be restored. For other files archive_id will be used as filename. See Amazon Glacier metadata format for mt-aws-glacier here: [Amazon Glacier metadata format used by mt-aws glacier][Amazon Glacier metadata format used by mt-aws glacier]
@@ -154,15 +154,15 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 1. "concurrency" (with 'sync' command) - number of parallel upload streams to run. (default 4)
 
-				--concurrency=4
-				
+		--concurrency=4
+
 2. "partsize" (with 'sync' command) - size of file chunk to upload at once, in Megabytes. (default 16)
 
-				--partsize=16
-				
+		--partsize=16
+
 3. "max-number-of-files" (with 'sync' or 'restore' commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
-				--max-number-of-files=100
+		--max-number-of-files=100
 
 ## Test/Play with it
 
@@ -178,41 +178,41 @@ OR
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
-		
 
 ## Help/contribute this project
 
 * If you are using it and like it, please "Star" it on GitHUb, this way you'll help promote the project
 * Please report any bugs or issues (using GitHub issues). Well, any feedback is welcomed.
 * If you want to contribute to the source code, please contact me first and describe what you want to do
-		
+
 ## Minimum Amazon Glacier permissions:
 
 Something like this:
 
-				{
-  				"Statement": [
-    				{
-      				"Effect": "Allow",
-      				"Resource":["arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test1",
-		  				"arn:aws:glacier:us-east-1:XXXXXXXXXXXX:vaults/test1",
-		  				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test2",
-		  				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test3"],
-      				"Action":["glacier:UploadArchive",
-                				"glacier:InitiateMultipartUpload",
-								"glacier:UploadMultipartPart",
-                				"glacier:UploadPart",
-                				"glacier:DeleteArchive",
-								"glacier:ListParts",
-								"glacier:InitiateJob",
-								"glacier:ListJobs",
-								"glacier:GetJobOutput",
-								"glacier:ListMultipartUploads",
-								"glacier:CompleteMultipartUpload"] 
-    				}
-  				]
-				}
+		{
+		"Statement": [
+			{
+			"Effect": "Allow",
+			"Resource":["arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test1",
+				"arn:aws:glacier:us-east-1:XXXXXXXXXXXX:vaults/test1",
+				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test2",
+				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test3"],
+				"Action":["glacier:UploadArchive",
+					"glacier:InitiateMultipartUpload",
+					"glacier:UploadMultipartPart",
+					"glacier:UploadPart",
+					"glacier:DeleteArchive",
+					"glacier:ListParts",
+					"glacier:InitiateJob",
+					"glacier:ListJobs",
+					"glacier:GetJobOutput",
+					"glacier:ListMultipartUploads",
+					"glacier:CompleteMultipartUpload"] 
+			}
+			]
+		}
 
+#### EOF
 
 [![mt-aws glacier tracking pixel](https://mt-aws.com/mt-aws-glacier-transp.gif "mt-aws glacier tracking pixel")](http://mt-aws.com/)
- 
+
