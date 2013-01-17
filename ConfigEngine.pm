@@ -189,7 +189,11 @@ sub parse_options
 				$result{$o} = $options{$o}->{default};
 			} else {
 				if (grep { $_ eq $o } @config_opts) {
-					return (["Please specify --config with \"$o\" option or --$o"], @warnings ? \@warnings : undef);
+					return ([
+						defined($result{config}) ?
+						"Please specify --$o OR add \"$o=...\" into the config file" :
+						"Please specify --$o OR specify --config and put \"$o=...\" into the config file"
+					],@warnings ? \@warnings : undef);
 				} else {
 					return (["Please specify --$o"], @warnings ? \@warnings : undef);
 				}

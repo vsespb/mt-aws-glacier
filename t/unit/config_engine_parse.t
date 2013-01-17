@@ -159,7 +159,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3'
 	));
-	ok( $errors && $errors->[0] eq 'Please specify --config with "secret" option or --secret', "should catch missed secret" );
+	ok( $errors && $errors->[0] eq 'Please specify --secret OR add "secret=..." into the config file', "should catch missed secret" );
 }
 
 {
@@ -167,7 +167,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'sync --key a --region b --dir x -journal z -to-va va -conc 9 --partsize=3'
 	));
-	ok( $errors && $errors->[0] eq 'Please specify --config with "secret" option or --secret', "should catch missed secret without config" );
+	ok( $errors && $errors->[0] eq 'Please specify --secret OR specify --config and put "secret=..." into the config file', "should catch missed secret without config" );
 }
 
 {

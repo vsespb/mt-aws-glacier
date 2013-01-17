@@ -99,7 +99,7 @@ for (@$warnings) {
 	warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
 }	
 if ($errors) {
-	print STDERR "ERROR: ".$errors->[0]."( use --help for help )\n\n";
+	print STDERR "ERROR: ".$errors->[0]." ( use --help for help )\n\n";
 	exit(1);
 }
 
