@@ -103,8 +103,7 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	unlink $file if -e $file;
 	ok ! -e $file, "assert we deleted file";
 	my $C = ConfigEngine->new();
-	eval {$C->read_config($file);};
-	ok $@ ne '', "should die if file not found"
+	ok !defined $C->read_config($file), "should die if file not found"
 }
 
 {
@@ -113,8 +112,7 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	mkpath($file);
 	ok -d $file, "assert file is directory";
 	my $C = ConfigEngine->new();
-	eval {$C->read_config($file);};
-	ok $@ ne '', "should die if file is directory"
+	ok !defined $C->read_config($file), "should die if file is directory"
 }
 
 sub read_as_config

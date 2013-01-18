@@ -151,6 +151,7 @@ sub parse_options
 	my %source;
 	if ($result{config}) {
 		my $config_result = $self->read_config($result{config});
+		return (["Cannot read config file \"$result{config}\""], @warnings ? \@warnings : undef) unless defined $config_result;
 		
 		my (%merged);
 		
@@ -219,8 +220,8 @@ sub parse_options
 sub read_config
 {
 	my ($self, $filename) = @_;
-	croak "config file not found $filename" unless -f $filename && -r $filename; #TODO test
-	open (F, "<:crlf:encoding(UTF-8)", $filename) || croak "cannot open config file";
+	return undef unless -f $filename && -r $filename; #TODO test
+	open (F, "<:crlf:encoding(UTF-8)", $filename) || return undef;
 	my %newconfig;
 	while (<F>) {
 		chomp;
