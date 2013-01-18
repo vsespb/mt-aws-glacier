@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1;
+use Test::More tests => 65;
 use lib qw{.. ../..};
 use ConfigEngine;
 use File::Path;

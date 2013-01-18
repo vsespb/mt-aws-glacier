@@ -37,6 +37,7 @@ my $harness = TAP::Harness->new({
 });
 $harness->runtests(
     'integration/journal.t',
+    'integration/config_read_config.t',
     'integration/utf8_journal.t',
     'integration/utf8_line_protocol.t',
     'integration/utf8.t',
