@@ -69,7 +69,7 @@ my %options = (
 	'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
-'key'                 => { type => 's' },
+'key'                 => { type => 's' },# validate => ['Invalid characters in "key"', sub { $_[2] =~ /^[A-Za-z0-9_/+\-\:]{5,100}$/ } ] },
 'secret'              => { type => 's' },
 'region'              => { type => 's' },
 'concurrency'         => { type => 'i', default => 4, validate =>
@@ -219,20 +219,19 @@ sub parse_options
 sub read_config
 {
 	my ($self, $filename) = @_;
-	die "config file not found $filename" unless -r $filename; #TODO test
-	open (F, "<:encoding(UTF-8)", $filename);
+	croak "config file not found $filename" unless -f $filename && -r $filename; #TODO test
+	open (F, "<:crlf:encoding(UTF-8)", $filename) || croak "cannot open config file";
 	my %newconfig;
 	while (<F>) {
 		chomp;
-		chop if /\r$/; # windows CRLF format
 		next if /^\s*$/;
 		next if /^\s*\#/;
-		my ($name, $value) = split(/\=/, $_);
-		$name =~ s/^\s*//;
-		$name =~ s/\s*$//;
-		$value =~ s/^\s*//;
-		$value =~ s/\s*$//;
-		
+		/^([^=]+)=(.*)$/;
+		my ($name, $value) = ($1,$2);
+		$name =~ s/^[ \t]*//;
+		$name =~ s/[ \t]*$//;
+		$value =~ s/^[ \t]*//;
+		$value =~ s/[ \t]*$//;
 		$newconfig{$name} = $value;
 	}
 	close F;
