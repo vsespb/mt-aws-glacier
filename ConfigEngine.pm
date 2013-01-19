@@ -83,6 +83,11 @@ my %options = (
 	}],
 ] },
 'max-number-of-files' => { type => 'i'},
+'protocol'             => { type => 's', default => 'http', validate => [
+	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
+          ($value =~ /^(https|http)$/)
+	}, ],
+] },
 );
 
 my %commands = (

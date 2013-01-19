@@ -314,13 +314,14 @@ sub perform_lwp
 	my ($self) = @_;
 	
 	for my $i (1..100) {
-		$self->_sign();	
-		
+		$self->_sign();
+
 		my $ua = LWP::UserAgent->new(timeout => 120);
+		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Just in case, lets hard code this.
 		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
 		my $req = undef;
-		my $url = "http://$self->{host}$self->{url}";
-		$url = "http://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
+		my $url = $self->{protocol} ."://$self->{host}$self->{url}";
+		$url = $self->{protocol} ."://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
 		$url .= "?$self->{params_s}" if $self->{params_s};
 		if ($self->{method} eq 'PUT') {
 			$req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
