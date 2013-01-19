@@ -62,22 +62,17 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Installation/System requirements
 
-Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Not tested under Mac OS.
+Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Not tested under Mac OS X.
 Should NOT work under Windows. 
 
-Install the following CPAN modules:
+* Install the following CPAN modules:
 
-* **LWP::UserAgent** (or Debian package **libwww-perl**)
-* **JSON::XS** (or Debian package **libjson-xs-perl**)
+	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl**)
+	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS**)
+		
+* Install mt-aws-glacier
 
-Install using *apt-get* (easier, more reliable way):
-
-		apt-get install libwww-perl libjson-xs-perl
-
-Install using *cpan* (if you like Perl and want use latest versions of libraries):
-
-		cpan -i LWP::UserAgent JSON::XS
-
+		git clone https://github.com/vsespb/mt-aws-glacier.git
 
 ## Warnings ( *MUST READ* )
 
