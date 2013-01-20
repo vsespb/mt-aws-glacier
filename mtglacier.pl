@@ -1,4 +1,4 @@
-#!/opt/local/bin/perl
+#!/usr/bin/perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -302,6 +302,7 @@ Common options:
 	--to-vault - Glacier vault name
 	--concurrency - number of parallel workers to run
 	--max-number-of-files - max number of files to sync/restore
+	--protocol - Use http or https to connect to Glacier
 Commands:
 	sync
 		--partsize - Glacier multipart upload part size
@@ -316,6 +317,7 @@ Config format (text file):
 	key=YOURKEY                                                                                                                                                                                                                                                      
 	secret=YOURSECRET                                                                                                                                                                                                                               
 	region=us-east-1 #eu-west-1, us-east-1 etc
+	protocol=https # or http
 
 END
 

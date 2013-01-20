@@ -40,7 +40,7 @@ sub new
 	my $self = {};
 	bless $self, $class;
 	
-	defined($self->{$_} = $options->{$_})||confess for (qw/vault region key secret/);
+	defined($self->{$_} = $options->{$_})||confess for (qw/vault region key secret protocol/);
 	
 	$self->{service} ||= 'glacier';
 	$self->{account_id} = '-';
@@ -317,11 +317,12 @@ sub perform_lwp
 		$self->_sign();
 
 		my $ua = LWP::UserAgent->new(timeout => 120);
-		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Just in case, lets hard code this.
+		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Lets hard code this.
 		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
 		my $req = undef;
 		my $url = $self->{protocol} ."://$self->{host}$self->{url}";
 		$url = $self->{protocol} ."://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
+		$ua->ssl_opts( verify_hostname => 0 ) if $ENV{MTGLACIER_FAKE_HOST}; #Hostname mismatch causes LWP to error.
 		$url .= "?$self->{params_s}" if $self->{params_s};
 		if ($self->{method} eq 'PUT') {
 			$req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
