@@ -83,16 +83,21 @@ my %options = (
 	}],
 },
 'max-number-of-files' => { type => 'i'},
+'protocol'             => { type => 's', default => 'http', validate => [
+	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
+          ($value =~ /^(https|http)$/)
+	}, ],
+] },
 );
 
 my %commands = (
-'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/], optional => [qw/max-number-of-files/]},
-'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/], optional => [qw//], deprecated => [qw/from-dir/] },
-'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
-'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/], optional => [qw//]},
-'check-local-hash'  => { req => [@config_opts, qw/journal dir/], deprecated => [qw/to-vault/] },
-'retrieve-inventory' => { req => [@config_opts, qw/vault/], optional => [qw//]},
-'download-inventory' => { req => [@config_opts, qw/vault new-journal/], optional => [qw//]},
+'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize protocol/], optional => [qw/max-number-of-files/]},
+'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency protocol/], optional => [qw//], deprecated => [qw/from-dir/] },
+'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency protocol/], },
+'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency protocol/], optional => [qw//]},
+'check-local-hash'  => { req => [@config_opts, qw/journal dir protocol/], deprecated => [qw/to-vault/] },
+'retrieve-inventory' => { req => [@config_opts, qw/vault protocol/], optional => [qw//]},
+'download-inventory' => { req => [@config_opts, qw/vault new-journal protocol/], optional => [qw//]},
 );
 
 
@@ -138,7 +143,7 @@ sub parse_options
 		}
 	}
 
-	my %result; # TODO: deafult hash, config from file
+    my %result; # TODO: deafult hash, config from file
 	
 	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
 	return (["Extra argument in command line: $argv[0]"], @warnings ? \@warnings : undef) if @argv;

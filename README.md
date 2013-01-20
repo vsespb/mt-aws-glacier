@@ -30,6 +30,7 @@ mt-aws-glacier is a client application for Glacier.
 * File name and modification times are stored as Glacier metadata
 * Ability to re-create journal file from Amazon Glacier metadata
 * UTF-8 support
+* User selectable HTTPS support. Currently defaults to plaintext HTTP
 
 ## Coming-soon features
 
@@ -54,7 +55,6 @@ mt-aws-glacier is a client application for Glacier.
 * Zero length files are ignored
 * Only multipart upload implemented, no plain upload
 * No way to specify SNS topic 
-* HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
 
 ## Production ready
 
@@ -62,7 +62,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Installation/System requirements
 
-Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Not tested under Mac OS X.
+Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS.
 Should NOT work under Windows. 
 
 * Install the following CPAN modules:
