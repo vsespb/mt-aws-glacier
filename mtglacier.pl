@@ -314,10 +314,12 @@ Commands:
 	download-inventory
 		--new-journal - Write inventory as new journal
 Config format (text file):
-	key=YOURKEY                                                                                                                                                                                                                                                      
-	secret=YOURSECRET                                                                                                                                                                                                                               
-	region=us-east-1 #eu-west-1, us-east-1 etc
-	protocol=https # or http
+	key=YOURKEY
+	secret=YOURSECRET
+	# region: eu-west-1, us-east-1 etc
+	region=us-east-1
+	# protocol=http (default) or https
+	protocol=http
 
 END
 
