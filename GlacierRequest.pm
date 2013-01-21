@@ -42,6 +42,7 @@ sub new
 	
 	defined($self->{$_} = $options->{$_})||confess for (qw/vault region key secret protocol/);
 	
+	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
 	$self->{service} ||= 'glacier';
 	$self->{account_id} = '-';
 	$self->{host} = "$self->{service}.$self->{region}.amazonaws.com";
