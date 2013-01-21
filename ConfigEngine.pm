@@ -87,6 +87,9 @@ my %options = (
 	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
 		($value =~ /^https?$/)
 	}, ],
+	['LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
+		$value eq 'https' ? LWP::UserAgent->is_protocol_supported("https") : 1 # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
+	}, ],
 ] },
 );
 

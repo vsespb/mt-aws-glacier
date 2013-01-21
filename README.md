@@ -67,8 +67,11 @@ Should NOT work under Windows.
 
 * Install the following CPAN modules:
 
-	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl**)
-	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS**)
+	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl** or MacPort **p5-libwww-perl**)
+	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS** or MacPort **p5-json-XS**)
+
+	* for Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
+	* to use HTTPS install LWP::UserAgent::https (or Debian package **libcrypt-ssleay-perl** or RPM package **perl-Crypt-SSLeay** or MacPort **p5-lwp-protocol-https**)
 		
 * Install mt-aws-glacier
 
