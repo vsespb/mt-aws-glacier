@@ -34,7 +34,7 @@ sub new
     bless $self, $class;
     $self->{upload_id}||die;
     $self->{filesize}||die;
-    $self->{mtime}||die;
+    defined($self->{mtime})||die;
     defined($self->{filename})||die;
     defined($self->{relfilename})||die;
     $self->{th}||die;

@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 188;
+use Test::More tests => 200;
 use Test::Deep;
 use lib qw{.. ../..};
 use MetaData;
@@ -153,6 +153,8 @@ no warnings 'redefine';
 		['file/a/b/c/d','1352124178'],
 		['директория/a/b/c/d','1352124178'],
 		['директория/файл',1352124178],
+		['директория/файл',0],
+		['директория/файл','0'],
 	) {
 		my $result = MetaData::_encode_json($_->[0], $_->[1]);
 		my $recoded = JSON::XS->new->utf8->allow_nonref->decode($result);
@@ -177,7 +179,7 @@ no warnings 'redefine';
 		['директория/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
 		['директория/файл',1352124178, 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vw5HChMOQwrDDkMK5w5DCuyIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
 	) {
-		ok $_->[2] eq MetaData::meta_encode($_->[0], $_->[1]), "check meta_encode";
+		ok $_->[2] eq MetaData::meta_encode($_->[0], $_->[1]), "check meta_encode"; # TODO: seems race condition here, hash order is undefined
 		
 		my ($filename, $mtime) = MetaData::meta_decode($_->[2]);
 		ok $_->[0] eq $filename, 'check filename';
@@ -240,6 +242,7 @@ no warnings 'redefine';
 		['20090101T000000Z', 1230768000], # after leap second
 		['19070809T082454Z', -1969112106], # negative value
 		['19070809T084134Z', -1969111106], # negative value
+		['19700101T000000Z', 0],
 	) {
 		my $result = MetaData::_parse_iso8601($_->[0]);
 		ok($result == $_->[1], 'should parse iso8601');

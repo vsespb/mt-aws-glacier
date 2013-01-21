@@ -117,9 +117,9 @@ sub _decode_json
 		return (undef, undef);
 	} else {
 		return (undef, undef) unless defined($h->{filename}) && defined($h->{mtime});
-		my $iso8601 = _parse_iso8601($h->{mtime});
-		return undef unless $iso8601;
-		return ($h->{filename}, $iso8601);
+		my $mtime = _parse_iso8601($h->{mtime});
+		return undef unless defined $mtime;
+		return ($h->{filename}, $mtime);
 	}
 }
 

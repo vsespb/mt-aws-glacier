@@ -1,3 +1,8 @@
+2013-01-21: v0.83 beta
+	* Bug fixed. File modification time 1970-01-01T00:00:00Z0 (i.e. epoch time = 0 ) was causing crash when uploading and missing file report when check-local-hash
+	* Main script: Changed shebang from /usr/bin/perl to /usr/bin/env - this will allow Mac Port users to work out of the box
+	* Main script: Cosmetic changes in --help output
+	* Documentation: added names of CentOS packages, better example of config file, cosmetic changes, fixed spelling mistakes    
 2013-01-12: v0.82 beta
 	* retrieve-inventory/download-inventory commands added. You can now restore journal file from scratch, from Amazon Glacier metadata
 	* Now when downloading files from glacier - restore original modification time
