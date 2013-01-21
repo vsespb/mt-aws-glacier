@@ -20,7 +20,7 @@
 
 package ConfigEngine;
 
-use Getopt::Long qw/GetOptionsFromArray/;
+use Getopt::Long;
 use Encode;
 use Carp;
 
@@ -107,8 +107,8 @@ sub new
 
 sub parse_options
 {
-	my ($self, @argv) = (@_);
-
+	(my $self, @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
+	
 	my (@warnings);
 	my %reverse_deprecations;
 	
@@ -117,7 +117,7 @@ sub parse_options
 		push @{ $reverse_deprecations{ $deprecations{$o} } }, $o;
 	}
 
-	my $command = shift @argv;
+	my $command = shift @ARGV;
 	return (["Please specify command"], undef) unless $command;
 	return (undef, undef, 'help', undef) if $command =~ /\b(help|h)\b/i;
 	my $command_ref = $commands{$command};
@@ -140,8 +140,8 @@ sub parse_options
 
 	my %result; # TODO: deafult hash, config from file
 	
-	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
-	return (["Extra argument in command line: $argv[0]"], @warnings ? \@warnings : undef) if @argv;
+	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptions(\%result, @getopts);
+	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
