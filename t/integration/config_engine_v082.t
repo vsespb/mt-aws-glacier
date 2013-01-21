@@ -58,6 +58,7 @@ for (
 		key=>'mykey',
 		secret => 'mysecret',
 		region => 'myregion',
+		protocol => 'http',
 		vault=>'myvault',
 		config=>'glacier.cfg',
 	}, "$_ result");
@@ -74,6 +75,7 @@ for (
 		key=>'mykey',
 		secret => 'mysecret',
 		region => 'myregion',
+		protocol => 'http',
 		vault=>'myvault',
 		'new-journal' => 'new-journal.log',
 		config=>'glacier.cfg',
