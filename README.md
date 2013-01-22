@@ -54,7 +54,8 @@ mt-aws-glacier is a client application for Glacier.
 
 * Zero length files are ignored
 * Only multipart upload implemented, no plain upload
-* No way to specify SNS topic 
+* No way to specify SNS topic
+* Mac OS X filesystem treated as case-insensetive
 
 ## Production ready
 
@@ -62,7 +63,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Installation/System requirements
 
-Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS.
+Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS X.
 Should NOT work under Windows. 
 
 * Install the following CPAN modules:
