@@ -174,7 +174,7 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 		./cycletest.sh retrieve MYDIR
 		./cycletest.sh restore MYDIR
 
-OR
+* OR
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
