@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -35,6 +35,7 @@ sub new
     defined($self->{filename})||die;
     defined($self->{relfilename})||die;
     $self->{partsize}||die;
+    defined($self->{mtime})||die;
     $self->{upload_id}||die;
     $self->{fh}||die;
     $self->{all_raised} = 0;
@@ -54,7 +55,7 @@ sub get_task
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {
-			my $part_th = TreeHash->new(); #TODO: we can sha twice for same data chunk here
+			my $part_th = TreeHash->new(); #TODO: We calc sha twice for same data chunk here
 			$part_th->eat_data(\$data);
 			$part_th->calc_tree();
 			
@@ -75,7 +76,8 @@ sub get_task
 		} else {
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
-				return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
+				# TODO: why do we have to have two FileFinishJob->new ??
+				return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
 			} else {
 				return ("wait");
 			}
@@ -90,7 +92,7 @@ sub finish_task
 	delete $self->{uploadparts}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{uploadparts}} == 0) {
 		# TODO: $self->{filename} LOG ONLY
-		return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
+		return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
 	} else {
 		return ("ok");
 	}

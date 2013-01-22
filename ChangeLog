@@ -1,35 +1,66 @@
+2013-01-21: v0.83 beta
+	* Bug fixed. File modification time 1970-01-01T00:00:00Z0 (i.e. epoch time = 0 ) was causing crash when uploading and missing file report when check-local-hash
+	* Main script: Changed shebang from /usr/bin/perl to /usr/bin/env - this will allow Mac Port users to work out of the box
+	* Main script: Cosmetic changes in --help output
+	* Documentation: added names of CentOS packages, better example of config file, cosmetic changes, fixed spelling mistakes    
+2013-01-12: v0.82 beta
+	* retrieve-inventory/download-inventory commands added. You can now restore journal file from scratch, from Amazon Glacier metadata
+	* Now when downloading files from glacier - restore original modification time
+	* Fixed - File modification time - date before 1970 were not working
+	* Improvement in error checking command line parameters
+	* Error checking added for read/write availability of journal file
+	* Internal: improvements to unit tests
+	
+2013-01-02: v0.81 beta
+	* Error handling when parsing command line implemented + --help command
+	* Security - considering filenames coming from "external" sources (from Glacier and from Journal file) as unsecure. Sanitize/check it.
+	* Some internal changes to TreeHash implementing (does not affect working code, but needs for future enhancements)
+	* Dependency removed - MIME::Base64::encode_base64url (implemented in 2010 in MIME::Base64), This function is re-implemented. So we can use older versions of this module.
+	
+2012-12-27: v0.80 beta
+	* Storing Amazon Glacier metadata (x-amz-archive-description) when upload files implemented (using custom format).
+	* More verbose output for check-local-hash command
+	* Internal: Huge testsuite improvements
+	* Internal: Refactored: command-line options processing, Glacier requests code, main program, misc 
+	* New Journal format: added support of file modification time, added journal version makers (software fully works with old journal files)
+
 2012-12-07: v0.78 beta
-			* Full internal UTF-8 support introduced. Can use wide characters in filenames, command line options
+	* Full internal UTF-8 support introduced. Can use wide characters in filenames, command line options
+	
 2012-12-05: v0.77 beta
-			* Replace File::Path::make_path with legacy method File::Path::mkpath so it's compatible now with older perl distribution (File::Path 1.08 CentOS 5.8)
-			* fixed problem when relative filenames start with "0" character
+	* Replace File::Path::make_path with legacy method File::Path::mkpath so it's compatible now with older perl distribution (File::Path 1.08 CentOS 5.8)
+	* fixed problem when relative filenames start with "0" character
+	
 2012-11-21: v0.76 beta
-			* Retrieval work improved: Can use more than just 50 first retrieval jobs (walking job list pagination). Requesting only
-			completed job list,	so use fewer requests.
-			* Fixed bug when restore process crashed after successful finishing (only happened when concurrency=1)
-			* Documentation fixes: Installation instructions improved. Help/Contribute section added. 
+	* Retrieval work improved: Can use more than just 50 first retrieval jobs (walking job list pagination). Requesting only
+	completed job list,	so use fewer requests.
+	* Fixed bug when restore process crashed after successful finishing (only happened when concurrency=1)
+	* Documentation fixes: Installation instructions improved. Help/Contribute section added.
+	 
 2012-11-17: v0.75 beta
-			* Bug fixed when signature not calculated right with retrieve requests (bug found in 0.74 after SHA256 optimization)
-			* Increased internal limit for maximum in-progress files while uploading (was 3 now 30)
+	* Bug fixed when signature not calculated right with retrieve requests (bug found in 0.74 after SHA256 optimization)
+	* Increased internal limit for maximum in-progress files while uploading (was 3 now 30)
+			
 2012-11-15: v0.74 beta
-			* Improved CPU usage apprx 30% - 1) SHA256 was calculated twice sometimes 2) In case data chunk < 1 MB we can use that TreeHash is equal to SHA256
-			* Debug code removed, which were causing failing requests in 20% cases
-			* Some refactoring
+	* Improved CPU usage apprx 30% - 1) SHA256 was calculated twice sometimes 2) In case data chunk < 1 MB we can use that TreeHash is equal to SHA256
+	* Debug code removed, which were causing failing requests in 20% cases
+	* Some refactoring
+			
 2012-11-15: v0.73 beta
-			* Sign request right before sending to network. Fixing the following 1) when request is retried due to 408/500 error,
-			we resign it, thus timestamp won't expire 2) put all heavy operations like SHA calculation before signature/timestamp
-			calculation
-			* Some legacy code removed
+	* Sign request right before sending to network. Fixing the following 1) when request is retried due to 408/500 error,
+	we resign it, thus timestamp won't expire 2) put all heavy operations like SHA calculation before signature/timestamp
+	calculation
+	* Some legacy code removed
+	
 2012-10-24: v0.72 beta
-			* Some effort to manage mtglacier version information, print version each run. Report version in HTTP UserAgent string. 
-			* Show some progress when reading large local directory listings
-			* Retry with throttling 408/500 HTTP requests. 408 can mean timeout/bad bandwidth. 500 means Amazon not ready yet.
-			* Some old unused code removed
-			* Option --max-number-of-files now works with "sync" and limits number of files to synchronize
-			* More verbose output
-			* For certain commands like Sync read only not-yet-synced filenames into memory (saves memory when working with huge filesets)
-			* Use Journal module to handle journals and file listings + unit test the module
+	* Some effort to manage mtglacier version information, print version each run. Report version in HTTP UserAgent string. 
+	* Show some progress when reading large local directory listings
+	* Retry with throttling 408/500 HTTP requests. 408 can mean timeout/bad bandwidth. 500 means Amazon not ready yet.
+	* Some old unused code removed
+	* Option --max-number-of-files now works with "sync" and limits number of files to synchronize
+	* More verbose output
+	* For certain commands like Sync read only not-yet-synced filenames into memory (saves memory when working with huge filesets)
+	* Use Journal module to handle journals and file listings + unit test the module
 
 2012-08-28: v0.7 beta
-			initial release
-
+	initial release

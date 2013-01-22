@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -56,46 +56,98 @@ sub process
 				return;
 			}
 			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
-			
 			my $result = undef;
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
-				my $uploadid = GlacierRequest->create_multipart_upload($self->{options}, $data->{partsize}); # TODO: partsize confusing, need use another name for option partsize
+				 # TODO: partsize confusing, need use another name for option partsize. partsize Amazon Upload partsize vs Download 'Range' partsize
+				my $req = GlacierRequest->new($self->{options});
+				my $uploadid = $req->create_multipart_upload($data->{partsize}, $data->{relfilename}, $data->{mtime});
 				confess unless $uploadid;
 				$result = { upload_id => $uploadid };
 				$console_out = "Created an upload_id $uploadid";
 			} elsif ($action eq "upload_part") {
-				my $r = GlacierRequest->upload_part($self->{options}, $data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->upload_part($data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
 				return undef unless $r;
 				$result = { uploaded => $data->{start} } ;
 				$console_out = "Uploaded part for $data->{filename} at offset [$data->{start}]";
 			} elsif ($action eq 'finish_upload') {
 				# TODO: move vault to task, not to options!
-				my $archive_id = GlacierRequest->finish_multipart_upload($self->{options}, $data->{upload_id}, $data->{filesize}, $data->{final_hash});
+				my $req = GlacierRequest->new($self->{options});
+				my $archive_id = $req->finish_multipart_upload($data->{upload_id}, $data->{filesize}, $data->{final_hash});
 				return undef unless $archive_id;
-				$result = { final_hash => $data->{final_hash}, archive_id => $archive_id, journal_entry => time()." CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}" };
+				$result = {
+					final_hash => $data->{final_hash},
+					archive_id => $archive_id,
+					journal_entry => {
+						type=> 'CREATED',
+						'time' => $req->{last_request_time},
+						archive_id => $archive_id,
+						size => $data->{filesize},
+						mtime => $data->{mtime},
+						treehash => $data->{final_hash},
+						relfilename => $data->{relfilename}
+					},
+				};
 				$console_out = "Finished $data->{filename} hash [$data->{final_hash}] archive_id [$archive_id]";
 			} elsif ($action eq 'delete_archive') {
-				my $r = GlacierRequest->delete_archive($self->{options}, $data->{archive_id});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->delete_archive($data->{archive_id});
 				return undef unless $r;
-				$result = { journal_entry => time()." DELETED $data->{archive_id} $data->{relfilename}" };
+				$result = {
+					journal_entry => {
+						type=> 'DELETED',
+						'time' => $req->{last_request_time},
+						archive_id => $data->{archive_id},
+						relfilename => $data->{relfilename}
+						}
+				};
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
 				mkpath(dirname($data->{filename}));
-				my $r = GlacierRequest->retrieval_download_job($self->{options}, $data->{jobid}, $data->{filename});
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
+				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
-			} elsif ($action eq 'retrieve_archive') {
-				my $r = GlacierRequest->retrieve_archive($self->{options}, $data->{archive_id});
-				return undef unless $r;
-				$result = { journal_entry => time()." RETRIEVE_JOB $data->{archive_id}" };
-				$console_out = "Retrieve Archive $data->{archive_id}";
-			} elsif ($action eq 'retrieval_fetch_job') {
-				my $r = GlacierRequest->retrieval_fetch_job($self->{options}, $data->{marker});
+			} elsif ($action eq 'inventory_download_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_download_to_memory($data->{job_id});
 				return undef unless $r;
 				$result = { response => $r };
-				$console_out = "Retrieve Job List";
+				$console_out = "Downloaded inventory in JSON format";
+			} elsif ($action eq 'retrieve_archive') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieve_archive( $data->{archive_id});
+				return undef unless $r;
+				$result = {
+					journal_entry => {
+						type=> 'RETRIEVE_JOB',
+						'time' => $req->{last_request_time},
+						archive_id => $data->{archive_id},
+						job_id => $r,
+						}
+				};
+				$console_out = "Retrieved Archive $data->{archive_id}";
+			} elsif ($action eq 'retrieval_fetch_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_fetch_job($data->{marker});
+				confess unless $r;
+				$result = { response => $r };
+				$console_out = "Retrieved Job List";
+			} elsif ($action eq 'inventory_fetch_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieval_fetch_job($data->{marker});
+				confess unless $r;
+				$result = { response => $r };
+				$console_out = "Fetched job list for inventory retrieval";
+			} elsif ($action eq 'retrieve_inventory_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->retrieve_inventory();
+				confess unless $r;
+				$result = { job_id => $r };
+				$console_out = "Retrieved Inventory, job id $r";
 			} else {
 				die $action;
 			}

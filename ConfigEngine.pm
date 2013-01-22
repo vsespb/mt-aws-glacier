@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -20,7 +20,7 @@
 
 package ConfigEngine;
 
-use Getopt::Long qw/GetOptionsFromArray/;
+use Getopt::Long;
 use Encode;
 use Carp;
 
@@ -30,6 +30,8 @@ use warnings;
 use utf8;
 
 
+my @config_opts = qw/key secret region protocol/;
+
 my %deprecations = (
 'from-dir'            => 'dir' ,
 'to-dir'              => 'dir' ,
@@ -38,22 +40,67 @@ my %deprecations = (
 	
 my %options = (
 'config'              => { type => 's' },
-'journal'             => { type => 's' }, #validate => [ ['Journal file not exist' => sub {-r } ], ]
+'journal'             => { type => 's', validate => [
+	['Journal file not found' => sub { my ($command, $results, $value) = @_;
+		if ($command eq 'sync') {
+			return 1;
+		} else {
+			return -r $value;
+		}
+	},
+	'Journal file not writable' => sub { my ($command, $results, $value) = @_;
+		if ($command =~ /^(sync|purge\-vault|restore|download\-inventory)$/) {
+			return (-f $value && -w $value && ! -d $value) || (! -d $value); # TODO: more strict test + actualyy create empty journal file when sync + unit test this
+		} else {
+			return 1;
+		}
+	} ],
+] },
+'new-journal'             => { type => 's', validate =>
+	[
+	'Journal file not empty - please provide empty file no write new journal' => sub { my ($command, $results, $value) = @_;
+		if ($command eq 'download-inventory') {
+			return ! -s $value;
+		} else {
+			return 1;
+		}
+	},	 ],
+},
+'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
-'concurrency'         => { type => 'i', validate => [ ['Max concurrency is 10,  Min is 1' => sub { $_ >= 1 && $_ <= 10 }],  ] },
-'partsize'            => { type => 'i', validate => [ ['Part size must be power of two'   => sub { ($_ != 0) && (($_ & ($_ - 1)) == 0)}], ] },
+'key'                 => { type => 's' },# validate => ['Invalid characters in "key"', sub { $_[2] =~ /^[A-Za-z0-9_/+\-\:]{5,100}$/ } ] },
+'secret'              => { type => 's' },
+'region'              => { type => 's' },
+'concurrency'         => { type => 'i', default => 4, validate =>
+	['Max concurrency is 30,  Min is 1' => sub { my ($command, $results, $value) = @_;
+		$value >= 1 && $value <= 30
+	}],
+},
+'partsize'            => { type => 'i', default => 16, validate =>
+	['Part size must be power of two'   => sub { my ($command, $results, $value) = @_;
+		($value != 0) && (($value & ($value - 1)) == 0)
+	}],
+},
 'max-number-of-files' => { type => 'i'},
+'protocol'             => { type => 's', default => 'http', validate => [
+	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
+		($value =~ /^https?$/)
+	}, ],
+	['LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
+		$value eq 'https' ? LWP::UserAgent->is_protocol_supported("https") : 1 # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
+	}, ],
+] },
 );
 
-# TODO: from-dir is optional, it warns that dir should be used. however from-dir is deprecated for this command!
-# TODO: deprecated options should be removed from result
 my %commands = (
-'sync'              => { req => [qw/config journal dir vault/],                 optional => [qw/partsize concurrency max-number-of-files/]},
-'purge-vault'       => { req => [qw/config journal vault /],                    optional => [qw/concurrency/], deprecated => [qw/from-dir/] },
-'restore'           => { req => [qw/config journal dir vault max-number-of-files/], },
-'restore-completed' => { req => [qw/config journal vault dir/],                 optional => [qw/concurrency/]},
-'check-local-hash'  => { req => [qw/config journal dir/],                                                      deprecated => [qw/to-vault/] },
+'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/], optional => [qw/max-number-of-files/]},
+'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/], optional => [qw//], deprecated => [qw/from-dir/] },
+'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
+'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/], optional => [qw//]},
+'check-local-hash'  => { req => [@config_opts, qw/journal dir/], deprecated => [qw/to-vault/] },
+'retrieve-inventory' => { req => [@config_opts, qw/vault/], optional => [qw//]},
+'download-inventory' => { req => [@config_opts, qw/vault new-journal/], optional => [qw//]},
 );
 
 
@@ -66,25 +113,10 @@ sub new
 }
 
 
-sub get_options_and_config
-{
-	my ($self, @argv) = (@_);
-	my ($errors, $warnings, $result) = $self->{parse_options};
-
-	for (@$warnings) {
-		warn "WARNING: $_";;
-	}	
-	if ($errors) {
-		die $errors->[0];
-	}
-	
-	$result->{config};
-}
-
 sub parse_options
 {
-	my ($self, @argv) = (@_);
-
+	(my $self, @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
+	
 	my (@warnings);
 	my %reverse_deprecations;
 	
@@ -93,11 +125,14 @@ sub parse_options
 		push @{ $reverse_deprecations{ $deprecations{$o} } }, $o;
 	}
 
-	my $command = shift @argv;
+	my $command = shift @ARGV;
+	return (["Please specify command"], undef) unless $command;
+	return (undef, undef, 'help', undef) if $command =~ /\b(help|h)\b/i;
 	my $command_ref = $commands{$command};
+	return (["Unknown command"], undef) unless $command_ref;
 	
 	my @getopts;
-	for my $o ( @{$command_ref->{req}}, @{$command_ref->{optional}}, @{$command_ref->{deprecated}} ) {
+	for my $o ( @{$command_ref->{req}}, @{$command_ref->{optional}}, @{$command_ref->{deprecated}}, 'config' ) {
 		my $option = $options{$o};
 		my $type = $option->{type}||'s';
 		my $opt_spec = join ('|', $o, @{ $option->{alias}||[] });
@@ -111,23 +146,35 @@ sub parse_options
 		}
 	}
 
-	#die join(';',@getopts);
-	my %result; # TODO: deafult hash, config from file
+    my %result; # TODO: deafult hash, config from file
 	
-	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptionsFromArray(\@argv, \%result, @getopts);
+	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptions(\%result, @getopts);
+	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
-	return (["Please specify config"], @warnings ? \@warnings : undef) unless $result{config};
+	#return (["Please specify --config"], @warnings ? \@warnings : undef) unless $result{config};
 	
 	
-	my $config_result = $self->read_config($result{config});
-	my %merged = %$config_result;
-	@merged{keys %result} = values %result;
-	%result = %merged;
+	my %source;
+	if ($result{config}) {
+		my $config_result = $self->read_config($result{config});
+		return (["Cannot read config file \"$result{config}\""], @warnings ? \@warnings : undef) unless defined $config_result;
+		
+		my (%merged);
+		
+		@merged{keys %$config_result} = values %$config_result;
+		$source{$_} = 'config' for (keys %$config_result);
 	
-
-	#use Data::Dumper;print Dumper(\%result);
+		@merged{keys %result} = values %result;
+		$source{$_} = 'command' for (keys %result);
+	
+	
+		%result =%merged;
+	} else {
+		$source{$_} = 'command' for (keys %result);
+	}
+	
 
 	for my $o (keys %deprecations) {
 		if ($result{$o}) {
@@ -135,8 +182,8 @@ sub parse_options
 				push @warnings, "$o is not needed for this command";
 				delete $result{$o};
 			} else {
-				if ($result{ $deprecations{$o} }) {
-					return (["$o specified, while $deprecations{$o} already defined"], @warnings ? \@warnings : undef);
+				if ($result{ $deprecations{$o} } && $source{ $deprecations{$o} } eq 'command') {
+					return (["$o specified, while $deprecations{$o} already defined "], @warnings ? \@warnings : undef);
 				} else {
 					push @warnings, "$o deprecated, use $deprecations{$o} instead";
 					$result{ $deprecations{$o} } = delete $result{$o};
@@ -146,39 +193,54 @@ sub parse_options
 	}
 
 	for my $o (@{$command_ref->{req}}) {
-		return (["Please specify $o"], @warnings ? \@warnings : undef) unless $result{$o};
+		unless ($result{$o}) {
+			if (defined($options{$o}->{default})) { # Options from config are used here!
+				$result{$o} = $options{$o}->{default};
+			} else {
+				if (grep { $_ eq $o } @config_opts) {
+					return ([
+						defined($result{config}) ?
+						"Please specify --$o OR add \"$o=...\" into the config file" :
+						"Please specify --$o OR specify --config and put \"$o=...\" into the config file"
+					],@warnings ? \@warnings : undef);
+				} else {
+					return (["Please specify --$o"], @warnings ? \@warnings : undef);
+				}
+			}
+		}
 	}
-
 	for my $o (keys %result) {
-		if (my $validations = $options{$o}{validate}) {
-			for my $v (@$validations) {
+		if (my $validations = $self->{override_validations}->{$o} || $options{$o}{validate}) {
+			my $validations_array = ref $validations->[0] eq 'ARRAY' ? $validations : [ $validations ];
+			for my $v (@$validations_array) {
 				my ($message, $test) = @$v;
-				$_ = $result{$o};
-				return (["$message"], @warnings ? \@warnings : undef) unless ($test->());
+				return (["$message"], @warnings ? \@warnings : undef) unless ($test->($command, \%result, $result{$o}));
 			}
 		}
 	}
 	
+
 	return (undef, @warnings ? \@warnings : undef, $command, \%result);
 }
+
+
 	
 sub read_config
 {
 	my ($self, $filename) = @_;
-	die "config file not found $filename" unless -f $filename;
-	open (F, "<:encoding(UTF-8)", $filename);
+	return undef unless -f $filename && -r $filename; #TODO test
+	open (F, "<:crlf:encoding(UTF-8)", $filename) || return undef;
 	my %newconfig;
 	while (<F>) {
 		chomp;
-		chop if /\r$/; # windows CRLF format
 		next if /^\s*$/;
 		next if /^\s*\#/;
-		my ($name, $value) = split(/\=/, $_);
-		$name =~ s/^\s*//;
-		$name =~ s/\s*$//;
-		$value =~ s/^\s*//;
-		$value =~ s/\s*$//;
-		
+		/^([^=]+)=(.*)$/;
+		my ($name, $value) = ($1,$2);
+		$name =~ s/^[ \t]*//;
+		$name =~ s/[ \t]*$//;
+		$value =~ s/^[ \t]*//;
+		$value =~ s/[ \t]*$//;
 		$newconfig{$name} = $value;
 	}
 	close F;

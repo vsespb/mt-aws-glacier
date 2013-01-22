@@ -1,22 +1,58 @@
 #!/usr/bin/perl
 
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 28;
+use Test::More tests => 33;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
 use Test::MockModule;
+use Carp;
 use Data::Dumper;
 
+my $mtroot = '/tmp/mt-aws-glacier-tests';
+
 no warnings 'redefine';
+
+#
+# This time we test both current config and current code together
+#
+
+my $max_concurrency = 30;
+my $too_big_concurrency = $max_concurrency+1;
+
+my %disable_validations = ( 
+	'override_validations' => {
+		'journal' => [ ['Journal file not exist' => sub { 1 } ], ],
+	},
+);
 
 local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
 #	print Dumper({errors => $errors, warnings => $warnings, result => $result});
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=2  --from-dir z'
 	));
 	#print Dumper({errors => $errors, warnings => $warnings, result => $result});
@@ -24,28 +60,28 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	ok( $warnings && $warnings->[0] =~ /to-vault deprecated, use vault instead/, 'delect already defined deprecated parameter');
 }
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'sync --config y -journal z -to-va va -conc 9 --partsize=2  --from-dir z'
 	));
 	ok( !$errors && $warnings && $warnings->[0] =~ /deprecated,\s*use.*instead/, 'warn about deprecated parameter');
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'sync --dir x --config y -journal z -to-va va -conc 11 --partsize=8 '
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	"sync --dir x --config y -journal z -to-va va -conc $too_big_concurrency --partsize=8 "
 	));
 	ok( $errors && $errors->[0] =~ /Max concurrency/, 'check concurrency range');
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3 '
 	));
 	ok( $errors && $errors->[0] =~ /must be power of two/, 'check partsize');
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'purge-vault --config=glacier.cfg --dir /data/backup --to-vault=myvault -journal=journal.log'
 	));
 #	print Dumper({errors => $errors, warnings => $warnings, result => $result});
@@ -55,7 +91,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 
 {
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
-	my ($errors, $warnings, $command, $result)= ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result)= ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'purge-vault --config=glacier.cfg  --vault=myvault -journal=journal.log'
 	));
 	ok( !$errors && !$warnings && $result && $result->{vault} eq 'myvault', "should override vault in command line" );
@@ -63,82 +99,160 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 
 {
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result)= ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'purge-vault --key=newkey -secret=newsecret --region newregion  --vault=myvault -journal=journal.log'
+	));
+	ok( !$errors && !$warnings && $result && $result->{key} eq 'newkey' && $result->{secret} eq 'newsecret' && $result->{region} eq 'newregion', "should work without config" );
+}
+
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'purge-vault --config=glacier.cfg  -journal=journal.log'
 	));
 	ok( !$errors && !$warnings && $result && $result->{vault} eq 'newvault', "should use vault from config" );
 }
 
-if (0) {
+{
 	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log'
 	));
-	print "ZZZ:".Dumper({errors => $errors, warnings => $warnings, result => $result});
-	ok( !$errors && !$warnings && $result && $result->{vault} eq 'myvault', "should override vault in command line when deprecated-name is used in command line" );
-}
-
-# v0.78 regressions test
-
-{
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3'
-	));
-	ok( !$errors && $warnings, "v0.78 regressiong in sync, error/warnings");
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', concurrency => 3, journal => 'journal.log'}, 'v0.78 regressiong in sync');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in sync');
+	ok( !$errors && $warnings && $result && $result->{vault} eq 'myvault', "should override vault in command line when deprecated-name is used in command line" );
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log'
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	''
 	));
-	ok( !$errors && $warnings, "v0.78 regressiong in sync, error/warnings");
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in sync');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in sync');
+	ok( $errors && $errors->[0] eq 'Please specify command', "should catch missing command" );
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'--myvault x'
 	));
-	ok( !$errors && $warnings, "v0.78 regressiong in check-local-hash, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in sync');
-	is_deeply($warnings, ['to-vault is not needed for this command','from-dir deprecated, use dir instead'], 'v0.78 regressiong in check-local-hash');
+	ok( $errors, "should catch missing command even if there are options" );
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log --max-number-of-files=10'
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'synx'
 	));
-	ok( !$errors && $warnings, "v0.78 regressiong in restore, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log', 'max-number-of-files' => 10}, 'v0.78 regressiong in restore');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in restore');
+	ok( $errors && $errors->[0] eq 'Unknown command', "should catch unknown command" );
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log '
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra'
 	));
-	ok( $errors, "v0.78 regressiong in restore, error/warnings" );
+	ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option" );
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
+	local *ConfigEngine::read_config = sub { { key=>'mykey', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3'
 	));
-	ok( !$errors && $warnings, "v0.78 regressiong in restore-completed, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', dir => '/data/backup', journal => 'journal.log'}, 'v0.78 regressiong in restore-completed');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], 'v0.78 regressiong in restore-completed');
+	ok( $errors && $errors->[0] eq 'Please specify --secret OR add "secret=..." into the config file', "should catch missed secret" );
 }
 
 {
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
-	'purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log'
+	local *ConfigEngine::read_config = sub { { key=>'mykey', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'sync --key a --region b --dir x -journal z -to-va va -conc 9 --partsize=3'
 	));
-	ok( !$errors && $warnings, "v0.78 regressiong in purge-vault, error/warnings" );
-	is_deeply($result, {key=>'mykey', secret => 'mysecret', region => 'myregion', vault=>'myvault', config=>'glacier.cfg', journal => 'journal.log'}, 'v0.78 regressiong in purge-vault');
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], 'v0.78 regressiong in purge-vault');
+	ok( $errors && $errors->[0] eq 'Please specify --secret OR specify --config and put "secret=..." into the config file', "should catch missed secret without config" );
 }
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => "mysecret", region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'sync --config a --region b --dir x -to-va va -conc 9 --partsize=4'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify --journal', "should catch missed journal with config ");
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => "mysecret", region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'sync --key a --secret b --region c --dir x -to-va va -conc 9 --partsize=4'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify --journal', "should catch missed journal without config ");
+}
+
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=3'
+	));
+	ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option 2" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	for (qw! help -help --help ---help!, qq!  --help !, qq! -help !, qq!h!, qq!-h!) {
+		my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+		$_
+		));
+		ok( !$errors && !$warnings && !$result && $command eq 'help', "should catch help [[$_]]" );
+	}
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my $file = "$mtroot/journal_t_1";
+	unlink $file || confess if -e $file;
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
+	));
+	ok( $errors && $errors->[0] =~ /Journal file not found/i, "should catch non existing journal $errors->[0]" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my $file = "$mtroot/journal_t_1";
+	unlink $file || confess if -e $file;
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'sync --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
+	));
+	ok( !$errors, "should allow non-existing journal for sync" );
+}
+
+{
+	my $cfg;
+	local *ConfigEngine::read_config = sub { $cfg };
+
+	$cfg = { key=>'mykey', secret => 'mysecret', region => 'myregion' };
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log'
+	));
+	ok($result->{concurrency} == 4, "we assume default value is 4");
+
+	$cfg = { key=>'mykey', secret => 'mysecret', region => 'myregion', concurrency => 5 };
+	($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log --concurrency=6'
+	));
+	ok($result->{concurrency} == 6, 'command line option should override config');
+
+	$cfg = { key=>'mykey', secret => 'mysecret', region => 'myregion', concurrency => 5 };
+	($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ',
+	'purge-vault --config=glacier.cfg  --to-vault=myvault -journal=journal.log'
+	));
+	ok($result->{concurrency} == 5, 'but config option should override default');
+
+
+}
+
 
 1;

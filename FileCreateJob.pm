@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -25,6 +25,8 @@ use warnings;
 use utf8;
 use base qw/Job/;
 use FileUploadJob;
+use File::stat;
+use Time::localtime;
 
 
 sub new
@@ -48,11 +50,12 @@ sub get_task
 	} else {
 		$self->{raised} = 1;
 		my $filesize = -s $self->{filename};
+		$self->{mtime} = stat($self->{filename})->mtime; # TODO: how could we assure file not modified when uploading btw?
 		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
 	    open my $fh, "<$self->{filename}";
 	    binmode $fh;
 	    $self->{fh} = $fh;
-		return ("ok", Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}} ));
+		return ("ok", Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}
 }
 
@@ -61,7 +64,14 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
-		return ("ok replace", FileUploadJob->new(fh => $self->{fh}, relfilename => $self->{relfilename}, filename => $self->{filename}, partsize => $self->{partsize}, upload_id => $task->{result}->{upload_id}));
+		return ("ok replace", FileUploadJob->new(
+			fh => $self->{fh},
+			relfilename => $self->{relfilename},
+			filename => $self->{filename},
+			partsize => $self->{partsize},
+			upload_id => $task->{result}->{upload_id},
+			mtime => $self->{mtime},
+		));
 	} else {
 		die;
 	}

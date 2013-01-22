@@ -1,10 +1,30 @@
 #!/usr/bin/perl
 
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 use strict;
 use warnings;
-use Test::Simple tests => 31*7*3 + 4*3*3;
-use lib qw/../;
+use Test::Simple tests => 1065;
+use lib qw{.. ../..};
 use TreeHash;
 
 
@@ -491,7 +511,43 @@ for my $i (1..31) {
 		$th->eat_data($dataref);
     	$th->calc_tree();
     	my $hash = $th->get_final_hash();
-#    	print "$size => '$hash',\n";
+    	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
+	}
+}
+}
+
+for my $chunksize (qw/200/) {
+	for my $i ((1..33),  qw/255 256 257 4095 4096 4097/) {
+		for my $j (qw/-1 0 1/) {
+			my $size = $i*$chunksize+$j;
+			my $dataref = get_pseudo_random_array($size);
+			
+			my $th = TreeHash->new(unit => $chunksize);
+			$th->eat_data($dataref);
+	    	$th->calc_tree();
+	    	my $hash = $th->get_final_hash();
+
+			my $threc = TreeHash->new(unit => $chunksize);
+			$threc->eat_data($dataref);
+	    	$threc->calc_tree_recursive();
+	    	my $hashrec = $th->get_final_hash();
+	    	
+	    	ok( $hash eq $hashrec, "comparing test recursive and normal" );
+		}
+	}
+}
+
+# check lso how it works for non-ref
+for my $chunksize (qw/200/) {
+for my $i (qw/1 2 29/) {
+	for my $j (qw/-1 0 1/) {
+		my $size = $i*$chunksize+$j;
+		my $dataref = get_pseudo_random_array($size);
+		my $data = $$dataref;
+		my $th = TreeHash->new(unit => $chunksize);
+		$th->eat_data($data);
+    	$th->calc_tree();
+    	my $hash = $th->get_final_hash();
     	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
 	}
 }

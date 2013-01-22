@@ -22,15 +22,30 @@
 
 use strict;
 use warnings;
-use Test::Simple tests => 3;
-
 use utf8;
-use bytes;
-no bytes;
-my $str = "Тест";
+use Test::Spec;
+use lib qw{.. ../..};
+use MetaData;
+use Encode;
+use JSON::XS;
+use Data::Dumper;
 
-ok ( length($str) == 4);
-ok ( bytes::length($str) == 8);
-ok (utf8::is_utf8($str));
+describe "MetaData" => sub {
+	it "should catch undef in _decode_json" => sub {
+		JSON::XS->expects("decode");
+		MetaData::_decode_json MetaData::_encode_json('тест', 1);
+		JSON::XS->expects("decode")->never();
+		ok !defined MetaData::_decode_json undef;
+		
+	};
+	it "should catch undef in _decode_utf8" => sub {
+		MetaData->expects("decode");
+		MetaData::_decode_utf8 encode("UTF-8", "тест");
+		MetaData->expects("decode")->never();
+		ok !defined MetaData::_decode_utf8 undef;
+	};
+};
+
+runtests unless caller;
 
 1;

@@ -1,5 +1,25 @@
 #!/usr/bin/perl
 
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 use strict;
 use warnings;
 use utf8;
@@ -19,7 +39,7 @@ my $data = {
 
 # test _can_read_filename_for_mode test
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my $anotherfile = 'newfile1';
 		$J->{journal_h}->{$relfilename} = $data;
 		
@@ -35,7 +55,7 @@ my $data = {
 
 # test read_all_files
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
 		(my $mock = Test::MockModule->new('Journal'))->
 			mock('_read_files', sub { (undef, @args) = @_; return ['fileA']});
@@ -47,7 +67,7 @@ my $data = {
 
 # test read_new_files
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
 		(my $mock = Test::MockModule->new('Journal'))->
 			mock('_read_files', sub { (undef, @args) = @_; return ['fileB']});
@@ -59,7 +79,7 @@ my $data = {
 
 # test read_existing_files
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
 		(my $mock = Test::MockModule->new('Journal'))->
 			mock('_read_files', sub { (undef, @args) = @_; return ['fileC']});
@@ -71,7 +91,7 @@ my $data = {
 
 # max_number_of_files should be triggered
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		my $maxfiles = 4;
@@ -81,13 +101,13 @@ my $data = {
 		(my $mock_find = Test::MockModule->new('File::Find'))->
 			mock('find', sub {
 				my ($args) = @_;
-				$args->{wanted}->() for (@filelist);
+				$args->{wanted}->() for (map { "$rootdir/$_" } @filelist);
 			});
 			
 		$File::Find::prune = 0;
 		my $filelist = $J->_read_files('all', $maxfiles);
 		
-		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } @filelist[0..$maxfiles-1]; 
+		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]; 
 		is_deeply($filelist, \@expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
@@ -95,7 +115,7 @@ my $data = {
 
 # max_number_of_files should not be triggered
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		my $maxfiles = 14;
@@ -105,13 +125,13 @@ my $data = {
 		(my $mock_find = Test::MockModule->new('File::Find'))->
 			mock('find', sub {
 				my ($args) = @_;
-				$args->{wanted}->() for (@filelist);
+				$args->{wanted}->() for (map { "$rootdir/$_" } @filelist);
 			});
 			
 		$File::Find::prune = 1;
 		my $filelist = $J->_read_files('all', $maxfiles);
 		
-		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } @filelist; 
+		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
 		is_deeply($filelist, \@expected);
 		ok($maxfiles >= scalar @filelist - 1);
 		ok($File::Find::prune == 0);
@@ -119,7 +139,7 @@ my $data = {
 
 # max_number_of_files should not be triggered when zero
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		(my $mock_journal = Test::MockModule->new('Journal'))->
@@ -128,20 +148,20 @@ my $data = {
 		(my $mock_find = Test::MockModule->new('File::Find'))->
 			mock('find', sub {
 				my ($args) = @_;
-				$args->{wanted}->() for (@filelist);
+				$args->{wanted}->() for (map { "$rootdir/$_" } @filelist);
 			});
 			
 		$File::Find::prune = 1;
 		my $filelist = $J->_read_files('all', 0);
 		
-		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } @filelist; 
+		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
 		is_deeply($filelist, \@expected);
 		ok($File::Find::prune == 0);
 }
 
 # should not add file if it does not exist
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		(my $mock_journal = Test::MockModule->new('Journal'))->
@@ -159,7 +179,7 @@ my $data = {
 
 # should not add file _can_read_filename_for_mode returns false
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		my $mock_journal = Test::MockModule->new('Journal');
@@ -178,7 +198,7 @@ my $data = {
 
 # should pass correct options to find
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => 'abc');
+		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		my $mock_journal = Test::MockModule->new('Journal');
@@ -188,12 +208,12 @@ my $data = {
 		(my $mock_find = Test::MockModule->new('File::Find'))->
 			mock('find', sub {
 				($args, $root_dir) = @_;
-				$args->{wanted}->() for (@filelist);
+				$args->{wanted}->() for (map { "$rootdir/$_" } @filelist);
 			});
 			
 		my $filelist = $J->_read_files('all', 0);
 		ok($args->{no_chdir} == 1);
-		ok($root_dir eq 'abc');
+		ok($root_dir eq $rootdir);
 		ok(defined($args->{wanted}));
 		ok(defined($args->{preprocess}));
 }

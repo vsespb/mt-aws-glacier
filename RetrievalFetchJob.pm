@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -63,7 +63,7 @@ sub finish_task
 		my $scalar = $json->decode( $task->{result}->{response} );
 		for my $job (@{$scalar->{JobList}}) {
 			#print "$job->{Completed}|$job->{JobId}|$job->{ArchiveId}\n";
-			if ($job->{Completed}) {
+			if ($job->{Action} eq 'ArchiveRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
 				if (my $a = $self->{archives}->{$job->{ArchiveId}}) {
 					if (!$self->{seen}->{ $job->{ArchiveId} }) {
 						$self->{seen}->{ $job->{ArchiveId} }=1;
@@ -75,9 +75,9 @@ sub finish_task
 		}
 		
 		if ($scalar->{Marker}) {
-			return ("ok replace", RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) );
+			return ("ok replace", RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
 		} elsif (scalar @{$self->{downloads}}) {
-			return ("ok replace", RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO
+			return ("ok replace", RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
 		} else {
 			return ("done");
 		}

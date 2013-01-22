@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use LineProtocol;
+use Carp;
 
 sub new
 {
@@ -39,7 +40,7 @@ sub new
 
 sub process_task
 {
-	my ($self, $ft) = @_;
+	my ($self, $ft, $journal) = @_;
 	my $task_list = {};
 	while (1) {
 		if ( @{$self->{freeworkers}} ) {
@@ -48,7 +49,7 @@ sub process_task
 				if (scalar keys %{$self->{children}} == scalar @{$self->{freeworkers}}) {
 					die;
 				}
-				my $r = $self->wait_worker($task_list, $ft);
+				my $r = $self->wait_worker($task_list, $ft, $journal);
 				return $r if $r;
 			} elsif ($result eq 'ok') {
 				my $worker_pid = shift @{$self->{freeworkers}};
@@ -59,7 +60,7 @@ sub process_task
 				die;
 			}
 		} else {
-			my $r = $self->wait_worker($task_list, $ft);
+			my $r = $self->wait_worker($task_list, $ft, $journal);
 			return $r if $r;
 		}
 	}
@@ -67,34 +68,32 @@ sub process_task
 
 sub wait_worker
 {
-	my ($self, $task_list, $ft) = @_;
+	my ($self, $task_list, $ft, $journal) = @_;
 	my @ready = $self->{disp_select}->can_read();
-    for my $fh (@ready) {
-      if (eof($fh)) {
-        $self->{disp_select}->remove($fh);
-        die "Unexpeced EOF in Pipe";
-        next; 
-      }
-      my ($pid, $taskid, $data) = get_response($fh);
-      push @{$self->{freeworkers}}, $pid;
-      die unless my $task = $task_list->{$taskid};
-      $task->{result} = $data;
-      print "PID $pid $task->{result}->{console_out}\n";
-      my ($result) = $ft->finish_task($task);
-	  delete $task_list->{$taskid};
-	  
-	  if ($task->{result}->{journal_entry}) {
-die; #TODO: that should not be here!
-	  	#open (F, ">>:encoding(UTF-8)", $journal);
-		#print F $task->{result}->{journal_entry}."\n";
-		#close F;
-	  }
-	  
-	  if ($result eq 'done') {
-	  	return $task->{result};
-	  } 
-    }
-    return 0;
+	for my $fh (@ready) {
+		if (eof($fh)) {
+			$self->{disp_select}->remove($fh);
+			die "Unexpeced EOF in Pipe";
+			next; 
+		}
+		my ($pid, $taskid, $data) = get_response($fh);
+		push @{$self->{freeworkers}}, $pid;
+		die unless my $task = $task_list->{$taskid};
+		$task->{result} = $data;
+		print "PID $pid $task->{result}->{console_out}\n";
+		my ($result) = $ft->finish_task($task);
+		delete $task_list->{$taskid};
+	
+		if ($task->{result}->{journal_entry}) {
+			confess unless defined $journal;
+			$journal->add_entry($task->{result}->{journal_entry});
+		}
+		  
+		if ($result eq 'done') {
+			return $task->{result};
+		} 
+	}
+	return 0;
 }
 
 sub send_command

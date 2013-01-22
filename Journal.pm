@@ -1,6 +1,6 @@
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -29,6 +29,7 @@ use File::Find ;
 use File::Spec;
 use Encode;
 use Carp;
+use IO::Handle;
 
 sub new
 {
@@ -39,7 +40,7 @@ sub new
 	$self->{journal_h} = {};
 	
 	$self->{used_versions} = {};
-	$self->{output_version} = '0';
+	$self->{output_version} = 'A' unless defined($self->{output_version});
 	
 	return $self;
 }
@@ -52,9 +53,12 @@ sub new
 
 sub read_journal
 {
-	my ($self) = @_;
-	return unless -s $self->{journal_file};
-	open (F, "<:encoding(UTF-8)", $self->{journal_file});
+	my ($self, %args) = @_;
+	confess unless defined $args{should_exist};
+	confess unless length($self->{journal_file});
+	confess if -d $self->{journal_file};
+	# TODO: croak here and elsewhere when checking for open files
+	open (F, "<:encoding(UTF-8)", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess; # TODO: this break coverage
 	while (<F>) {
 		chomp;
 		$self->process_line($_);
@@ -63,13 +67,28 @@ sub read_journal
 	return;
 }
 
+sub open_for_write
+{
+	my ($self) = @_;
+  	open ($self->{append_file}, ">>:encoding(UTF-8)", $self->{journal_file}) || confess $self->{journal_file};
+  	$self->{append_file}->autoflush();
+}
+
+sub close_for_write
+{
+	my ($self) = @_;
+	confess unless $self->{append_file};
+	close $self->{append_file};
+}
+
 sub process_line
 {
 	my ($self, $line) = @_;
 		# Journal version 'A'
 	
-	if ($line =~ /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/) {
+	if ($line =~ /^A\t(\d{1,20})\tCREATED\t(\S+)\t(\d+)\t([+-]?\d{1,20})\t(\S+)\t(.*?)$/) {
 		my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) = ($1,$2,$3,$4,$5,$6);
+		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		$self->_add_file($relfilename, {
 			time => $time,
 			archive_id => $archive_id,
@@ -77,15 +96,20 @@ sub process_line
 			mtime => $mtime,
 			treehash => $treehash,
 		});
-		$self->{used_versions}->{A} = 1;
-	} elsif ($line =~ /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/) {
+		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
+	} elsif ($line =~ /^A\t(\d{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
 		$self->_delete_file($3);
-		$self->{used_versions}->{A} = 1;
+		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
+	} elsif ($line =~ /^A\t(\d{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
+		my ($time, $archive_id, $job_id) = ($1,$2,$3);
+		$self->_retrieve_job($time, $archive_id, $job_id);
+		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
 		
 	# Journal version '0'
 	
-	} elsif ($line =~ /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
+	} elsif ($line =~ /^(\d{1,20})\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
 		my ($time, $archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4,$5);
+		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		#die if $self->{journal_h}->{$relfilename};
 		$self->_add_file($relfilename, {
 			time => $time,
@@ -93,12 +117,16 @@ sub process_line
 			size => $size,
 			treehash => $treehash,
 		});
-		$self->{used_versions}->{0} = 1;
-	} elsif ($line =~ /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/) {
+		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
+	} elsif ($line =~ /^\d{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
 		$self->_delete_file($2);
-		$self->{used_versions}->{0} = 1;
+		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
+	} elsif ($line =~ /^(\d{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
+		my ($time, $archive_id) = ($1,$2);
+		$self->_retrieve_job($time, $archive_id);
+		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} else {
-		#die;
+		#confess;
 	}
 }
 
@@ -114,6 +142,11 @@ sub _delete_file
 	delete $self->{journal_h}->{$relfilename} if $self->{journal_h}->{$relfilename}; # TODO: exception or warning if $files->{$2}
 }
 
+sub _retrieve_job
+{
+	my ($time, $archive_id, $job_id) = @_;
+}
+
 #
 # Wrting journal
 #
@@ -121,17 +154,37 @@ sub _delete_file
 sub add_entry
 {
 	my ($self, $e) = @_;
+	
+	confess unless $self->{output_version} eq 'A';
+	
+	# TODO: time should be ascending?
+
 	if ($e->{type} eq 'CREATED') {
 		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
-		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id filesize mtime final_hash relfilename/);
-		if ($self->{output_version} eq 'A') {
-			print "A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{filesize}\t$e->{mtime}\t$e->{final_hash}\t$e->{relfilename}";
-		} elsif ($self->{output_version} eq '0') {
-			print "$e->{time} CREATED $e->{archive_id} $e->{filesize} $e->{final_hash} $e->{relfilename}";
-		} else {
-			confess "Unexpected else";
-		}
+		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id size mtime treehash relfilename/);
+		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
+		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$filename");
+	} elsif ($e->{type} eq 'DELETED') {
+		#  DELETED $data->{archive_id} $data->{relfilename}
+		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id relfilename/);
+		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
+		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$filename");
+	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
+		#  RETRIEVE_JOB $data->{archive_id}
+		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id job_id/);
+		$self->_write_line("A\t$e->{time}\tRETRIEVE_JOB\t$e->{archive_id}\t$e->{job_id}");
+	} else {
+		confess "Unexpected else";
 	}
+}
+
+sub _write_line
+{
+	my ($self, $line) = @_;
+	confess unless $self->{append_file};
+	confess unless print { $self->{append_file} } $line."\n";
+	close F;
+	# TODO: fsync()
 }
 
 #
@@ -181,7 +234,9 @@ sub _read_files
 			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
 			
 			if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
-				push @$filelist, { absfilename => $filename, relfilename => File::Spec->abs2rel($filename, $self->{root_dir}) };
+				my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
+				confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
+				push @$filelist, { absfilename => $filename, relfilename => $relfilename };
 			}
 		}
 	}, preprocess => sub {
@@ -196,6 +251,19 @@ sub absfilename
 	my ($self, $relfilename) = @_;
 	confess unless defined($self->{root_dir});
 	return File::Spec->rel2abs($relfilename, $self->{root_dir});
+}
+
+# Class method
+# Does not work with directory names
+sub sanity_relative_filename
+{
+	my ($filename) = @_;
+	return undef if $filename =~ m!^//!g;
+	$filename =~ s!^/!!;
+	return undef if $filename =~ m![\r\n\t]!g;
+	$filename = File::Spec->catdir( map {return undef if m!^\.\.?$!; $_; } split('/', File::Spec->canonpath($filename)) );
+	return undef if $filename eq '';
+	return $filename;
 }
 
 sub _is_file_exists

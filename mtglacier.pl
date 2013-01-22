@@ -1,8 +1,8 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
-# mt-aws-glacier - AWS Glacier sync client
-# Copyright (C) 2012  Victor Efimov
-# vs@vs-dev.com http://vs-dev.com
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
 # This file is part of "mt-aws-glacier"
@@ -27,10 +27,9 @@ use warnings;
 use utf8;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
-our $VERSION = "0.78beta";
+our $VERSION = "0.83beta";
 
 
-use URI;
 use ParentWorker;
 use ChildWorker;
 use JobProxy;
@@ -39,11 +38,15 @@ use FileListDeleteJob;
 use FileListRetrievalJob;
 use RetrievalFetchJob;
 use JobListProxy;
+use RetrieveInventoryJob;
+use InventoryFetchJob;
 use File::Find ;
 use File::Spec;
 use Journal;
 use ConfigEngine;
 use ForkEngine;
+use Carp;
+use File::stat;
 
 
 
@@ -80,38 +83,42 @@ sub dcs
 
 
 
-print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n";
+print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 
 my ($P) = @_;
-my ($src, $vault, $journal, $max_number_of_files);
+my ($src, $vault, $journal);
 my $maxchildren = 4;
-my $partsize = 16;
 my $config = {};
 my $config_filename;
 
 
 my ($errors, $warnings, $action, $options) = ConfigEngine->new()->parse_options(@ARGV);
 
+
 for (@$warnings) {
-	warn "WARNING: $_";;
+	warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
 }	
 if ($errors) {
-	die $errors->[0];
+	print STDERR "ERROR: ".$errors->[0]." ( use --help for help )\n\n";
+	exit(1);
 }
 
 
-use Data::Dumper;print Dumper($options);
 
 
 if ($action eq 'sync') {
 	die "Not a directory $options->{dir}" unless -d $options->{dir};
+	
+	my $partsize = delete $options->{partsize};
+	
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
-	$j->read_new_files($options->{max_number_of_files});
+	$j->read_journal(should_exist => 0);
+	$j->read_new_files($options->{'max-number-of-files'});
+	$j->open_for_write();
 	
 	my @joblist;
 	for (@{ $j->{newfiles_a} }) {
@@ -121,70 +128,79 @@ if ($action eq 'sync') {
 	}
 	if (scalar @joblist) {
 		my $lt = JobListProxy->new(jobs => \@joblist);
-		my $R = $FE->{parent_worker}->process_task($lt);
+		my $R = $FE->{parent_worker}->process_task($lt, $j);
 		die unless $R;
 	}
+	$j->close_for_write();
+	$FE->terminate_children();
 } elsif ($action eq 'purge-vault') {
-	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	my $j = Journal->new(journal_file => $options->{journal});
 	
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
+	$j->open_for_write();
+	
 	my $files = $j->{journal_h};
 	if (scalar keys %$files) {
 		my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
 		my $ft = JobProxy->new(job => FileListDeleteJob->new(archives => \@filelist ));
-		my $R = $P->process_task($ft);
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
 		print "Nothing to delete\n";
 	}
-	
+	$j->close_for_write();
+	$FE->terminate_children();
 } elsif ($action eq 'restore') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
-	#die "You must specify number of files to restore" unless $max_number_of_files;
-	
+	confess unless $options->{'max-number-of-files'};
+			
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
+	$j->open_for_write();
+	
 	my $files = $j->{journal_h};
 	# TODO: refactor
 	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
-	@filelist  = splice(@filelist, 0, $options->{max_number_of_files});
+	@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
 	if (scalar @filelist) {
 		my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
-		my $R = $FE->process_task($ft);
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
 		print "Nothing to restore\n";
 	}
-	
+	$j->close_for_write();
+	$FE->terminate_children();
 } elsif ($action eq 'restore-completed') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	
 	my $FE = ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
+	
 	my $files = $j->{journal_h};
 	# TODO: refactor
-	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
+	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	if (scalar keys %filelist) {
 		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
-		my $R = $FE->process_task($ft);
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
 		print "Nothing to restore\n";
 	}
-	
+	$FE->terminate_children();
 } elsif ($action eq 'check-local-hash') {
 	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
-	$j->read_journal();
+	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 	
-	my ($error_hash, $error_size, $error_missed, $no_error) = (0,0,0,0);
+	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error) = (0,0,0,0,0);
 	for my $f (keys %$files) {
 		my $file=$files->{$f};
 		my $th = TreeHash->new();
@@ -192,10 +208,14 @@ if ($action eq 'sync') {
 		if (-f $absfilename ) {
 			open my $F, "<", $absfilename;
 			binmode $F;
-			$th->eat_file($F);
+			$th->eat_file($F); # TODO: don't calc tree hash if size differs!
 			close $F;
 			$th->calc_tree();
 			my $treehash = $th->get_final_hash();
+			if (defined($file->{mtime}) && (my $actual_mtime = stat($absfilename)->mtime) != $file->{mtime}) {
+				print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
+				++$error_mtime;
+			}
 			if (-s $absfilename == $file->{size}) {
 				if ($treehash eq $files->{$f}->{treehash}) {
 					print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
@@ -213,15 +233,99 @@ if ($action eq 'sync') {
 				++$error_missed;
 		}
 	}
-	print "TOTALS:\n$no_error OK\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+	print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+	print "($error_mtime of them have File Modification Time altered)\n";
 	exit(1) if $error_hash || $error_size || $error_missed;
+} elsif ($action eq 'retrieve-inventory') {
+	$options->{concurrency} = 1; # TODO implement this in ConfigEngine
+	#my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+			
+	my $FE = ForkEngine->new(options => $options);
+	$FE->start_children();
+	
+	#$j->read_journal(should_exist => 1);
+	#$j->open_for_write();
+	
+	my $ft = JobProxy->new(job => RetrieveInventoryJob->new());
+	my $R = $FE->{parent_worker}->process_task($ft, undef);
+	#$j->close_for_write();
+	$FE->terminate_children();
+} elsif ($action eq 'download-inventory') {
+	$options->{concurrency} = 1; # TODO implement this in ConfigEngine
+	my $j = Journal->new(journal_file => $options->{'new-journal'});
+			
+	my $FE = ForkEngine->new(options => $options);
+	$FE->start_children();
+	
+	
+	my $ft = JobProxy->new(job => InventoryFetchJob->new());
+	my $R = $FE->{parent_worker}->process_task($ft, undef);
+	# here we can have response from both JobList or Inventory output..
+	# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
+	# Inventory retriebal has key 'ArchiveList'
+	# TODO: implement it more clear way on level of Job/Tasks object
+	
+	croak if -s $options->{'new-journal'}; # TODO: fix race condition between this and opening file
+	$j->open_for_write();
+
+	my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});
+	my $now = time();
+	
+	for my $item (@{$data->{'ArchiveList'}}) {
+		
+		my ($relfilename, $mtime) = MetaData::meta_decode($item->{ArchiveDescription});
+		$relfilename = $item->{ArchiveId} unless defined $relfilename;
+		$mtime = $now unless defined $mtime;
+		
+		my $creation_time = MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
+		#time archive_id size mtime treehash relfilename
+		$j->add_entry({
+			type => 'CREATED',
+			relfilename => $relfilename,
+			time => $creation_time,
+			archive_id => $item->{ArchiveId},
+			size => $item->{Size},
+			mtime => $mtime,
+			treehash => $item->{SHA256TreeHash},
+		});		
+	}
+	$j->close_for_write();
+	$FE->terminate_children();
+} elsif ($action eq 'help') {
+	print <<"END";
+Usage: mtglacier.pl COMMAND [OPTION]...
+
+Common options:
+	--config - config file
+	--journal - journal file (append only)
+	--from-dir - source local directory
+	--to-vault - Glacier vault name
+	--concurrency - number of parallel workers to run
+	--max-number-of-files - max number of files to sync/restore
+	--protocol - Use http or https to connect to Glacier
+Commands:
+	sync
+		--partsize - Glacier multipart upload part size
+	purge-vault
+	restore
+	restore-completed
+	check-local-hash
+	retrieve-inventory
+	download-inventory
+		--new-journal - Write inventory as new journal
+Config format (text file):
+	key=YOURKEY
+	secret=YOURSECRET
+	# region: eu-west-1, us-east-1 etc
+	region=us-east-1
+	# protocol=http (default) or https
+	protocol=http
+
+END
+
 } else {
 	die "Wrong usage";
 }
-
-
-
-
 
 
 1;
