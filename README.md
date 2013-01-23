@@ -55,7 +55,7 @@ mt-aws-glacier is a client application for Glacier.
 * Only multipart upload implemented, no plain upload
 * No way to specify SNS topic
 * HTTP only, no way to configure HTTPS yet (however it works fine in HTTPS mode)
-* Mac OS X filesystem treated as case-insensetive
+* Mac OS X filesystem treated as case-sensitive
 
 ## Production ready
 
