@@ -54,7 +54,7 @@ mt-aws-glacier is a client application for Glacier.
 
 * Zero length files are ignored
 * Only multipart upload implemented, no plain upload
-* Mac OS X filesystem treated as case-insensetive
+* Mac OS X filesystem treated as case-sensitive
 
 ## Production ready
 
