@@ -4,6 +4,7 @@
 use warnings;
 use strict;
 use HTTP::Daemon;
+use HTTP::Daemon::SSL;
 use Carp;
 use POSIX;
 use File::Path;
@@ -14,18 +15,24 @@ use TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
 use Time::Local;
 
+my $proto = $ARGV[0]||die "Specify http|https";
+my $tmp_folder = $ARGV[1]||die "Specify temporary folder";
 my $children_count = 20;
-my $daemon = HTTP::Daemon->new(LocalHost => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1) || die;
+my $daemon = $proto eq 'http' ? HTTP::Daemon->new(LocalAddr => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1) : HTTP::Daemon::SSL->new(LocalAddr => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1);
+$daemon || die $daemon;
 my $json_coder = JSON::XS->new->utf8->allow_nonref;
 
 my $config = { key=>'AKIAJ2QN54K3SOFABCDE', secret => 'jhuYh6d73hdhGndk1jdHJHdjHghDjDkkdkKDkdkd'};
 my $seq_n = 0;
 
-$ARGV[0]||die "Specify temporary folder";
 
 for my $n (1..$children_count) {
 	if (!fork()) {
 		while (my $conn = $daemon->accept) {
+#			if (rand > 0.9) {
+#				close $conn;
+#				next;
+#			}
 			my $request = $conn->get_request();
 			next unless $request;
 			my $resp = child_worker($request);
@@ -440,7 +447,7 @@ sub basepath
 	my ($account, $vault, $idtype, $id, $key) = @_;
 	my $root_dir = $account;
 	$root_dir = '_default' if $root_dir eq '-';
-	my $path = "$ARGV[0]$root_dir/$vault/$idtype";
+	my $path = "$tmp_folder$root_dir/$vault/$idtype";
 	$path .= "/$id" if defined($id);
 	mkpath($path);
 	$path .= "/$key" if defined($key);
