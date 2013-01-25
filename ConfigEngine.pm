@@ -23,7 +23,7 @@ package ConfigEngine;
 use Getopt::Long;
 use Encode;
 use Carp;
-
+use List::Util qw/first/;
 
 use strict;
 use warnings;
@@ -115,7 +115,7 @@ sub new
 
 sub parse_options
 {
-	(my $self, @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
+	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
 	
 	my (@warnings);
 	my %reverse_deprecations;
@@ -178,7 +178,7 @@ sub parse_options
 
 	for my $o (keys %deprecations) {
 		if ($result{$o}) {
-			if (grep { $_ eq $o } @{ $command_ref->{deprecated} }) {
+			if (first { $_ eq $o } @{ $command_ref->{deprecated} }) {
 				push @warnings, "$o is not needed for this command";
 				delete $result{$o};
 			} else {
@@ -197,7 +197,7 @@ sub parse_options
 			if (defined($options{$o}->{default})) { # Options from config are used here!
 				$result{$o} = $options{$o}->{default};
 			} else {
-				if (grep { $_ eq $o } @config_opts) {
+				if (first { $_ eq $o } @config_opts) {
 					return ([
 						defined($result{config}) ?
 						"Please specify --$o OR add \"$o=...\" into the config file" :
@@ -228,22 +228,22 @@ sub parse_options
 sub read_config
 {
 	my ($self, $filename) = @_;
-	return undef unless -f $filename && -r $filename; #TODO test
-	open (F, "<:crlf:encoding(UTF-8)", $filename) || return undef;
+	return unless -f $filename && -r $filename; #TODO test
+	open (my $F, "<:crlf:encoding(UTF-8)", $filename) || return;
 	my %newconfig;
-	while (<F>) {
+	while (<$F>) {
 		chomp;
 		next if /^\s*$/;
 		next if /^\s*\#/;
 		/^([^=]+)=(.*)$/;
-		my ($name, $value) = ($1,$2);
+		my ($name, $value) = ($1,$2); # TODO: test lines with wrong format
 		$name =~ s/^[ \t]*//;
 		$name =~ s/[ \t]*$//;
 		$value =~ s/^[ \t]*//;
 		$value =~ s/[ \t]*$//;
 		$newconfig{$name} = $value;
 	}
-	close F;
+	close $F;
 	return \%newconfig;
 }
 
