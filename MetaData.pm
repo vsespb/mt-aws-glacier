@@ -30,6 +30,8 @@ use JSON::XS;
 use POSIX;
 use Time::Local;
 
+use constant MAX_SIZE => 1024;
+
 =pod
 
 MT-AWS-GLACIER metadata format (x-amz-archive-description field).
@@ -69,7 +71,7 @@ Note, that according to this spec. Same (FILENAME,MTIME) values can produce diff
 =cut
 
 my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
-	JSON::XS->new->utf8->max_depth(1)->max_size(1024) : # some additional abuse-protection
+	JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) : # some additional abuse-protection
 	JSON::XS->new->utf8; # it's still protected by length checking below
 
 sub meta_decode
@@ -77,7 +79,7 @@ sub meta_decode
   my ($str) = @_;
   my ($marker, $b64) = split(' ', $str);
   if ($marker eq 'mt1') {
-  	return (undef, undef) unless length($b64) <= 1024;
+  	return (undef, undef) unless length($b64) <= MAX_SIZE;
   	return _decode_json(_decode_utf8(_decode_b64($b64)));
   } else {
   	return (undef, undef);
@@ -99,7 +101,7 @@ sub _decode_b64
 sub _decode_utf8
 {
 	my ($str) = @_;
-	return undef unless defined $str;
+	return unless defined $str;
 	my $res = eval {
 		decode("UTF-8", $str, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
 	};
@@ -109,7 +111,7 @@ sub _decode_utf8
 sub _decode_json
 {
 	my ($str) = @_;
-	return undef unless defined $str;
+	return unless defined $str;
 	my $h = eval { 
 		$meta_coder->decode($str)
 	};
@@ -118,7 +120,7 @@ sub _decode_json
 	} else {
 		return (undef, undef) unless defined($h->{filename}) && defined($h->{mtime});
 		my $mtime = _parse_iso8601($h->{mtime});
-		return undef unless defined $mtime;
+		return unless defined $mtime;
 		return ($h->{filename}, $mtime);
 	}
 }
@@ -128,9 +130,9 @@ sub _decode_json
 sub meta_encode
 {
 	my ($relfilename, $mtime) = @_;
-	return undef unless defined($mtime) && defined($relfilename);
+	return unless defined($mtime) && defined($relfilename);
 	my $res = "mt1 "._encode_b64(_encode_utf8(_encode_json($relfilename, $mtime)));
-	return undef if length($res) > 1024;
+	return if length($res) > MAX_SIZE;
 	return $res;
 }
 
@@ -154,7 +156,7 @@ sub _encode_json
 {
 	my ($relfilename, $mtime) = @_;
 	
-	$meta_coder->encode({
+	return $meta_coder->encode({
 		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
 		filename => $relfilename
 	}),
@@ -163,7 +165,7 @@ sub _encode_json
 sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
 {
 	my ($str) = @_;
-	return undef unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
+	return unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
 	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
 	$sec = 59 if $sec == 60; # TODO: dirty workaround to avoid dealing with leap seconds
 	my $res = eval { timegm($sec,$min,$hour,$day,$month - 1,$year) };
