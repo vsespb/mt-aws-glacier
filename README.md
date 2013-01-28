@@ -106,6 +106,8 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 		secret=YOURSECRET
 		# region: eu-west-1, us-east-1 etc
 		region=us-east-1
+		# protocol=http (default) or https
+		protocol=http
 
 3. Create a vault in specified region, using Amazon Console (`myvault`)
 4. Choose a filename for the Journal, for example, `journal.log`
