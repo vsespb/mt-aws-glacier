@@ -175,7 +175,7 @@ sub child_worker
 		$resp->header('x-amz-archive-id', $archive_id);
 		return $resp;
 	
-	# CREATE JOB (to restore file, for example)	
+	# CREATE JOB (to restore file/retrieve inventory)	
 	} elsif (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs$!)) {
 		my ($account, $vault) = ($1,$2);
 		defined($account)||croak;
@@ -252,7 +252,7 @@ sub child_worker
 		} else {
 			croak;
 		}
-	# LIST JOBS (to restore file, for example)	
+	# LIST JOBS (to restore file/retrieve inventory)	
 	} elsif (($data->{method} eq 'GET') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs$!)) {
 		my ($account, $vault) = ($1,$2);
 		defined($account)||croak;
@@ -338,6 +338,19 @@ sub child_worker
 		my $bpath = basepath($account, $vault, 'archive', $archive_id)||croak;
 		rmtree($bpath) if -d $bpath && $bpath =~ m!archive/\d!;
 		my $resp = HTTP::Response->new(200, "Fine");
+		return $resp;
+	# CREATE VAULT
+	} elsif (($data->{method} eq 'PUT') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)$!)) {
+		my ($account, $vault) = ($1,$2);
+		create_vault($account, $vault);
+		my $resp = HTTP::Response->new(201, "Created");
+		$resp->header('x-amzn-RequestId', gen_id());
+		return $resp;
+	} elsif (($data->{method} eq 'DELETE') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)$!)) {
+		my ($account, $vault) = ($1,$2);
+		delete_vault($account, $vault);
+		my $resp = HTTP::Response->new(204, "No Content");
+		$resp->header('x-amzn-RequestId', gen_id());
 		return $resp;
 	} else {
 		confess;
@@ -447,11 +460,41 @@ sub basepath
 	my ($account, $vault, $idtype, $id, $key) = @_;
 	my $root_dir = $account;
 	$root_dir = '_default' if $root_dir eq '-';
-	my $path = "$tmp_folder$root_dir/$vault/$idtype";
+	my $path = "$tmp_folder$root_dir";
+	mkpath($path);
+	$path .= "/$vault";
+	confess unless -d $path;
+	$path .= "/$idtype";
 	$path .= "/$id" if defined($id);
 	mkpath($path);
 	$path .= "/$key" if defined($key);
 	print "RETURN [$path]\n";
+	return $path;
+}
+
+sub create_vault
+{
+	my ($account, $vault) = @_;
+	my $root_dir = $account;
+	$root_dir = '_default' if $root_dir eq '-';
+	my $path = "$tmp_folder$root_dir";
+	mkpath($path);
+	$path .= "/$vault";
+	mkpath($path);
+	return $path;
+}
+
+sub delete_vault
+{
+	my ($account, $vault) = @_;
+	my $root_dir = $account;
+	$root_dir = '_default' if $root_dir eq '-';
+	my $path = "$tmp_folder$root_dir";
+	mkpath($path);
+	$path .= "/$vault";
+	confess unless -d $path;
+	confess if glob("$path/archive/*");
+	rmtree($path);
 	return $path;
 }
 
