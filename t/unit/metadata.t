@@ -38,6 +38,20 @@ describe "MetaData" => sub {
 		ok !defined MetaData::_decode_json undef;
 		
 	};
+	it "should not call encode" => sub {
+		MetaData->expects("_encode_utf8")->never();
+		MetaData::meta_encode('тест', 1);
+		ok 1;
+	};
+	it "should not call decode for current metadata version" => sub {
+		MetaData->expects("_decode_utf8")->never();
+		MetaData::meta_decode MetaData::meta_encode('тест', 1);
+		ok 1;
+	};
+	it "should call decode for mt1" => sub {
+		MetaData->expects("_decode_utf8")->once();
+		MetaData::meta_decode 'mt1 eyJmaWxlbmFtZSI6IsOQwq9Bw5DCryIsIm10aW1lIjoiMTk3MDAxMDFUMDAwMjAzWiJ9'
+	};
 	it "should catch undef in _decode_utf8" => sub {
 		MetaData->expects("decode");
 		MetaData::_decode_utf8 encode("UTF-8", "тест");

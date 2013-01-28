@@ -36,9 +36,9 @@ use constant MAX_SIZE => 1024;
 
 MT-AWS-GLACIER metadata format (x-amz-archive-description field).
 
-Version 'mt1'
+Version 'mt2'
 
-x-amz-archive-description = 'mt1' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
+x-amz-archive-description = 'mt2' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
 
 Input data:
 
@@ -81,6 +81,9 @@ sub meta_decode
   if ($marker eq 'mt1') {
   	return (undef, undef) unless length($b64) <= MAX_SIZE;
   	return _decode_json(_decode_utf8(_decode_b64($b64)));
+  } elsif ($marker eq 'mt2') {
+  	return (undef, undef) unless length($b64) <= MAX_SIZE;
+  	return _decode_json(_decode_b64($b64));
   } else {
   	return (undef, undef);
   }
@@ -131,7 +134,7 @@ sub meta_encode
 {
 	my ($relfilename, $mtime) = @_;
 	return unless defined($mtime) && defined($relfilename);
-	my $res = "mt1 "._encode_b64(_encode_utf8(_encode_json($relfilename, $mtime)));
+	my $res = "mt2 "._encode_b64(_encode_json($relfilename, $mtime));
 	return if length($res) > MAX_SIZE;
 	return $res;
 }

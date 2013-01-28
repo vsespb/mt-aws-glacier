@@ -44,6 +44,7 @@ $harness->runtests(
     'integration/utf8.t',
     'integration/t_treehash.t',
     'integration/metadata.t',
+    'integration/metadata_mt1.t',
     'integration/journal_readwrite.t',
     'unit/journal_readjournal.t',
     'unit/journal_writejournal.t',
