@@ -148,6 +148,18 @@ sub process
 				confess unless $r;
 				$result = { job_id => $r };
 				$console_out = "Retrieved Inventory, job id $r";
+			} elsif ($action eq 'create_vault_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->create_vault($data->{name});
+				confess unless $r;
+				$result = { };
+				$console_out = "Created vault $data->{name}";
+			} elsif ($action eq 'delete_vault_job') {
+				my $req = GlacierRequest->new($self->{options});
+				my $r = $req->delete_vault($data->{name});
+				confess unless $r;
+				$result = { };
+				$console_out = "Deleted vault $data->{name}";
 			} else {
 				die $action;
 			}
