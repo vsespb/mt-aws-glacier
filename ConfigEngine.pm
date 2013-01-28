@@ -87,8 +87,19 @@ my %options = (
 	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
 		($value =~ /^https?$/)
 	}, ],
-	['LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
-		$value eq 'https' ? LWP::UserAgent->is_protocol_supported("https") : 1 # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
+	['IO::Socket::SSL or LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
+		$value ne 'https' || LWP::UserAgent->is_protocol_supported("https"); # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
+	}, ],
+	['LWP::UserAgent 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
+		$value ne 'https' || LWP->VERSION() >= 6
+	}, ],
+	['LWP::Protocol::https 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
+		if ($value eq 'https') {
+			require LWP::Protocol::https;
+			LWP::Protocol::https->VERSION >= 6
+		} else {
+			1;
+		}
 	}, ],
 ] },
 );
