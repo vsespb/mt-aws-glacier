@@ -24,7 +24,6 @@ use strict;
 use warnings;
 use utf8;
 use POSIX;
-use Net::HTTPS ();
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use TreeHash;
@@ -32,7 +31,6 @@ use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use MetaData;
 use Carp;
 
-$Net::HTTPS::SSL_SOCKET_CLASS = "Net::SSL";
 
 
 
@@ -327,9 +325,9 @@ sub perform_lwp
 		$url = $self->{protocol} ."://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
 		if ($self->{protocol} eq 'https') {
 			if ($ENV{MTGLACIER_FAKE_HOST}) {
-				$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode=>IO::Socket::SSL::SSL_VERIFY_NONE); #Hostname mismatch causes LWP to error.
+				$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode=>0); #Hostname mismatch causes LWP to error.
 			} else {
-				$ua->ssl_opts( verify_hostname => 1, SSL_verify_mode=>IO::Socket::SSL::SSL_VERIFY_PEER);
+				$ua->ssl_opts( verify_hostname => 1, SSL_verify_mode=>1);
 			}
 		}
 		$url .= "?$self->{params_s}" if $self->{params_s};
