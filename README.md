@@ -109,9 +109,12 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 		# protocol=http (default) or https
 		protocol=http
 
+	(you can skip any config option and specify it directly in command line)
 3. Create a vault in specified region, using Amazon Console (`myvault`) or using mtglacier
 
 		./mtglacier.pl create-vault myvault --config=glacier.cfg
+
+	(note that Amazon Glacier does not return error if vault already exists etc)
 
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
@@ -141,6 +144,8 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 		./mtglacier.pl delete-vault myvault --config=glacier.cfg 
 
+	(note: currently Amazon Glacier does not return error if vault is not exists)
+
 ## Restoring journal
 
 In case you lost your journal file, you can restore it from Amazon Glacier metadata
@@ -162,17 +167,19 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 ## Additional command line options
 
-1. "concurrency" (with 'sync' command) - number of parallel upload streams to run. (default 4)
+1. `concurrency` (with `sync` or `restore` commands) - number of parallel upload streams to run. (default 4)
 
 		--concurrency=4
 
-2. "partsize" (with 'sync' command) - size of file chunk to upload at once, in Megabytes. (default 16)
+2. `partsize` (with `sync` command) - size of file chunk to upload at once, in Megabytes. (default 16)
 
 		--partsize=16
 
-3. "max-number-of-files" (with 'sync' or 'restore' commands) - limit number of files to sync/restore. Program will finish when reach this limit.
+3. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
 		--max-number-of-files=100
+
+4. `key/secret/region/vault/protocol` - you can override any option from config
 
 ## Test/Play with it
 
