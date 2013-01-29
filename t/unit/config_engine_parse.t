@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 41;
+use Test::More tests => 43;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -261,6 +261,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	'create-vault myvault --config=glacier.cfg'
 	));
 	ok( !$errors, "show allow positional arguments" );
+	ok ($command eq 'create-vault');
 	ok( $result->{'vault-name'} eq 'myvault', "should parse positional arguments");
 }
 
@@ -271,6 +272,7 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 	'create-vault --config=glacier.cfg myvault'
 	));
 	ok( !$errors, "show allow positional arguments after options" );
+	ok ($command eq 'create-vault');
 	ok( $result->{'vault-name'} eq 'myvault', "should parse positional arguments after options");
 }
 

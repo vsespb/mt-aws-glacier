@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 4;
+use Test::More tests => 6;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -54,6 +54,7 @@ for (
 ){
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && !$warnings, "$_ error/warnings");
+	ok ($command eq 'retrieve-inventory', "$_ command");
 	is_deeply($result, {
 		key=>'mykey',
 		secret => 'mysecret',
@@ -71,6 +72,7 @@ for (
 ){
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && !$warnings, "$_ error/warnings");
+	ok ($command eq 'download-inventory', "$_ command");
 	is_deeply($result, {
 		key=>'mykey',
 		secret => 'mysecret',
