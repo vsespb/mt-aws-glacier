@@ -74,7 +74,7 @@ Should NOT work under Windows.
 	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::UserAgent::https** via CPAN: `cpan -i LWP::UserAgent::https`
 	or `cpanp -i LWP::UserAgent::https` If `perl -MLWP -e 'print LWP->VERSION()'` prints 6.x version - everything is installed already.
 
-		
+
 * Install mt-aws-glacier
 
 		git clone https://github.com/vsespb/mt-aws-glacier.git
@@ -190,7 +190,7 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 ## Minimum Amazon Glacier permissions:
 
-Something like this:
+Something like this (including permissions to create/delete vaults):
 
 		{
 		"Statement": [
@@ -201,19 +201,27 @@ Something like this:
 				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test2",
 				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test3"],
 				"Action":["glacier:UploadArchive",
-					"glacier:InitiateMultipartUpload",
-					"glacier:UploadMultipartPart",
-					"glacier:UploadPart",
-					"glacier:DeleteArchive",
-					"glacier:ListParts",
-					"glacier:InitiateJob",
-					"glacier:ListJobs",
-					"glacier:GetJobOutput",
-					"glacier:ListMultipartUploads",
-					"glacier:CompleteMultipartUpload"] 
+				  "glacier:InitiateMultipartUpload",
+				  "glacier:UploadMultipartPart",
+				  "glacier:UploadPart",
+				  "glacier:DeleteArchive",
+				  "glacier:ListParts",
+				  "glacier:InitiateJob",
+				  "glacier:ListJobs",
+				  "glacier:GetJobOutput",
+				  "glacier:ListMultipartUploads",
+				  "glacier:CompleteMultipartUpload"] 
+			},
+			{
+				"Effect": "Allow",
+				"Resource":["arn:aws:glacier:eu-west-1:*",
+				  "arn:aws:glacier:us-east-1:*"],
+				"Action":["glacier:CreateVault",
+				  "glacier:DeleteVault"] 
 			}
 			]
 		}
+
 
 #### EOF
 
