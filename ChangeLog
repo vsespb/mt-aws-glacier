@@ -3,19 +3,23 @@
 	* mtglacier.pl now deprected, use mtglacier
 	* Now you can execute mtglacier command from any directory, or create a symlink to it - it will find other package files by itself 
 	* Minor fixes in help command output and cosmetic changes
+
 2013-01-28: v0.85 beta
 	* Create/delete vault support
+
 2013-01-28: v0.84 beta
 	* HTTPS Support added
 	* Bug fixed: Some (UTF-8) metadata characters was double-encoded (however it can be read without problems)
 	* Compatibility - Amazon Glacier Metadata: only backward compatible with previous versions. 
 	* Documentation improvements
 	* Error checking improved when reading config file
+
 2013-01-21: v0.83 beta
 	* Bug fixed. File modification time 1970-01-01T00:00:00Z0 (i.e. epoch time = 0 ) was causing crash when uploading and missing file report when check-local-hash
 	* Main script: Changed shebang from /usr/bin/perl to /usr/bin/env - this will allow Mac Port users to work out of the box
 	* Main script: Cosmetic changes in --help output
 	* Documentation: added names of CentOS packages, better example of config file, cosmetic changes, fixed spelling mistakes    
+
 2013-01-12: v0.82 beta
 	* retrieve-inventory/download-inventory commands added. You can now restore journal file from scratch, from Amazon Glacier metadata
 	* Now when downloading files from glacier - restore original modification time
