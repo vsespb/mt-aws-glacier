@@ -309,7 +309,7 @@ sub main
 		$FE->terminate_children();
 	} elsif ($action eq 'help') {
 		print <<"END";
-Usage: mtglacier.pl COMMAND [OPTION]...
+Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
 
 Common options:
 	--config - config file
@@ -329,6 +329,8 @@ Commands:
 	retrieve-inventory
 	download-inventory
 		--new-journal - Write inventory as new journal
+	create-vault VAULT-NAME
+	delete-vault VAULT-NAME
 Config format (text file):
 	key=YOURKEY
 	secret=YOURSECRET
