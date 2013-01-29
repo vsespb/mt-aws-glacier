@@ -109,7 +109,10 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 		# protocol=http (default) or https
 		protocol=http
 
-3. Create a vault in specified region, using Amazon Console (`myvault`)
+3. Create a vault in specified region, using Amazon Console (`myvault`) or using mtglacier
+
+		./mtglacier.pl create-vault myvault --config=glacier.cfg
+
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
@@ -133,6 +136,10 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 12. Delete all your files from vault
 
 		./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		
+13. Wait ~ 24-48 hours and you can try deleting your vault
+
+		./mtglacier.pl delete-vault myvault --config=glacier.cfg 
 
 ## Restoring journal
 
