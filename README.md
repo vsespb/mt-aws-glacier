@@ -78,6 +78,8 @@ Should NOT work under Windows.
 
 		git clone https://github.com/vsespb/mt-aws-glacier.git
 
+	After that you can execute `mtglacier` command from any directory, or create a symlink to it -- it will find other package files by itself.
+
 ## Warnings ( *MUST READ* )
 
 * When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
@@ -111,37 +113,37 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 	(you can skip any config option and specify it directly in command line)
 3. Create a vault in specified region, using Amazon Console (`myvault`) or using mtglacier
 
-		./mtglacier.pl create-vault myvault --config=glacier.cfg
+		./mtglacier create-vault myvault --config=glacier.cfg
 
 	(note that Amazon Glacier does not return error if vault already exists etc)
 
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
-		./mtglacier.pl sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
+		./mtglacier sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
 
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
-		./mtglacier.pl check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+		./mtglacier check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
     
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
 
-		./mtglacier.pl restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=10
+		./mtglacier restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=10
 
 10. Wait 4+ hours for Amazon Glacier to complete archive retrieval
 11. Download restored files back to backup location
 
-		./mtglacier.pl restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		./mtglacier restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
 
 12. Delete all your files from vault
 
-		./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		./mtglacier purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
 		
 13. Wait ~ 24-48 hours and you can try deleting your vault
 
-		./mtglacier.pl delete-vault myvault --config=glacier.cfg 
+		./mtglacier delete-vault myvault --config=glacier.cfg 
 
 	(note: currently Amazon Glacier does not return error if vault is not exists)
 
@@ -151,13 +153,13 @@ In case you lost your journal file, you can restore it from Amazon Glacier metad
 
 1. Run retrieve-inventory command. This will request Amazon Glacier to prepare vault inventory.
 
-		./mtglacier.pl retrieve-inventory --config=glacier.cfg --vault=myvault
+		./mtglacier retrieve-inventory --config=glacier.cfg --vault=myvault
 
 2. Wait 4+ hours for Amazon Glacier to complete inventory retrieval (also note that you will get only ~24h old inventory..)
 
 3. Download inventory and export it to new journal (this sometimes can be pretty slow even if inventory is small, wait a few minutes):
 
-		./mtglacier.pl download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log
+		./mtglacier download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log
 
 
 For files created by mt-aws-glacier version 0.8x and higher original filenames will be restored. For other files archive_id will be used as filename. See Amazon Glacier metadata format for mt-aws-glacier here: [Amazon Glacier metadata format used by mt-aws glacier][Amazon Glacier metadata format used by mt-aws glacier]
