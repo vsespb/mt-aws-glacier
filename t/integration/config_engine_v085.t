@@ -42,7 +42,7 @@ my %disable_validations = (
 
 
 
-# v0.84 regressions test
+# v0.85 regressions test
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
