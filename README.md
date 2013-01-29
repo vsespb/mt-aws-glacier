@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.85 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.86 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -78,7 +78,7 @@ Should NOT work under Windows.
 
 		git clone https://github.com/vsespb/mt-aws-glacier.git
 
-	After that you can execute `mtglacier` command from any directory, or create a symlink to it -- it will find other package files by itself.
+	After that you can execute `mtglacier` command from any directory, or create a symlink to it - it will find other package files by itself.
 
 ## Warnings ( *MUST READ* )
 

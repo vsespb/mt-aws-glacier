@@ -1,3 +1,8 @@
+2013-01-29: v0.86 beta
+	* Changed project file structure. Modules moved to lib/App/MtAws
+	* mtglacier.pl now deprected, use mtglacier
+	* Now you can execute mtglacier command from any directory, or create a symlink to it - it will find other package files by itself 
+	* Minor fixes in help command output and cosmetic changes
 2013-01-28: v0.85 beta
 	* Create/delete vault support
 2013-01-28: v0.84 beta
