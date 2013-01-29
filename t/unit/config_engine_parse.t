@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 33;
+use Test::More tests => 43;
 use Test::Deep;
 use lib qw{.. ../..};
 use ConfigEngine;
@@ -254,5 +254,62 @@ local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', r
 
 }
 
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'create-vault myvault --config=glacier.cfg'
+	));
+	ok( !$errors, "show allow positional arguments" );
+	ok ($command eq 'create-vault');
+	ok( $result->{'vault-name'} eq 'myvault', "should parse positional arguments");
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'create-vault --config=glacier.cfg myvault'
+	));
+	ok( !$errors, "show allow positional arguments after options" );
+	ok ($command eq 'create-vault');
+	ok( $result->{'vault-name'} eq 'myvault', "should parse positional arguments after options");
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'create-vault --config=glacier.cfg'
+	));
+	ok( $errors && $errors->[0] eq 'Please specify another argument in command line: vault-name', "show throw error is positional argument is missing" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'create-vault --config=glacier.cfg arg1 arg2'
+	));
+	ok( $errors && $errors->[0] eq 'Extra argument in command line: arg2', "show throw error is there is extra positional argument" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'create-vault --config=glacier.cfg arg1 arg2'
+	));
+	ok( $errors && $errors->[0] eq 'Extra argument in command line: arg2', "show throw error is there is extra positional argument" );
+}
+
+{
+	local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	
+	my ($errors, $warnings, $command, $result) = ConfigEngine->new()->parse_options(split(' ',
+	'create-vault --config=glacier.cfg my#vault'
+	));
+	ok( $errors && $errors->[0] eq 'Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"', "should validate positional arguments" );
+}
 
 1;

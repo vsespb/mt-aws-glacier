@@ -254,8 +254,8 @@ no warnings 'redefine';
 	ok !defined MetaData::meta_encode(undef, 4), 'should catche missed filename';
 	ok defined MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
 	ok !defined MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
-	ok defined MetaData::meta_encode('я' x 128, 0), 'should allow 128 UTF characters';
-	ok defined MetaData::meta_encode('z' x 256, 0), 'should allow 256 ASCII characters';
+	ok defined MetaData::meta_encode('я' x 350, 0), 'should allow 350 UTF 2 bytes characters';
+	ok defined MetaData::meta_encode('z' x 700, 0), 'should allow 700 ASCII characters';
 }
 
 # test _parse_iso8601

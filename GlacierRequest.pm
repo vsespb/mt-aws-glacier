@@ -40,7 +40,9 @@ sub new
 	my $self = {};
 	bless $self, $class;
 	
-	defined($self->{$_} = $options->{$_})||confess for (qw/vault region key secret protocol/);
+	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol/);
+	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault/); # TODO: validate vault later
+	
 	
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
 	$self->{service} ||= 'glacier';
@@ -242,6 +244,32 @@ sub download_inventory
 	return $resp ? $resp : undef; # $resp->decoded_content is undefined here as content_file used
 }
 
+
+sub create_vault
+{
+	my ($self, $vault_name) = @_;
+
+	confess unless defined($vault_name);
+   
+	$self->{url} = "/$self->{account_id}/vaults/$vault_name";
+	$self->{method} = 'PUT';
+
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp->header('x-amzn-RequestId') : undef;
+}
+
+sub delete_vault
+{
+	my ($self, $vault_name) = @_;
+
+	confess unless defined($vault_name);
+   
+	$self->{url} = "/$self->{account_id}/vaults/$vault_name";
+	$self->{method} = 'DELETE';
+
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp->header('x-amzn-RequestId') : undef;
+}
 
 
 

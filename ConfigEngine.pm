@@ -102,9 +102,17 @@ my %options = (
 		}
 	}, ],
 ] },
+'vault-name'            => { validate =>
+	['Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'   => sub { my ($command, $results, $value) = @_;
+		$value =~ /^[A-Za-z0-9\.\-_]{1,255}$/;
+	}],
+},
+
 );
 
 my %commands = (
+'create-vault'      => { args=> ['vault-name'], req => [@config_opts]},
+'delete-vault'      => { args=> ['vault-name'], req => [@config_opts]},
 'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/], optional => [qw/max-number-of-files/]},
 'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/], optional => [qw//], deprecated => [qw/from-dir/] },
 'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
@@ -160,7 +168,6 @@ sub parse_options
     my %result; # TODO: deafult hash, config from file
 	
 	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptions(\%result, @getopts);
-	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
@@ -174,7 +181,7 @@ sub parse_options
 		
 		my (%merged);
 		
-		@merged{keys %$config_result} = values %$config_result;
+		@merged{keys %$config_result} = values %$config_result; # TODO: throw away and ignore any unknown config options
 		$source{$_} = 'config' for (keys %$config_result);
 	
 		@merged{keys %result} = values %result;
@@ -185,6 +192,17 @@ sub parse_options
 	} else {
 		$source{$_} = 'command' for (keys %result);
 	}
+
+	if ($command_ref->{args}) {
+		for (@{$command_ref->{args}}) {
+			confess if defined $result{$_}; # we should not have arguments and options with same-name in our ConfigEngine config
+			my $val = shift @ARGV;
+			return (["Please specify another argument in command line: $_"], @warnings ? \@warnings : undef) unless defined $val;
+			$result{$_} = decode("UTF-8", $val);
+			$source{$_} = 'args';
+		}
+	}
+	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	
 
 	for my $o (keys %deprecations) {

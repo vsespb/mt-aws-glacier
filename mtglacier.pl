@@ -27,7 +27,7 @@ use warnings;
 use utf8;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
-our $VERSION = "0.84beta";
+our $VERSION = "0.85beta";
 
 
 use ParentWorker;
@@ -47,7 +47,8 @@ use ConfigEngine;
 use ForkEngine;
 use Carp;
 use File::stat;
-
+use CreateVaultJob;
+use DeleteVaultJob;
 
 BEGIN { no warnings; $Net::HTTPS::SSL_SOCKET_CLASS = "IO::Socket::SSL"; }; # force use of IO::Socket::SSL for SSL certifiates validation
 
@@ -290,6 +291,24 @@ if ($action eq 'sync') {
 		});		
 	}
 	$j->close_for_write();
+	$FE->terminate_children();
+} elsif ($action eq 'create-vault') {
+	$options->{concurrency} = 1;
+			
+	my $FE = ForkEngine->new(options => $options);
+	$FE->start_children();
+	
+	my $ft = JobProxy->new(job => CreateVaultJob->new(name => $options->{'vault-name'}));
+	my $R = $FE->{parent_worker}->process_task($ft, undef);
+	$FE->terminate_children();
+} elsif ($action eq 'delete-vault') {
+	$options->{concurrency} = 1;
+			
+	my $FE = ForkEngine->new(options => $options);
+	$FE->start_children();
+	
+	my $ft = JobProxy->new(job => DeleteVaultJob->new(name => $options->{'vault-name'}));
+	my $R = $FE->{parent_worker}->process_task($ft, undef);
 	$FE->terminate_children();
 } elsif ($action eq 'help') {
 	print <<"END";

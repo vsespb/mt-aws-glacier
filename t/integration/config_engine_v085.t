@@ -42,44 +42,44 @@ my %disable_validations = (
 
 
 
-# v0.82 regressions test
+# v0.85 regressions test
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
 
-# retrieve-inventory
+# create-vault
 
 for (
-	qq!retrieve-inventory --config=glacier.cfg --vault=myvault!,
+	qq!create-vault myvault --config=glacier.cfg!,
 ){
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && !$warnings, "$_ error/warnings");
-	ok ($command eq 'retrieve-inventory', "$_ command");
+	ok ($command eq 'create-vault', "$_ command");
 	is_deeply($result, {
 		key=>'mykey',
 		secret => 'mysecret',
 		region => 'myregion',
 		protocol => 'http',
-		vault=>'myvault',
+		'vault-name'=>'myvault',
 		config=>'glacier.cfg',
 	}, "$_ result");
 }
 
-# download-inventory
+
+# delete-vault
 
 for (
-	qq!download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log!,
+	qq!delete-vault myvault --config=glacier.cfg!,
 ){
 	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && !$warnings, "$_ error/warnings");
-	ok ($command eq 'download-inventory', "$_ command");
+	ok ($command eq 'delete-vault', "$_ command");
 	is_deeply($result, {
 		key=>'mykey',
 		secret => 'mysecret',
 		region => 'myregion',
 		protocol => 'http',
-		vault=>'myvault',
-		'new-journal' => 'new-journal.log',
+		'vault-name'=>'myvault',
 		config=>'glacier.cfg',
 	}, "$_ result");
 }
