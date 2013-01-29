@@ -347,7 +347,7 @@ sub perform_lwp
 
 		my $ua = LWP::UserAgent->new(timeout => 120);
 		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Lets hard code this.
-		$ua->agent("mt-aws-glacier/$main::VERSION (http://mt-aws.com/) "); 
+		$ua->agent("mt-aws-glacier/$App::MtAws::VERSION (http://mt-aws.com/) "); 
 		my $req = undef;
 		my $url = $self->{protocol} ."://$self->{host}$self->{url}";
 		$url = $self->{protocol} ."://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
