@@ -192,35 +192,35 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 Something like this (including permissions to create/delete vaults):
 
+	{
+	"Statement": [
 		{
-		"Statement": [
-			{
+		"Effect": "Allow",
+		"Resource":["arn:aws:glacier:eu-west-1:*:vaults/test1",
+			"arn:aws:glacier:us-east-1:*:vaults/test1",
+			"arn:aws:glacier:eu-west-1:*:vaults/test2",
+			"arn:aws:glacier:eu-west-1:*:vaults/test3"],
+			"Action":["glacier:UploadArchive",
+			  "glacier:InitiateMultipartUpload",
+			  "glacier:UploadMultipartPart",
+			  "glacier:UploadPart",
+			  "glacier:DeleteArchive",
+			  "glacier:ListParts",
+			  "glacier:InitiateJob",
+			  "glacier:ListJobs",
+			  "glacier:GetJobOutput",
+			  "glacier:ListMultipartUploads",
+			  "glacier:CompleteMultipartUpload"] 
+		},
+		{
 			"Effect": "Allow",
-			"Resource":["arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test1",
-				"arn:aws:glacier:us-east-1:XXXXXXXXXXXX:vaults/test1",
-				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test2",
-				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test3"],
-				"Action":["glacier:UploadArchive",
-				  "glacier:InitiateMultipartUpload",
-				  "glacier:UploadMultipartPart",
-				  "glacier:UploadPart",
-				  "glacier:DeleteArchive",
-				  "glacier:ListParts",
-				  "glacier:InitiateJob",
-				  "glacier:ListJobs",
-				  "glacier:GetJobOutput",
-				  "glacier:ListMultipartUploads",
-				  "glacier:CompleteMultipartUpload"] 
-			},
-			{
-				"Effect": "Allow",
-				"Resource":["arn:aws:glacier:eu-west-1:*",
-				  "arn:aws:glacier:us-east-1:*"],
-				"Action":["glacier:CreateVault",
-				  "glacier:DeleteVault"] 
-			}
-			]
+			"Resource":["arn:aws:glacier:eu-west-1:*",
+			  "arn:aws:glacier:us-east-1:*"],
+			"Action":["glacier:CreateVault",
+			  "glacier:DeleteVault"] 
 		}
+		]
+	}
 
 
 #### EOF
