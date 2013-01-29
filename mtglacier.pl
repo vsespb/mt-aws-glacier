@@ -27,7 +27,7 @@ use warnings;
 use utf8;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
-our $VERSION = "0.84beta";
+our $VERSION = "0.85beta";
 
 
 use ParentWorker;

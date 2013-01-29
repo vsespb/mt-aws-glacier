@@ -1,3 +1,5 @@
+2013-01-28: v0.85 beta
+	* Create/delete vault support
 2013-01-28: v0.84 beta
 	* HTTPS Support added
 	* Bug fixed: Some (UTF-8) metadata characters was double-encoded (however it can be read without problems)
