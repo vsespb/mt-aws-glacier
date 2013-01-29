@@ -96,7 +96,7 @@ my %options = (
 	['LWP::Protocol::https 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
 		if ($value eq 'https') {
 			require LWP::Protocol::https;
-			LWP::Protocol::https->VERSION >= 6
+			LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6
 		} else {
 			1;
 		}
