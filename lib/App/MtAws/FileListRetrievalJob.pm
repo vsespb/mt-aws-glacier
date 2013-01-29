@@ -50,10 +50,10 @@ sub get_task
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}
 			});
 			$self->{pending}->{$archive->{archive_id}}=1;
+			$self->{all_raised} = 1 unless scalar @{$self->{archives}};
 			return ("ok", $task);
 		} else {
-			$self->{all_raised} = 1;
-			return ("wait");
+			die;
 		}
 	}
 }
