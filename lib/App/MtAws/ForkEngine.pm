@@ -18,15 +18,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ForkEngine;
+package App::MtAws::ForkEngine;
 
 use strict;
 use warnings;
 use utf8;
 use IO::Select;
 use IO::Pipe;
-use ChildWorker;
-use ParentWorker;
+use App::MtAws::ChildWorker;
+use App::MtAws::ParentWorker;
 
 sub new
 {
@@ -53,7 +53,7 @@ sub start_children
 			$SIG{INT} = $SIG{TERM} = sub { kill(12, $parent_pid); print STDERR "CHILD($$) SIGINT\n"; exit(1); };
 			$SIG{USR2} = sub { exit(0); };
 			# child code
-			my $C = ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
+			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 			$C->process();
 			kill(2, $parent_pid);
 			exit(1);
@@ -61,7 +61,7 @@ sub start_children
 	}
 	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %{$self->{children}}) ; print STDERR "PARENT Exit\n"; exit(1); };
 	$SIG{USR2} = sub {  $SIG{CHLD}='IGNORE';print STDERR "PARENT SIGUSR2\n"; exit(1); };
-	return $self->{parent_worker} = ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
+	return $self->{parent_worker} = App::MtAws::ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
 }
 
 #

@@ -18,22 +18,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package FileListRetrievalJob;
+package App::MtAws::DeleteVaultJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
+use base qw/App::MtAws::Job/;
+use File::stat;
+
 
 sub new
 {
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->{archives}||die;
-    $self->{pending}={};
-    $self->{all_raised} = 0;
-    $self->{position} = 0;
+    $self->{name}||die;
+    $self->{raised} = 0;
     return $self;
 }
 
@@ -41,20 +41,11 @@ sub new
 sub get_task
 {
 	my ($self) = @_;
-	if ($self->{all_raised}) {
+	if ($self->{raised}) {
 		return ("wait");
 	} else {
-		if (scalar @{$self->{archives}}) {
-			my $archive = shift @{$self->{archives}};
-			my $task = Task->new(id => $archive->{archive_id}, action=>"retrieve_archive", data => {
-				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}
-			});
-			$self->{pending}->{$archive->{archive_id}}=1;
-			return ("ok", $task);
-		} else {
-			$self->{all_raised} = 1;
-			return ("wait");
-		}
+		$self->{raised} = 1;
+		return ("ok", App::MtAws::Task->new(id => 'delete_vault', action=>"delete_vault_job", data => { name => $self->{name} }));
 	}
 }
 
@@ -62,11 +53,10 @@ sub get_task
 sub finish_task
 {
 	my ($self, $task) = @_;
-	delete $self->{pending}->{$task->{id}};
-	if ($self->{all_raised} && scalar keys %{$self->{pending}} == 0) {
+	if ($self->{raised}) {
 		return ("done");
 	} else {
-		return ("ok");
+		die;
 	}
 }
 	

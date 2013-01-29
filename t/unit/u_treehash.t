@@ -24,8 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 11;
-use lib qw{.. ../..};
-use TreeHash;
+use lib qw{../lib ../../lib};
+use App::MtAws::TreeHash;
 use Data::Dumper;
 
 
@@ -33,10 +33,10 @@ use Data::Dumper;
 {
 	my $s = "Hello, world! ".('x' x 100);
 	
-	my $th = TreeHash->new(unit => 7);
+	my $th = App::MtAws::TreeHash->new(unit => 7);
 	$th->eat_data(\$s);
 	$th->calc_tree();
-	my $th2 = TreeHash->new(unit => 7);
+	my $th2 = App::MtAws::TreeHash->new(unit => 7);
 	$th2->eat_data($s);
 	$th2->calc_tree();
 	ok ( $th->get_final_hash() eq $th2->get_final_hash(), 'should work for both ref and non-ref' );
@@ -45,7 +45,7 @@ use Data::Dumper;
 {
 	my $s = "Hello, world! ".('x' x 100);
 	
-	my $th = TreeHash->new(unit => 7);
+	my $th = App::MtAws::TreeHash->new(unit => 7);
 	$th->eat_data(\$s);
 	$th->calc_tree();
 	my $hash = $th->get_final_hash();
@@ -55,7 +55,7 @@ use Data::Dumper;
 {
 	my $s = "Hello, world! ".('x' x 100);
 	
-	my $th = TreeHash->new(unit => 1048576);
+	my $th = App::MtAws::TreeHash->new(unit => 1048576);
 	$th->eat_data(\$s);
 	$th->calc_tree();
 	my $hash = $th->get_final_hash();
@@ -66,11 +66,11 @@ use Data::Dumper;
 	my $chunk = 128;
 	my $s = "s" x $chunk;
 	
-	my $th = TreeHash->new(unit => $chunk);
+	my $th = App::MtAws::TreeHash->new(unit => $chunk);
 	$th->_eat_data_one_mb(\$s);
 	$th->calc_tree();
 	
-	my $th2 = TreeHash->new(unit => $chunk);
+	my $th2 = App::MtAws::TreeHash->new(unit => $chunk);
 	$th2->_eat_data_one_mb($s);
 	$th2->calc_tree();
 	ok ( $th->get_final_hash() eq $th2->get_final_hash(), '_eat_data_one_mb should work for both ref and non-ref' );
@@ -82,7 +82,7 @@ use Data::Dumper;
 
 	ok length( $data[0]) == $chunk, "assumtion that length is correct";
 	
-	my $th_simple = TreeHash->new(unit => $chunk);
+	my $th_simple = App::MtAws::TreeHash->new(unit => $chunk);
 	
 	for (@data) {
 		$th_simple->_eat_data_one_mb(\$_);
@@ -91,7 +91,7 @@ use Data::Dumper;
 	$th_simple->calc_tree();
 	my $simplehash = $th_simple->get_final_hash();
 	
-	my $th_complex = TreeHash->new(unit => $chunk);
+	my $th_complex = App::MtAws::TreeHash->new(unit => $chunk);
 	$th_complex->eat_data(join('', @data));
 	$th_complex->calc_tree();
 
@@ -106,7 +106,7 @@ use Data::Dumper;
 
 	ok length( $data[0]) == $chunk, "assumtion that length is correct";
 	
-	my $th_simple = TreeHash->new(unit => $chunk);
+	my $th_simple = App::MtAws::TreeHash->new(unit => $chunk);
 	
 	for (@data) {
 		$th_simple->_eat_data_one_mb(\$_);
@@ -115,9 +115,9 @@ use Data::Dumper;
 	$th_simple->calc_tree();
 	my $simplehash = $th_simple->get_final_hash();
 
-	my $th_complex = TreeHash->new(unit => $chunk);
+	my $th_complex = App::MtAws::TreeHash->new(unit => $chunk);
 	for (@data) {
-		my $th_chunk = TreeHash->new(unit => $chunk);
+		my $th_chunk = App::MtAws::TreeHash->new(unit => $chunk);
 		$th_chunk->_eat_data_one_mb(\$_);
 		$th_complex->eat_another_treehash($th_chunk);
 	}
@@ -132,7 +132,7 @@ use Data::Dumper;
 
 	ok length( $data[0]) == $chunk, "assumtion that length is correct";
 	
-	my $th_simple = TreeHash->new(unit => $chunk);
+	my $th_simple = App::MtAws::TreeHash->new(unit => $chunk);
 	
 	for (@data) {
 		$th_simple->_eat_data_one_mb(\$_);
@@ -141,9 +141,9 @@ use Data::Dumper;
 	$th_simple->calc_tree();
 	my $simplehash = $th_simple->get_final_hash();
 
-	my $th_complex = TreeHash->new(unit => $chunk);
+	my $th_complex = App::MtAws::TreeHash->new(unit => $chunk);
 	for (@data) {
-		my $th_chunk = TreeHash->new(unit => $chunk);
+		my $th_chunk = App::MtAws::TreeHash->new(unit => $chunk);
 		$th_chunk->_eat_data_one_mb(\$_);
 		$th_chunk->calc_tree();
 		$th_complex->eat_another_treehash($th_chunk);
@@ -155,7 +155,7 @@ use Data::Dumper;
 
 {
 	my $chunk = 128;
-	my $th_simple = TreeHash->new(unit => $chunk);
+	my $th_simple = App::MtAws::TreeHash->new(unit => $chunk);
 	eval {
 		$th_simple->_eat_data_one_mb('x' x ($chunk-1));
 		$th_simple->_eat_data_one_mb('x' x $chunk);

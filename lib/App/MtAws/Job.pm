@@ -18,11 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Task;
+package App::MtAws::Job;
 
 use strict;
 use warnings;
 use utf8;
+use App::MtAws::Task;
 
 
 sub new
@@ -30,12 +31,19 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->{action}||die;
-    defined($self->{id})||die;
-    $self->{data}||die;
-    $self->{result}={};
     return $self;
 }
 
+# returns "ok" "wait" "ok subtask" "ok replace"
+sub get_task
+{
+	my ($self) = @_;
+}
+
+# returns "ok" "ok replace" "done"
+sub finish_task
+{
+	my ($self) = @_;
+}
 	
 1;

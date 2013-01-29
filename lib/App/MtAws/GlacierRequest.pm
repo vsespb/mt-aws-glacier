@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package GlacierRequest;
+package App::MtAws::GlacierRequest;
 
 use strict;
 use warnings;
@@ -26,9 +26,9 @@ use utf8;
 use POSIX;
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use TreeHash;
+use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
-use MetaData;
+use App::MtAws::MetaData;
 use Carp;
 
 
@@ -40,7 +40,9 @@ sub new
 	my $self = {};
 	bless $self, $class;
 	
-	defined($self->{$_} = $options->{$_})||confess for (qw/vault region key secret protocol/);
+	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol/);
+	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault/); # TODO: validate vault later
+	
 	
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
 	$self->{service} ||= 'glacier';
@@ -73,7 +75,7 @@ sub create_multipart_upload
 	$self->{method} = 'POST';
 
 	$self->add_header('x-amz-part-size', $partsize);
-	defined($self->{description} = MetaData::meta_encode($relfilename, $mtime))||confess; #TODO: gracefull error in case filename too big
+	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime))||confess; #TODO: gracefull error in case filename too big
 	$self->add_header('x-amz-archive-description', $self->{description});
 	
 	my $resp = $self->perform_lwp();
@@ -243,6 +245,32 @@ sub download_inventory
 }
 
 
+sub create_vault
+{
+	my ($self, $vault_name) = @_;
+
+	confess unless defined($vault_name);
+   
+	$self->{url} = "/$self->{account_id}/vaults/$vault_name";
+	$self->{method} = 'PUT';
+
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp->header('x-amzn-RequestId') : undef;
+}
+
+sub delete_vault
+{
+	my ($self, $vault_name) = @_;
+
+	confess unless defined($vault_name);
+   
+	$self->{url} = "/$self->{account_id}/vaults/$vault_name";
+	$self->{method} = 'DELETE';
+
+	my $resp = $self->perform_lwp();
+	return $resp ? $resp->header('x-amzn-RequestId') : undef;
+}
+
 
 
 sub _calc_data_hash
@@ -323,7 +351,13 @@ sub perform_lwp
 		my $req = undef;
 		my $url = $self->{protocol} ."://$self->{host}$self->{url}";
 		$url = $self->{protocol} ."://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
-		$ua->ssl_opts( verify_hostname => 0 ) if $ENV{MTGLACIER_FAKE_HOST}; #Hostname mismatch causes LWP to error.
+		if ($self->{protocol} eq 'https') {
+			if ($ENV{MTGLACIER_FAKE_HOST}) {
+				$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode=>0); #Hostname mismatch causes LWP to error.
+			} else {
+				$ua->ssl_opts( verify_hostname => 1, SSL_verify_mode=>1);
+			}
+		}
 		$url .= "?$self->{params_s}" if $self->{params_s};
 		if ($self->{method} eq 'PUT') {
 			$req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});

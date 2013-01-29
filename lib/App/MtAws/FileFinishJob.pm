@@ -18,44 +18,59 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package JobProxy;
+package App::MtAws::FileFinishJob;
+
 
 use strict;
 use warnings;
 use utf8;
+use base qw/App::MtAws::Job/;
+
 
 sub new
 {
     my ($class, %args) = @_;
     my $self = \%args;
-    $self->{job}||die;
     bless $self, $class;
+    $self->{upload_id}||die;
+    $self->{filesize}||die;
+    defined($self->{mtime})||die;
+    defined($self->{filename})||die;
+    defined($self->{relfilename})||die;
+    $self->{th}||die;
+    $self->{raised} = 0;
     return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
 sub get_task
 {
-	my ($self, @a) = @_;
-	my @r = $self->{job}->get_task(@a);
-	
-	if ($r[0] eq 'ok replace'){
-		$self->{job} = $r[1];
-		 @r = $self->{job}->get_task(@a);
+	my ($self) = @_;
+	if ($self->{raised}) {
+		return ("wait");
+	} else {
+		$self->{raised} = 1;
+		$self->{th}->calc_tree();
+		$self->{final_hash} = $self->{th}->get_final_hash();
+		return ("ok", App::MtAws::Task->new(id => "finish_upload",action=>"finish_upload", data => {
+			upload_id => $self->{upload_id},
+			filesize => $self->{filesize},
+			mtime => $self->{mtime},
+			filename => $self->{filename},
+			relfilename => $self->{relfilename},
+			final_hash => $self->{final_hash}
+		} ));
 	}
-	return @r;
 }
 
-# returns "ok", "done"
+# returns "ok" "ok replace" "done"
 sub finish_task
 {
-	my ($self, @a) = @_;
-	my @res = $self->{job}->finish_task(@a);
-	if ($res[0] eq 'ok replace'){
-		$self->{job} = $res[1];
-		return ("ok");
+	my ($self, $task) = @_;
+	if ($self->{raised}) {
+		return ("done");
 	} else {
-		return @res;
+		die;
 	}
 }
 	

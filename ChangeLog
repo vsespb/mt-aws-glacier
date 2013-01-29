@@ -1,3 +1,11 @@
+2013-01-28: v0.85 beta
+	* Create/delete vault support
+2013-01-28: v0.84 beta
+	* HTTPS Support added
+	* Bug fixed: Some (UTF-8) metadata characters was double-encoded (however it can be read without problems)
+	* Compatibility - Amazon Glacier Metadata: only backward compatible with previous versions. 
+	* Documentation improvements
+	* Error checking improved when reading config file
 2013-01-21: v0.83 beta
 	* Bug fixed. File modification time 1970-01-01T00:00:00Z0 (i.e. epoch time = 0 ) was causing crash when uploading and missing file report when check-local-hash
 	* Main script: Changed shebang from /usr/bin/perl to /usr/bin/env - this will allow Mac Port users to work out of the box

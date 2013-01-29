@@ -25,8 +25,8 @@ use warnings;
 use utf8;
 use Test::More tests => 26;
 use Test::Deep;
-use lib qw{.. ../..};
-use Journal;
+use lib qw{../lib ../../lib};
+use App::MtAws::Journal;
 use Test::MockModule;
 
 my $relfilename = 'def/abc';
@@ -39,7 +39,7 @@ my $data = {
 
 # test _can_read_filename_for_mode test
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my $anotherfile = 'newfile1';
 		$J->{journal_h}->{$relfilename} = $data;
 		
@@ -55,9 +55,9 @@ my $data = {
 
 # test read_all_files
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
-		(my $mock = Test::MockModule->new('Journal'))->
+		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_read_files', sub { (undef, @args) = @_; return ['fileA']});
 		$J->read_all_files();
 		
@@ -67,9 +67,9 @@ my $data = {
 
 # test read_new_files
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
-		(my $mock = Test::MockModule->new('Journal'))->
+		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_read_files', sub { (undef, @args) = @_; return ['fileB']});
 		$J->read_new_files(117);
 		
@@ -79,9 +79,9 @@ my $data = {
 
 # test read_existing_files
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
-		(my $mock = Test::MockModule->new('Journal'))->
+		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_read_files', sub { (undef, @args) = @_; return ['fileC']});
 		$J->read_existing_files();
 		
@@ -91,11 +91,11 @@ my $data = {
 
 # max_number_of_files should be triggered
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		my $maxfiles = 4;
-		(my $mock_journal = Test::MockModule->new('Journal'))->
+		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_is_file_exists', sub { return 1});
 
 		(my $mock_find = Test::MockModule->new('File::Find'))->
@@ -115,11 +115,11 @@ my $data = {
 
 # max_number_of_files should not be triggered
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 		my $maxfiles = 14;
-		(my $mock_journal = Test::MockModule->new('Journal'))->
+		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_is_file_exists', sub { return 1});
 
 		(my $mock_find = Test::MockModule->new('File::Find'))->
@@ -139,10 +139,10 @@ my $data = {
 
 # max_number_of_files should not be triggered when zero
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
-		(my $mock_journal = Test::MockModule->new('Journal'))->
+		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_is_file_exists', sub { return 1});
 
 		(my $mock_find = Test::MockModule->new('File::Find'))->
@@ -161,10 +161,10 @@ my $data = {
 
 # should not add file if it does not exist
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
-		(my $mock_journal = Test::MockModule->new('Journal'))->
+		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_is_file_exists', sub { return 0 });
 
 		(my $mock_find = Test::MockModule->new('File::Find'))->
@@ -179,10 +179,10 @@ my $data = {
 
 # should not add file _can_read_filename_for_mode returns false
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
-		my $mock_journal = Test::MockModule->new('Journal');
+		my $mock_journal = Test::MockModule->new('App::MtAws::Journal');
 		$mock_journal->mock('_is_file_exists', sub { return 1 });
 		$mock_journal->mock('_can_read_filename_for_mode', sub { return 0 });
 		
@@ -198,10 +198,10 @@ my $data = {
 
 # should pass correct options to find
 {
-		my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
-		my $mock_journal = Test::MockModule->new('Journal');
+		my $mock_journal = Test::MockModule->new('App::MtAws::Journal');
 		$mock_journal->mock('_is_file_exists', sub { return 1 });
 		
 		my ($args, $root_dir);

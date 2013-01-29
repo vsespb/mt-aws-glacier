@@ -25,8 +25,8 @@ use warnings;
 use utf8;
 use Test::More tests => 580;
 use Test::Deep;
-use lib qw{.. ../..};
-use Journal;
+use lib qw{../lib ../../lib};
+use App::MtAws::Journal;
 use Test::MockModule;
 
 my $rootdir = 'root_dir';
@@ -94,11 +94,11 @@ sub test_all_ok
 	
 	# CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my ($args, $filename);
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_file', sub {	(undef, $filename, $args) = @_;	});
 			
 			$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
@@ -110,11 +110,11 @@ sub test_all_ok
 	
 	# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my ($filename);
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_file', sub {	(undef, $filename) = @_;	});
 			
 			$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
@@ -125,11 +125,11 @@ sub test_all_ok
 
 	#  RETRIEVE_JOB
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my ($time, $archive_id, $job_id);
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub {	(undef, $time, $archive_id, $job_id) = @_;	});
 			
 			$J->process_line("A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
@@ -148,11 +148,11 @@ sub test_all_ok
 		
 	# CREATED /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my ($args, $filename);
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_file', sub {	(undef, $filename, $args) = @_;	});
 			
 			$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $data->{relfilename}");
@@ -165,11 +165,11 @@ sub test_all_ok
 	
 	# DELETED /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my ($filename);
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_file', sub {	(undef, $filename) = @_;	});
 			
 			$J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}");
@@ -180,11 +180,11 @@ sub test_all_ok
 	
 	#  RETRIEVE_JOB
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my ($time, $archive_id, $job_id);
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub {	(undef, $time, $archive_id, $job_id) = @_;	});
 			
 			$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");
@@ -213,11 +213,11 @@ sub test_all_fails_for_create_A
 	
 	# CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my $called = 0;
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_file', sub {	$called = 1 });
 			
 			$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
@@ -243,11 +243,11 @@ sub test_all_fails_for_create_07
 		
 	# CREATED /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my $called = 0;
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_file', sub {	$called = 1});
 			
 			$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $data->{relfilename}");
@@ -267,11 +267,11 @@ sub test_all_fails_for_delete
 	
 	# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my $called = 0;
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_file', sub {	$called = 1});
 			
 			$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
@@ -286,11 +286,11 @@ sub test_all_fails_for_delete
 	
 	# DELETED /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my $called = 0;
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_file', sub {	$called = 1 });
 			
 			$J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}");
@@ -309,11 +309,11 @@ sub test_all_fails_for_retrieve
 	
 	# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my $called = 0;
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub {	$called =1 });
 			
 			$J->process_line("A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
@@ -329,11 +329,11 @@ sub test_all_fails_for_retrieve
 	
 	# DELETED /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/
 	{
-			my $J = Journal->new(journal_file=>'x', root_dir => $rootdir);
+			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
 			my $called = 0;
 			
-			(my $mock = Test::MockModule->new('Journal'))->
+			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub {	$called =1 });
 			
 			$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");

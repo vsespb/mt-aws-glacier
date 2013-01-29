@@ -18,12 +18,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ParentWorker;
+package App::MtAws::ParentWorker;
+
+use lib 'lib';
 
 use strict;
 use warnings;
 use utf8;
-use LineProtocol;
+use App::MtAws::LineProtocol;
 use Carp;
 
 sub new

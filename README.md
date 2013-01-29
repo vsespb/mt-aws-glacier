@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.83 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.85 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -41,7 +41,6 @@ mt-aws-glacier is a client application for Glacier.
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
 * Split code to re-usable modules, publishing on CPAN (Currently there are great existing Glacier modules on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*) 
-* Create/Delete vault functions
 
 
 [Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier 
@@ -54,7 +53,7 @@ mt-aws-glacier is a client application for Glacier.
 
 * Zero length files are ignored
 * Only multipart upload implemented, no plain upload
-* No way to specify SNS topic 
+* Mac OS X filesystem treated as case-sensitive
 
 ## Production ready
 
@@ -62,7 +61,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Installation/System requirements
 
-Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS.
+Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS X.
 Should NOT work under Windows. 
 
 * Install the following CPAN modules:
@@ -70,9 +69,11 @@ Should NOT work under Windows.
 	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl** or MacPort **p5-libwww-perl**)
 	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS** or MacPort **p5-json-XS**)
 
-	* for Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
-	* to use HTTPS install LWP::UserAgent::https (or Debian package **libcrypt-ssleay-perl** or RPM package **perl-Crypt-SSLeay** or MacPort **p5-lwp-protocol-https**)
-		
+	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
+	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::UserAgent::https** via CPAN: `cpan -i LWP::UserAgent::https`
+	or `cpanp -i LWP::UserAgent::https` If `perl -MLWP -e 'print LWP->VERSION()'` prints 6.x version - everything is installed already.
+
+
 * Install mt-aws-glacier
 
 		git clone https://github.com/vsespb/mt-aws-glacier.git
@@ -104,8 +105,16 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 		secret=YOURSECRET
 		# region: eu-west-1, us-east-1 etc
 		region=us-east-1
+		# protocol=http (default) or https
+		protocol=http
 
-3. Create a vault in specified region, using Amazon Console (`myvault`)
+	(you can skip any config option and specify it directly in command line)
+3. Create a vault in specified region, using Amazon Console (`myvault`) or using mtglacier
+
+		./mtglacier.pl create-vault myvault --config=glacier.cfg
+
+	(note that Amazon Glacier does not return error if vault already exists etc)
+
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
@@ -129,6 +138,12 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 12. Delete all your files from vault
 
 		./mtglacier.pl purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		
+13. Wait ~ 24-48 hours and you can try deleting your vault
+
+		./mtglacier.pl delete-vault myvault --config=glacier.cfg 
+
+	(note: currently Amazon Glacier does not return error if vault is not exists)
 
 ## Restoring journal
 
@@ -151,17 +166,19 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 ## Additional command line options
 
-1. "concurrency" (with 'sync' command) - number of parallel upload streams to run. (default 4)
+1. `concurrency` (with `sync` or `restore` commands) - number of parallel upload streams to run. (default 4)
 
 		--concurrency=4
 
-2. "partsize" (with 'sync' command) - size of file chunk to upload at once, in Megabytes. (default 16)
+2. `partsize` (with `sync` command) - size of file chunk to upload at once, in Megabytes. (default 16)
 
 		--partsize=16
 
-3. "max-number-of-files" (with 'sync' or 'restore' commands) - limit number of files to sync/restore. Program will finish when reach this limit.
+3. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
 		--max-number-of-files=100
+
+4. `key/secret/region/vault/protocol` - you can override any option from config
 
 ## Test/Play with it
 
@@ -173,7 +190,7 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 		./cycletest.sh retrieve MYDIR
 		./cycletest.sh restore MYDIR
 
-OR
+* OR
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
@@ -186,30 +203,38 @@ OR
 
 ## Minimum Amazon Glacier permissions:
 
-Something like this:
+Something like this (including permissions to create/delete vaults):
 
+	{
+	"Statement": [
 		{
-		"Statement": [
-			{
+		"Effect": "Allow",
+		"Resource":["arn:aws:glacier:eu-west-1:*:vaults/test1",
+			"arn:aws:glacier:us-east-1:*:vaults/test1",
+			"arn:aws:glacier:eu-west-1:*:vaults/test2",
+			"arn:aws:glacier:eu-west-1:*:vaults/test3"],
+			"Action":["glacier:UploadArchive",
+			  "glacier:InitiateMultipartUpload",
+			  "glacier:UploadMultipartPart",
+			  "glacier:UploadPart",
+			  "glacier:DeleteArchive",
+			  "glacier:ListParts",
+			  "glacier:InitiateJob",
+			  "glacier:ListJobs",
+			  "glacier:GetJobOutput",
+			  "glacier:ListMultipartUploads",
+			  "glacier:CompleteMultipartUpload"] 
+		},
+		{
 			"Effect": "Allow",
-			"Resource":["arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test1",
-				"arn:aws:glacier:us-east-1:XXXXXXXXXXXX:vaults/test1",
-				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test2",
-				"arn:aws:glacier:eu-west-1:XXXXXXXXXXXX:vaults/test3"],
-				"Action":["glacier:UploadArchive",
-					"glacier:InitiateMultipartUpload",
-					"glacier:UploadMultipartPart",
-					"glacier:UploadPart",
-					"glacier:DeleteArchive",
-					"glacier:ListParts",
-					"glacier:InitiateJob",
-					"glacier:ListJobs",
-					"glacier:GetJobOutput",
-					"glacier:ListMultipartUploads",
-					"glacier:CompleteMultipartUpload"] 
-			}
-			]
+			"Resource":["arn:aws:glacier:eu-west-1:*",
+			  "arn:aws:glacier:us-east-1:*"],
+			"Action":["glacier:CreateVault",
+			  "glacier:DeleteVault"] 
 		}
+		]
+	}
+
 
 #### EOF
 

@@ -23,8 +23,8 @@
 use strict;
 use warnings;
 use utf8;
-use lib qw{.. ../..};
-use LineProtocol;
+use lib qw{../lib ../../lib};
+use App::MtAws::LineProtocol;
 use Test::Simple tests => 3;
 
 my $str = "Тест";

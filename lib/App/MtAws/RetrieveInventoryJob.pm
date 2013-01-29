@@ -18,15 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package FileCreateJob;
+package App::MtAws::RetrieveInventoryJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
-use FileUploadJob;
+use base qw/App::MtAws::Job/;
 use File::stat;
-use Time::localtime;
 
 
 sub new
@@ -34,9 +32,6 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    defined($self->{filename})||die;
-    defined($self->{relfilename})||die;
-    $self->{partsize}||die;
     $self->{raised} = 0;
     return $self;
 }
@@ -49,13 +44,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		my $filesize = -s $self->{filename};
-		$self->{mtime} = stat($self->{filename})->mtime; # TODO: how could we assure file not modified when uploading btw?
-		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
-	    open my $fh, "<$self->{filename}";
-	    binmode $fh;
-	    $self->{fh} = $fh;
-		return ("ok", Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
+		return ("ok", App::MtAws::Task->new(id => 'retrieve_inventory', action=>"retrieve_inventory_job", data => {}));
 	}
 }
 
@@ -64,16 +53,10 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
-		return ("ok replace", FileUploadJob->new(
-			fh => $self->{fh},
-			relfilename => $self->{relfilename},
-			filename => $self->{filename},
-			partsize => $self->{partsize},
-			upload_id => $task->{result}->{upload_id},
-			mtime => $self->{mtime},
-		));
+		return ("done");
 	} else {
 		die;
 	}
 }
+	
 1;

@@ -23,10 +23,10 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 200;
+use Test::More tests => 941;
 use Test::Deep;
-use lib qw{.. ../..};
-use MetaData;
+use lib qw{../lib ../../lib};
+use App::MtAws::MetaData;
 
 use Test::MockModule;
 use MIME::Base64 3.11 qw/encode_base64url encode_base64/;
@@ -53,11 +53,11 @@ no warnings 'redefine';
 		qq!тест test!,
 		qq!тест=test!,
 	) {
-		my $result = MetaData::_encode_b64(MetaData::_encode_utf8($_));
+		my $result = App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_utf8($_));
 		ok ($result eq encode_base64url(encode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)), 'match base64 encode');
 		ok ($result !~ /[\r\n]/m, 'does not contain linefeed');
 		ok ($result !~ /[\+\/\=]/m, 'does not contain + and /');
-		my $redecoded = MetaData::_decode_utf8(MetaData::_decode_b64($result));
+		my $redecoded = App::MtAws::MetaData::_decode_utf8(App::MtAws::MetaData::_decode_b64($result));
 		
 		#ok(utf8::is_utf8($_), "source should be utf8 $_");
 		ok(utf8::is_utf8($redecoded), "recoded should be utf8");
@@ -75,8 +75,8 @@ no warnings 'redefine';
 		qq!aa_-!,
 		qq!bb-_!,
 	) {
-		my $str = MetaData::_decode_b64($_);
-		my $rebase64 = MetaData::_encode_b64($str);
+		my $str = App::MtAws::MetaData::_decode_b64($_);
+		my $rebase64 = App::MtAws::MetaData::_encode_b64($str);
 		ok ($rebase64 eq $_, "use dash and underscore $_ $str");
 	}
 }
@@ -91,9 +91,9 @@ no warnings 'redefine';
 		qq!eeeee!,
 		qq!ffffff!,
 	) {
-		my $base64url = MetaData::_encode_b64($_);
+		my $base64url = App::MtAws::MetaData::_encode_b64($_);
 		ok ($base64url !~ /=/g, "_enocde_b64 should not pad base64 $_");
-		ok (MetaData::_decode_b64($base64url) eq $_, "_decode_b64 should work without padding $_ $base64url");
+		ok (App::MtAws::MetaData::_decode_b64($base64url) eq $_, "_decode_b64 should work without padding $_ $base64url");
 		
 	}
 }
@@ -110,16 +110,16 @@ no warnings 'redefine';
 	) {
 		my $last_arg;
 		my $base64 = encode_base64($_, "");
-		my $base64url = MetaData::_encode_b64($_);
+		my $base64url = App::MtAws::MetaData::_encode_b64($_);
 		local *MIME::Base64::decode_base64 = sub { ($last_arg) = @_;};
-		MetaData::_decode_b64($base64url);
+		App::MtAws::MetaData::_decode_b64($base64url);
 		ok ($last_arg eq $base64, "$last_arg eq $base64");
 	}
 }
 
 # test _encode_b64/_decode_b64 EOL
 {
-	my $base64 = MetaData::_encode_b64('x' x 1024);
+	my $base64 = App::MtAws::MetaData::_encode_b64('x' x 1024);
 	ok ($base64 !~ /[\r\n]/m, 'does not contain linefeed');
 }
 
@@ -138,8 +138,8 @@ no warnings 'redefine';
 		['тест test', '0YLQtdGB0YIgdGVzdA'],
 		['тест=test', '0YLQtdGB0YI9dGVzdA'],
 	) {
-		ok (MetaData::_encode_b64(MetaData::_encode_utf8($_->[0])) eq $_->[1], 'base64 match fixture');
-		ok (MetaData::_decode_utf8(MetaData::_decode_b64($_->[1])) eq $_->[0], 'fixture match base64');
+		ok (App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_utf8($_->[0])) eq $_->[1], 'base64 match fixture');
+		ok (App::MtAws::MetaData::_decode_utf8(App::MtAws::MetaData::_decode_b64($_->[1])) eq $_->[0], 'fixture match base64');
 	}
 }
 
@@ -156,7 +156,7 @@ no warnings 'redefine';
 		['директория/файл',0],
 		['директория/файл','0'],
 	) {
-		my $result = MetaData::_encode_json($_->[0], $_->[1]);
+		my $result = App::MtAws::MetaData::_encode_json($_->[0], $_->[1]);
 		my $recoded = JSON::XS->new->utf8->allow_nonref->decode($result);
 		ok ($result !~ /[\r\n]/m, 'no linefeed');
 ##		ok( $result =~ /\:\s*$_->[1]/, "result should contain mtime as numeric");
@@ -164,7 +164,7 @@ no warnings 'redefine';
 		my $result_decoded =decode("UTF-8", $result, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 		ok ($result_decoded =~ /\Q$_->[0]\E/m, "json string should contain UTF without escapes");
 		
-		my ($filename, $mtime) = MetaData::_decode_json($result);
+		my ($filename, $mtime) = App::MtAws::MetaData::_decode_json($result);
 		ok ($filename eq $_->[0], 'filename match');
 		ok ($mtime == $_->[1], 'mtime match');
 	}
@@ -173,44 +173,75 @@ no warnings 'redefine';
 # test meta_encode/meta_decode with fixtures
 {
 	for (
-		['file', 1352924178, 'mt1 eyJmaWxlbmFtZSI6ImZpbGUiLCJtdGltZSI6IjIwMTIxMTE0VDIwMTYxOFoifQ'],
-		['file/a',1351924178, 'mt1 eyJmaWxlbmFtZSI6ImZpbGUvYSIsIm10aW1lIjoiMjAxMjExMDNUMDYyOTM4WiJ9'],
-		['file/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6ImZpbGUvYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
-		['директория/a/b/c/d','1352124178', 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
-		['директория/файл',1352124178, 'mt1 eyJmaWxlbmFtZSI6IsOQwrTDkMK4w5HCgMOQwrXDkMK6w5HCgsOQwr7DkcKAw5DCuMORwo8vw5HChMOQwrDDkMK5w5DCuyIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
+		['file', 1352924178, 'mt2 eyJmaWxlbmFtZSI6ImZpbGUiLCJtdGltZSI6IjIwMTIxMTE0VDIwMTYxOFoifQ'],
+		['file/a',1351924178, 'mt2 eyJmaWxlbmFtZSI6ImZpbGUvYSIsIm10aW1lIjoiMjAxMjExMDNUMDYyOTM4WiJ9'],
+		['file/a/b/c/d','1352124178', 'mt2 eyJmaWxlbmFtZSI6ImZpbGUvYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
+		['директория/a/b/c/d','1352124178', 'mt2 eyJmaWxlbmFtZSI6ItC00LjRgNC10LrRgtC-0YDQuNGPL2EvYi9jL2QiLCJtdGltZSI6IjIwMTIxMTA1VDE0MDI1OFoifQ'],
+		['директория/файл',1352124178, 'mt2 eyJmaWxlbmFtZSI6ItC00LjRgNC10LrRgtC-0YDQuNGPL9GE0LDQudC7IiwibXRpbWUiOiIyMDEyMTEwNVQxNDAyNThaIn0'],
 	) {
-		ok $_->[2] eq MetaData::meta_encode($_->[0], $_->[1]), "check meta_encode"; # TODO: seems race condition here, hash order is undefined
-		
-		my ($filename, $mtime) = MetaData::meta_decode($_->[2]);
-		ok $_->[0] eq $filename, 'check filename';
+		my ($filename, $mtime) = App::MtAws::MetaData::meta_decode($_->[2]);
+		ok $_->[0] eq $filename, "check filename $_->[0] $filename";
 		ok $_->[1] eq $mtime, 'check mtime';
+	}
+}
+
+# test increment of length of resulting data
+{
+	use bytes;
+	no bytes;
+	my $str = '';
+	my ($old_strlen, $old_encoded_lenth) = (undef, undef);
+	for (qw/a b c d e f _ ß µ Ũ  а б в г д е ё ж з и к л м н о п р с т у ф ц ч ш щ э ю я А Б В Г Д Е Ё Ж З И К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Э Ю Я/) {
+		$str .= $_;
+		my $strlen = bytes::length($str);
+		my $encoded = App::MtAws::MetaData::meta_encode($str, 1234);
+		my $encoded_length = bytes::length($encoded);
+		
+		if (defined($old_strlen) && defined($old_encoded_lenth)) {
+			ok ( ($encoded_length - $old_encoded_lenth) <= int(((($strlen - $old_strlen) * 4)/3)+0.5) + 1);
+		}
+		$old_encoded_lenth = $encoded_length;
+		$old_strlen = $strlen;
+	}
+}
+
+# test increment of length of resulting data
+{
+	for my $str1 (qw/ ! a b c d e f _ ß µ Ũ  а б в г д е ё ж з и к л м н о п р с т у ф ц ч ш щ э ю я А Б В Г Д Е Ё Ж З И К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Э Ю Я/) {
+		for my $str2 (qw/a hello/, qq!file1/file2/file3/file4!, qq!длинный русский текст!, qq!/!) {
+			my $source = $str1.$str2;
+			my $encoded = App::MtAws::MetaData::meta_encode($source, 1234);
+			my ($decoded, $mtime) = App::MtAws::MetaData::meta_decode($encoded);
+			ok $source eq $decoded;
+			ok $mtime = 1234;
+		}
 	}
 }
 
 # test error catch while decoding
 {
-	ok !defined MetaData::meta_decode('zzz'), 'should return undef if no marker present';
-	ok !defined MetaData::meta_decode('mt1 zzz'), 'should return undef if utf is broken';
-	ok !defined MetaData::meta_decode('mt1 !!!!'), 'should return undef if base64 is broken';
-	ok !defined MetaData::meta_decode('mt1 z+z'), 'should return undef if base64 is broken';
-	ok defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
-	ok defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('ff')), 'should return undef if json is broken';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
-	ok !defined MetaData::meta_decode('mt1 '.encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
+	ok !defined App::MtAws::MetaData::meta_decode('zzz'), 'should return undef if no marker present';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 zzz'), 'should return undef if utf is broken';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 !!!!'), 'should return undef if base64 is broken';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 z+z'), 'should return undef if base64 is broken';
+	ok defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
+	ok defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('ff')), 'should return undef if json is broken';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
 	
-	ok defined MetaData::meta_decode('mt1   '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
-	ok defined MetaData::meta_decode("mt1\t\t".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
-	ok defined MetaData::meta_decode(" \tmt1\t\t ".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
+	ok defined App::MtAws::MetaData::meta_decode('mt2   '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
+	ok defined App::MtAws::MetaData::meta_decode("mt2\t\t".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
+	ok defined App::MtAws::MetaData::meta_decode(" \tmt2\t\t ".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
 	
-	eval { MetaData::meta_decode('zzz') };
+	eval { App::MtAws::MetaData::meta_decode('zzz') };
 	ok $@ eq '', 'should not override eval code';
 	
-	eval { MetaData::meta_decode('mt1 zzz') };
+	eval { App::MtAws::MetaData::meta_decode('mt2 zzz') };
 	ok $@ eq '', 'should not override eval code';
 
 }
@@ -218,13 +249,13 @@ no warnings 'redefine';
 
 # test error cacth while encoding
 {
-	ok defined MetaData::meta_encode('filename', -1), 'should not catch negative mtime';
-	ok !defined MetaData::meta_encode('filename'), 'should catche missed mtime';
-	ok !defined MetaData::meta_encode(undef, 4), 'should catche missed filename';
-	ok defined MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
-	ok !defined MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
-	ok defined MetaData::meta_encode('я' x 128, 0), 'should allow 128 UTF characters';
-	ok defined MetaData::meta_encode('z' x 256, 0), 'should allow 256 ASCII characters';
+	ok defined App::MtAws::MetaData::meta_encode('filename', -1), 'should not catch negative mtime';
+	ok !defined App::MtAws::MetaData::meta_encode('filename'), 'should catche missed mtime';
+	ok !defined App::MtAws::MetaData::meta_encode(undef, 4), 'should catche missed filename';
+	ok defined App::MtAws::MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
+	ok !defined App::MtAws::MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
+	ok defined App::MtAws::MetaData::meta_encode('я' x 350, 0), 'should allow 350 UTF 2 bytes characters';
+	ok defined App::MtAws::MetaData::meta_encode('z' x 700, 0), 'should allow 700 ASCII characters';
 }
 
 # test _parse_iso8601
@@ -244,7 +275,7 @@ no warnings 'redefine';
 		['19070809T084134Z', -1969111106], # negative value
 		['19700101T000000Z', 0],
 	) {
-		my $result = MetaData::_parse_iso8601($_->[0]);
+		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
 		ok($result == $_->[1], 'should parse iso8601');
 		
 		my $dt = DateTime->from_epoch( epoch => $_->[1] );
@@ -268,7 +299,7 @@ no warnings 'redefine';
 		['2009 01-01T 00:00 00.123 z', 1230768000],
 		['2009 01-01T 00:00 00,1234 z', 1230768000],
 	) {
-		my $result = MetaData::_parse_iso8601($_->[0]);
+		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
 		ok($result == $_->[1], 'should parse iso8601');
 	}
 }
@@ -277,11 +308,11 @@ no warnings 'redefine';
 # check catching for undef - warning duplicate test found in unit tests
 {
 	my $called;
-	local *MetaData::decode = sub { $called = 1 };
-	ok defined MetaData::_decode_utf8 encode("UTF-8", "тест");
-	ok ($called, "_decode_utf8 calls MetaData::decode (which is Encode::decode)");
+	local *App::MtAws::MetaData::decode = sub { $called = 1 };
+	ok defined App::MtAws::MetaData::_decode_utf8 encode("UTF-8", "тест");
+	ok ($called, "_decode_utf8 calls App::MtAws::MetaData::decode (which is Encode::decode)");
 	$called = 0;
-	ok !defined MetaData::_decode_utf8 undef;
+	ok !defined App::MtAws::MetaData::_decode_utf8 undef;
 	ok !$called, "_decode_utf8 retruns undef even without calling Encode::decode";
 }
 

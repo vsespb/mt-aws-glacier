@@ -18,11 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ProxyTask;
+package App::MtAws::CreateVaultJob;
 
 use strict;
 use warnings;
 use utf8;
+use base qw/App::MtAws::Job/;
+use File::stat;
 
 
 sub new
@@ -30,19 +32,32 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->{task}||die;
-    $self->{id}||die;
-    $self->{jobid}||die;
-    
-    $self->{task}->{jobid} = $self->{jobid};
-    $self->{action} = $self->{task}->{action};
-    $self->{attachment} = $self->{task}->{attachment};
-    $self->{data} = $self->{task}->{data};
-    $self->{result} = {};
-    
-    defined($self->{id})||die;
+    $self->{name}||die;
+    $self->{raised} = 0;
     return $self;
 }
 
+# returns "ok" "wait" "ok subtask"
+sub get_task
+{
+	my ($self) = @_;
+	if ($self->{raised}) {
+		return ("wait");
+	} else {
+		$self->{raised} = 1;
+		return ("ok", App::MtAws::Task->new(id => 'create_vault', action=>"create_vault_job", data => { name => $self->{name} }));
+	}
+}
+
+# returns "ok" "ok replace" "done"
+sub finish_task
+{
+	my ($self, $task) = @_;
+	if ($self->{raised}) {
+		return ("done");
+	} else {
+		die;
+	}
+}
 	
 1;

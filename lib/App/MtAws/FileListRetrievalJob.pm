@@ -18,27 +18,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package FileFinishJob;
-
+package App::MtAws::FileListRetrievalJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
-
+use base qw/App::MtAws::Job/;
 
 sub new
 {
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->{upload_id}||die;
-    $self->{filesize}||die;
-    defined($self->{mtime})||die;
-    defined($self->{filename})||die;
-    defined($self->{relfilename})||die;
-    $self->{th}||die;
-    $self->{raised} = 0;
+    $self->{archives}||die;
+    $self->{pending}={};
+    $self->{all_raised} = 0;
+    $self->{position} = 0;
     return $self;
 }
 
@@ -46,20 +41,20 @@ sub new
 sub get_task
 {
 	my ($self) = @_;
-	if ($self->{raised}) {
+	if ($self->{all_raised}) {
 		return ("wait");
 	} else {
-		$self->{raised} = 1;
-		$self->{th}->calc_tree();
-		$self->{final_hash} = $self->{th}->get_final_hash();
-		return ("ok", Task->new(id => "finish_upload",action=>"finish_upload", data => {
-			upload_id => $self->{upload_id},
-			filesize => $self->{filesize},
-			mtime => $self->{mtime},
-			filename => $self->{filename},
-			relfilename => $self->{relfilename},
-			final_hash => $self->{final_hash}
-		} ));
+		if (scalar @{$self->{archives}}) {
+			my $archive = shift @{$self->{archives}};
+			my $task = App::MtAws::Task->new(id => $archive->{archive_id}, action=>"retrieve_archive", data => {
+				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}
+			});
+			$self->{pending}->{$archive->{archive_id}}=1;
+			return ("ok", $task);
+		} else {
+			$self->{all_raised} = 1;
+			return ("wait");
+		}
 	}
 }
 
@@ -67,10 +62,11 @@ sub get_task
 sub finish_task
 {
 	my ($self, $task) = @_;
-	if ($self->{raised}) {
+	delete $self->{pending}->{$task->{id}};
+	if ($self->{all_raised} && scalar keys %{$self->{pending}} == 0) {
 		return ("done");
 	} else {
-		die;
+		return ("ok");
 	}
 }
 	

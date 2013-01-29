@@ -31,7 +31,7 @@
 #
 
 
-package TreeHash;
+package App::MtAws::TreeHash;
 
 
 
@@ -93,7 +93,7 @@ sub eat_data
 sub eat_another_treehash
 {
 	my ($self, $th) = @_;
-	croak unless $th->isa("TreeHash");
+	croak unless $th->isa("App::MtAws::TreeHash");
 	$self->{tree}->[0] ||= [];
 	my $cnt = scalar @{ $self->{tree}->[0] };
 	my $newstart = $cnt ? $self->{tree}->[0]->[$cnt - 1]->{finish} + 1 : 0;

@@ -18,32 +18,45 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Job;
+package App::MtAws::JobProxy;
 
 use strict;
 use warnings;
 use utf8;
-use Task;
-
 
 sub new
 {
     my ($class, %args) = @_;
     my $self = \%args;
+    $self->{job}||die;
     bless $self, $class;
     return $self;
 }
 
-# returns "ok" "wait" "ok subtask" "ok replace"
+# returns "ok" "wait" "ok subtask"
 sub get_task
 {
-	my ($self) = @_;
+	my ($self, @a) = @_;
+	my @r = $self->{job}->get_task(@a);
+	
+	if ($r[0] eq 'ok replace'){
+		$self->{job} = $r[1];
+		 @r = $self->{job}->get_task(@a);
+	}
+	return @r;
 }
 
-# returns "ok" "ok replace" "done"
+# returns "ok", "done"
 sub finish_task
 {
-	my ($self) = @_;
+	my ($self, @a) = @_;
+	my @res = $self->{job}->finish_task(@a);
+	if ($res[0] eq 'ok replace'){
+		$self->{job} = $res[1];
+		return ("ok");
+	} else {
+		return @res;
+	}
 }
 	
 1;

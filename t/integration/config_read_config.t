@@ -24,8 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 65;
-use lib qw{.. ../..};
-use ConfigEngine;
+use lib qw{../lib ../../lib};
+use App::MtAws::ConfigEngine;
 use File::Path;
 use Encode;
 
@@ -102,7 +102,7 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 {
 	unlink $file if -e $file;
 	ok ! -e $file, "assert we deleted file";
-	my $C = ConfigEngine->new();
+	my $C = App::MtAws::ConfigEngine->new();
 	ok !defined $C->read_config($file), "should die if file not found"
 }
 
@@ -111,7 +111,7 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	rmtree($file) if -d $file;
 	mkpath($file);
 	ok -d $file, "assert file is directory";
-	my $C = ConfigEngine->new();
+	my $C = App::MtAws::ConfigEngine->new();
 	ok !defined $C->read_config($file), "should die if file is directory"
 }
 
@@ -122,7 +122,7 @@ sub read_as_config
 	binmode F;
 	print F $bytes;
 	close F;
-	my $C = ConfigEngine->new();
+	my $C = App::MtAws::ConfigEngine->new();
 	return $C->read_config($file);
 	
 }

@@ -18,10 +18,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ChildWorker;
+package App::MtAws::ChildWorker;
 
-use LineProtocol;
-use GlacierRequest;
+use App::MtAws::LineProtocol;
+use App::MtAws::GlacierRequest;
 use strict;
 use warnings;
 use utf8;
@@ -61,20 +61,20 @@ sub process
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
 				 # TODO: partsize confusing, need use another name for option partsize. partsize Amazon Upload partsize vs Download 'Range' partsize
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $uploadid = $req->create_multipart_upload($data->{partsize}, $data->{relfilename}, $data->{mtime});
 				confess unless $uploadid;
 				$result = { upload_id => $uploadid };
 				$console_out = "Created an upload_id $uploadid";
 			} elsif ($action eq "upload_part") {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->upload_part($data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
 				return undef unless $r;
 				$result = { uploaded => $data->{start} } ;
 				$console_out = "Uploaded part for $data->{filename} at offset [$data->{start}]";
 			} elsif ($action eq 'finish_upload') {
 				# TODO: move vault to task, not to options!
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $archive_id = $req->finish_multipart_upload($data->{upload_id}, $data->{filesize}, $data->{final_hash});
 				return undef unless $archive_id;
 				$result = {
@@ -92,7 +92,7 @@ sub process
 				};
 				$console_out = "Finished $data->{filename} hash [$data->{final_hash}] archive_id [$archive_id]";
 			} elsif ($action eq 'delete_archive') {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->delete_archive($data->{archive_id});
 				return undef unless $r;
 				$result = {
@@ -106,19 +106,19 @@ sub process
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
 				mkpath(dirname($data->{filename}));
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
 				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
 			} elsif ($action eq 'inventory_download_job') {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_to_memory($data->{job_id});
 				return undef unless $r;
 				$result = { response => $r };
 				$console_out = "Downloaded inventory in JSON format";
 			} elsif ($action eq 'retrieve_archive') {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_archive( $data->{archive_id});
 				return undef unless $r;
 				$result = {
@@ -131,23 +131,35 @@ sub process
 				};
 				$console_out = "Retrieved Archive $data->{archive_id}";
 			} elsif ($action eq 'retrieval_fetch_job') {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_fetch_job($data->{marker});
 				confess unless $r;
 				$result = { response => $r };
 				$console_out = "Retrieved Job List";
 			} elsif ($action eq 'inventory_fetch_job') {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_fetch_job($data->{marker});
 				confess unless $r;
 				$result = { response => $r };
 				$console_out = "Fetched job list for inventory retrieval";
 			} elsif ($action eq 'retrieve_inventory_job') {
-				my $req = GlacierRequest->new($self->{options});
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_inventory();
 				confess unless $r;
 				$result = { job_id => $r };
 				$console_out = "Retrieved Inventory, job id $r";
+			} elsif ($action eq 'create_vault_job') {
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
+				my $r = $req->create_vault($data->{name});
+				confess unless $r;
+				$result = { };
+				$console_out = "Created vault $data->{name}";
+			} elsif ($action eq 'delete_vault_job') {
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
+				my $r = $req->delete_vault($data->{name});
+				confess unless $r;
+				$result = { };
+				$console_out = "Deleted vault $data->{name}";
 			} else {
 				die $action;
 			}

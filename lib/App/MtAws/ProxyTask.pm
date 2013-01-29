@@ -18,37 +18,31 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package LineProtocol;
+package App::MtAws::ProxyTask;
 
 use strict;
 use warnings;
 use utf8;
 
-use JSON::XS;
 
-
-require Exporter;
-use base qw/Exporter/;
-
-our @EXPORT = qw/encode_data decode_data/;
-our @EXPORT_OK = qw/escape unescape/;
-
-# yes, a module, so we can unit-test it (JSON and YAML have different serialization implementeation)
-my $json_coder = JSON::XS->new->utf8->allow_nonref;
-
-sub decode_data
+sub new
 {
-  my ($yaml_e) = @_;
-  return $json_coder->decode($yaml_e);
+    my ($class, %args) = @_;
+    my $self = \%args;
+    bless $self, $class;
+    $self->{task}||die;
+    $self->{id}||die;
+    $self->{jobid}||die;
+    
+    $self->{task}->{jobid} = $self->{jobid};
+    $self->{action} = $self->{task}->{action};
+    $self->{attachment} = $self->{task}->{attachment};
+    $self->{data} = $self->{task}->{data};
+    $self->{result} = {};
+    
+    defined($self->{id})||die;
+    return $self;
 }
 
-sub encode_data
-{
-  my ($data) = @_;
-  return $json_coder->encode($data);
-}
-
-
+	
 1;
-
-__END__

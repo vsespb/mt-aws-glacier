@@ -18,12 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ConfigEngine;
+package App::MtAws::ConfigEngine;
 
 use Getopt::Long;
 use Encode;
 use Carp;
-
+use List::Util qw/first/;
 
 use strict;
 use warnings;
@@ -87,13 +87,32 @@ my %options = (
 	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
 		($value =~ /^https?$/)
 	}, ],
-	['LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
-		$value eq 'https' ? LWP::UserAgent->is_protocol_supported("https") : 1 # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
+	['IO::Socket::SSL or LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
+		$value ne 'https' || LWP::UserAgent->is_protocol_supported("https"); # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
+	}, ],
+	['LWP::UserAgent 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
+		$value ne 'https' || LWP->VERSION() >= 6
+	}, ],
+	['LWP::Protocol::https 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
+		if ($value eq 'https') {
+			require LWP::Protocol::https;
+			LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6
+		} else {
+			1;
+		}
 	}, ],
 ] },
+'vault-name'            => { validate =>
+	['Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'   => sub { my ($command, $results, $value) = @_;
+		$value =~ /^[A-Za-z0-9\.\-_]{1,255}$/;
+	}],
+},
+
 );
 
 my %commands = (
+'create-vault'      => { args=> ['vault-name'], req => [@config_opts]},
+'delete-vault'      => { args=> ['vault-name'], req => [@config_opts]},
 'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/], optional => [qw/max-number-of-files/]},
 'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/], optional => [qw//], deprecated => [qw/from-dir/] },
 'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
@@ -115,7 +134,7 @@ sub new
 
 sub parse_options
 {
-	(my $self, @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
+	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
 	
 	my (@warnings);
 	my %reverse_deprecations;
@@ -149,7 +168,6 @@ sub parse_options
     my %result; # TODO: deafult hash, config from file
 	
 	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptions(\%result, @getopts);
-	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
 
 	# Special config handling
@@ -163,7 +181,7 @@ sub parse_options
 		
 		my (%merged);
 		
-		@merged{keys %$config_result} = values %$config_result;
+		@merged{keys %$config_result} = values %$config_result; # TODO: throw away and ignore any unknown config options
 		$source{$_} = 'config' for (keys %$config_result);
 	
 		@merged{keys %result} = values %result;
@@ -174,11 +192,22 @@ sub parse_options
 	} else {
 		$source{$_} = 'command' for (keys %result);
 	}
+
+	if ($command_ref->{args}) {
+		for (@{$command_ref->{args}}) {
+			confess if defined $result{$_}; # we should not have arguments and options with same-name in our ConfigEngine config
+			my $val = shift @ARGV;
+			return (["Please specify another argument in command line: $_"], @warnings ? \@warnings : undef) unless defined $val;
+			$result{$_} = decode("UTF-8", $val);
+			$source{$_} = 'args';
+		}
+	}
+	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	
 
 	for my $o (keys %deprecations) {
 		if ($result{$o}) {
-			if (grep { $_ eq $o } @{ $command_ref->{deprecated} }) {
+			if (first { $_ eq $o } @{ $command_ref->{deprecated} }) {
 				push @warnings, "$o is not needed for this command";
 				delete $result{$o};
 			} else {
@@ -197,7 +226,7 @@ sub parse_options
 			if (defined($options{$o}->{default})) { # Options from config are used here!
 				$result{$o} = $options{$o}->{default};
 			} else {
-				if (grep { $_ eq $o } @config_opts) {
+				if (first { $_ eq $o } @config_opts) {
 					return ([
 						defined($result{config}) ?
 						"Please specify --$o OR add \"$o=...\" into the config file" :
@@ -228,22 +257,22 @@ sub parse_options
 sub read_config
 {
 	my ($self, $filename) = @_;
-	return undef unless -f $filename && -r $filename; #TODO test
-	open (F, "<:crlf:encoding(UTF-8)", $filename) || return undef;
+	return unless -f $filename && -r $filename; #TODO test
+	open (my $F, "<:crlf:encoding(UTF-8)", $filename) || return;
 	my %newconfig;
-	while (<F>) {
+	while (<$F>) {
 		chomp;
 		next if /^\s*$/;
 		next if /^\s*\#/;
 		/^([^=]+)=(.*)$/;
-		my ($name, $value) = ($1,$2);
+		my ($name, $value) = ($1,$2); # TODO: test lines with wrong format
 		$name =~ s/^[ \t]*//;
 		$name =~ s/[ \t]*$//;
 		$value =~ s/^[ \t]*//;
 		$value =~ s/[ \t]*$//;
 		$newconfig{$name} = $value;
 	}
-	close F;
+	close $F;
 	return \%newconfig;
 }
 
