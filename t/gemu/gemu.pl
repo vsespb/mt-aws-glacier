@@ -11,7 +11,7 @@ use File::Path;
 use Data::Dumper;
 use JSON::XS;
 use lib qw{.. ../..};
-use TreeHash;
+use App::MtAws::TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
 use Time::Local;
 
@@ -88,7 +88,7 @@ sub child_worker
 		
 		croak unless sha256_hex(${$data->{bodyref}}) eq $data->{headers}->{'x-amz-content-sha256'};
 		
-		my $part_th = TreeHash->new();
+		my $part_th = App::MtAws::TreeHash->new();
 		$part_th->eat_data($data->{bodyref});
 		$part_th->calc_tree();
 		my $th = $part_th->get_final_hash();
@@ -142,7 +142,7 @@ sub child_worker
 		my $archive_id = gen_id();
 		my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
 		
-		my $part_th = TreeHash->new();
+		my $part_th = App::MtAws::TreeHash->new();
 		
 		open OUT, ">$archive_path" || croak $archive_path;
 		binmode OUT;
