@@ -50,8 +50,6 @@ use File::stat;
 use CreateVaultJob;
 use DeleteVaultJob;
 
-BEGIN { no warnings; $Net::HTTPS::SSL_SOCKET_CLASS = "IO::Socket::SSL"; }; # force use of IO::Socket::SSL for SSL certifiates validation
-
 
 # TODO: can be replaced with perl pragmas
 $SIG{__DIE__} = sub {
