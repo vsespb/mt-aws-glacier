@@ -78,10 +78,9 @@ sub dcs
   print STDERR $cs.$p1;
 }
 
-
 sub main
 {
-	print "MT-AWS-Glacier, part of MT-AWS suite, Copyright (c) 2012  Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
+	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 	
 	my ($P) = @_;
 	my ($src, $vault, $journal);
