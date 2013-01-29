@@ -102,6 +102,12 @@ my %options = (
 		}
 	}, ],
 ] },
+'vault-name'            => { validate =>
+	['Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'   => sub { my ($command, $results, $value) = @_;
+		$value =~ /^[A-Za-z0-9\.\-_]{1,255}$/;
+	}],
+},
+
 );
 
 my %commands = (
