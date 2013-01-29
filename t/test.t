@@ -35,25 +35,4 @@ my $harness = TAP::Harness->new({
     jobs			=> 8,
     switches	=> '-MDevel::Cover'
 });
-$harness->runtests(
-    'integration/journal.t',
-    'integration/config_read_config.t',
-    'integration/config_engine_config_file.t',
-    'integration/utf8_journal.t',
-    'integration/utf8_line_protocol.t',
-    'integration/utf8.t',
-    'integration/t_treehash.t',
-    'integration/metadata.t',
-    'integration/metadata_mt1.t',
-    'integration/journal_readwrite.t',
-    'unit/journal_readjournal.t',
-    'unit/journal_writejournal.t',
-    'unit/journal_readfiles.t',
-    'unit/journal_sanity.t',
-    'unit/config_engine_parse.t',
-    'unit/u_treehash.t',
-    'unit/metadata.t',
-    'unit/journal_openmodes.t',
-    'integration/config_engine_v078.t',
-    'integration/config_engine_v082.t',
-);
+$harness->runtests(glob('unit/*.t'), glob('integration/*.t'));
