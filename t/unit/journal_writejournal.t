@@ -25,8 +25,8 @@ use warnings;
 use utf8;
 use Test::More tests => 3;
 use Test::Deep;
-use lib qw{.. ../..};
-use Journal;
+use lib qw{../lib ../../lib};
+use App::MtAws::Journal;
 use Test::MockModule;
 
 
@@ -49,11 +49,11 @@ my $data = {
 
 # CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 {
-		my $J = Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
 
 		my ($line);
 		
-		my $mock = Test::MockModule->new('Journal');
+		my $mock = Test::MockModule->new('App::MtAws::Journal');
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		
@@ -63,11 +63,11 @@ my $data = {
 
 # DELETED
 {
-		my $J = Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
 
 		my ($line);
 		
-		my $mock = Test::MockModule->new('Journal');
+		my $mock = Test::MockModule->new('App::MtAws::Journal');
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		
@@ -77,11 +77,11 @@ my $data = {
 
 # RETRIEVE_JOB
 {
-		my $J = Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
 
 		my ($line);
 		
-		my $mock = Test::MockModule->new('Journal');
+		my $mock = Test::MockModule->new('App::MtAws::Journal');
 		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
 		$mock->mock('_time', sub {	$data->{time} });
 		

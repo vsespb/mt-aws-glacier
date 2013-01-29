@@ -18,13 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package FileFinishJob;
+package App::MtAws::FileFinishJob;
 
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
+use base qw/App::MtAws::Job/;
 
 
 sub new
@@ -52,7 +52,7 @@ sub get_task
 		$self->{raised} = 1;
 		$self->{th}->calc_tree();
 		$self->{final_hash} = $self->{th}->get_final_hash();
-		return ("ok", Task->new(id => "finish_upload",action=>"finish_upload", data => {
+		return ("ok", App::MtAws::Task->new(id => "finish_upload",action=>"finish_upload", data => {
 			upload_id => $self->{upload_id},
 			filesize => $self->{filesize},
 			mtime => $self->{mtime},

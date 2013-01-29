@@ -24,8 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use Test::Simple tests => 76;
-use lib qw{.. ../..};
-use Journal;
+use lib qw{../lib ../../lib};
+use App::MtAws::Journal;
 use File::Path;
 use JournalTest;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)

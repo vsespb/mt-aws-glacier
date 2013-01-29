@@ -24,8 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 4154;
-use lib qw{.. ../..};
-use MetaData;
+use lib qw{../lib ../../lib};
+use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use POSIX;
@@ -44,7 +44,7 @@ for my $char1 (qw/a b c d e f _ ß µ Ũ  а б в г д е ё ж з и к л м
 sub test
 {
 	my ($str) = @_;
-	my ($res, $mtime) = MetaData::meta_decode(mt1_meta_encode($str, 123));
+	my ($res, $mtime) = App::MtAws::MetaData::meta_decode(mt1_meta_encode($str, 123));
 	ok $res eq $str;
 	ok $mtime == 123;
 }

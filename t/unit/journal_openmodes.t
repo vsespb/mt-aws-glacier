@@ -26,8 +26,8 @@ use utf8;
 use Test::More tests => 16;
 use Test::Deep;
 use File::Path;
-use lib qw{.. ../..};
-use Journal;
+use lib qw{../lib ../../lib};
+use App::MtAws::Journal;
 use Test::MockModule;
 use Carp;
 
@@ -41,7 +41,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 # checking when reading journal
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	create($file, $fixture);
 	eval {
@@ -51,7 +51,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	remove($file);
 	eval {
@@ -61,7 +61,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	remove($file);
 	eval {
@@ -71,7 +71,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	create($file);
 	eval {
@@ -81,7 +81,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	create($file, $fixture);
 	eval {
@@ -91,7 +91,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	create($file);
 	eval {
@@ -101,7 +101,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	create($file, $fixture);
 	eval {
@@ -111,7 +111,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	remove($file);
 	eval {
@@ -122,7 +122,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 
 {
 	for my $mode (qw/0 1/) {
-		my $J = Journal->new(journal_file=>$mtroot, root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(journal_file=>$mtroot, root_dir => $rootdir);
 		
 		eval {
 			$J->read_journal(should_exist => $mode);
@@ -134,7 +134,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 # checking when writing journal
 {
 	remove($file);
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	$J->open_for_write();
 	$J->_write_line($fixture);
 	ok -s $file, "should write to file, even without closing file";
@@ -142,7 +142,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 
 {
 	remove($file);
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	$J->open_for_write();
 	$J->_write_line($fixture);
 	$J->close_for_write;
@@ -154,7 +154,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 	no bytes;
 	create($file, $fixture);
 	ok -s $file == bytes::length($fixture) + length("\n"), "assume length";
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	$J->open_for_write();
 	$J->_write_line($fixture);
 	ok -s $file == 2* ( bytes::length($fixture) + length("\n") ), "should append";
@@ -162,14 +162,14 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 
 {
 	remove($file);
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	eval { $J->_write_line($fixture); };
 	ok($@ ne '', "write to closed file should die");
 }
 
 {
 	remove($file);
-	my $J = Journal->new(journal_file=>$file, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	eval { $J->close_for_write; };
 	ok($@ ne '', "close for write should die if file was not opened");
 }

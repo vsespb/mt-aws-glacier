@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package GlacierRequest;
+package App::MtAws::GlacierRequest;
 
 use strict;
 use warnings;
@@ -26,9 +26,9 @@ use utf8;
 use POSIX;
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use TreeHash;
+use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
-use MetaData;
+use App::MtAws::MetaData;
 use Carp;
 
 
@@ -75,7 +75,7 @@ sub create_multipart_upload
 	$self->{method} = 'POST';
 
 	$self->add_header('x-amz-part-size', $partsize);
-	defined($self->{description} = MetaData::meta_encode($relfilename, $mtime))||confess; #TODO: gracefull error in case filename too big
+	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime))||confess; #TODO: gracefull error in case filename too big
 	$self->add_header('x-amz-archive-description', $self->{description});
 	
 	my $resp = $self->perform_lwp();

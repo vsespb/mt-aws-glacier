@@ -18,12 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package CreateVaultJob;
+package App::MtAws::CreateVaultJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
+use base qw/App::MtAws::Job/;
 use File::stat;
 
 
@@ -45,7 +45,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		return ("ok", Task->new(id => 'create_vault', action=>"create_vault_job", data => { name => $self->{name} }));
+		return ("ok", App::MtAws::Task->new(id => 'create_vault', action=>"create_vault_job", data => { name => $self->{name} }));
 	}
 }
 

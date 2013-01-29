@@ -18,13 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package FileUploadJob;
+package App::MtAws::FileUploadJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
-use FileFinishJob;
+use base qw/App::MtAws::Job/;
+use App::MtAws::FileFinishJob;
 
 
 sub new
@@ -40,7 +40,7 @@ sub new
     $self->{fh}||die;
     $self->{all_raised} = 0;
     $self->{position} = 0;
-    $self->{th} = TreeHash->new();
+    $self->{th} = App::MtAws::TreeHash->new();
     return $self;
 }
 
@@ -55,13 +55,13 @@ sub get_task
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {
-			my $part_th = TreeHash->new(); #TODO: We calc sha twice for same data chunk here
+			my $part_th = App::MtAws::TreeHash->new(); #TODO: We calc sha twice for same data chunk here
 			$part_th->eat_data(\$data);
 			$part_th->calc_tree();
 			
 			my $part_final_hash = $part_th->get_final_hash();
 			
-			my $task = Task->new(id => $self->{position}, action=>"upload_part", data => {
+			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"upload_part", data => {
 				start => $self->{position},
 				upload_id => $self->{upload_id},
 				part_final_hash => $part_final_hash,
@@ -77,7 +77,7 @@ sub get_task
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
 				# TODO: why do we have to have two FileFinishJob->new ??
-				return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
+				return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
 			} else {
 				return ("wait");
 			}
@@ -92,7 +92,7 @@ sub finish_task
 	delete $self->{uploadparts}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{uploadparts}} == 0) {
 		# TODO: $self->{filename} LOG ONLY
-		return ("ok replace", FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
+		return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
 	} else {
 		return ("ok");
 	}

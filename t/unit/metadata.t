@@ -24,8 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec;
-use lib qw{.. ../..};
-use MetaData;
+use lib qw{../lib ../../lib};
+use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
@@ -33,30 +33,30 @@ use Data::Dumper;
 describe "MetaData" => sub {
 	it "should catch undef in _decode_json" => sub {
 		JSON::XS->expects("decode");
-		MetaData::_decode_json MetaData::_encode_json('тест', 1);
+		App::MtAws::MetaData::_decode_json App::MtAws::MetaData::_encode_json('тест', 1);
 		JSON::XS->expects("decode")->never();
-		ok !defined MetaData::_decode_json undef;
+		ok !defined App::MtAws::MetaData::_decode_json undef;
 		
 	};
 	it "should not call encode" => sub {
-		MetaData->expects("_encode_utf8")->never();
-		MetaData::meta_encode('тест', 1);
+		App::MtAws::MetaData->expects("_encode_utf8")->never();
+		App::MtAws::MetaData::meta_encode('тест', 1);
 		ok 1;
 	};
 	it "should not call decode for current metadata version" => sub {
-		MetaData->expects("_decode_utf8")->never();
-		MetaData::meta_decode MetaData::meta_encode('тест', 1);
+		App::MtAws::MetaData->expects("_decode_utf8")->never();
+		App::MtAws::MetaData::meta_decode App::MtAws::MetaData::meta_encode('тест', 1);
 		ok 1;
 	};
 	it "should call decode for mt1" => sub {
-		MetaData->expects("_decode_utf8")->once();
-		MetaData::meta_decode 'mt1 eyJmaWxlbmFtZSI6IsOQwq9Bw5DCryIsIm10aW1lIjoiMTk3MDAxMDFUMDAwMjAzWiJ9'
+		App::MtAws::MetaData->expects("_decode_utf8")->once();
+		App::MtAws::MetaData::meta_decode 'mt1 eyJmaWxlbmFtZSI6IsOQwq9Bw5DCryIsIm10aW1lIjoiMTk3MDAxMDFUMDAwMjAzWiJ9'
 	};
 	it "should catch undef in _decode_utf8" => sub {
-		MetaData->expects("decode");
-		MetaData::_decode_utf8 encode("UTF-8", "тест");
-		MetaData->expects("decode")->never();
-		ok !defined MetaData::_decode_utf8 undef;
+		App::MtAws::MetaData->expects("decode");
+		App::MtAws::MetaData::_decode_utf8 encode("UTF-8", "тест");
+		App::MtAws::MetaData->expects("decode")->never();
+		ok !defined App::MtAws::MetaData::_decode_utf8 undef;
 	};
 };
 

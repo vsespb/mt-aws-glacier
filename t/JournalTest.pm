@@ -24,9 +24,9 @@ use strict;
 use warnings;
 use utf8;
 use lib qw/../;
-use Journal;
+use App::MtAws::Journal;
 use File::Path;
-use TreeHash;
+use App::MtAws::TreeHash;
 use Test::Simple;
 use Encode;
 use Carp;
@@ -58,7 +58,7 @@ sub test_journal
 	mkpath($self->{dataroot});
 	$self->create_journal();
 	
-	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal(should_exist => 1);
 	
 	my @checkfiles = grep { $_->{type} eq 'normalfile' && $_->{journal} && $_->{journal} eq 'created' } @{$self->{testfiles}};
@@ -80,7 +80,7 @@ sub test_real_files
 	mkpath($self->{dataroot});
 	$self->create_files();
 	
-	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_all_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' } @{$self->{testfiles}};
@@ -100,7 +100,7 @@ sub test_all_files
 	$self->create_journal();
 	$self->create_files('skip');
 	
-	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_all_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} } @{$self->{testfiles}};
@@ -120,7 +120,7 @@ sub test_new_files
 	mkpath($self->{dataroot});
 	$self->create_journal();
 	$self->create_files('skip');
-	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal(should_exist => 1);
 	$j->read_new_files();
 	
@@ -140,7 +140,7 @@ sub test_existing_files
 	mkpath($self->{dataroot});
 	$self->create_journal();
 	$self->create_files('skip');
-	my $j = Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
 	$j->read_journal(should_exist => 1);
 	$j->read_existing_files();
 	
@@ -240,7 +240,7 @@ sub create_journal_vA
 sub get_random_archive_id
 {
 	my ($i) = @_;
-	my $th = TreeHash->new();
+	my $th = App::MtAws::TreeHash->new();
 	my $s = $$.time().$i;
 	$th->eat_data(\$s);
 	$th->calc_tree();
@@ -251,7 +251,7 @@ sub scalar_treehash
 {
 	my ($str) = @_;
 	confess if utf8::is_utf8($str);
-	my $th = TreeHash->new();
+	my $th = App::MtAws::TreeHash->new();
 	$th->eat_data(\$str);
 	$th->calc_tree();
 	$th->get_final_hash();

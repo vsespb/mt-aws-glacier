@@ -18,13 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package FileCreateJob;
+package App::MtAws::FileCreateJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
-use FileUploadJob;
+use base qw/App::MtAws::Job/;
+use App::MtAws::FileUploadJob;
 use File::stat;
 use Time::localtime;
 
@@ -55,7 +55,7 @@ sub get_task
 	    open my $fh, "<$self->{filename}";
 	    binmode $fh;
 	    $self->{fh} = $fh;
-		return ("ok", Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
+		return ("ok", App::MtAws::Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}
 }
 
@@ -64,7 +64,7 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
-		return ("ok replace", FileUploadJob->new(
+		return ("ok replace", App::MtAws::FileUploadJob->new(
 			fh => $self->{fh},
 			relfilename => $self->{relfilename},
 			filename => $self->{filename},

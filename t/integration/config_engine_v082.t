@@ -25,14 +25,14 @@ use warnings;
 use utf8;
 use Test::More tests => 6;
 use Test::Deep;
-use lib qw{.. ../..};
-use ConfigEngine;
+use lib qw{../lib ../../lib};
+use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
 
 no warnings 'redefine';
 
-local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
+local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
 my %disable_validations = ( 
 	'override_validations' => {
@@ -52,7 +52,7 @@ my ($default_concurrency, $default_partsize) = (4, 16);
 for (
 	qq!retrieve-inventory --config=glacier.cfg --vault=myvault!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && !$warnings, "$_ error/warnings");
 	ok ($command eq 'retrieve-inventory', "$_ command");
 	is_deeply($result, {
@@ -70,7 +70,7 @@ for (
 for (
 	qq!download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && !$warnings, "$_ error/warnings");
 	ok ($command eq 'download-inventory', "$_ command");
 	is_deeply($result, {

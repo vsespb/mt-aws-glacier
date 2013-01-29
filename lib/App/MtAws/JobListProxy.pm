@@ -18,12 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package JobListProxy;
+package App::MtAws::JobListProxy;
 
 use strict;
 use warnings;
 use utf8;
-use ProxyTask;
+use App::MtAws::ProxyTask;
 
 sub new
 {
@@ -58,7 +58,7 @@ sub get_task
 			if ($status eq 'wait') {
 				last unless ($maxcnt--);
 			} else {
-				my $newtask = ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
+				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
 				$self->{pending}->{$newtask->{id}} = $newtask;
 				return ($status, $newtask);
 			}
@@ -75,7 +75,7 @@ sub finish_task
 	my ($self, $task) = @_;
 	my $jobid = $task->{jobid};
 	
-	$task->{task}->{result} = $task->{result}; # TODO: move to ProxyTask
+	$task->{task}->{result} = $task->{result}; # TODO: move to App::MtAws::ProxyTask
 	
 	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task->{task});
 	delete $self->{pending}->{$task->{id}};

@@ -18,14 +18,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package RetrievalFetchJob;
+package App::MtAws::RetrievalFetchJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
-use FileUploadJob;
-use RetrievalDownloadJob;
+use base qw/App::MtAws::Job/;
+use App::MtAws::FileUploadJob;
+use App::MtAws::RetrievalDownloadJob;
 
 use JSON::XS;
 
@@ -50,7 +50,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		return ("ok", Task->new(id => "retrieval_fetch_job",action=>"retrieval_fetch_job", data => { marker => $self->{marker} } ));
+		return ("ok", App::MtAws::Task->new(id => "retrieval_fetch_job",action=>"retrieval_fetch_job", data => { marker => $self->{marker} } ));
 	}
 }
 
@@ -75,9 +75,9 @@ sub finish_task
 		}
 		
 		if ($scalar->{Marker}) {
-			return ("ok replace", RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
+			return ("ok replace", App::MtAws::RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
 		} elsif (scalar @{$self->{downloads}}) {
-			return ("ok replace", RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
+			return ("ok replace", App::MtAws::RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
 		} else {
 			return ("done");
 		}

@@ -24,8 +24,8 @@
 use strict;
 use warnings;
 use Test::Simple tests => 1065;
-use lib qw{.. ../..};
-use TreeHash;
+use lib qw{../lib ../../lib};
+use App::MtAws::TreeHash;
 
 
 
@@ -507,7 +507,7 @@ for my $i (1..31) {
 	for my $j (qw/-3 -2 -1 0 1 2 3/) {
 		my $size = $i*$chunksize+$j;
 		my $dataref = get_pseudo_random_array($size);
-		my $th = TreeHash->new(unit => $chunksize);
+		my $th = App::MtAws::TreeHash->new(unit => $chunksize);
 		$th->eat_data($dataref);
     	$th->calc_tree();
     	my $hash = $th->get_final_hash();
@@ -522,12 +522,12 @@ for my $chunksize (qw/200/) {
 			my $size = $i*$chunksize+$j;
 			my $dataref = get_pseudo_random_array($size);
 			
-			my $th = TreeHash->new(unit => $chunksize);
+			my $th = App::MtAws::TreeHash->new(unit => $chunksize);
 			$th->eat_data($dataref);
 	    	$th->calc_tree();
 	    	my $hash = $th->get_final_hash();
 
-			my $threc = TreeHash->new(unit => $chunksize);
+			my $threc = App::MtAws::TreeHash->new(unit => $chunksize);
 			$threc->eat_data($dataref);
 	    	$threc->calc_tree_recursive();
 	    	my $hashrec = $th->get_final_hash();
@@ -544,7 +544,7 @@ for my $i (qw/1 2 29/) {
 		my $size = $i*$chunksize+$j;
 		my $dataref = get_pseudo_random_array($size);
 		my $data = $$dataref;
-		my $th = TreeHash->new(unit => $chunksize);
+		my $th = App::MtAws::TreeHash->new(unit => $chunksize);
 		$th->eat_data($data);
     	$th->calc_tree();
     	my $hash = $th->get_final_hash();
@@ -560,7 +560,7 @@ for my $i (1..4) {
 	for my $j (qw/-1 0 1/) {
 		my $size = $i*$chunksize+$j;
 		my $dataref = get_pseudo_random_array($size);
-		my $th = $chunksize == 1048576 ? TreeHash->new() : TreeHash->new(unit => $chunksize);
+		my $th = $chunksize == 1048576 ? App::MtAws::TreeHash->new() : App::MtAws::TreeHash->new(unit => $chunksize);
 		$th->eat_data($dataref);
     	$th->calc_tree();
     	my $hash = $th->get_final_hash();

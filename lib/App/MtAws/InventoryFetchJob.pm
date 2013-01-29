@@ -18,13 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package InventoryFetchJob;
+package App::MtAws::InventoryFetchJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
-use InventoryDownloadJob;
+use base qw/App::MtAws::Job/;
+use App::MtAws::InventoryDownloadJob;
 
 use JSON::XS;
 
@@ -46,7 +46,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		return ("ok", Task->new(id => "inventory_fetch",action=>"inventory_fetch_job", data => { marker => $self->{marker} } ));
+		return ("ok", App::MtAws::Task->new(id => "inventory_fetch",action=>"inventory_fetch_job", data => { marker => $self->{marker} } ));
 	}
 }
 
@@ -61,12 +61,12 @@ sub finish_task
 		for my $job (@{$scalar->{JobList}}) {
 			#print "$job->{Completed}|$job->{JobId}\n";
 			if ($job->{Action} eq 'InventoryRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
-				return ("ok replace", InventoryDownloadJob->new(job_id => $job->{JobId}));
+				return ("ok replace", App::MtAws::InventoryDownloadJob->new(job_id => $job->{JobId}));
 			}
 		}
 		
 		if ($scalar->{Marker}) {
-			return ("ok replace", InventoryFetchJob->new(marker => $scalar->{Marker}) );
+			return ("ok replace", App::MtAws::InventoryFetchJob->new(marker => $scalar->{Marker}) );
 		} else {
 			return ("done");
 		}

@@ -18,12 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package InventoryDownloadJob;
+package App::MtAws::InventoryDownloadJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
+use base qw/App::MtAws::Job/;
 use File::stat;
 
 
@@ -45,7 +45,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		return ("ok", Task->new(id => 'inventory_download', action=>"inventory_download_job", data => { job_id => $self->{job_id} }));
+		return ("ok", App::MtAws::Task->new(id => 'inventory_download', action=>"inventory_download_job", data => { job_id => $self->{job_id} }));
 	}
 }
 

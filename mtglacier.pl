@@ -22,6 +22,8 @@
 
 package main;
 
+use lib qw{lib};
+
 use strict;
 use warnings;
 use utf8;
@@ -30,25 +32,25 @@ use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is m
 our $VERSION = "0.85beta";
 
 
-use ParentWorker;
-use ChildWorker;
-use JobProxy;
-use FileCreateJob;
-use FileListDeleteJob;
-use FileListRetrievalJob;
-use RetrievalFetchJob;
-use JobListProxy;
-use RetrieveInventoryJob;
-use InventoryFetchJob;
+use App::MtAws::ParentWorker;
+use App::MtAws::ChildWorker;
+use App::MtAws::JobProxy;
+use App::MtAws::FileCreateJob;
+use App::MtAws::FileListDeleteJob;
+use App::MtAws::FileListRetrievalJob;
+use App::MtAws::RetrievalFetchJob;
+use App::MtAws::JobListProxy;
+use App::MtAws::RetrieveInventoryJob;
+use App::MtAws::InventoryFetchJob;
 use File::Find ;
 use File::Spec;
-use Journal;
-use ConfigEngine;
-use ForkEngine;
+use App::MtAws::Journal;
+use App::MtAws::ConfigEngine;
+use App::MtAws::ForkEngine;
 use Carp;
 use File::stat;
-use CreateVaultJob;
-use DeleteVaultJob;
+use App::MtAws::CreateVaultJob;
+use App::MtAws::DeleteVaultJob;
 
 
 # TODO: can be replaced with perl pragmas
@@ -91,7 +93,7 @@ my $config = {};
 my $config_filename;
 
 
-my ($errors, $warnings, $action, $options) = ConfigEngine->new()->parse_options(@ARGV);
+my ($errors, $warnings, $action, $options) = App::MtAws::ConfigEngine->new()->parse_options(@ARGV);
 
 
 for (@$warnings) {
@@ -110,9 +112,9 @@ if ($action eq 'sync') {
 	
 	my $partsize = delete $options->{partsize};
 	
-	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 0);
@@ -122,20 +124,20 @@ if ($action eq 'sync') {
 	my @joblist;
 	for (@{ $j->{newfiles_a} }) {
 		my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-		my $ft = JobProxy->new(job => FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
+		my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
 		push @joblist, $ft;
 	}
 	if (scalar @joblist) {
-		my $lt = JobListProxy->new(jobs => \@joblist);
+		my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
 		my $R = $FE->{parent_worker}->process_task($lt, $j);
 		die unless $R;
 	}
 	$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'purge-vault') {
-	my $j = Journal->new(journal_file => $options->{journal});
+	my $j = App::MtAws::Journal->new(journal_file => $options->{journal});
 	
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 1);
@@ -144,7 +146,7 @@ if ($action eq 'sync') {
 	my $files = $j->{journal_h};
 	if (scalar keys %$files) {
 		my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
-		my $ft = JobProxy->new(job => FileListDeleteJob->new(archives => \@filelist ));
+		my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListDeleteJob->new(archives => \@filelist ));
 		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
@@ -153,10 +155,10 @@ if ($action eq 'sync') {
 	$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'restore') {
-	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	confess unless $options->{'max-number-of-files'};
 			
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 1);
@@ -167,7 +169,7 @@ if ($action eq 'sync') {
 	my @filelist =	grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
 	if (scalar @filelist) {
-		my $ft = JobProxy->new(job => FileListRetrievalJob->new(archives => \@filelist ));
+		my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListRetrievalJob->new(archives => \@filelist ));
 		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
@@ -176,9 +178,9 @@ if ($action eq 'sync') {
 	$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'restore-completed') {
-	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
 	$j->read_journal(should_exist => 1);
@@ -187,7 +189,7 @@ if ($action eq 'sync') {
 	# TODO: refactor
 	my %filelist =	map { $_->{archive_id} => $_ } grep { ! -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 	if (scalar keys %filelist) {
-		my $ft = JobProxy->new(job => RetrievalFetchJob->new(archives => \%filelist ));
+		my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(archives => \%filelist ));
 		my $R = $FE->{parent_worker}->process_task($ft, $j);
 		die unless $R;
 	} else {
@@ -195,14 +197,14 @@ if ($action eq 'sync') {
 	}
 	$FE->terminate_children();
 } elsif ($action eq 'check-local-hash') {
-	my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 	
 	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error) = (0,0,0,0,0);
 	for my $f (keys %$files) {
 		my $file=$files->{$f};
-		my $th = TreeHash->new();
+		my $th = App::MtAws::TreeHash->new();
 		my $absfilename = $j->absfilename($f);
 		if (-f $absfilename ) {
 			open my $F, "<", $absfilename;
@@ -237,27 +239,27 @@ if ($action eq 'sync') {
 	exit(1) if $error_hash || $error_size || $error_missed;
 } elsif ($action eq 'retrieve-inventory') {
 	$options->{concurrency} = 1; # TODO implement this in ConfigEngine
-	#my $j = Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+	#my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 			
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
 	#$j->read_journal(should_exist => 1);
 	#$j->open_for_write();
 	
-	my $ft = JobProxy->new(job => RetrieveInventoryJob->new());
+	my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrieveInventoryJob->new());
 	my $R = $FE->{parent_worker}->process_task($ft, undef);
 	#$j->close_for_write();
 	$FE->terminate_children();
 } elsif ($action eq 'download-inventory') {
 	$options->{concurrency} = 1; # TODO implement this in ConfigEngine
-	my $j = Journal->new(journal_file => $options->{'new-journal'});
+	my $j = App::MtAws::Journal->new(journal_file => $options->{'new-journal'});
 			
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
 	
-	my $ft = JobProxy->new(job => InventoryFetchJob->new());
+	my $ft = App::MtAws::JobProxy->new(job => App::MtAws::InventoryFetchJob->new());
 	my $R = $FE->{parent_worker}->process_task($ft, undef);
 	# here we can have response from both JobList or Inventory output..
 	# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
@@ -272,11 +274,11 @@ if ($action eq 'sync') {
 	
 	for my $item (@{$data->{'ArchiveList'}}) {
 		
-		my ($relfilename, $mtime) = MetaData::meta_decode($item->{ArchiveDescription});
+		my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
 		$relfilename = $item->{ArchiveId} unless defined $relfilename;
 		$mtime = $now unless defined $mtime;
 		
-		my $creation_time = MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
+		my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
 		#time archive_id size mtime treehash relfilename
 		$j->add_entry({
 			type => 'CREATED',
@@ -293,19 +295,19 @@ if ($action eq 'sync') {
 } elsif ($action eq 'create-vault') {
 	$options->{concurrency} = 1;
 			
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	my $ft = JobProxy->new(job => CreateVaultJob->new(name => $options->{'vault-name'}));
+	my $ft = App::MtAws::JobProxy->new(job => App::MtAws::CreateVaultJob->new(name => $options->{'vault-name'}));
 	my $R = $FE->{parent_worker}->process_task($ft, undef);
 	$FE->terminate_children();
 } elsif ($action eq 'delete-vault') {
 	$options->{concurrency} = 1;
 			
-	my $FE = ForkEngine->new(options => $options);
+	my $FE = App::MtAws::ForkEngine->new(options => $options);
 	$FE->start_children();
 	
-	my $ft = JobProxy->new(job => DeleteVaultJob->new(name => $options->{'vault-name'}));
+	my $ft = App::MtAws::JobProxy->new(job => App::MtAws::DeleteVaultJob->new(name => $options->{'vault-name'}));
 	my $R = $FE->{parent_worker}->process_task($ft, undef);
 	$FE->terminate_children();
 } elsif ($action eq 'help') {

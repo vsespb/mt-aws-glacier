@@ -25,14 +25,14 @@ use warnings;
 use utf8;
 use Test::More tests => 178;
 use Test::Deep;
-use lib qw{.. ../..};
-use ConfigEngine;
+use lib qw{../lib ../../lib};
+use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
 
 no warnings 'redefine';
 
-local *ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
+local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
 my %disable_validations = ( 
 	'override_validations' => {
@@ -55,7 +55,7 @@ for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -79,7 +79,7 @@ for (
 	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
 	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors, "should understand line without config $_");
 	is_deeply($result, {
 		key=>'mykey',
@@ -100,8 +100,8 @@ for (
 	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
 	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
 ){
-	local *ConfigEngine::read_config = sub { { secret => 'mysecret' } };
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	local *App::MtAws::ConfigEngine::read_config = sub { { secret => 'mysecret' } };
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors, "should understand part of config $_");
 	is_deeply($result, {
 		key=>'mykey',
@@ -120,8 +120,8 @@ for (
 for (
 	qq!sync --config=glacier.cfg --key=mykey --secret=newsecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
 ){
-	local *ConfigEngine::read_config = sub { { secret => 'mysecret' } };
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	local *App::MtAws::ConfigEngine::read_config = sub { { secret => 'mysecret' } };
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors, "command line should override config $_");
 	is_deeply($result, {
 		key=>'mykey',
@@ -145,7 +145,7 @@ for (
 # TODO: this one will not work
 #	qq! -partsize 2 -from-dir /data/backup -config glacier.cfg -to-vault=myvault -journal=journal.log -concurrency 8 sync !,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -169,7 +169,7 @@ for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --journal=journal.log --concurrency=8 --partsize=2!,
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --concurrency=8 --partsize=2!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch missed options");
 	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
 }
@@ -181,7 +181,7 @@ for (
 	qq!sync sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3!,
 	qq!sync --dir x --config y -journal z -to-va va extra -conc 9 --partsize=3!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch non option");
 	ok( $errors->[0] =~ /Extra argument/, "$_ - should catch non option $errors->[0]");
 }
@@ -191,7 +191,7 @@ for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=42 --partsize=$default_partsize!,
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --max-number-of-files=42 --partsize=$default_partsize!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -220,7 +220,7 @@ for (
 # TODO: this one will not work
 #	qq! -partsize 2 -from-dir /data/backup -config glacier.cfg -to-vault=myvault -journal=journal.log -concurrency 8 sync !,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 #	print $errors->[0];
 	is_deeply($result, {
@@ -240,7 +240,7 @@ for (
 	qq!check-local-hash --config=glacier.cfg --to-vault=myvault --journal=journal.log!,
 	qq!check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch missed options");
 	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
 }
@@ -253,7 +253,7 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=21 --concurrency=$default_concurrency!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=21!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -276,7 +276,7 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9 --max-number-of-files=21!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal journal.log --max-number-of-files=21 --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -306,7 +306,7 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --max-number-of-files=21 --concurrency=9!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch missed options");
 	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
 }
@@ -318,7 +318,7 @@ for (
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log !,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -339,7 +339,7 @@ for (
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9 !,
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal journal.log  --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -369,7 +369,7 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --concurrency=9!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch missed options");
 	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
 }
@@ -384,7 +384,7 @@ for (
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log !,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -405,7 +405,7 @@ for (
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup  --journal=journal.log  --concurrency=9 --to-vault=myvault!,
 	qq!purge-vault --config glacier.cfg --from-dir=/data/backup  --journal=journal.log  --concurrency=9 --to-vault=myvault!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( !$errors && $warnings, "$_ error/warnings");
 	is_deeply($result, {
 		key=>'mykey',
@@ -426,7 +426,7 @@ for (
 	qq!purge-vault --config=glacier.cfg  --journal=journal.log  --concurrency=9!,
 	qq!purge-vault --config=glacier.cfg --to-vault=myvault  --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch missed options");
 	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
 }

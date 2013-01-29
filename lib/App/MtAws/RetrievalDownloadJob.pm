@@ -18,12 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package RetrievalDownloadJob;
+package App::MtAws::RetrievalDownloadJob;
 
 use strict;
 use warnings;
 use utf8;
-use base qw/Job/;
+use base qw/App::MtAws::Job/;
 use File::stat;
 
 
@@ -48,7 +48,7 @@ sub get_task
 	} else {
 		if (scalar @{$self->{archives}}) {
 			my $archive = shift @{$self->{archives}};
-			my $task = Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
+			my $task = App::MtAws::Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid}
 			});
 			$self->{pending}->{$archive->{jobid}}=1;
