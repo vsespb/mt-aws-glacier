@@ -78,6 +78,8 @@ Should NOT work under Windows.
 
 		git clone https://github.com/vsespb/mt-aws-glacier.git
 
+	(or just download and unzip `https://github.com/vsespb/mt-aws-glacier/archive/master.zip` )
+
 	After that you can execute `mtglacier` command from any directory, or create a symlink to it - it will find other package files by itself.
 
 ## Warnings ( *MUST READ* )
