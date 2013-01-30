@@ -1,4 +1,5 @@
 2013-01-29: v0.86 beta
+	* Bug fixed: when doing retrieval or delete, crash after successful finishing (only happened when concurrency=1). Regression of bug fixed 0.76beta.
 	* Changed project file structure. Modules moved to lib/App/MtAws
 	* mtglacier.pl now deprected, use mtglacier
 	* Now you can execute mtglacier command from any directory, or create a symlink to it - it will find other package files by itself 
