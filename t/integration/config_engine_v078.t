@@ -29,7 +29,6 @@ use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
-no autovivification;
 no warnings 'redefine';
 
 local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
