@@ -23,14 +23,13 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 43;
+use Test::More tests => 49;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Carp;
 use Data::Dumper;
-
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 
 no warnings 'redefine';
@@ -44,9 +43,21 @@ my $too_big_concurrency = $max_concurrency+1;
 
 my %disable_validations = ( 
 	'override_validations' => {
-		'journal' => [ ['Journal file not exist' => sub { 1 } ], ],
+		journal => undef,
+		secret  => undef,
+		key => undef, 
 	},
 );
+
+sub assert_config_throw_error($$$)
+{
+	my ($config, $errorre, $text) = @_;
+	local *App::MtAws::ConfigEngine::read_config = sub { $config };
+	
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(override_validations=>{journal=>undef})->parse_options(split(' ', $_ ));
+	ok( $errors && $errors->[0] =~ $errorre, $text);
+}
+
 
 local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
@@ -206,7 +217,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 }
 
 {
-	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
+	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'k'x20, secret => 's'x40, region => 'myregion', vault => 'newvault' } };
 	
 	my $file = "$mtroot/journal_t_1";
 	unlink $file || confess if -e $file;
@@ -214,8 +225,19 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
 	'restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
 	));
-	ok( $errors && $errors->[0] =~ /Journal file not found/i, "should catch non existing journal $errors->[0]" );
+	ok( $errors && $errors->[0] =~ /Journal file not found/i, "should catch non existing journal" );
 }
+
+for ('restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1') {
+	assert_config_throw_error { key=>'!'x20, secret => 's'x40, region => 'myregion', vault => 'newvault' }, qr/Invalid format of "key"/, "should catch bad key" ;
+	assert_config_throw_error { key=>'a'x21, secret => 's'x40, region => 'myregion', vault => 'newvault' }, qr/Invalid format of "key"/, "should catch bad key" ;
+	assert_config_throw_error { key=>'a'x20, secret => 's'x41, region => 'myregion', vault => 'newvault' }, qr/Invalid format of "secret"/, "should catch bad key" ;
+	assert_config_throw_error { key=>'a'x20, secret => ' 'x40, region => 'myregion', vault => 'newvault' }, qr/Invalid format of "secret"/, "should catch bad key" ;
+	assert_config_throw_error { key=>'a'x20, secret => 'a'x40, region => 'my_region', vault => 'newvault' }, qr/Invalid format of "region"/, "should catch bad key" ;
+	assert_config_throw_error { key=>'a'x20, secret => 'a'x40, region => 'x'x80, vault => 'newvault' }, qr/Invalid format of "region"/, "should catch bad key" ;
+}
+
+
 
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
@@ -223,7 +245,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 	my $file = "$mtroot/journal_t_1";
 	unlink $file || confess if -e $file;
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'sync --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
 	));
 	ok( !$errors, "should allow non-existing journal for sync" );
@@ -257,7 +279,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'create-vault myvault --config=glacier.cfg'
 	));
 	ok( !$errors, "show allow positional arguments" );
@@ -268,7 +290,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'create-vault --config=glacier.cfg myvault'
 	));
 	ok( !$errors, "show allow positional arguments after options" );
@@ -279,7 +301,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'create-vault --config=glacier.cfg'
 	));
 	ok( $errors && $errors->[0] eq 'Please specify another argument in command line: vault-name', "show throw error is positional argument is missing" );
@@ -288,7 +310,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'create-vault --config=glacier.cfg arg1 arg2'
 	));
 	ok( $errors && $errors->[0] eq 'Extra argument in command line: arg2', "show throw error is there is extra positional argument" );
@@ -297,7 +319,7 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'create-vault --config=glacier.cfg arg1 arg2'
 	));
 	ok( $errors && $errors->[0] eq 'Extra argument in command line: arg2', "show throw error is there is extra positional argument" );
@@ -306,10 +328,12 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 {
 	local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault' } };
 	
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new()->parse_options(split(' ',
+	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ',
 	'create-vault --config=glacier.cfg my#vault'
 	));
 	ok( $errors && $errors->[0] eq 'Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"', "should validate positional arguments" );
 }
+
+
 
 1;

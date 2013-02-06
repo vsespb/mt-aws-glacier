@@ -38,12 +38,14 @@ rmtree($file);
 
 my %disable_validations = ( 
 	'override_validations' => {
-		'journal' => [ ['Journal file not exist' => sub { 1 } ], ],
+		journal => undef,
+		secret  => undef,
+		key => undef, 
 	},
 );
 
 
-my $line = "purge-vault --key=k --secret=s --region=r --config=$file --to-vault=myvault --journal x";
+my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to-vault=myvault --journal x";
 {
 	unlink $file;
 	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $line));
