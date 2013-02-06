@@ -58,6 +58,7 @@ sub finish_task
 	if ($self->{raised}) {
 		my $json = JSON::XS->new->allow_nonref;
 		my $scalar = $json->decode( $task->{result}->{response} );
+		# https://forums.aws.amazon.com/thread.jspa?messageID=421246
 		for my $job (@{$scalar->{JobList}}) {
 			#print "$job->{Completed}|$job->{JobId}\n";
 			if ($job->{Action} eq 'InventoryRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
