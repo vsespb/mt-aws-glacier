@@ -97,6 +97,10 @@ sub get_config
 		my @remote = option qw/concurrency key vault secret region protocol/;
 		my @dir_or_relname = option qw/set-rel-filename dir/;
 		option qw/base-dir include exclude partsize journal filename stdin wait chunksize zz/;
+		
+		
+		validation 'concurrency', 'concurrency should be less than 30', sub { $_ < 30 };
+		
 		command 'sync' => sub {
 			 mandatory( mandatory(@remote), 'journal',  mandatory('dir'), check_base_dir, optional('partsize'), filter_options ); 
 		};
@@ -104,7 +108,7 @@ sub get_config
 			mandatory(@remote), mandatory('journal'),  scope('dir', check_dir_or_relname, check_base_dir), optional('partsize'); 
 		};
 		command 'retrieve-file' => sub {
-			mandatory(@remote), mandatory('journal'),  check_wait, scope('dir', check_dir_or_relname, check_base_dir), optional 'partsize' 
+			validate mandatory(@remote), mandatory('journal'),  check_wait, scope('dir', check_dir_or_relname, check_base_dir), optional 'partsize' 
 		};
 	});
 	return $c;

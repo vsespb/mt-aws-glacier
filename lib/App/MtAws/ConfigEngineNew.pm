@@ -32,7 +32,9 @@ use utf8;
 require Exporter;                                                                                                                                                                                                                                                              
 use base qw/Exporter/;                                                                                                                                                                                                                                                         
                                                                                                                                                                                                                                                                                
-our @EXPORT = qw/option command mandatory optional scope present set error/;
+our @EXPORT = qw/option command validation
+				mandatory optional validate scope
+				present set error/;
 
 our $context; 
 
@@ -62,14 +64,23 @@ sub parse_options
 	
 	$self->{commands}->{shift @ARGV	}->{cb}->();
 	
-	print Dumper($self);
+	print Dumper($self->{errors});
 	print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
 	#print Dumper($self);
 }
 
+sub assert_option {	($context->{options}->{$_} && $_) || confess "undeclared option $_"; }
+
 sub option(@) {
-	map {  $context->{options}->{$_} = { name => $_ }; $_ } @_;
+	map { $context->{options}->{$_} = { name => $_ }; $_	} @_;
 };
+
+sub validation($$&)
+{
+	my ($name, $message, $cb) = @_;
+	option($name);
+	push @{ $context->{options}->{$name}->{validations} }, { message => $message, cb => $cb };
+}
 
 sub command(@)
 {
@@ -79,7 +90,7 @@ sub command(@)
 
 sub mandatory(@) {
 	return map {
-		confess unless ($context->{options}->{$_});
+		assert_option;
 		unless ($context->{options}->{$_}->{seen}) {
 			$context->{options}->{$_}->{seen} = 1;
 			push @{$context->{errors}}, "$_ is mandatory" unless defined($context->{options}->{$_}->{value});
@@ -91,13 +102,27 @@ sub mandatory(@) {
 sub optional(@)
 {
 	return map {
-		confess "undefined option $_" unless ($context->{options}->{$_});
+		assert_option;
 		$context->{options}->{$_}->{seen} = 1;
 		#$context->{options}->{$_}->{mandatory_ok} = 1;
 		$_;
 	} @_;
 };
 
+sub validate(@)
+{
+	return map {
+		assert_option;
+		my $optionref = $context->{options}->{$_};
+		for my $v (@{ $optionref->{validations} }) {
+			for ($optionref->{value}) {
+				my $x = $v->{cb}->();
+				error ($v->{message}) unless $v->{cb}->();
+			}
+		}
+		$_;
+	} @_;
+};
 
 sub scope($@)
 {
