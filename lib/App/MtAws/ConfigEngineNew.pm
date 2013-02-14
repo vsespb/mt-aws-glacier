@@ -62,17 +62,22 @@ sub parse_options
 	
 	@{$self->{options}->{$_}}{qw/value source/} = ($results{$_}, 'option') for keys %results;
 	
-	$self->{commands}->{shift @ARGV	}->{cb}->();
+	$self->{commands}->{my $command = shift @ARGV	}->{cb}->();
 	
-	print Dumper($self->{errors});
-	print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
+	#print Dumper($self->{errors});
+	#print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
 	#print Dumper($self);
+	return ($self->{errors}, undef, $command, undef);
 }
 
 sub assert_option {	($context->{options}->{$_} && $_) || confess "undeclared option $_"; }
 
 sub option(@) {
-	map { $context->{options}->{$_} = { name => $_ }; $_	} @_;
+	if (@_ == 1) {
+		$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0]; # TODO: refactor somehow??
+	} else {
+		map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
+	}
 };
 
 sub validation($$&)
@@ -80,6 +85,7 @@ sub validation($$&)
 	my ($name, $message, $cb) = @_;
 	option($name);
 	push @{ $context->{options}->{$name}->{validations} }, { message => $message, cb => $cb };
+	$_;
 }
 
 sub command(@)
@@ -116,7 +122,6 @@ sub validate(@)
 		my $optionref = $context->{options}->{$_};
 		for my $v (@{ $optionref->{validations} }) {
 			for ($optionref->{value}) {
-				my $x = $v->{cb}->();
 				error ($v->{message}) unless $v->{cb}->();
 			}
 		}
@@ -130,7 +135,6 @@ sub scope($@)
 	return map {
 		confess "undefined option $_" unless ($context->{options}->{$_});
 		unshift @{$context->{options}->{$_}->{scope}}, $scopename;
-		print "ZZ $_\n";
 		$_;
 	} @_;
 };
