@@ -34,7 +34,7 @@ use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
 our @EXPORT = qw/option command validation
 				mandatory optional validate scope
-				present set error/;
+				present custom error/;
 
 our $context; 
 
@@ -142,7 +142,7 @@ sub present($)
 	return defined($context->{options}->{$name}->{value})
 };
 
-sub set($$)
+sub custom($$)
 {
 	my ($name, $value) = @_;
 	confess if ($context->{options}->{$name});

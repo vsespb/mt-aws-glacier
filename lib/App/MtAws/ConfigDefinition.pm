@@ -46,15 +46,15 @@ sub check_dir_or_relname
 {
 	
 	if (present('filename')) {
-		set('data-type', 'filename'), mandatory('filename'), do {
+		custom('data-type', 'filename'), mandatory('filename'), do {
 			if (present('set-rel-filename')) {
 				if (present('dir')) {
 					error('set-rel-filename and dir are mutual exclusive')
 				} else {
-					set('name-type', 'rel-filename'), mandatory('set-rel-filename');
+					custom('name-type', 'rel-filename'), mandatory('set-rel-filename');
 				}
 			} elsif (present('dir')) {
-				set('name-type', 'dir'), mandatory('dir');
+				custom('name-type', 'dir'), mandatory('dir');
 			} else {
 				error('please specify set-rel-filename or dir')
 			}
@@ -64,7 +64,7 @@ sub check_dir_or_relname
 			if (present('dir')) {
 				error('set-rel-filename and dir are mutual exclusive')
 			} else {
-				set('name-type', 'rel-filename'), set('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin')
+				custom('name-type', 'rel-filename'), custom('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin')
 			}
 		} else {
 			error('need use set-rel-filename together with stdin')
