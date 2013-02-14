@@ -32,7 +32,7 @@ use utf8;
 require Exporter;                                                                                                                                                                                                                                                              
 use base qw/Exporter/;                                                                                                                                                                                                                                                         
                                                                                                                                                                                                                                                                                
-our @EXPORT = qw/option command mandatory optional present set error/;
+our @EXPORT = qw/option command mandatory optional scope present set error/;
 
 our $context; 
 
@@ -94,6 +94,18 @@ sub optional(@)
 		confess "undefined option $_" unless ($context->{options}->{$_});
 		$context->{options}->{$_}->{seen} = 1;
 		#$context->{options}->{$_}->{mandatory_ok} = 1;
+		$_;
+	} @_;
+};
+
+
+sub scope($@)
+{
+	my $scopename = shift; 
+	return map {
+		confess "undefined option $_" unless ($context->{options}->{$_});
+		unshift @{$context->{options}->{$_}->{scope}}, $scopename;
+		print "ZZ $_\n";
 		$_;
 	} @_;
 };

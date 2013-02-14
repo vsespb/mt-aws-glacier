@@ -101,10 +101,10 @@ sub get_config
 			 mandatory( mandatory(@remote), 'journal',  mandatory('dir'), check_base_dir, optional('partsize'), filter_options ); 
 		};
 		command 'upload-file' => sub {
-			mandatory(@remote), mandatory('journal'),  check_dir_or_relname, check_base_dir, optional('partsize'); 
+			mandatory(@remote), mandatory('journal'),  scope('dir', check_dir_or_relname, check_base_dir), optional('partsize'); 
 		};
 		command 'retrieve-file' => sub {
-			mandatory(@remote), mandatory('journal'),  check_wait, check_dir_or_relname, check_base_dir, optional 'partsize' 
+			mandatory(@remote), mandatory('journal'),  check_wait, scope('dir', check_dir_or_relname, check_base_dir), optional 'partsize' 
 		};
 	});
 	return $c;
