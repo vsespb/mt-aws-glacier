@@ -56,15 +56,14 @@ sub parse_options
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
 	
 	my @getopts = map { "$_=s" } keys %{$self->{options}};
-	GetOptions($self->{results}={}, @getopts);
+	GetOptions(\my %results, @getopts);
+	
+	@{$self->{options}->{$_}}{qw/value source/} = ($results{$_}, 'option') for keys %results;
+	
 	$self->{commands}->{shift @ARGV	}->{cb}->();
 	
-	
-	
-	
-	print Dumper($self->{errors});
-	print Dumper($self->{results});
-	print Dumper [grep { (!$_->{seen}) && defined($self->{results}->{$_->{name}}) } values %{$self->{options}}];
+	print Dumper($self);
+	print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
 	#print Dumper($self);
 }
 
@@ -83,8 +82,7 @@ sub mandatory(@) {
 		confess unless ($context->{options}->{$_});
 		unless ($context->{options}->{$_}->{seen}) {
 			$context->{options}->{$_}->{seen} = 1;
-			#$context->{options}->{$_}->{mandatory_ok} = defined($context->{results}->{$_});
-			push @{$context->{errors}}, "$_ is mandatory" unless defined($context->{results}->{$_});
+			push @{$context->{errors}}, "$_ is mandatory" unless defined($context->{options}->{$_}->{value});
 		}
 		$_;
 	} @_;
@@ -104,7 +102,7 @@ sub present($)
 {
 	my ($name) = @_;
 	confess "option not defined $name" unless ($context->{options}->{$name});
-	return defined($context->{results}->{$name})
+	return defined($context->{options}->{$name}->{value})
 };
 
 sub set($$)
