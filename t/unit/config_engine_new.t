@@ -491,6 +491,22 @@ describe "present" => sub {
 	};
 };
 
+describe "custom" => sub {
+	it "should not redefine option" => sub {
+		localize sub {
+			option 'myoption';
+			ok ! defined eval { custom 'myoption', 42; 1; };
+		}
+	};
+	it "should work " => sub {
+		localize sub {
+			my $res = custom 'myoption', 42; 1;
+			ok $res eq 'myoption';
+			cmp_deeply context->{options}->{myoption}, { name => 'myoption', value => 42, source => 'set' };
+		}
+	};
+};
+
 runtests unless caller;
 
 1;
