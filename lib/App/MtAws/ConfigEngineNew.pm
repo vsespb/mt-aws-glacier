@@ -143,7 +143,7 @@ sub scope($@)
 sub present($)
 {
 	my ($name) = @_;
-	confess "option not defined $name" unless ($context->{options}->{$name});
+	assert_option for $name;
 	return defined($context->{options}->{$name}->{value})
 };
 

@@ -465,6 +465,32 @@ describe "scope" => sub {
 	};
 };
 
+describe "present" => sub {
+	it "should check option " => sub {
+		localize sub {
+			local $_ = 'abc';
+			option 'myoption';
+			context->{options}->{myoption}->{value} = 1;
+			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			ok present('myoption');
+			ok $_ eq 'abc';
+		}
+	};
+	it "should work when option exists " => sub {
+		localize sub {
+			option 'myoption';
+			context->{options}->{myoption}->{value} = 1;
+			ok present('myoption');
+		}
+	};
+	it "should work when option not exists " => sub {
+		localize sub {
+			option 'myoption';
+			ok ! present 'myoption'
+		}
+	};
+};
+
 runtests unless caller;
 
 1;
