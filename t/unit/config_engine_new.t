@@ -427,14 +427,16 @@ describe "scope" => sub {
 		it "should work with one scope" => sub {
 			localize sub {
 				option 'myoption';
-				scope 'myscope', 'myoption';
+				my @res = scope 'myscope', 'myoption';
+				cmp_deeply [@res], ['myoption'];
 				cmp_deeply context->{options}->{myoption}->{scope}, ['myscope'];
 			}
 		};
 		it "should work with one two scopes" => sub {
 			localize sub {
 				option 'myoption';
-				scope 'outer', scope 'inner', 'myoption';
+				my @res = scope 'outer', scope 'inner', 'myoption';
+				cmp_deeply [@res], ['myoption'];
 				cmp_deeply context->{options}->{myoption}->{scope}, ['outer', 'inner'];
 			}
 		};
@@ -450,15 +452,17 @@ describe "scope" => sub {
 			localize sub {
 				local $_ = 'abc';
 				options qw/o1 o2/;
-				scope 'sc', qw/o1 o2/;
+				my @res = scope 'sc', qw/o1 o2/;
+				cmp_deeply [@res], [qw/o1 o2/];
 				cmp_deeply context->{options}->{$_}->{scope}, ['sc'] for qw/o1 o2/;
 				ok $_ eq 'abc';
 			}
 		};
-		it "should work with one two scopes" => sub {
+		it "should work with two scopes" => sub {
 			localize sub {
 				options qw/o1 o2/;
-				scope 'outer', scope 'inner', qw/o1 o2/;
+				my @res = scope 'outer', scope 'inner', qw/o1 o2/;
+				cmp_deeply [@res], [qw/o1 o2/];
 				cmp_deeply context->{options}->{$_}->{scope}, ['outer', 'inner'] for qw/o1 o2/;
 			}
 		};
