@@ -49,12 +49,14 @@ describe "option" => sub {
 	};
 	it "should not overwrite existing option" => sub {
 		localize sub {
+			local $_ = 'abc';
 			option 'myoption';
 			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption'};
 			mandatory 'myoption';
 			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
 			option 'myoption';
 			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
+			ok $_ eq 'abc';
 		}
 	};
 	it "should return option name as scalar" => sub {
@@ -81,6 +83,7 @@ describe "options" => sub {
 	};
 	it "should not overwrite existing options" => sub {
 		localize sub {
+			local $_ = 'abc';
 			options 'myoption1', 'myoption2';
 			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1'};
 			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2'};
@@ -88,6 +91,7 @@ describe "options" => sub {
 			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
 			options 'myoption1';
 			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			ok $_ eq 'abc';
 		}
 	};
 	it "should return option name as array" => sub {
@@ -127,12 +131,14 @@ describe "validation" => sub {
 	};
 	it "should work without option" => sub {
 		localize sub {
+			local $_ = 'abc';
 			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
 			ok $r eq 'myoption';
 			ok context->{options}->{'myoption'};
 			cmp_deeply [sort keys %{context->{options}->{'myoption'}}], [sort qw/name validations/];
 			ok 'myoption' eq context->{options}->{'myoption'}->{name};
 			ok scalar @{context->{options}->{'myoption'}->{validations}} == 1;
+			ok $_ eq 'abc';
 		}
 	};
 };
@@ -194,6 +200,7 @@ describe "mandatory" => sub {
 	};
 	it "should work when 2 of 2 mandatory option presents" => sub {
 		localize sub {
+			local $_ = 'abc';
 			my @options = ('myoption', 'myoption2');
 			options @options;
 			context->{options}->{myoption}->{value} = '123';
@@ -203,6 +210,7 @@ describe "mandatory" => sub {
 			ok !defined context->{errors};
 			ok context->{options}->{myoption}->{seen};
 			ok context->{options}->{myoption2}->{seen};
+			ok $_ eq 'abc';
 		}
 	};
 	it "should work when 1 of 2 mandatory option presents" => sub {
@@ -270,6 +278,7 @@ describe "optional" => sub {
 		};
 		it "should work when 2 of 2 optional option presents" => sub {
 			localize sub {
+				local $_ = 'abc';
 				my @options = ('myoption', 'myoption2');
 				options @options;
 				context->{options}->{myoption}->{value} = '123';
@@ -279,6 +288,7 @@ describe "optional" => sub {
 				ok !defined context->{errors};
 				ok context->{options}->{myoption}->{seen};
 				ok context->{options}->{myoption2}->{seen};
+				ok $_ eq 'abc';
 			}
 		};
 		it "should work when 1 of 2 optional option presents" => sub {
@@ -316,12 +326,14 @@ describe "validate" => sub {
 	describe "validation is defined" => sub {
 		it "should work when validation passed" => sub {
 			localize sub {
+				local $_ = 'abc';
 				validation 'myoption', 'myerror', sub { $_ > 10 };
 				context->{options}->{myoption}->{value} = '123';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
 				ok !defined context->{errors};
 				ok context->{options}->{myoption}->{seen};
+				ok $_ eq 'abc';
 			}
 		};
 		it "should work when validation failed" => sub {
