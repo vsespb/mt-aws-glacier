@@ -120,6 +120,7 @@ sub validate(@)
 	return map {
 		assert_option;
 		my $optionref = $context->{options}->{$_};
+		$optionref->{seen} = 1;
 		for my $v (@{ $optionref->{validations} }) {
 			for ($optionref->{value}) {
 				error ($v->{message}) unless $v->{cb}->();

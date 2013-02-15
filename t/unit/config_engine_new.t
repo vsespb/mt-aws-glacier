@@ -299,6 +299,103 @@ describe "optional" => sub {
 	};
 };
 
+describe "validate" => sub {
+	it "should check option" => sub {
+		localize sub {
+			option 'myoption';
+			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			validate('myoption2');
+		}
+	};
+	describe "validation is defined" => sub {
+		it "should work when validation passed" => sub {
+			localize sub {
+				validation 'myoption', 'myerror', sub { $_ > 10 };
+				context->{options}->{myoption}->{value} = '123';
+				my ($res) = validate 'myoption';
+				ok $res eq 'myoption';
+				ok !defined context->{errors};
+				ok context->{options}->{myoption}->{seen};
+			}
+		};
+		it "should work when validation failed" => sub {
+			localize sub {
+				validation 'myoption', 'myerror', sub { $_ > 10 };
+				context->{options}->{myoption}->{value} = '7';
+				my ($res) = validate 'myoption';
+				ok $res eq 'myoption';
+				cmp_deeply context->{errors}, ['myerror'];
+				ok context->{options}->{myoption}->{seen};
+			}
+		};
+	};
+	describe "validation is not defined" => sub {
+		it "should work" => sub {
+			localize sub {
+				option 'myoption';
+				context->{options}->{myoption}->{value} = '123';
+				my ($res) = validate 'myoption';
+				ok $res eq 'myoption';
+				ok !defined context->{errors};
+				ok context->{options}->{myoption}->{seen};
+			}
+		};
+	};
+	describe "several validation" => sub {
+		it "should work when both failed" => sub {
+			localize sub {
+				options qw/myoption/;
+				validation 'myoption', 'myerror', sub { $_ > 10 };
+				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				context->{options}->{myoption}->{value} = '1';
+				context->{options}->{myoption2}->{value} = '2';
+				my (@res) = validate qw/myoption myoption2/;
+				cmp_deeply [@res], [qw/myoption myoption2/];
+				ok context->{options}->{myoption}->{seen};
+				ok context->{options}->{myoption2}->{seen};
+				cmp_deeply context->{errors}, ['myerror', 'myerror2'];
+			}
+		};
+		it "error order should match validation order" => sub {
+			localize sub {
+				options qw/myoption/;
+				validation 'myoption', 'myerror', sub { $_ > 10 };
+				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				context->{options}->{myoption}->{value} = '1';
+				context->{options}->{myoption2}->{value} = '2';
+				my (@res) = validate qw/myoption2 myoption/;
+				cmp_deeply context->{errors}, ['myerror2', 'myerror'];
+			}
+		};
+		it "should work when one failed" => sub {
+			localize sub {
+				options qw/myoption/;
+				validation 'myoption', 'myerror', sub { $_ > 10 };
+				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				context->{options}->{myoption}->{value} = '11';
+				context->{options}->{myoption2}->{value} = '2';
+				my (@res) = validate qw/myoption myoption2/;
+				cmp_deeply [@res], [qw/myoption myoption2/];
+				ok context->{options}->{myoption}->{seen};
+				ok context->{options}->{myoption2}->{seen};
+				cmp_deeply context->{errors}, ['myerror2'];
+			}
+		};
+		it "should work when one failed" => sub {
+			localize sub {
+				options qw/myoption/;
+				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				context->{options}->{myoption}->{value} = '2';
+				context->{options}->{myoption2}->{value} = '2';
+				my (@res) = validate qw/myoption myoption2/;
+				cmp_deeply [@res], [qw/myoption myoption2/];
+				ok context->{options}->{myoption}->{seen};
+				ok context->{options}->{myoption2}->{seen};
+				cmp_deeply context->{errors}, ['myerror2'];
+			}
+		};
+	};
+};
 
 runtests unless caller;
 
