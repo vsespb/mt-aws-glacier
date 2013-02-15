@@ -110,6 +110,34 @@ describe "options" => sub {
 	};
 };
 
+describe "mandatory" => sub {
+	it "should check option" => sub {
+		localize sub {
+			option 'myoption';
+			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			mandatory('myoption2');
+		}
+	};
+	it "should work when mandatory option exists" => sub {
+		localize sub {
+			option 'myoption';
+			context->{options}->{myoption}->{value} = '123';
+			my ($res) = mandatory 'myoption';
+			ok $res eq 'myoption';
+			ok !defined context->{errors};
+			ok context->{options}->{myoption}->{seen};
+		}
+	};
+	it "should work when mandatory option missing" => sub {
+		localize sub {
+			option 'myoption';
+			my ($res) = mandatory 'myoption';
+			ok $res eq 'myoption';
+			cmp_deeply context->{errors}, ['myoption is mandatory'];
+			ok context->{options}->{myoption}->{seen};
+		}
+	};
+};
 
 runtests unless caller;
 
