@@ -511,6 +511,21 @@ describe "custom" => sub {
 	};
 };
 
+describe "error" => sub {
+	it "should work" => sub {
+		localize sub {
+			error 'myerror';
+			cmp_deeply context->{errors}, ['myerror']; 
+		}
+	};
+	it "should push errors to stack" => sub {
+		localize sub {
+			error 'myerror';
+			error 'myerror2';
+			cmp_deeply context->{errors}, ['myerror', 'myerror2']; 
+		}
+	};
+};
 runtests unless caller;
 
 1;
