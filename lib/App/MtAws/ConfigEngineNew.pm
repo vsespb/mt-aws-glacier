@@ -73,11 +73,11 @@ sub parse_options
 sub assert_option {	($context->{options}->{$_} && $_) || confess "undeclared option $_"; }
 
 sub option($) {
-	$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0]; # TODO: refactor somehow??
+	$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0];
 };
 
 sub options(@) {
-	map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
+	@_ == 1 ? option($_[0]) : map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
 };
 
 sub validation($$&)
