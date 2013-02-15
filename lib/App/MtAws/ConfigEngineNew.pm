@@ -32,7 +32,7 @@ use utf8;
 require Exporter;                                                                                                                                                                                                                                                              
 use base qw/Exporter/;                                                                                                                                                                                                                                                         
                                                                                                                                                                                                                                                                                
-our @EXPORT = qw/option command validation
+our @EXPORT = qw/option options command validation
 				mandatory optional validate scope
 				present custom error/;
 
@@ -72,12 +72,12 @@ sub parse_options
 
 sub assert_option {	($context->{options}->{$_} && $_) || confess "undeclared option $_"; }
 
-sub option(@) {
-	if (@_ == 1) {
-		$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0]; # TODO: refactor somehow??
-	} else {
-		map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
-	}
+sub option($) {
+	$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0]; # TODO: refactor somehow??
+};
+
+sub options(@) {
+	map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
 };
 
 sub validation($$&)

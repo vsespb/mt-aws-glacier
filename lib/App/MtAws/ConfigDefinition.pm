@@ -94,9 +94,9 @@ sub get_config
 	my $c  = App::MtAws::ConfigEngineNew->new(%args);
 	
 	$c->define(sub {
-		my @remote = option qw/concurrency key vault secret region protocol/;
-		my @dir_or_relname = option qw/set-rel-filename dir/;
-		option qw/base-dir include exclude partsize journal filename stdin wait chunksize zz/;
+		my @remote = options qw/concurrency key vault secret region protocol/;
+		my @dir_or_relname = options qw/set-rel-filename dir/;
+		options qw/base-dir include exclude partsize journal filename stdin wait chunksize zz/;
 		
 		
 		validation 'concurrency', 'concurrency should be less than 30', sub { $_ < 30 };
