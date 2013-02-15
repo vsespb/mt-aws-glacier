@@ -198,73 +198,77 @@ describe "mandatory" => sub {
 };
 
 describe "optional" => sub {
-	it "should check option" => sub {
-		localize sub {
-			option 'myoption';
-			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
-			optional('myoption2');
-		}
+	describe "one argument" => sub {
+		it "should check option" => sub {
+			localize sub {
+				option 'myoption';
+				App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+				optional('myoption2');
+			}
+		};
+		it "should work when optional option exists" => sub {
+			localize sub {
+				option 'myoption';
+				context->{options}->{myoption}->{value} = '123';
+				my ($res) = optional 'myoption';
+				ok $res eq 'myoption';
+				ok !defined context->{errors};
+				ok context->{options}->{myoption}->{seen};
+			}
+		};
+		it "should work when optional option missing" => sub {
+			localize sub {
+				option 'myoption';
+				my ($res) = optional 'myoption';
+				ok $res eq 'myoption';
+				ok !defined context->{errors};;
+				ok context->{options}->{myoption}->{seen};
+			}
+		};
 	};
-	it "should work when optional option exists" => sub {
-		localize sub {
-			option 'myoption';
-			context->{options}->{myoption}->{value} = '123';
-			my ($res) = optional 'myoption';
-			ok $res eq 'myoption';
-			ok !defined context->{errors};
-			ok context->{options}->{myoption}->{seen};
-		}
-	};
-	it "should work when optional option missing" => sub {
-		localize sub {
-			option 'myoption';
-			my ($res) = optional 'myoption';
-			ok $res eq 'myoption';
-			ok !defined context->{errors};;
-			ok context->{options}->{myoption}->{seen};
-		}
-	};
-	it "should check options when several options presents" => sub {
-		localize sub {
-			my @options = ('myoption', 'myoption2');
-			options @options;
-			App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
-			optional @options;
-		}
-	};
-	it "should work when 2 of 2 optional option presents" => sub {
-		localize sub {
-			my @options = ('myoption', 'myoption2');
-			options @options;
-			context->{options}->{myoption}->{value} = '123';
-			context->{options}->{myoption2}->{value} = '123';
-			my @res = optional @options;
-			cmp_deeply [@res], [@options];
-			ok !defined context->{errors};
-			ok context->{options}->{myoption}->{seen};
-			ok context->{options}->{myoption2}->{seen};
-		}
-	};
-	it "should work when 1 of 2 optional option presents" => sub {
-		localize sub {
-			options my @options = ('myoption', 'myoption2');
-			context->{options}->{myoption}->{value} = '123';
-			my @res = optional @options;
-			cmp_deeply [@res], [@options];
-			ok !defined context->{errors};
-			ok context->{options}->{myoption}->{seen};
-			ok context->{options}->{myoption2}->{seen};
-		}
-	};
-	it "should work when 0 of 2 optional option presents" => sub {
-		localize sub {
-			options my @options = ('myoption', 'myoption2');
-			my @res = optional @options;
-			cmp_deeply [@res], [@options];
-			ok !defined context->{errors};
-			ok context->{options}->{myoption}->{seen};
-			ok context->{options}->{myoption2}->{seen};
-		}
+	describe "many arguments" => sub {
+		it "should check options" => sub {
+			localize sub {
+				my @options = ('myoption', 'myoption2');
+				options @options;
+				App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+				optional @options;
+			}
+		};
+		it "should work when 2 of 2 optional option presents" => sub {
+			localize sub {
+				my @options = ('myoption', 'myoption2');
+				options @options;
+				context->{options}->{myoption}->{value} = '123';
+				context->{options}->{myoption2}->{value} = '123';
+				my @res = optional @options;
+				cmp_deeply [@res], [@options];
+				ok !defined context->{errors};
+				ok context->{options}->{myoption}->{seen};
+				ok context->{options}->{myoption2}->{seen};
+			}
+		};
+		it "should work when 1 of 2 optional option presents" => sub {
+			localize sub {
+				options my @options = ('myoption', 'myoption2');
+				context->{options}->{myoption}->{value} = '123';
+				my @res = optional @options;
+				cmp_deeply [@res], [@options];
+				ok !defined context->{errors};
+				ok context->{options}->{myoption}->{seen};
+				ok context->{options}->{myoption2}->{seen};
+			}
+		};
+		it "should work when 0 of 2 optional option presents" => sub {
+			localize sub {
+				options my @options = ('myoption', 'myoption2');
+				my @res = optional @options;
+				cmp_deeply [@res], [@options];
+				ok !defined context->{errors};
+				ok context->{options}->{myoption}->{seen};
+				ok context->{options}->{myoption2}->{seen};
+			}
+		};
 	};
 };
 
