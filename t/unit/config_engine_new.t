@@ -137,6 +137,50 @@ describe "mandatory" => sub {
 			ok context->{options}->{myoption}->{seen};
 		}
 	};
+	it "should check options when several options presents" => sub {
+		localize sub {
+			my @options = ('myoption', 'myoption2');
+			options @options;
+			App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+			mandatory @options;
+		}
+	};
+	it "should work when 2 of 2 mandatory option presents" => sub {
+		localize sub {
+			my @options = ('myoption', 'myoption2');
+			options @options;
+			context->{options}->{myoption}->{value} = '123';
+			context->{options}->{myoption2}->{value} = '123';
+			my @res = mandatory @options;
+			cmp_deeply [@res], [@options];
+			ok !defined context->{errors};
+			ok context->{options}->{myoption}->{seen};
+			ok context->{options}->{myoption2}->{seen};
+		}
+	};
+	it "should work when 1 of 2 mandatory option presents" => sub {
+		localize sub {
+			options my @options = ('myoption', 'myoption2');
+			context->{options}->{myoption}->{value} = '123';
+			my @res = mandatory @options;
+			cmp_deeply [@res], [@options];
+			ok defined context->{errors};
+			cmp_deeply ['myoption2 is mandatory'], context->{errors};
+			ok context->{options}->{myoption}->{seen};
+			ok context->{options}->{myoption2}->{seen};
+		}
+	};
+	it "should work when 0 of 2 mandatory option presents" => sub {
+		localize sub {
+			options my @options = ('myoption', 'myoption2');
+			my @res = mandatory @options;
+			cmp_deeply [@res], [@options];
+			ok defined context->{errors};
+			cmp_deeply ['myoption is mandatory', 'myoption2 is mandatory'], context->{errors};
+			ok context->{options}->{myoption}->{seen};
+			ok context->{options}->{myoption2}->{seen};
+		}
+	};
 };
 
 runtests unless caller;
