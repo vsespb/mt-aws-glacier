@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 3;
+use Test::More tests => 8;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -41,7 +41,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
-	check_error($errors, 'concurrency should be less than 30', "validation should work with option");
+	ok check_error($errors, 'concurrency should be less than 30'), "validation should work with option";
 }
 
 {
@@ -51,7 +51,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
-	check_error($errors, 'concurrency should be less than 30', "validation should work with option inline");
+	ok check_error($errors, 'concurrency should be less than 30'), "validation should work with option inline";
 }
 
 {
@@ -61,7 +61,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
-	check_error($errors, 'concurrency should be less than 30', "validation should work withithout option");
+	ok check_error($errors, 'concurrency should be less than 30'), "validation should work withithout option";
 }
 
 {
@@ -72,7 +72,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption', 200);
-	check_error($errors, ['concurrency should be less than 30', 'concurrency should be less than 100 for sure'], 'should perform two validations');
+	ok check_error($errors, ['concurrency should be less than 30', 'concurrency should be less than 100 for sure']), 'should perform two validations';
 }
 
 # mandatory
@@ -84,7 +84,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { mandatory('myoption') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	check_error($errors, 'myoption is mandatory', "mandatory should work")
+	ok check_error($errors, 'myoption is mandatory'), "mandatory should work";
 }
 
 {
@@ -94,7 +94,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { mandatory('myoption', 'myoption3') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory'], 'should perform first mandatory check out of two'); 
+	ok check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory']), 'should perform first mandatory check out of two'; 
 }
 
 {
@@ -104,7 +104,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { mandatory(optional('myoption'), 'myoption3') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	check_error($errors, ['myoption3 is mandatory'], 'mandatory should work if inner optional() exists'); 
+	ok check_error($errors, ['myoption3 is mandatory']), 'mandatory should work if inner optional() exists'; 
 }
 
 {
@@ -114,7 +114,49 @@ use Data::Dumper;
 		command 'mycommand' => sub { mandatory(mandatory('myoption'), 'myoption3') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory'], 'nested mandatoy should work'); 
+	ok check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory']), 'nested mandatoy should work'; 
+}
+
+# optional
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2');
+		command 'mycommand' => sub { optional('myoption') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	ok ! defined $errors, "optional should work";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2', 'myoption3');
+		command 'mycommand' => sub { optional('myoption', 'myoption3') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	ok !defined $errors, 'should perform two optional checks'; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2', 'myoption3');
+		command 'mycommand' => sub { optional(mandatory('myoption'), 'myoption3') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	ok check_error($errors, ['myoption is mandatory']), 'optional should work right if inner mandatory() exists'; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2', 'myoption3');
+		command 'mycommand' => sub { optional(optional('myoption'), 'myoption3') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	ok ! defined $errors, 'nested optional should work'; 
 }
 
 sub create_engine
@@ -126,7 +168,7 @@ sub check_error
 {
 	my ($errors, $text_or_texts, $msg) = @_;
 	my $texts = ref($text_or_texts) eq ref('') ? [$text_or_texts] : $text_or_texts;   
-	cmp_deeply $errors, $texts, $msg;
+	eq_deeply $errors, $texts, $msg;
 }
 
 1;
