@@ -110,6 +110,33 @@ describe "options" => sub {
 	};
 };
 
+
+describe "validation" => sub {
+	it "should work" => sub {
+		localize sub {
+			option 'myoption';
+			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
+			ok $r eq 'myoption';
+			ok scalar @{context->{options}->{'myoption'}->{validations}} == 1;
+			my $v = context->{options}->{'myoption'}->{validations}->[0];
+			cmp_deeply [sort keys %$v], [sort qw/message cb/]; 
+			ok $v->{message} eq 'test message';
+			ok $v->{cb}->() for (11);
+			ok !$v->{cb}->() for (10);
+		}
+	};
+	it "should work without option" => sub {
+		localize sub {
+			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
+			ok $r eq 'myoption';
+			ok context->{options}->{'myoption'};
+			cmp_deeply [sort keys %{context->{options}->{'myoption'}}], [sort qw/name validations/];
+			ok 'myoption' eq context->{options}->{'myoption'}->{name};
+			ok scalar @{context->{options}->{'myoption'}->{validations}} == 1;
+		}
+	};
+};
+
 describe "assert_option" => sub {
 	it "should confess if option not declared" => sub {
 		localize sub {
@@ -271,6 +298,7 @@ describe "optional" => sub {
 		};
 	};
 };
+
 
 runtests unless caller;
 

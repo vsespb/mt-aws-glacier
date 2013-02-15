@@ -85,7 +85,7 @@ sub validation($$&)
 	my ($name, $message, $cb) = @_;
 	option($name);
 	push @{ $context->{options}->{$name}->{validations} }, { message => $message, cb => $cb };
-	$_;
+	$name;
 }
 
 sub command(@)
