@@ -40,8 +40,8 @@ use Data::Dumper;
 		validation 'myoption', 'concurrency should be less than 30', sub { $_ < 30 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my (@res) = $c->parse_options('mycommand', '-myoption', 31);
-	ok check_error('concurrency should be less than 30', @res), "validation should work with option"
+	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
+	check_error($errors, 'concurrency should be less than 30', "validation should work with option");
 }
 
 {
@@ -50,8 +50,8 @@ use Data::Dumper;
 		validation option('myoption'), 'concurrency should be less than 30', sub { $_ < 30 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my (@res) = $c->parse_options('mycommand', '-myoption', 31);
-	ok check_error('concurrency should be less than 30', @res), "validation should work with option inline"
+	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
+	check_error($errors, 'concurrency should be less than 30', "validation should work with option inline");
 }
 
 {
@@ -60,8 +60,8 @@ use Data::Dumper;
 		validation 'myoption', 'concurrency should be less than 30', sub { $_ < 30 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my (@res) = $c->parse_options('mycommand', '-myoption', 31);
-	ok check_error('concurrency should be less than 30', @res), "validation should work withithout option"
+	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
+	check_error($errors, 'concurrency should be less than 30', "validation should work withithout option");
 }
 
 {
@@ -72,8 +72,49 @@ use Data::Dumper;
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my ($errors) = $c->parse_options('mycommand', '-myoption', 200);
-	ok $errors && $errors->[0] eq 'concurrency should be less than 30', 'should perform first validation out of two';
-	ok $errors && $errors->[1] eq 'concurrency should be less than 100 for sure', 'should perform second validation out of two';
+	check_error($errors, ['concurrency should be less than 30', 'concurrency should be less than 100 for sure'], 'should perform two validations');
+}
+
+# mandatory
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2');
+		command 'mycommand' => sub { mandatory('myoption') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	check_error($errors, 'myoption is mandatory', "mandatory should work")
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2', 'myoption3');
+		command 'mycommand' => sub { mandatory('myoption', 'myoption3') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory'], 'should perform first mandatory check out of two'); 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2', 'myoption3');
+		command 'mycommand' => sub { mandatory(optional('myoption'), 'myoption3') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	check_error($errors, ['myoption3 is mandatory'], 'mandatory should work if inner optional() exists'); 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2', 'myoption3');
+		command 'mycommand' => sub { mandatory(mandatory('myoption'), 'myoption3') };
+	});
+	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
+	check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory'], 'nested mandatoy should work'); 
 }
 
 sub create_engine
@@ -83,8 +124,9 @@ sub create_engine
 
 sub check_error
 {
-	my ($text, $errors) = @_;
-	!! ($errors && $errors->[0] eq $text);
+	my ($errors, $text_or_texts, $msg) = @_;
+	my $texts = ref($text_or_texts) eq ref('') ? [$text_or_texts] : $text_or_texts;   
+	cmp_deeply $errors, $texts, $msg;
 }
 
 1;
