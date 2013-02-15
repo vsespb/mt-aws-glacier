@@ -110,6 +110,20 @@ describe "options" => sub {
 	};
 };
 
+describe "assert_option" => sub {
+	it "should confess if option not declared" => sub {
+		localize sub {
+			ok ! defined eval { App::MtAws::ConfigEngineNew::assert_option for ('myoption'); 1; };
+		}
+	};
+	it "should not confess if option is declared" => sub {
+		localize sub {
+			option 'myoption';
+			ok defined eval { App::MtAws::ConfigEngineNew::assert_option for ('myoption'); 1; };
+		}
+	};
+};
+
 describe "mandatory" => sub {
 	it "should check option" => sub {
 		localize sub {
