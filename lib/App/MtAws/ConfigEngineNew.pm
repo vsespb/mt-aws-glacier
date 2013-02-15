@@ -70,7 +70,7 @@ sub parse_options
 	return ($self->{errors}, undef, $command, undef);
 }
 
-sub assert_option {	($context->{options}->{$_} && $_) || confess "undeclared option $_"; }
+sub assert_option {	($context->{options}->{$_} && defined $_) || confess "undeclared option $_"; }
 
 sub option($) {
 	$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0];
@@ -134,7 +134,7 @@ sub scope($@)
 {
 	my $scopename = shift; 
 	return map {
-		confess "undefined option $_" unless ($context->{options}->{$_});
+		assert_option;
 		unshift @{$context->{options}->{$_}->{scope}}, $scopename;
 		$_;
 	} @_;

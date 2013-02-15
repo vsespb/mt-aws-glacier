@@ -149,6 +149,12 @@ describe "assert_option" => sub {
 			ok defined eval { App::MtAws::ConfigEngineNew::assert_option for ('myoption'); 1; };
 		}
 	};
+	it "should not confess if option is declared and option is '0' " => sub {
+		localize sub {
+			option '0';
+			ok defined eval { App::MtAws::ConfigEngineNew::assert_option for ('0'); 1; };
+		}
+	};
 };
 
 describe "mandatory" => sub {
@@ -342,6 +348,13 @@ describe "validate" => sub {
 		};
 	};
 	describe "several validation" => sub {
+		it "should check option" => sub {
+			localize sub {
+				options qw/myoption myoption2/;
+				App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+				validate(qw/myoption2 myoption/);
+			}
+		};
 		it "should work when both failed" => sub {
 			localize sub {
 				options qw/myoption/;
@@ -392,6 +405,49 @@ describe "validate" => sub {
 				ok context->{options}->{myoption}->{seen};
 				ok context->{options}->{myoption2}->{seen};
 				cmp_deeply context->{errors}, ['myerror2'];
+			}
+		};
+	};
+};
+
+describe "scope" => sub {
+	describe "with one argument" => sub {
+		it "should work with one scope" => sub {
+			localize sub {
+				option 'myoption';
+				scope 'myscope', 'myoption';
+				cmp_deeply context->{options}->{myoption}->{scope}, ['myscope'];
+			}
+		};
+		it "should work with one two scopes" => sub {
+			localize sub {
+				option 'myoption';
+				scope 'outer', scope 'inner', 'myoption';
+				cmp_deeply context->{options}->{myoption}->{scope}, ['outer', 'inner'];
+			}
+		};
+	};
+	describe "with several arguments" => sub {
+		it "should check option" => sub {
+			localize sub {
+				App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+				scope 'myscope', qw/myoption myoption2/;
+			}
+		};
+		it "should work with one scope" => sub {
+			localize sub {
+				local $_ = 'abc';
+				options qw/o1 o2/;
+				scope 'sc', qw/o1 o2/;
+				cmp_deeply context->{options}->{$_}->{scope}, ['sc'] for qw/o1 o2/;
+				ok $_ eq 'abc';
+			}
+		};
+		it "should work with one two scopes" => sub {
+			localize sub {
+				options qw/o1 o2/;
+				scope 'outer', scope 'inner', qw/o1 o2/;
+				cmp_deeply context->{options}->{$_}->{scope}, ['outer', 'inner'] for qw/o1 o2/;
 			}
 		};
 	};
