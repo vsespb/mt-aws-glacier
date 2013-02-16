@@ -56,12 +56,10 @@ sub define($&)
 sub error_to_message
 {
 	my ($spec, %data) = @_;
-	my (@formats, @names);
-	
 	my $rep = sub {
 		my ($match) = @_;
 		if (my ($format, $name) = $match =~ /([\w\d]+)\s+([\w]+)/) {
-			if ($format =~ /^option$/i) {
+			if (lc $format eq lc 'option') {
 				defined(my $value = $data{$name})||confess;
 				qq{"--$value"};
 			} else {
@@ -96,17 +94,16 @@ sub parse_options
 	$self->{error_texts} = [ map {
 		if (ref($_) eq ref({})) {
 			my $name = $_->{format} || confess;
-			my $format = $self->{messages}->{$name};
-			confess qq{message $name not defined} unless defined $format;
+			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name}; 
 			error_to_message($format, %$_);
 		} else {
 			$_;
 		}
 	} @{$self->{errors}} ];
 	
-	$self->{error_tokens} = [ map { $_->{format} } @{$self->{errors}} ];
-	
-	return (@{$self->{errors}} == 0 ? undef : $self->{errors}, @{$self->{error_texts}} == 0 ? undef : $self->{error_texts}, undef, $command, undef);
+	return (@{$self->{errors}} == 0 ? undef : $self->{errors},
+		@{$self->{error_texts}} == 0 ? undef : $self->{error_texts},
+		undef, $command, undef);
 }
 
 sub assert_option {	($context->{options}->{$_} && defined $_) || confess "undeclared option $_"; }
@@ -122,7 +119,6 @@ sub options(@) {
 sub message($$)
 {
 	my ($message, $format) = @_;
-	#print Dumper $context;
 	confess if defined $context->{messages}->{$message};
 	$context->{messages}->{$message} = $format;
 	$message;
@@ -158,7 +154,6 @@ sub optional(@)
 	return map {
 		assert_option;
 		$context->{options}->{$_}->{seen} = 1;
-		#$context->{options}->{$_}->{mandatory_ok} = 1;
 		$_;
 	} @_;
 };
@@ -204,18 +199,11 @@ sub custom($$)
 	return $name;
 };
 
-# mandatory: [ Please specify %OPT, option(s) ] 
-# Please specify "--%s"
 
-sub error($%)
+sub error($;%)
 {
 	my ($name, %data) = @_;
-	if (%data) {
-		$data{format} = $name;
-		push @{$context->{errors}}, \%data;
-	} else {
-		push @{$context->{errors}}, $name;
-	}
+	push @{$context->{errors}}, %data ? { format => $name, %data } :  $name;
 	return;
 };
 	
