@@ -190,6 +190,15 @@ describe "mandatory" => sub {
 			ok context->{options}->{myoption}->{seen};
 		}
 	};
+	it "should work when mandatory option missing and mandatory is nested" => sub {
+		localize sub {
+			option 'myoption';
+			my ($res) = mandatory mandatory 'myoption';
+			ok $res eq 'myoption';
+			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
+			ok context->{options}->{myoption}->{seen};
+		}
+	};
 	it "should check options when several options presents" => sub {
 		localize sub {
 			my @options = ('myoption', 'myoption2');
