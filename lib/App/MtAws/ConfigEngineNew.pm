@@ -136,7 +136,9 @@ sub validation($$&)
 sub command(@)
 {
 	my ($name, $cb) = @_;
+	confess "command $name already declared" if defined $context->{commands}->{$name};
 	$context->{commands}->{$name} = { cb => $cb };
+	return;
 };
 
 sub mandatory(@) {

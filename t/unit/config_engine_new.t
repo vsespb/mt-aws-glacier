@@ -40,6 +40,29 @@ sub localize(&)
 }
 
 
+describe "command" => sub {
+	it "should work" => sub {
+		localize sub {
+			my $code = sub { $_*2 };
+			my @res = command 'mycommand', $code;
+			ok @res == 0;
+			cmp_deeply context->{commands}->{'mycommand'}, { cb => $code };
+		};
+	};
+	it "should compile with inline subroutine declaration" => sub {
+		localize sub {
+			command 'mycommand' => sub { $_*2 };
+		};
+	};
+	it "should die if command redefined" => sub {
+		localize sub {
+			my $code = sub { $_*2 };
+			command 'mycommand', $code;
+			ok !defined eval { command 'mycommand', $code; 1 };
+		};
+	};
+};
+
 describe "option" => sub {
 	it "should work" => sub {
 		localize sub {
