@@ -204,7 +204,9 @@ sub custom($$)
 sub error($;%)
 {
 	my ($name, %data) = @_;
-	push @{$context->{errors}}, %data ? { format => $name, %data } :  $name;
+	push @{$context->{errors}}, %data ?
+		(defined($context->{messages}->{$name}) and { format => $name, %data } or confess "message '$name' is undefined") :
+		$name;
 	return;
 };
 	

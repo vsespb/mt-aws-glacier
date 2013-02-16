@@ -577,6 +577,67 @@ describe "error to message" => sub {
 		ok defined eval { error_to_message("%04d a% is mandatory", a => 1, b => 'abc'); 1 };
 	};
 };
+
+describe 'message' => sub {
+	it "should work" => sub {
+		localize sub {
+			is message("a", "b"), "a";
+			is context->{messages}{"a"}, "b";
+		};
+	};
+	it "should prohibit redeclaration" => sub {
+		localize sub {
+			message "a", "b";
+			ok ! defined eval { message "a", "c"; 1 };
+		};
+	};
+	it "should prohibit redeclaration even if format is false" => sub {
+		localize sub {
+			message "a", "0";
+			ok ! defined eval { message "a", "0"; 1 };
+		};
+	};
+};
+
+describe 'error' => sub {
+	it "should work with variables" => sub {
+		localize sub {
+			message("mymessage", "some text");
+			my @res = error("mymessage", a => 1, b => 42);
+			ok @res == 0;
+			cmp_deeply context->{errors}, [{ format => "mymessage", a => 1, b => 42}];
+		};
+	};
+	it "should die if message undeclared and variables specified" => sub {
+		localize sub {
+			message("mymessage", "some text");
+			ok !defined eval { error("mymessage1", a => 1, b => 42); 1 };
+		};
+	};
+	it "should not die if message declared, but =0 and variables specified" => sub {
+		localize sub {
+			message("mymessage", "0");
+			my @res = error("mymessage", a => 1, b => 42);;
+			ok @res == 0;
+		};
+	};
+	it "should work without variables" => sub {
+		localize sub {
+			message("mymessage", "some text");
+			my @res = error("mymessage");
+			ok @res == 0;
+			cmp_deeply context->{errors}, ["mymessage"];
+		};
+	};
+	it "should not die if message undeclared and no variables specified" => sub {
+		localize sub {
+			message("mymessage", "some text");
+			my @res = error("mymessage1");
+			ok @res == 0;
+		};
+	};
+};
+
 runtests unless caller;
 
 1;
