@@ -539,6 +539,12 @@ describe "error" => sub {
 describe "error to message" => sub {
 	sub error_to_message { &App::MtAws::ConfigEngineNew::error_to_message };
 	
+	it "should work without format" => sub {
+		ok error_to_message("option is mandatory") eq "option is mandatory";
+	};
+	it "should work without format with params" => sub {
+		ok error_to_message("option is mandatory", a => 1) eq "option is mandatory";
+	};
 	it "should work with one param" => sub {
 		ok error_to_message("%a% is mandatory", a => 42) eq "42 is mandatory";
 	};
