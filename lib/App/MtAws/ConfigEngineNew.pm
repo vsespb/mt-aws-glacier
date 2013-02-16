@@ -35,6 +35,7 @@ use base qw/Exporter/;
 our @EXPORT = qw/option options command validation message
 				mandatory optional validate scope
 				present custom error/;
+				
 
 our $context; 
 
@@ -58,7 +59,7 @@ sub error_to_message
 	my ($spec, %data) = @_;
 	my $rep = sub {
 		my ($match) = @_;
-		if (my ($format, $name) = $match =~ /([\w\d]+)\s+([\w]+)/) {
+		if (my ($format, $name) = $match =~ /^([\w]+)\s+([\w]+)$/) {
 			if (lc $format eq lc 'option') {
 				defined(my $value = $data{$name})||confess;
 				qq{"--$value"};
@@ -72,7 +73,7 @@ sub error_to_message
 		}
 	};
 	
-	$spec =~ s{%([A-Za-z\d\s]+)%} {$rep->($1)}ge;
+	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge; # in new perl versions \w also means unicode chars..
 	$spec;
 }
 

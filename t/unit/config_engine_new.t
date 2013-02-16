@@ -526,6 +526,42 @@ describe "error" => sub {
 		}
 	};
 };
+
+describe "error to message" => sub {
+	sub error_to_message { &App::MtAws::ConfigEngineNew::error_to_message };
+	
+	it "should work with one param" => sub {
+		ok error_to_message("%a% is mandatory", a => 42) eq "42 is mandatory";
+	};
+	it "should work with two params" => sub {
+		ok error_to_message("%a% and %b%", a => 1, b => 2) eq "1 and 2";
+	};
+	it "should work with option" => sub {
+		ok error_to_message("%a% and %option b%", a => 'x', b => 'y') eq 'x and "--y"';
+		ok error_to_message("%option a% and %option b%", a => 'x', b => 'y') eq '"--x" and "--y"';
+		ok error_to_message("%option a% and %b%", a => 'x', b => 'y') eq '"--x" and y';
+	};
+	it "should work with sprintf formats" => sub {
+		ok error_to_message("%a% and %04d b%", a => 'x', b => 10) eq 'x and 0010';
+		ok error_to_message("%04d a% and %06d b%", a => '42', b => '24') eq '0042 and 000024';
+		ok error_to_message("%04d a% and %b%", a => 42, b => 'y') eq '0042 and y';
+	};
+	it "should work with alpa, numbers and underscore" => sub {
+		ok error_to_message("%a_42% is mandatory", a_42 => 'abc') eq "abc is mandatory";
+		ok error_to_message("%option a_42% is mandatory", a_42 => 'abc') eq '"--abc" is mandatory';
+		ok error_to_message("%option   a_42% is mandatory", a_42 => 'abc') eq '"--abc" is mandatory';
+	};
+	it "should confess is variable missing" => sub {
+		ok ! defined eval { error_to_message("%a% is mandatory", b => 'abc'); 1 };
+		ok ! defined eval { error_to_message("%option a% is mandatory", b => 'abc'); 1 };
+		ok ! defined eval { error_to_message("%04d a% is mandatory", b => 42); 1 };
+	};
+	it "should not confess is there is extra variable" => sub {
+		ok defined eval { error_to_message("%a% is mandatory", a => 1, b => 'abc'); 1 };
+		ok defined eval { error_to_message("%option a% is mandatory", a => 1, b => 'abc'); 1 };
+		ok defined eval { error_to_message("%04d a% is mandatory", a => 1, b => 'abc'); 1 };
+	};
+};
 runtests unless caller;
 
 1;
