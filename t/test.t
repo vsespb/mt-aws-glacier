@@ -27,12 +27,15 @@ use utf8;
 
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',
-    exec => ['perl'],
+    ($ARGV[0] && $ARGV[0] eq 'cover') ? (switches	=> '-MDevel::Cover') : (exec => ['perl']),
     merge           => 1,
- #   verbosity       => 1,
+   #verbosity       => 1,
     normalize       => 1,
     color           => 1,
     jobs			=> 8,
-    switches	=> '-MDevel::Cover'
 });
-$harness->runtests(glob('unit/*.t'), glob('integration/*.t'));
+
+my $first = 'integration/t_treehash.t';
+my @others = grep { $_ ne $first } glob('unit/*.t'), glob('integration/*.t');
+
+$harness->runtests($first, @others);
