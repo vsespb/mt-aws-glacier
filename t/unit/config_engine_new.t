@@ -81,7 +81,7 @@ describe "options" => sub {
 			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2'};
 		}
 	};
-	it "should not overwrite existing options" => sub {
+	it "should not overwrite existing options with one argument" => sub {
 		localize sub {
 			local $_ = 'abc';
 			options 'myoption1', 'myoption2';
@@ -94,16 +94,25 @@ describe "options" => sub {
 			ok $_ eq 'abc';
 		}
 	};
+	it "should not overwrite existing options with many arguments" => sub {
+		localize sub {
+			local $_ = 'abc';
+			options 'myoption1', 'myoption2';
+			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1'};
+			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2'};
+			mandatory 'myoption1', 'myoption2';
+			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
+			options 'myoption1', 'myoption2';
+			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
+			ok $_ eq 'abc';
+		}
+	};
 	it "should return option name as array" => sub {
 		localize sub {
 			my @res = options 'myoption1', 'myoption2';
 			cmp_deeply [@res], ['myoption1', 'myoption2'];
-		}
-	};
-	it "should return option name as scalar if just one option is specified" => sub {
-		localize sub {
-			my $name = options 'myoption';
-			ok $name eq 'myoption';
 		}
 	};
 	it "should return array length if several option names are passed and context is scalar" => sub {

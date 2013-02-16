@@ -107,14 +107,14 @@ sub parse_options
 		undef, $command, undef);
 }
 
-sub assert_option {	($context->{options}->{$_} && defined $_) || confess "undeclared option $_"; }
+sub assert_option { $context->{options}->{$_} or confess "undeclared option $_"; }
 
 sub option($) {
 	$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0];
 };
 
 sub options(@) {
-	@_ == 1 ? option($_[0]) : map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
+	map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_
 };
 
 sub message($$)
