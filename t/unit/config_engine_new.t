@@ -186,7 +186,7 @@ describe "mandatory" => sub {
 			option 'myoption';
 			my ($res) = mandatory 'myoption';
 			ok $res eq 'myoption';
-			cmp_deeply context->{errors}, ['myoption is mandatory'];
+			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
 			ok context->{options}->{myoption}->{seen};
 		}
 	};
@@ -220,7 +220,7 @@ describe "mandatory" => sub {
 			my @res = mandatory @options;
 			cmp_deeply [@res], [@options];
 			ok defined context->{errors};
-			cmp_deeply ['myoption2 is mandatory'], context->{errors};
+			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption2' }];
 			ok context->{options}->{myoption}->{seen};
 			ok context->{options}->{myoption2}->{seen};
 		}
@@ -231,7 +231,7 @@ describe "mandatory" => sub {
 			my @res = mandatory @options;
 			cmp_deeply [@res], [@options];
 			ok defined context->{errors};
-			cmp_deeply ['myoption is mandatory', 'myoption2 is mandatory'], context->{errors};
+			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption' }, { format => 'mandatory', a => 'myoption2' }];
 			ok context->{options}->{myoption}->{seen};
 			ok context->{options}->{myoption2}->{seen};
 		}
@@ -342,7 +342,7 @@ describe "validate" => sub {
 				context->{options}->{myoption}->{value} = '7';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
-				cmp_deeply context->{errors}, ['myerror'];
+				cmp_deeply context->{errors}, [ { format => 'myerror', a => 'myoption' }];
 				ok context->{options}->{myoption}->{seen};
 			}
 		};
@@ -378,7 +378,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption myoption2/];
 				ok context->{options}->{myoption}->{seen};
 				ok context->{options}->{myoption2}->{seen};
-				cmp_deeply context->{errors}, ['myerror', 'myerror2'];
+				cmp_deeply context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
 		it "error order should match validation order" => sub {
@@ -389,7 +389,7 @@ describe "validate" => sub {
 				context->{options}->{myoption}->{value} = '1';
 				context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption2 myoption/;
-				cmp_deeply context->{errors}, ['myerror2', 'myerror'];
+				cmp_deeply context->{errors}, [ { format => 'myerror2', a => 'myoption2' }, { format => 'myerror', a => 'myoption' }];
 			}
 		};
 		it "should work when one failed" => sub {
@@ -403,7 +403,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption myoption2/];
 				ok context->{options}->{myoption}->{seen};
 				ok context->{options}->{myoption2}->{seen};
-				cmp_deeply context->{errors}, ['myerror2'];
+				cmp_deeply context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
 		it "should work when one failed" => sub {
@@ -416,7 +416,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption myoption2/];
 				ok context->{options}->{myoption}->{seen};
 				ok context->{options}->{myoption2}->{seen};
-				cmp_deeply context->{errors}, ['myerror2'];
+				cmp_deeply context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
 	};

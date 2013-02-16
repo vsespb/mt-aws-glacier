@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 8;
+use Test::More tests => 21;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -37,42 +37,47 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		option('myoption');
-		validation 'myoption', 'concurrency should be less than 30', sub { $_ < 30 };
+		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
-	ok check_error($errors, 'concurrency should be less than 30'), "validation should work with option";
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption', 31);
+	cmp_deeply $error_texts, [q{"--myoption" should be less than 30}], "validation should work"; 
+	cmp_deeply $error_tokens, [{format => 'too_high', a => 'myoption'}], "validation should work"; 
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		validation option('myoption'), 'concurrency should be less than 30', sub { $_ < 30 };
+		validation option('myoption'), message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
-	ok check_error($errors, 'concurrency should be less than 30'), "validation should work with option inline";
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption', 31);
+	cmp_deeply $error_texts, [q{"--myoption" should be less than 30}], "validation should work with option inline"; 
+	cmp_deeply $error_tokens, [{format => 'too_high', a => 'myoption'}], "validation should work with option inline"; 
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		validation 'myoption', 'concurrency should be less than 30', sub { $_ < 30 };
+		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption', 31);
-	ok check_error($errors, 'concurrency should be less than 30'), "validation should work withithout option";
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption', 31);
+	cmp_deeply $error_texts, [q{"--myoption" should be less than 30}], "validation should work withithout option"; 
+	cmp_deeply $error_tokens, [{format => 'too_high', a => 'myoption'}], "validation should work withithout option"; 
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		validation 'myoption', 'concurrency should be less than 30', sub { $_ < 30 };
-		validation 'myoption', 'concurrency should be less than 100 for sure', sub { $_ < 100 };
+		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		validation 'myoption', message('way_too_high', "%option a% should be less than 100 for sure"), sub { $_ < 100 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption', 200);
-	ok check_error($errors, ['concurrency should be less than 30', 'concurrency should be less than 100 for sure']), 'should perform two validations';
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption', 200);
+
+	cmp_deeply $error_texts, [q{"--myoption" should be less than 30}, q{"--myoption" should be less than 100 for sure}], "should perform two validations"; 
+	cmp_deeply $error_tokens, [{format => 'too_high', a => 'myoption'}, {format => 'way_too_high', a => 'myoption'}], "should perform two validations"; 
 }
 
 # mandatory
@@ -80,41 +85,49 @@ use Data::Dumper;
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2');
 		command 'mycommand' => sub { mandatory('myoption') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	ok check_error($errors, 'myoption is mandatory'), "mandatory should work";
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption2', 31);
+	cmp_deeply $error_texts, [q{Please specify "--myoption"}], "mandatory should work"; 
+	cmp_deeply $error_tokens, [{format => 'mandatory', a => 'myoption'}], "mandatory should work";
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
 		command 'mycommand' => sub { mandatory('myoption', 'myoption3') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	ok check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory']), 'should perform first mandatory check out of two'; 
+	my ($error_tokens, $error_texts)= $c->parse_options('mycommand', '-myoption2', 31);
+	cmp_deeply $error_texts, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "should perform first mandatory check out of two"; 
+	cmp_deeply $error_tokens, [{format => 'mandatory', a => 'myoption'}, {format => 'mandatory', a => 'myoption3'}], "should perform first mandatory check out of two";
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
 		command 'mycommand' => sub { mandatory(optional('myoption'), 'myoption3') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	ok check_error($errors, ['myoption3 is mandatory']), 'mandatory should work if inner optional() exists'; 
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption2', 31);
+	cmp_deeply $error_texts, [q{Please specify "--myoption3"}], "mandatory should work if inner optional() exists"; 
+	cmp_deeply $error_tokens, [{format => 'mandatory', a => 'myoption3'}], "mandatory should work if inner optional() exists";
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
 		command 'mycommand' => sub { mandatory(mandatory('myoption'), 'myoption3') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	ok check_error($errors, ['myoption is mandatory', 'myoption3 is mandatory']), 'nested mandatoy should work'; 
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption2', 31);
+	cmp_deeply $error_texts, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "nested mandatoy should work"; 
+	cmp_deeply $error_tokens, [{format => 'mandatory', a => 'myoption'}, {format => 'mandatory', a => 'myoption3'}], "nested mandatoy should work";
 }
 
 # optional
@@ -142,11 +155,13 @@ use Data::Dumper;
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
 		command 'mycommand' => sub { optional(mandatory('myoption'), 'myoption3') };
 	});
-	my ($errors) = $c->parse_options('mycommand', '-myoption2', 31);
-	ok check_error($errors, ['myoption is mandatory']), 'optional should work right if inner mandatory() exists'; 
+	my ($error_tokens, $error_texts) = $c->parse_options('mycommand', '-myoption2', 31);
+	cmp_deeply $error_texts, [q{Please specify "--myoption"}], "optional should work right if inner mandatory() exists";
+	cmp_deeply $error_tokens, [{format => 'mandatory', a => 'myoption'}], "optional should work right if inner mandatory() exists";
 }
 
 {
@@ -162,13 +177,6 @@ use Data::Dumper;
 sub create_engine
 {
 	App::MtAws::ConfigEngineNew->new();
-}
-
-sub check_error
-{
-	my ($errors, $text_or_texts, $msg) = @_;
-	my $texts = ref($text_or_texts) eq ref('') ? [$text_or_texts] : $text_or_texts;   
-	eq_deeply $errors, $texts, $msg;
 }
 
 1;

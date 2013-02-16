@@ -45,11 +45,13 @@ sub check_base_dir
 sub check_dir_or_relname
 {
 	
+	message 'mutual', "%option a% and %option b% are mutual exclusive";
 	if (present('filename')) {
 		custom('data-type', 'filename'), mandatory('filename'), do {
 			if (present('set-rel-filename')) {
 				if (present('dir')) {
-					error('set-rel-filename and dir are mutual exclusive')
+					error('mutual', a => 'set-rel-filename', b => 'dir');
+					#error('set-rel-filename and dir are mutual exclusive')
 				} else {
 					custom('name-type', 'rel-filename'), mandatory('set-rel-filename');
 				}
@@ -98,14 +100,15 @@ sub get_config
 		my @dir_or_relname = options qw/set-rel-filename dir/;
 		options qw/base-dir include exclude partsize journal filename stdin wait chunksize zz/;
 		
-		
-		validation 'concurrency', 'concurrency should be less than 30', sub { $_ < 30 };
+		message 'mandatory', "Please specify %option a%";
+	
+		validation 'concurrency', message('concurrency_too_high', "%option option% should be less than 30"), sub { $_ < 30 };
 		
 		command 'sync' => sub {
 			 mandatory( mandatory(@remote), 'journal',  mandatory('dir'), check_base_dir, optional('partsize'), filter_options ); 
 		};
 		command 'upload-file' => sub {
-			mandatory(@remote), mandatory('journal'),  scope('dir', check_dir_or_relname, check_base_dir), optional('partsize'); 
+			validate mandatory(@remote), mandatory('journal'),  scope('dir', check_dir_or_relname, check_base_dir), optional('partsize'); 
 		};
 		command 'retrieve-file' => sub {
 			validate mandatory(@remote), mandatory('journal'),  check_wait, scope('dir', check_dir_or_relname, check_base_dir), optional 'partsize' 

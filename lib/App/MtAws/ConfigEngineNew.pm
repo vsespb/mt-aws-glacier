@@ -32,7 +32,7 @@ use utf8;
 require Exporter;                                                                                                                                                                                                                                                              
 use base qw/Exporter/;                                                                                                                                                                                                                                                         
                                                                                                                                                                                                                                                                                
-our @EXPORT = qw/option options command validation
+our @EXPORT = qw/option options command validation message
 				mandatory optional validate scope
 				present custom error/;
 
@@ -53,6 +53,31 @@ sub define($&)
 	$block->();
 }
 
+sub error_to_message
+{
+	my ($spec, %data) = @_;
+	my (@formats, @names);
+	
+	my $rep = sub {
+		my ($match) = @_;
+		if (my ($format, $name) = $match =~ /([\w\d]+)\s+([\w]+)/) {
+			if ($format =~ /^option$/i) {
+				defined(my $value = $data{$name})||confess;
+				qq{"--$value"};
+			} else {
+				defined(my $value = $data{$name})||confess;
+				sprintf("%$format", $value);
+			}
+		} else {
+			defined(my $value = $data{$match})||confess;
+			$value;
+		}
+	};
+	
+	$spec =~ s{%([A-Za-z\d\s]+)%} {$rep->($1)}ge;
+	$spec;
+}
+
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
@@ -67,7 +92,21 @@ sub parse_options
 	#print Dumper($self->{errors});
 	#print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
 	#print Dumper($self);
-	return ($self->{errors}, undef, $command, undef);
+	
+	$self->{error_texts} = [ map {
+		if (ref($_) eq ref({})) {
+			my $name = $_->{format} || confess;
+			my $format = $self->{messages}->{$name};
+			confess qq{message $name not defined} unless defined $format;
+			error_to_message($format, %$_);
+		} else {
+			$_;
+		}
+	} @{$self->{errors}} ];
+	
+	$self->{error_tokens} = [ map { $_->{format} } @{$self->{errors}} ];
+	
+	return (@{$self->{errors}} == 0 ? undef : $self->{errors}, @{$self->{error_texts}} == 0 ? undef : $self->{error_texts}, undef, $command, undef);
 }
 
 sub assert_option {	($context->{options}->{$_} && defined $_) || confess "undeclared option $_"; }
@@ -80,11 +119,20 @@ sub options(@) {
 	@_ == 1 ? option($_[0]) : map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_;
 };
 
+sub message($$)
+{
+	my ($message, $format) = @_;
+	#print Dumper $context;
+	confess if defined $context->{messages}->{$message};
+	$context->{messages}->{$message} = $format;
+	$message;
+}
+
 sub validation($$&)
 {
 	my ($name, $message, $cb) = @_;
 	option($name);
-	push @{ $context->{options}->{$name}->{validations} }, { message => $message, cb => $cb };
+	push @{ $context->{options}->{$name}->{validations} }, { 'message' => $message, cb => $cb };
 	$name;
 }
 
@@ -99,7 +147,7 @@ sub mandatory(@) {
 		assert_option;
 		unless ($context->{options}->{$_}->{seen}) {
 			$context->{options}->{$_}->{seen} = 1;
-			push @{$context->{errors}}, "$_ is mandatory" unless defined($context->{options}->{$_}->{value});
+			push @{$context->{errors}}, { format => "mandatory", a => $_ } unless defined($context->{options}->{$_}->{value});
 		}
 		$_;
 	} @_;
@@ -119,11 +167,12 @@ sub validate(@)
 {
 	return map {
 		assert_option;
-		my $optionref = $context->{options}->{$_};
+		my $option = $_;
+		my $optionref = $context->{options}->{$option};
 		$optionref->{seen} = 1;
 		for my $v (@{ $optionref->{validations} }) {
 			for ($optionref->{value}) {
-				error ($v->{message}) unless $v->{cb}->();
+				error ({ format => $v->{message}, a => $option}) unless $v->{cb}->();
 			}
 		}
 		$_;
@@ -155,10 +204,18 @@ sub custom($$)
 	return $name;
 };
 
-sub error($)
+# mandatory: [ Please specify %OPT, option(s) ] 
+# Please specify "--%s"
+
+sub error($%)
 {
-	my ($text) = @_;
-	push @{$context->{errors}}, $text;
+	my ($name, %data) = @_;
+	if (%data) {
+		$data{format} = $name;
+		push @{$context->{errors}}, \%data;
+	} else {
+		push @{$context->{errors}}, $name;
+	}
 	return;
 };
 	
