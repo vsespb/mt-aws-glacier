@@ -27,7 +27,7 @@ use base qw/App::MtAws::Job/;
 use App::MtAws::FileUploadJob;
 use File::stat;
 use Time::localtime;
-
+use Carp;
 
 sub new
 {
@@ -52,7 +52,7 @@ sub get_task
 		my $filesize = -s $self->{filename};
 		$self->{mtime} = stat($self->{filename})->mtime; # TODO: how could we assure file not modified when uploading btw?
 		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
-	    open my $fh, "<$self->{filename}";
+	    open my $fh, "<$self->{filename}" or confess "ERROR: unable to open task file $self->{filename} for reading: $!";
 	    binmode $fh;
 	    $self->{fh} = $fh;
 		return ("ok", App::MtAws::Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
