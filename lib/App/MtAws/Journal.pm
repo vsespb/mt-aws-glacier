@@ -244,6 +244,7 @@ sub _read_files
 			if (defined(my $res = eval { decode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
 				$res;
 			} else {
+				# TODO: how will this work with strict utf STDOUT mode?
 				print STDERR "=== ===\nERROR: file/dir name [$_] with invalid characters, inside directory [$File::Find::dir]\nDump of file name bytes:\n";
 				require Devel::Peek;
 				Devel::Peek::Dump($_);
