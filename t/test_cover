@@ -1,4 +1,4 @@
 #!/bin/sh
 cover -delete
-./test.t
+./test.t cover
 cover cover_db -report=html

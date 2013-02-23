@@ -69,9 +69,9 @@ my %options = (
 'job-id'             => { type => 's' },
 'dir'                 => { type => 's' },
 'vault'               => { type => 's' },
-'key'                 => { type => 's' },# validate => ['Invalid characters in "key"', sub { $_[2] =~ /^[A-Za-z0-9_/+\-\:]{5,100}$/ } ] },
-'secret'              => { type => 's' },
-'region'              => { type => 's' },
+'key'                 => { type => 's', validate => ['Invalid format of "key"', sub { $_[2] =~ /^[A-Za-z0-9]{20}$/; } ] },
+'secret'              => { type => 's', validate => ['Invalid format of "secret"', sub { $_[2] =~ /^[\x21-\x7e]{40}$/ } ] },
+'region'              => { type => 's', validate => ['Invalid format of "region"', sub { $_[2] =~ /^[A-Za-z0-9\-]{3,20}$/; } ] },
 'concurrency'         => { type => 'i', default => 4, validate =>
 	['Max concurrency is 30,  Min is 1' => sub { my ($command, $results, $value) = @_;
 		$value >= 1 && $value <= 30
@@ -239,7 +239,7 @@ sub parse_options
 		}
 	}
 	for my $o (keys %result) {
-		if (my $validations = $self->{override_validations}->{$o} || $options{$o}{validate}) {
+		if (my $validations = exists $self->{override_validations}->{$o} ? $self->{override_validations}->{$o} : $options{$o}{validate}) {
 			my $validations_array = ref $validations->[0] eq 'ARRAY' ? $validations : [ $validations ];
 			for my $v (@$validations_array) {
 				my ($message, $test) = @$v;

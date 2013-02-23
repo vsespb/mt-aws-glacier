@@ -36,7 +36,9 @@ local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => '
 
 my %disable_validations = ( 
 	'override_validations' => {
-		'journal' => [ ['Journal file not exist' => sub { 1 } ], ],
+		journal => undef,
+		secret  => undef,
+		key => undef, 
 	},
 );
 

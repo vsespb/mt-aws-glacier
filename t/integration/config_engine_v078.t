@@ -29,14 +29,15 @@ use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
-
 no warnings 'redefine';
 
 local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
 
 my %disable_validations = ( 
 	'override_validations' => {
-		'journal' => [ ['Journal file not exist' => sub { 1 } ], ],
+		journal => undef,
+		secret  => undef,
+		key => undef, 
 	},
 );
 
@@ -183,7 +184,7 @@ for (
 ){
 	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
 	ok( $errors && !$result, "$_ - should catch non option");
-	ok( $errors->[0] =~ /Extra argument/, "$_ - should catch non option $errors->[0]");
+	ok( $errors->[0] =~ /Extra argument/, "$_ - should catch non option");
 }
 for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --max-number-of-files=42!,
