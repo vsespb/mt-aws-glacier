@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Simple tests => 76;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use File::Path;
 use JournalTest;

@@ -1,3 +1,9 @@
+2013-02-23: v0.87 beta
+	* More verbose error message if we found broken UTF-8 in filenames
+	* More verbose error message in case of permission problems when reading files from disk 
+	* Error checking for key/secret/region format added
+	* Some minor internal changes and test improvements
+	
 2013-01-29: v0.86 beta
 	* Bug fixed: when doing retrieval or delete, crash after successful finishing (only happened when concurrency=1). Regression of bug fixed 0.76beta.
 	* Changed project file structure. Modules moved to lib/App/MtAws

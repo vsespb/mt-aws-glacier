@@ -240,7 +240,18 @@ sub _read_files
 			}
 		}
 	}, preprocess => sub {
-		map { decode("UTF-8", $_, 1) } @_;
+		map {
+			if (defined(my $res = eval { decode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
+				$res;
+			} else {
+				# TODO: how will this work with strict utf STDOUT mode?
+				print STDERR "=== ===\nERROR: file/dir name [$_] with invalid characters, inside directory [$File::Find::dir]\nDump of file name bytes:\n";
+				require Devel::Peek;
+				Devel::Peek::Dump($_);
+				print STDERR "=== ===\n";
+				croak;
+			}
+		} @_;
 	}, no_chdir => 1 }, ($self->{root_dir}));
 	
 	$filelist;
