@@ -124,28 +124,27 @@ sub parse_options
 		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
 	}
 	
-	my $original_command = my $command = shift @ARGV;
-	confess "unknown command or alias" unless
-		$self->{commands}->{$command} ||
-		(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
-	 
-	$self->{commands}->{$command}->{cb}->();
 	
-	$self->unflatten_scope();
-	
+	my $command = undef;
+	unless ($self->{errors}) {
+		my $original_command = $command = shift @ARGV;
+		confess "unknown command or alias" unless
+			$self->{commands}->{$command} ||
+			(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
+		 
+		$self->{commands}->{$command}->{cb}->();
+		$self->unflatten_scope();
+		warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+	}
 	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
-	
-	warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
-
-	
-	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];	
+	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];
 	
 	return {
 		errors => arrayref_or_undef $self->{errors},
 		error_texts => arrayref_or_undef $self->{error_texts},
 		warnings => arrayref_or_undef $self->{warnings},
 		warning_texts => arrayref_or_undef $self->{warning_texts},
-		command => $command,
+		command => $self->{errors} ? undef : $command,
 		options => $self->{data}
 	};
 }

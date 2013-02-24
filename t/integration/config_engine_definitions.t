@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 114;
+use Test::More tests => 146;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
