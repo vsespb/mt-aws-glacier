@@ -105,10 +105,21 @@ sub parse_options
 	
 	local $context = $self;
 	
-	my @getopts = map { "$_=s" } keys %{$self->{options}};
+	my @getopts = map {
+		map { "$_=s" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] }
+	} values %{$self->{options}};
 	GetOptions(\my %results, @getopts);
 	
-	@{$self->{options}->{$_}}{qw/value source/} = ($results{$_}, 'option') for keys %results;
+	for (keys %results) {
+		my $optref;
+		if ($self->{options}->{$_}) {
+			$optref = $self->{options}->{$_};
+		} else {
+			$optref = $self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_";
+			warning("deprecated_option", option => $_) if $self->{deprecated_options}->{$_};
+		}
+		@{$optref}{qw/value source original_option/} = ($results{$_}, 'option', $_);
+	}
 	
 	my $original_command = my $command = shift @ARGV;
 	confess "unknown command or alias" unless
@@ -154,8 +165,24 @@ sub unflatten_scope
 
 sub assert_option { $context->{options}->{$_} or confess "undeclared option $_"; }
 
-sub option($) {
-	$context->{options}->{$_[0]} = { name => $_[0] } unless $context->{options}->{$_[0]}; $_[0];
+#TODO: die if redefining options??
+sub option($;%) {
+	my ($name, %opts) = @_;
+	if (%opts) {
+		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref ''); # TODO: common code for two subs, move out
+		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
+		
+		
+		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
+			confess "option $_ already declared" if defined $context->{options}->{$_};
+			confess "alias $_ already declared" if defined $context->{optaliasmap}->{$_};
+			$context->{optaliasmap}->{$_} = $name;
+		}
+		
+		$context->{deprecated_options}->{$_} = 1 for (@{$opts{deprecated}||[]});
+	}
+	$context->{options}->{$name} = { name => $name, %opts } unless $context->{options}->{$name};
+	return $name;
 };
 
 sub options(@) {
@@ -188,13 +215,13 @@ sub command($%;$)
 		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref '');
 		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
 		
-		$context->{deprecated_commands}->{$_} = 1 for (@{$opts{deprecated}||[]});
-		
 		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
 			confess "command $_ already declared" if defined $context->{commands}->{$_};
 			confess "alias $_ already declared" if defined $context->{aliasmap}->{$_};
 			$context->{aliasmap}->{$_} = $name;
 		}
+
+		$context->{deprecated_commands}->{$_} = 1 for (@{$opts{deprecated}||[]});
 	}
 	$context->{commands}->{$name} = { cb => $cb, %opts };
 	return;

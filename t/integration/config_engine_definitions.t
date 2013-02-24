@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 81;
+use Test::More tests => 90;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -239,6 +239,41 @@ use Data::Dumper;
 	cmp_deeply($res->{options}, { o1 => '11' }, "options should work with one command");
 }
 
+# option alias 
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', alias => 'old';
+		command 'mycommand', sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-old', '11');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply($res->{options}, { o1 => '11' }, "alias should work");
+	cmp_deeply($c->{options}->{o1},
+		{ value => '11', name => 'o1', seen => 1, alias => ['old'], source => 'option', original_option => 'old' },
+		"alias should work");
+}
+
+# option deprecated 
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', deprecated => 'old';
+		message 'deprecated_option', "option %option option% is deprecated";
+		command 'mycommand', sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-old', '11');
+	ok ! defined ($res->{errors}||$res->{error_texts});
+	ok $res->{warnings} && $res->{warning_texts};
+	cmp_deeply $res->{warning_texts}, ['option "--old" is deprecated'], "deprecated options should work"; 
+	cmp_deeply $res->{warnings}, [{format => 'deprecated_option', option => 'old'}], "deprecated options should work"; 
+	cmp_deeply($res->{options}, { o1 => '11' }, "deprecated options should work");
+	cmp_deeply($c->{options}->{o1},
+		{ value => '11', name => 'o1', seen => 1, deprecated => ['old'], source => 'option', original_option => 'old' },
+		"deprecated options should work");
+}
+
+
 # scope
 
 {
@@ -248,7 +283,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { scope ('myscope', optional('o1')), optional('o2') };
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand';
 	cmp_deeply($res->{options}, { 'myscope' => { o1 => '11'}, o2 => '21' }, "scope should work");
 }
@@ -260,7 +295,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { scope ('myscope', optional('o1'), optional('o2')) };
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand';
 	cmp_deeply($res->{options}, { 'myscope' => { o1 => '11', o2 => '21'} }, "scope should work with two options");
 }
@@ -272,7 +307,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { scope ('myscope', scope('inner', optional('o1'))), optional('o2') };
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand';
 	cmp_deeply($res->{options}, { 'myscope' => { 'inner' => { o1 => '11'}}, o2 => '21' }, "nested scope should work");
 }
@@ -284,7 +319,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { scope ('myscope', scope('inner', optional('o1'), optional('o2'))) };
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand';
 	cmp_deeply($res->{options}, { 'myscope' => { 'inner' => { o1 => '11',  o2 => '21'}} }, "nested scope should work with two options");
 }
@@ -298,7 +333,7 @@ use Data::Dumper;
 		command 'mycommand' => sub { scope ('myscope', optional('o3'), custom('o1', '42')), custom('o2', '41') };
 	});
 	my $res = $c->parse_options('mycommand', '-o3', '11');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand';
 	cmp_deeply($res->{options}, { 'myscope' => { o1 => '42',  o3 => '11'}, o2 => 41 }, "custom should work");
 }
@@ -389,7 +424,7 @@ use Data::Dumper;
 		command 'mycommand', alias => 'commandofmine', sub {};
 	});
 	my $res = $c->parse_options('commandofmine', '-o1', '11');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', 'alias should work';
 }
 
@@ -400,7 +435,7 @@ use Data::Dumper;
 		command 'mycommand', alias => ['c1', 'c2'], sub {};
 	});
 	my $res = $c->parse_options('c2', '-o1', '11');
-	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', 'multiple aliases should work';
 }
 
@@ -412,7 +447,7 @@ use Data::Dumper;
 		command 'mycommand', deprecated => 'commandofmine', sub {};
 	});
 	my $res = $c->parse_options('commandofmine', '-o1', '11');
-	ok ! defined $res->{errors}||$res->{error_texts};
+	ok ! defined ($res->{errors}||$res->{error_texts});
 	is $res->{command}, 'mycommand', 'alias should work';
 	ok $res->{warnings};
 	ok $res->{warning_texts};
