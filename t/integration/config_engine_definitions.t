@@ -289,6 +289,22 @@ use Data::Dumper;
 	cmp_deeply($res->{options}, { 'myscope' => { 'inner' => { o1 => '11',  o2 => '21'}} }, "nested scope should work with two options");
 }
 
+# custom
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o3';
+		command 'mycommand' => sub { scope ('myscope', optional('o3'), custom('o1', '42')), custom('o2', '41') };
+	});
+	my $res = $c->parse_options('mycommand', '-o3', '11');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myscope' => { o1 => '42',  o3 => '11'}, o2 => 41 }, "custom should work");
+}
+
+
+
 sub create_engine
 {
 	App::MtAws::ConfigEngineNew->new();
