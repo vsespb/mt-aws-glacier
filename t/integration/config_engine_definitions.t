@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 31;
+use Test::More tests => 55;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -237,6 +237,56 @@ use Data::Dumper;
 	ok ! defined $res->{warning_texts};
 	is $res->{command}, 'mycommand';
 	cmp_deeply($res->{options}, { o1 => '11' }, "options should work with one command");
+}
+
+# scope
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { scope ('myscope', optional('o1')), optional('o2') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myscope' => { o1 => '11'}, o2 => '21' }, "scope should work");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { scope ('myscope', optional('o1'), optional('o2')) };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myscope' => { o1 => '11', o2 => '21'} }, "scope should work with two options");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { scope ('myscope', scope('inner', optional('o1'))), optional('o2') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myscope' => { 'inner' => { o1 => '11'}}, o2 => '21' }, "nested scope should work");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { scope ('myscope', scope('inner', optional('o1'), optional('o2'))) };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myscope' => { 'inner' => { o1 => '11',  o2 => '21'}} }, "nested scope should work with two options");
 }
 
 sub create_engine

@@ -88,7 +88,15 @@ sub parse_options
 	
 	$self->{commands}->{my $command = shift @ARGV	}->{cb}->();
 	
-	my %options = map { $_ => $self->{options}->{$_}->{value} } keys %{$self->{options}};
+	my %options;
+	for my $k (keys %{$self->{options}}) {
+		my $v = $self->{options}->{$k};
+		my $dest = \%options;
+		for (@{$v->{scope}}) {
+			$dest = $dest->{$_} ||= {};
+		}
+		$dest->{$k} = $v->{value};
+	}
 	
 	#print Dumper($self->{errors});
 	#print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
