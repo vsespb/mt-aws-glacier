@@ -206,6 +206,38 @@ use Data::Dumper;
 	cmp_deeply($res->{options}, { myoption => 31 }, "option should work even if specified twice");
 }
 
+# options
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { optional('o1', 'o2') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{errors};
+	ok ! defined $res->{error_texts};
+	ok ! defined $res->{warnings};
+	ok ! defined $res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { o1 => '11', o2 => '21' }, "options should work with two commands");
+}
+
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1';
+		command 'mycommand' => sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11');
+	ok ! defined $res->{errors};
+	ok ! defined $res->{error_texts};
+	ok ! defined $res->{warnings};
+	ok ! defined $res->{warning_texts};
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { o1 => '11' }, "options should work with one command");
+}
 
 sub create_engine
 {
