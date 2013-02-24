@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 74;
+use Test::More tests => 81;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -402,6 +402,31 @@ use Data::Dumper;
 	my $res = $c->parse_options('c2', '-o1', '11');
 	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
 	is $res->{command}, 'mycommand', 'multiple aliases should work';
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1';
+		message 'deprecated_command', "command %command% is deprecated";
+		command 'mycommand', { deprecated => 'commandofmine'}, sub {};
+	});
+	my $res = $c->parse_options('commandofmine', '-o1', '11');
+	ok ! defined $res->{errors}||$res->{error_texts};
+	is $res->{command}, 'mycommand', 'alias should work';
+	ok $res->{warnings};
+	ok $res->{warning_texts};
+	cmp_deeply $res->{warning_texts}, ["command commandofmine is deprecated"], "deprecated commands should work"; 
+	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1';
+		command 'mycommand', { deprecated => 'commandofmine'}, sub {};
+	});
+	ok ! defined eval { $c->parse_options('commandofmine', '-o1', '11'); 1 }, "deprecated command should die if message undeclated"
 }
 
 sub create_engine

@@ -677,6 +677,22 @@ describe "error" => sub {
 	};
 };
 
+describe "warning" => sub {
+	it "should work" => sub {
+		localize sub {
+			warning 'myerror';
+			cmp_deeply context->{warnings}, ['myerror']; 
+		}
+	};
+	it "should push warnings to stack" => sub {
+		localize sub {
+			warning 'mywarning';
+			warning 'mywarning2';
+			cmp_deeply context->{warnings}, ['mywarning', 'mywarning2']; 
+		}
+	};
+};
+
 describe "error to message" => sub {
 	sub error_to_message { &App::MtAws::ConfigEngineNew::error_to_message };
 	

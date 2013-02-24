@@ -34,7 +34,7 @@ use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
 our @EXPORT = qw/option options command validation message
 				mandatory optional validate scope
-				present custom error/;
+				present custom error warning/;
 				
 
 our $context; 
@@ -50,7 +50,7 @@ sub new
 sub define($&)
 {
 	my ($self, $block) = @_;
-	$context = $self;
+	local $context = $self;
 	$block->();
 }
 
@@ -80,6 +80,8 @@ sub error_to_message
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
+	
+	local $context = $self;
 	
 	my @getopts = map { "$_=s" } keys %{$self->{options}};
 	GetOptions(\my %results, @getopts);
@@ -117,13 +119,23 @@ sub parse_options
 		}
 	} @{$self->{errors}} ];
 	
-	#push @{$self->{warnings}}, if ($self->{deprecated_commands}->{$original_command});
+	warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+
+	$self->{warning_texts} = [ map {
+		if (ref($_) eq ref({})) {
+			my $name = $_->{format} || confess;
+			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name}; 
+			error_to_message($format, %$_);
+		} else {
+			$_;
+		}
+	} @{$self->{warnings}} ];
 	
 	return {
 		errors => @{$self->{errors}} == 0 ? undef : $self->{errors},
 		error_texts => @{$self->{error_texts}} == 0 ? undef : $self->{error_texts},
-		warnings => undef,
-		warning_texts => undef,
+		warnings => @{$self->{warnings}} == 0 ? undef : $self->{warnings},
+		warning_texts => @{$self->{warning_texts}} == 0 ? undef : $self->{warning_texts},
 		command => $command,
 		options => \%options
 	};
@@ -243,6 +255,16 @@ sub error($;%)
 {
 	my ($name, %data) = @_;
 	push @{$context->{errors}},
+		defined($context->{messages}->{$name}) ?
+			{ format => $name, %data } :
+			(%data ? confess("message '$name' is undefined") : $name);
+	return;
+};
+	
+sub warning($;%)
+{
+	my ($name, %data) = @_;
+	push @{$context->{warnings}},
 		defined($context->{messages}->{$name}) ?
 			{ format => $name, %data } :
 			(%data ? confess("message '$name' is undefined") : $name);
