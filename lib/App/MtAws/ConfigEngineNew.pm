@@ -86,7 +86,12 @@ sub parse_options
 	
 	@{$self->{options}->{$_}}{qw/value source/} = ($results{$_}, 'option') for keys %results;
 	
-	$self->{commands}->{my $command = shift @ARGV	}->{cb}->();
+	my $command = shift @ARGV;
+	confess "unknown command or alias" unless
+		$self->{commands}->{$command} ||
+		(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
+	 
+	$self->{commands}->{$command}->{cb}->();
 	
 	my %options;
 	for my $k (keys %{$self->{options}}) {
@@ -153,6 +158,17 @@ sub command($$;$)
 	my ($name, $cb, $opts) = (shift, pop, shift||{}); # firs arg is name, last is cb, optional middle is opt
 
 	confess "command $name already declared" if defined $context->{commands}->{$name};
+	confess "alias $name already declared" if defined $context->{aliasmap}->{$name};
+	if ($opts) {
+		if (defined $opts->{alias}) {
+			$opts->{alias} = [$opts->{alias}] if ref $opts->{alias} eq ref '';
+			for (@{$opts->{alias}}) {
+				confess "command $_ already declared" if defined $context->{commands}->{$_};
+				confess "alias $_ already declared" if defined $context->{aliasmap}->{$_};
+				$context->{aliasmap}->{$_} = $name;
+			}
+		}
+	}
 	$context->{commands}->{$name} = { cb => $cb, %$opts };
 	return;
 };

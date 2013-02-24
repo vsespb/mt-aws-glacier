@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 70;
+use Test::More tests => 74;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -378,6 +378,30 @@ use Data::Dumper;
 	ok ! defined $res->{warnings}||$res->{warning_texts};
 	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables"; 
 	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables"; 
+}
+
+# command
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1';
+		command 'mycommand', { alias => 'commandofmine'}, sub {};
+	});
+	my $res = $c->parse_options('commandofmine', '-o1', '11');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand', 'alias should work';
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1';
+		command 'mycommand', { alias => ['c1', 'c2']}, sub {};
+	});
+	my $res = $c->parse_options('c2', '-o1', '11');
+	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
+	is $res->{command}, 'mycommand', 'multiple aliases should work';
 }
 
 sub create_engine
