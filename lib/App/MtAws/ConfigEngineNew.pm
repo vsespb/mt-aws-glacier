@@ -110,15 +110,18 @@ sub parse_options
 	} values %{$self->{options}};
 	GetOptions(\my %results, @getopts);
 	
-	for (keys %results) {
-		my $optref;
+	for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
+		my ($optref, $is_alias);
 		if ($self->{options}->{$_}) {
-			$optref = $self->{options}->{$_};
+			($optref, $is_alias) = ($self->{options}->{$_}, 0);
 		} else {
-			$optref = $self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_";
+			($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
 			warning("deprecated_option", option => $_) if $self->{deprecated_options}->{$_};
 		}
-		@{$optref}{qw/value source original_option/} = ($results{$_}, 'option', $_);
+		
+		# TODO: exit sub, don't analyze anything
+		error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
+		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
 	}
 	
 	my $original_command = my $command = shift @ARGV;

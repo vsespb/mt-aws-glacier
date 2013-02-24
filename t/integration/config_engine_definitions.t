@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 90;
+use Test::More tests => 114;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -250,8 +250,96 @@ use Data::Dumper;
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	cmp_deeply($res->{options}, { o1 => '11' }, "alias should work");
 	cmp_deeply($c->{options}->{o1},
-		{ value => '11', name => 'o1', seen => 1, alias => ['old'], source => 'option', original_option => 'old' },
+		{ value => '11', name => 'o1', seen => 1, alias => ['old'], source => 'option', original_option => 'old', is_alias => 1  },
 		"alias should work");
+}
+
+for (['-old', '11', '-o1', '42'], ['-o1', '42', '-old', '11']) {
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', alias => 'old';
+		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		command 'mycommand', sub { optional('o1') };
+	});
+	cmp_deeply [sort qw/old o1/], [qw/o1 old/];
+	my $res = $c->parse_options('mycommand', @$_);
+	ok ! defined ($res->{warnings}||$res->{warning_texts});
+	ok $res->{errors} && $res->{error_texts};
+	ok @{$res->{error_texts}} == 1;
+	cmp_deeply $res->{error_texts}, ['both options "--o1" and "--old" are specified. however they are aliases'], "should not be able to specify option twice using alias"; 
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o1', b => 'old'}], "should not be able to specify option twice using alias"; 
+}
+
+for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', alias => 'o0';
+		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		command 'mycommand', sub { optional('o1') };
+	});
+	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
+	my $res = $c->parse_options('mycommand', @$_);
+	ok ! defined ($res->{warnings}||$res->{warning_texts});
+	ok $res->{errors} && $res->{error_texts};
+	ok @{$res->{error_texts}} == 1;
+	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
+		"should not be able to specify option twice using alias"; 
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
+		"should not be able to specify option twice using alias"; 
+}
+
+for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'x', alias => ['o1', 'o0'];
+		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		command 'mycommand', sub { optional('x') };
+	});
+	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
+	my $res = $c->parse_options('mycommand', @$_);
+	ok ! defined ($res->{warnings}||$res->{warning_texts});
+	ok $res->{errors} && $res->{error_texts};
+	ok @{$res->{error_texts}} == 1;
+	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
+		"should not be able to specify option twice using two aliases"; 
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
+		"should not be able to specify option twice using two aliases"; 
+}
+
+for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'x', deprecated => ['o1', 'o0'];
+		message 'deprecated_option', "option %option option% is deprecated";
+		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		command 'mycommand', sub { optional('x') };
+	});
+	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
+	my $res = $c->parse_options('mycommand', @$_);
+	ok $res->{errors} && $res->{error_texts} && $res->{warnings} && $res->{warning_texts};
+	ok @{$res->{error_texts}} == 1;
+	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
+		"should not be able to specify option twice using two deprecations"; 
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
+		"should not be able to specify option twice using two deprecations"; 
+}
+
+for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'x', deprecated => 'o1', alias => 'o0';
+		message 'deprecated_option', "option %option option% is deprecated";
+		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		command 'mycommand', sub { optional('x') };
+	});
+	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
+	my $res = $c->parse_options('mycommand', @$_);
+	ok $res->{errors} && $res->{error_texts} && $res->{warnings} && $res->{warning_texts};
+	ok @{$res->{error_texts}} == 1;
+	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
+		"should not be able to specify option twice using deprecation and alias"; 
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}], 
+		"should not be able to specify option twice using deprecation and alias"; 
 }
 
 # option deprecated 
@@ -269,7 +357,7 @@ use Data::Dumper;
 	cmp_deeply $res->{warnings}, [{format => 'deprecated_option', option => 'old'}], "deprecated options should work"; 
 	cmp_deeply($res->{options}, { o1 => '11' }, "deprecated options should work");
 	cmp_deeply($c->{options}->{o1},
-		{ value => '11', name => 'o1', seen => 1, deprecated => ['old'], source => 'option', original_option => 'old' },
+		{ value => '11', name => 'o1', seen => 1, deprecated => ['old'], source => 'option', original_option => 'old', is_alias => 1 },
 		"deprecated options should work");
 }
 
