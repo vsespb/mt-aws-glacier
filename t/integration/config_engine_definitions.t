@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 55;
+use Test::More tests => 70;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -304,6 +304,81 @@ use Data::Dumper;
 }
 
 
+# error, message, present
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		message 'mutual', "%option a% and %option b% are mutual exclusive";
+		options 'o1', 'o2';
+		command 'mycommand' => sub {
+			if (present('o1') && present('o2')) {
+				error('mutual', a => 'o1', b => 'o2');
+			} else {
+				optional('o1'), mandatory('o2')
+			}
+		};
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{warnings}||$res->{warning_texts};
+	cmp_deeply $res->{error_texts}, [q{"--o1" and "--o2" are mutual exclusive}], "error should work"; 
+	cmp_deeply $res->{errors}, [{format => 'mutual', a => 'o1', b => 'o2'}], "error should work"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub {
+			if (present('o1') && present('o2')) {
+				error('mymessage');
+			} else {
+				optional('o1'), mandatory('o2')
+			}
+		};
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{warnings}||$res->{warning_texts};
+	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with undeclared message"; 
+	cmp_deeply $res->{errors}, ['mymessage'], "error should work with undeclared message"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		message 'mymessage', 'some text';
+		command 'mycommand' => sub {
+			if (present('o1') && present('o2')) {
+				error('mymessage');
+			} else {
+				optional('o1'), mandatory('o2')
+			}
+		};
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{warnings}||$res->{warning_texts};
+	cmp_deeply $res->{error_texts}, [q{some text}], "error should work with declared message without variables"; 
+	cmp_deeply $res->{errors}, [{ format => 'mymessage'}], "error should work with declared message without variables"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub {
+			if (present('o1') && present('o2')) {
+				error('mymessage');
+			} else {
+				optional('o1'), mandatory('o2')
+			}
+		};
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{warnings}||$res->{warning_texts};
+	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables"; 
+	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables"; 
+}
 
 sub create_engine
 {

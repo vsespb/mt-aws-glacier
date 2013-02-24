@@ -658,14 +658,15 @@ describe 'error' => sub {
 			message("mymessage", "some text");
 			my @res = error("mymessage");
 			ok @res == 0;
-			cmp_deeply context->{errors}, ["mymessage"];
+			cmp_deeply context->{errors}, [{ format => "mymessage"}];
 		};
 	};
-	it "should not die if message undeclared and no variables specified" => sub {
+	it "should work if message undeclared and no variables specified" => sub {
 		localize sub {
 			message("mymessage", "some text");
 			my @res = error("mymessage1");
 			ok @res == 0;
+			cmp_deeply context->{errors}, ["mymessage1"];
 		};
 	};
 };

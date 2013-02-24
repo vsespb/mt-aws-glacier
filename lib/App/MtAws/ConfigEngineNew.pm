@@ -73,7 +73,7 @@ sub error_to_message
 		}
 	};
 	
-	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge; # in new perl versions \w also means unicode chars..
+	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge if %data; # in new perl versions \w also means unicode chars..
 	$spec;
 }
 
@@ -221,9 +221,10 @@ sub custom($$)
 sub error($;%)
 {
 	my ($name, %data) = @_;
-	push @{$context->{errors}}, %data ?
-		(defined($context->{messages}->{$name}) and { format => $name, %data } or confess "message '$name' is undefined") :
-		$name;
+	push @{$context->{errors}},
+		defined($context->{messages}->{$name}) ?
+			{ format => $name, %data } :
+			(%data ? confess("message '$name' is undefined") : $name);
 	return;
 };
 	
