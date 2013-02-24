@@ -77,6 +77,12 @@ sub error_to_message
 	$spec;
 }
 
+sub arrayref_or_undef($)
+{
+	my ($ref) = @_;
+	defined($ref) && @$ref > 0 ? $ref : undef;
+}
+
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
@@ -95,51 +101,55 @@ sub parse_options
 	 
 	$self->{commands}->{$command}->{cb}->();
 	
-	my %options;
+	$self->unflatten_scope();
+	
+	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
+	
+	warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+
+	
+	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];	
+	
+	return {
+		errors => arrayref_or_undef $self->{errors},
+		error_texts => arrayref_or_undef $self->{error_texts},
+		warnings => arrayref_or_undef $self->{warnings},
+		warning_texts => arrayref_or_undef $self->{warning_texts},
+		command => $command,
+		options => $self->{result_options}
+	};
+}
+
+sub unflatten_scope
+{
+	my ($self) = @_;
+	my $options = {};
 	for my $k (keys %{$self->{options}}) {
 		my $v = $self->{options}->{$k};
-		my $dest = \%options;
+		my $dest = $options;
 		for (@{$v->{scope}}) {
 			$dest = $dest->{$_} ||= {};
 		}
 		$dest->{$k} = $v->{value};
 	}
-	
-	#print Dumper($self->{errors});
-	#print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
-	#print Dumper($self);
-	
-	$self->{error_texts} = [ map {
-		if (ref($_) eq ref({})) {
-			my $name = $_->{format} || confess;
-			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name}; 
-			error_to_message($format, %$_);
-		} else {
-			$_;
-		}
-	} @{$self->{errors}} ];
-	
-	warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
-
-	$self->{warning_texts} = [ map {
-		if (ref($_) eq ref({})) {
-			my $name = $_->{format} || confess;
-			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name}; 
-			error_to_message($format, %$_);
-		} else {
-			$_;
-		}
-	} @{$self->{warnings}} ];
-	
-	return {
-		errors => @{$self->{errors}} == 0 ? undef : $self->{errors},
-		error_texts => @{$self->{error_texts}} == 0 ? undef : $self->{error_texts},
-		warnings => @{$self->{warnings}} == 0 ? undef : $self->{warnings},
-		warning_texts => @{$self->{warning_texts}} == 0 ? undef : $self->{warning_texts},
-		command => $command,
-		options => \%options
-	};
+	$self->{result_options} = $options;
 }
+
+sub errors_or_warnings_to_messages
+{
+	my ($self, $err) = @_;
+	return unless defined $err;
+	map {
+		if (ref($_) eq ref({})) {
+			my $name = $_->{format} || confess "format not defined";
+			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name}; 
+			error_to_message($format, %$_);
+		} else {
+			$_;
+		}
+	} @{$err};
+}
+
 
 sub assert_option { $context->{options}->{$_} or confess "undeclared option $_"; }
 
