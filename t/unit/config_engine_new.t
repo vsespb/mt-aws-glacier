@@ -110,6 +110,12 @@ describe "command" => sub {
 				ok !defined eval { command 'newcommand', alias => 'myalias', $code; 1 };
 			};
 		};
+		it "should die if alias already defined in same statement" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				ok !defined eval { command 'newcommand', alias => ['myalias', 'myalias'], $code; 1 };
+			};
+		};
 		it "should die if alias already defined, in case alias is an array" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
@@ -160,6 +166,19 @@ describe "command" => sub {
 				my $code = sub { $_*2 };
 				command 'mycommand', deprecated => 'myalias', $code;
 				ok !defined eval { command 'newcommand', deprecated => 'myalias', $code; 1 };
+			};
+		};
+		it "should die if alias deprecated defined in same statement" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				ok !defined eval { command 'newcommand', deprecated => ['myalias', 'myalias'], $code; 1 };
+			};
+		};
+		it "should die if alias deprecated and alias redefined in same statement" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				ok !defined eval { command 'newcommand', deprecated => 'myalias', alias => 'myalias', $code; 1 };
+				ok !defined eval { command 'newcommand', alias => 'myalias', deprecated => 'myalias', $code; 1 };
 			};
 		};
 		it "should die if alias already defined, in case alias is an array" => sub {
@@ -225,10 +244,26 @@ describe "option" => sub {
 				ok ! defined eval { option('myoption', alias => ['o1', 'o2']); 1 };
 			}
 		};
+		it "should die if alias redefining alias in same statement" => sub {
+			localize sub {
+				ok ! defined eval { option('myoption', alias => ['o1', 'o1']); 1 };
+			}
+		};
 		it "should die if alias redefining deprecated" => sub {
 			localize sub {
 				option 'old', deprecated => 'o2';
 				ok ! defined eval { option('myoption', alias => ['o1', 'o2']); 1 };
+			}
+		};
+		it "should die if deprecation redefining deprecation  in same statement" => sub {
+			localize sub {
+				ok ! defined eval { option('myoption', deprecated => ['o1', 'o1']); 1 };
+			}
+		};
+		it "should die if deprecation redefining alias in same statement" => sub {
+			localize sub {
+				ok ! defined eval { option('myoption', deprecated => 'o1', alias => 'o1'); 1 };
+				ok ! defined eval { option('myoption', alias => 'o1', deprecated => 'o1'); 1 };
 			}
 		};
 	};
