@@ -148,11 +148,12 @@ sub validation($$&)
 	$name;
 }
 
-sub command(@)
+sub command($$;$)
 {
-	my ($name, $cb) = @_;
+	my ($name, $cb, $opts) = (shift, pop, shift||{}); # firs arg is name, last is cb, optional middle is opt
+
 	confess "command $name already declared" if defined $context->{commands}->{$name};
-	$context->{commands}->{$name} = { cb => $cb };
+	$context->{commands}->{$name} = { cb => $cb, %$opts };
 	return;
 };
 

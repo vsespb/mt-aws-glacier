@@ -61,6 +61,14 @@ describe "command" => sub {
 			ok !defined eval { command 'mycommand', $code; 1 };
 		};
 	};
+	it "should work with options" => sub {
+		localize sub {
+			my $code = sub { $_*2 };
+			my @res = command 'mycommand', { alias => 'abc', xyz => 42 },$code;
+			ok @res == 0;
+			cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, xyz => 42, alias => 'abc' };
+		};
+	};
 };
 
 describe "option" => sub {
