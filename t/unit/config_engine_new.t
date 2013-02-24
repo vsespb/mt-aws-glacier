@@ -796,6 +796,40 @@ describe 'error' => sub {
 	};
 };
 
+describe 'unflatten_scope' => sub {
+	it "should work" => sub {
+		my $c = create_engine();
+		$c->{options} = {
+			a => { value => 1},
+			b => { value => 2, scope => ['x']},
+		};
+		$c->unflatten_scope();
+		cmp_deeply $c->{data}, { a => 1, x => { b => 2 }};
+		cmp_deeply $c->{options}->{a}, { value => 1}, "it should not autovivify scope";
+	};
+	it "should work with nested scopes" => sub {
+		my $c = create_engine();
+		$c->{options} = {
+			a => { value => 1},
+			b => { value => 2, scope => ['x', 'y']},
+		};
+		$c->unflatten_scope();
+		cmp_deeply $c->{data}, { a => 1, x => { y => { b => 2 }}};
+		cmp_deeply $c->{options}->{a}, { value => 1}, "it should not autovivify scope";
+	};
+	it "should work with empty data" => sub {
+		my $c = create_engine();
+		$c->{options} = {};
+		$c->unflatten_scope();
+		cmp_deeply $c->{data}, {};
+	};
+};
+
+sub create_engine
+{
+	App::MtAws::ConfigEngineNew->new();
+}
+
 runtests unless caller;
 
 1;

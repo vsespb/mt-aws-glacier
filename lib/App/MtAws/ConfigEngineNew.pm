@@ -116,7 +116,7 @@ sub parse_options
 		warnings => arrayref_or_undef $self->{warnings},
 		warning_texts => arrayref_or_undef $self->{warning_texts},
 		command => $command,
-		options => $self->{result_options}
+		options => $self->{data}
 	};
 }
 
@@ -127,12 +127,12 @@ sub unflatten_scope
 	for my $k (keys %{$self->{options}}) {
 		my $v = $self->{options}->{$k};
 		my $dest = $options;
-		for (@{$v->{scope}}) {
+		for (@{$v->{scope}||[]}) {
 			$dest = $dest->{$_} ||= {};
 		}
 		$dest->{$k} = $v->{value};
 	}
-	$self->{result_options} = $options;
+	$self->{data} = $options;
 }
 
 sub errors_or_warnings_to_messages
