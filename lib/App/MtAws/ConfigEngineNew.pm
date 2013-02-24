@@ -178,25 +178,25 @@ sub validation($$&)
 	$name;
 }
 
-sub command($$;$)
+sub command($%;$)
 {
-	my ($name, $cb, $opts) = (shift, pop, shift||{}); # firs arg is name, last is cb, optional middle is opt
+	my ($name, $cb, %opts) = (shift, pop, @_); # firs arg is name, last is cb, optional middle is opt
 
 	confess "command $name already declared" if defined $context->{commands}->{$name};
 	confess "alias $name already declared" if defined $context->{aliasmap}->{$name};
-	if ($opts) {
-		$opts->{alias} = [$opts->{alias}] if (defined $opts->{alias}) && (ref $opts->{alias} eq ref '');
-		$opts->{deprecated} = [$opts->{deprecated}] if (defined $opts->{deprecated}) && ref $opts->{deprecated} eq ref '';
+	if (%opts) {
+		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref '');
+		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
 		
-		$context->{deprecated_commands}->{$_} = 1 for (@{$opts->{deprecated}||[]});
+		$context->{deprecated_commands}->{$_} = 1 for (@{$opts{deprecated}||[]});
 		
-		for (@{$opts->{alias}||[]}, @{$opts->{deprecated}||[]}) {
+		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
 			confess "command $_ already declared" if defined $context->{commands}->{$_};
 			confess "alias $_ already declared" if defined $context->{aliasmap}->{$_};
 			$context->{aliasmap}->{$_} = $name;
 		}
 	}
-	$context->{commands}->{$name} = { cb => $cb, %$opts };
+	$context->{commands}->{$name} = { cb => $cb, %opts };
 	return;
 };
 

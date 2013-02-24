@@ -386,7 +386,7 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
-		command 'mycommand', { alias => 'commandofmine'}, sub {};
+		command 'mycommand', alias => 'commandofmine', sub {};
 	});
 	my $res = $c->parse_options('commandofmine', '-o1', '11');
 	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
@@ -397,7 +397,7 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
-		command 'mycommand', { alias => ['c1', 'c2']}, sub {};
+		command 'mycommand', alias => ['c1', 'c2'], sub {};
 	});
 	my $res = $c->parse_options('c2', '-o1', '11');
 	ok ! defined $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts};
@@ -409,7 +409,7 @@ use Data::Dumper;
 	$c->define(sub {
 		option 'o1';
 		message 'deprecated_command', "command %command% is deprecated";
-		command 'mycommand', { deprecated => 'commandofmine'}, sub {};
+		command 'mycommand', deprecated => 'commandofmine', sub {};
 	});
 	my $res = $c->parse_options('commandofmine', '-o1', '11');
 	ok ! defined $res->{errors}||$res->{error_texts};
@@ -424,7 +424,7 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
-		command 'mycommand', { deprecated => 'commandofmine'}, sub {};
+		command 'mycommand', deprecated => 'commandofmine', sub {};
 	});
 	ok ! defined eval { $c->parse_options('commandofmine', '-o1', '11'); 1 }, "deprecated command should die if message undeclated"
 }

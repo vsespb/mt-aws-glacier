@@ -64,14 +64,14 @@ describe "command" => sub {
 	it "should die if alias redefined" => sub {
 		localize sub {
 			my $code = sub { $_*2 };
-			command 'firscommand', {alias => 'firstalias'}, $code;
+			command 'firscommand', alias => 'firstalias', $code;
 			ok !defined eval { command 'firstalias', $code; 1 };
 		};
 	};
 	it "should work with options" => sub {
 		localize sub {
 			my $code = sub { $_*2 };
-			my @res = command 'mycommand', { xyz => 42, def => '24' },$code;
+			my @res = command 'mycommand', xyz => 42, def => '24',$code;
 			ok @res == 0;
 			cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, xyz => 42, def => 24 };
 		};
@@ -80,7 +80,7 @@ describe "command" => sub {
 		it "should work with alias option when it's a scalar" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				my @res = command 'mycommand', { alias => 'abc', abc => 'xyz' },$code;
+				my @res = command 'mycommand', alias => 'abc', abc => 'xyz', $code;
 				ok @res == 0;
 				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, alias => ['abc'], abc => 'xyz' };
 				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
@@ -89,7 +89,7 @@ describe "command" => sub {
 		it "should work with alias option when it's an array" => sub {	
 			localize sub {
 				my $code = sub { $_*2 };
-				my @res = command 'mycommand', { alias => [qw/abc def/] },$code;
+				my @res = command 'mycommand', alias => [qw/abc def/],$code;
 				ok @res == 0;
 				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, alias => ['abc', 'def'] };
 				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
@@ -100,21 +100,21 @@ describe "command" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
 				command 'mycommand', $code;
-				ok !defined eval { command 'newcommand', { alias => 'mycommand'}, $code; 1 };
+				ok !defined eval { command 'newcommand', alias => 'mycommand', $code; 1 };
 			};
 		};
 		it "should die if alias already defined" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				command 'mycommand', { alias => 'myalias'}, $code;
-				ok !defined eval { command 'newcommand', { alias => 'myalias'}, $code; 1 };
+				command 'mycommand', alias => 'myalias', $code;
+				ok !defined eval { command 'newcommand', alias => 'myalias', $code; 1 };
 			};
 		};
 		it "should die if alias already defined, in case alias is an array" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				command 'mycommand', { alias => ['myalias1', 'myalias2']}, $code;
-				ok !defined eval { command 'newcommand', { alias => ['myalias3', 'myalias2']}, $code; 1 };
+				command 'mycommand', alias => ['myalias1', 'myalias2'], $code;
+				ok !defined eval { command 'newcommand', alias => ['myalias3', 'myalias2'], $code; 1 };
 			};
 		};
 	};
@@ -122,7 +122,7 @@ describe "command" => sub {
 		it "should work with alias option when it's a scalar" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				my @res = command 'mycommand', { deprecated => 'abc', abc => 'xyz' },$code;
+				my @res = command 'mycommand', deprecated => 'abc', abc => 'xyz',$code;
 				ok @res == 0;
 				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc'], abc => 'xyz' };
 				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
@@ -132,7 +132,7 @@ describe "command" => sub {
 		it "should work with alias option when it's an array" => sub {	
 			localize sub {
 				my $code = sub { $_*2 };
-				my @res = command 'mycommand', { deprecated => [qw/abc def/] },$code;
+				my @res = command 'mycommand', deprecated => [qw/abc def/],$code;
 				ok @res == 0;
 				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc', 'def'] };
 				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
@@ -145,28 +145,28 @@ describe "command" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
 				command 'mycommand', $code;
-				ok !defined eval { command 'newcommand', { deprecated => 'mycommand'}, $code; 1 };
+				ok !defined eval { command 'newcommand', deprecated => 'mycommand', $code; 1 };
 			};
 		};
 		it "should die if alias already defined" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				command 'mycommand', { alias => 'myalias'}, $code;
-				ok !defined eval { command 'newcommand', { deprecated => 'myalias'}, $code; 1 };
+				command 'mycommand', alias => 'myalias', $code;
+				ok !defined eval { command 'newcommand', deprecated => 'myalias', $code; 1 };
 			};
 		};
 		it "should die if deprecated alias already defined" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				command 'mycommand', { deprecated => 'myalias'}, $code;
-				ok !defined eval { command 'newcommand', { deprecated => 'myalias'}, $code; 1 };
+				command 'mycommand', deprecated => 'myalias', $code;
+				ok !defined eval { command 'newcommand', deprecated => 'myalias', $code; 1 };
 			};
 		};
 		it "should die if alias already defined, in case alias is an array" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
-				command 'mycommand', { alias => ['myalias1', 'myalias2']}, $code;
-				ok !defined eval { command 'newcommand', { deprecated => ['myalias3', 'myalias2']}, $code; 1 };
+				command 'mycommand', alias => ['myalias1', 'myalias2'], $code;
+				ok !defined eval { command 'newcommand', deprecated => ['myalias3', 'myalias2'], $code; 1 };
 			};
 		};
 	};
