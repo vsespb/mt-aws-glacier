@@ -88,6 +88,8 @@ sub parse_options
 	
 	$self->{commands}->{my $command = shift @ARGV	}->{cb}->();
 	
+	my %options = map { $_ => $self->{options}->{$_}->{value} } keys %{$self->{options}};
+	
 	#print Dumper($self->{errors});
 	#print Dumper [grep { (!$_->{seen}) && defined($_->{value}) } values %{$self->{options}}];
 	#print Dumper($self);
@@ -102,9 +104,14 @@ sub parse_options
 		}
 	} @{$self->{errors}} ];
 	
-	return (@{$self->{errors}} == 0 ? undef : $self->{errors},
-		@{$self->{error_texts}} == 0 ? undef : $self->{error_texts},
-		undef, $command, undef);
+	return {
+		errors => @{$self->{errors}} == 0 ? undef : $self->{errors},
+		error_texts => @{$self->{error_texts}} == 0 ? undef : $self->{error_texts},
+		warnings => undef,
+		warning_texts => undef,
+		command => $command,
+		options => \%options
+	};
 }
 
 sub assert_option { $context->{options}->{$_} or confess "undeclared option $_"; }
