@@ -51,7 +51,6 @@ sub check_dir_or_relname
 			if (present('set-rel-filename')) {
 				if (present('dir')) {
 					error('mutual', a => 'set-rel-filename', b => 'dir');
-					#error('set-rel-filename and dir are mutual exclusive')
 				} else {
 					custom('name-type', 'rel-filename'), mandatory('set-rel-filename');
 				}
@@ -64,7 +63,7 @@ sub check_dir_or_relname
 	} elsif (present('stdin')) {
 		if (present('set-rel-filename')) {
 			if (present('dir')) {
-				error('set-rel-filename and dir are mutual exclusive')
+				error('mutual', a => 'set-rel-filename', b => 'dir');
 			} else {
 				custom('name-type', 'rel-filename'), custom('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin')
 			}
