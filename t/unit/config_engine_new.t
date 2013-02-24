@@ -763,6 +763,31 @@ describe "errors_or_warnings_to_messages" => sub {
 	};
 };
 
+describe "arrayref_or_undef" => sub {
+	it "should work" => sub {
+		cmp_deeply App::MtAws::ConfigEngineNew::arrayref_or_undef([1]), [1];
+	};
+	it "should work with array of undef" => sub {
+		cmp_deeply App::MtAws::ConfigEngineNew::arrayref_or_undef([undef]), [undef];
+	};
+	it "should work with empty array" => sub {
+		ok ! defined App::MtAws::ConfigEngineNew::arrayref_or_undef([]);
+	};
+	it "should work with undef" => sub {
+		ok ! defined App::MtAws::ConfigEngineNew::arrayref_or_undef(undef);
+	};
+	it "should return undef, not empty list" => sub {
+		my @a = App::MtAws::ConfigEngineNew::arrayref_or_undef(undef);
+		ok @a == 1;
+		ok !defined $a[0];
+	};
+	it "should return undef, not empty list" => sub {
+		my @a = App::MtAws::ConfigEngineNew::arrayref_or_undef([]);
+		ok @a == 1;
+		ok !defined $a[0];
+	};
+};
+
 describe 'message' => sub {
 	it "should work" => sub {
 		localize sub {
