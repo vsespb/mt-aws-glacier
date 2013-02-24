@@ -118,6 +118,58 @@ describe "command" => sub {
 			};
 		};
 	};
+	describe "deprecated", sub {
+		it "should work with alias option when it's a scalar" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				my @res = command 'mycommand', { deprecated => 'abc', abc => 'xyz' },$code;
+				ok @res == 0;
+				cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc'], abc => 'xyz' };
+				cmp_deeply context->{aliasmap}->{'abc'}, 'mycommand';
+				ok context->{deprecated_commands}->{'abc'};
+			};
+		};
+		it "should work with alias option when it's an array" => sub {	
+			localize sub {
+				my $code = sub { $_*2 };
+				my @res = command 'mycommand', { deprecated => [qw/abc def/] },$code;
+				ok @res == 0;
+				cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc', 'def'] };
+				cmp_deeply context->{aliasmap}->{'abc'}, 'mycommand';
+				cmp_deeply context->{aliasmap}->{'def'}, 'mycommand';
+				ok context->{deprecated_commands}->{'abc'};
+				ok context->{deprecated_commands}->{'def'};
+			};
+		};
+		it "should die if command already defined" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				command 'mycommand', $code;
+				ok !defined eval { command 'newcommand', { deprecated => 'mycommand'}, $code; 1 };
+			};
+		};
+		it "should die if alias already defined" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				command 'mycommand', { alias => 'myalias'}, $code;
+				ok !defined eval { command 'newcommand', { deprecated => 'myalias'}, $code; 1 };
+			};
+		};
+		it "should die if deprecated alias already defined" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				command 'mycommand', { deprecated => 'myalias'}, $code;
+				ok !defined eval { command 'newcommand', { deprecated => 'myalias'}, $code; 1 };
+			};
+		};
+		it "should die if alias already defined, in case alias is an array" => sub {
+			localize sub {
+				my $code = sub { $_*2 };
+				command 'mycommand', { alias => ['myalias1', 'myalias2']}, $code;
+				ok !defined eval { command 'newcommand', { deprecated => ['myalias3', 'myalias2']}, $code; 1 };
+			};
+		};
+	};
 };
 
 describe "option" => sub {
