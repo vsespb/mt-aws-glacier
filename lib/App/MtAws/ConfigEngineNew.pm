@@ -77,6 +77,22 @@ sub error_to_message
 	$spec;
 }
 
+
+sub errors_or_warnings_to_messages
+{
+	my ($self, $err) = @_;
+	return unless defined $err;
+	map {
+		if (ref($_) eq ref({})) {
+			my $name = $_->{format} || confess "format not defined";
+			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name};
+			error_to_message($format, %$_);
+		} else {
+			$_;
+		}
+	} @{$err};
+}
+
 sub arrayref_or_undef($)
 {
 	my ($ref) = @_;
@@ -133,21 +149,6 @@ sub unflatten_scope
 		$dest->{$k} = $v->{value};
 	}
 	$self->{data} = $options;
-}
-
-sub errors_or_warnings_to_messages
-{
-	my ($self, $err) = @_;
-	return unless defined $err;
-	map {
-		if (ref($_) eq ref({})) {
-			my $name = $_->{format} || confess "format not defined";
-			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name}; 
-			error_to_message($format, %$_);
-		} else {
-			$_;
-		}
-	} @{$err};
 }
 
 

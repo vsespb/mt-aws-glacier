@@ -28,7 +28,7 @@ use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
 use Data::Dumper;
 
-sub context()
+sub Context()
 {
 	$App::MtAws::ConfigEngineNew::context
 }
@@ -46,7 +46,7 @@ describe "command" => sub {
 			my $code = sub { $_*2 };
 			my @res = command 'mycommand', $code;
 			ok @res == 0;
-			cmp_deeply context->{commands}->{'mycommand'}, { cb => $code };
+			cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code };
 		};
 	};
 	it "should compile with inline subroutine declaration" => sub {
@@ -73,7 +73,7 @@ describe "command" => sub {
 			my $code = sub { $_*2 };
 			my @res = command 'mycommand', { xyz => 42, def => '24' },$code;
 			ok @res == 0;
-			cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, xyz => 42, def => 24 };
+			cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, xyz => 42, def => 24 };
 		};
 	};
 	describe "alias", sub {
@@ -82,8 +82,8 @@ describe "command" => sub {
 				my $code = sub { $_*2 };
 				my @res = command 'mycommand', { alias => 'abc', abc => 'xyz' },$code;
 				ok @res == 0;
-				cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, alias => ['abc'], abc => 'xyz' };
-				cmp_deeply context->{aliasmap}->{'abc'}, 'mycommand';
+				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, alias => ['abc'], abc => 'xyz' };
+				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
 			};
 		};
 		it "should work with alias option when it's an array" => sub {	
@@ -91,9 +91,9 @@ describe "command" => sub {
 				my $code = sub { $_*2 };
 				my @res = command 'mycommand', { alias => [qw/abc def/] },$code;
 				ok @res == 0;
-				cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, alias => ['abc', 'def'] };
-				cmp_deeply context->{aliasmap}->{'abc'}, 'mycommand';
-				cmp_deeply context->{aliasmap}->{'def'}, 'mycommand';
+				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, alias => ['abc', 'def'] };
+				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
+				cmp_deeply Context->{aliasmap}->{'def'}, 'mycommand';
 			};
 		};
 		it "should die if command already defined" => sub {
@@ -124,9 +124,9 @@ describe "command" => sub {
 				my $code = sub { $_*2 };
 				my @res = command 'mycommand', { deprecated => 'abc', abc => 'xyz' },$code;
 				ok @res == 0;
-				cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc'], abc => 'xyz' };
-				cmp_deeply context->{aliasmap}->{'abc'}, 'mycommand';
-				ok context->{deprecated_commands}->{'abc'};
+				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc'], abc => 'xyz' };
+				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
+				ok Context->{deprecated_commands}->{'abc'};
 			};
 		};
 		it "should work with alias option when it's an array" => sub {	
@@ -134,11 +134,11 @@ describe "command" => sub {
 				my $code = sub { $_*2 };
 				my @res = command 'mycommand', { deprecated => [qw/abc def/] },$code;
 				ok @res == 0;
-				cmp_deeply context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc', 'def'] };
-				cmp_deeply context->{aliasmap}->{'abc'}, 'mycommand';
-				cmp_deeply context->{aliasmap}->{'def'}, 'mycommand';
-				ok context->{deprecated_commands}->{'abc'};
-				ok context->{deprecated_commands}->{'def'};
+				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc', 'def'] };
+				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
+				cmp_deeply Context->{aliasmap}->{'def'}, 'mycommand';
+				ok Context->{deprecated_commands}->{'abc'};
+				ok Context->{deprecated_commands}->{'def'};
 			};
 		};
 		it "should die if command already defined" => sub {
@@ -176,18 +176,18 @@ describe "option" => sub {
 	it "should work" => sub {
 		localize sub {
 			option 'myoption';
-			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption'}
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption'}
 		}
 	};
 	it "should not overwrite existing option" => sub {
 		localize sub {
 			local $_ = 'abc';
 			option 'myoption';
-			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption'};
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption'};
 			mandatory 'myoption';
-			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
 			option 'myoption';
-			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
 			ok $_ eq 'abc';
 		}
 	};
@@ -203,26 +203,26 @@ describe "options" => sub {
 	it "should work with one argument" => sub {
 		localize sub {
 			options 'myoption';
-			cmp_deeply context->{options}->{myoption}, {'name' => 'myoption'}
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption'}
 		}
 	};
 	it "should work with many arguments" => sub {
 		localize sub {
 			options 'myoption1', 'myoption2';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1'};
-			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2'};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1'};
+			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2'};
 		}
 	};
 	it "should not overwrite existing options with one argument" => sub {
 		localize sub {
 			local $_ = 'abc';
 			options 'myoption1', 'myoption2';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1'};
-			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2'};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1'};
+			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2'};
 			mandatory 'myoption1';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
 			options 'myoption1';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
 			ok $_ eq 'abc';
 		}
 	};
@@ -230,14 +230,14 @@ describe "options" => sub {
 		localize sub {
 			local $_ = 'abc';
 			options 'myoption1', 'myoption2';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1'};
-			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2'};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1'};
+			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2'};
 			mandatory 'myoption1', 'myoption2';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
-			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
 			options 'myoption1', 'myoption2';
-			cmp_deeply context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
-			cmp_deeply context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
 			ok $_ eq 'abc';
 		}
 	};
@@ -262,8 +262,8 @@ describe "validation" => sub {
 			option 'myoption';
 			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
 			ok $r eq 'myoption';
-			ok scalar @{context->{options}->{'myoption'}->{validations}} == 1;
-			my $v = context->{options}->{'myoption'}->{validations}->[0];
+			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
+			my $v = Context->{options}->{'myoption'}->{validations}->[0];
 			cmp_deeply [sort keys %$v], [sort qw/message cb/]; 
 			ok $v->{message} eq 'test message';
 			ok $v->{cb}->() for (11);
@@ -275,10 +275,10 @@ describe "validation" => sub {
 			local $_ = 'abc';
 			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
 			ok $r eq 'myoption';
-			ok context->{options}->{'myoption'};
-			cmp_deeply [sort keys %{context->{options}->{'myoption'}}], [sort qw/name validations/];
-			ok 'myoption' eq context->{options}->{'myoption'}->{name};
-			ok scalar @{context->{options}->{'myoption'}->{validations}} == 1;
+			ok Context->{options}->{'myoption'};
+			cmp_deeply [sort keys %{Context->{options}->{'myoption'}}], [sort qw/name validations/];
+			ok 'myoption' eq Context->{options}->{'myoption'}->{name};
+			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
 			ok $_ eq 'abc';
 		}
 	};
@@ -315,11 +315,11 @@ describe "mandatory" => sub {
 	it "should work when mandatory option exists" => sub {
 		localize sub {
 			option 'myoption';
-			context->{options}->{myoption}->{value} = '123';
+			Context->{options}->{myoption}->{value} = '123';
 			my ($res) = mandatory 'myoption';
 			ok $res eq 'myoption';
-			ok !defined context->{errors};
-			ok context->{options}->{myoption}->{seen};
+			ok !defined Context->{errors};
+			ok Context->{options}->{myoption}->{seen};
 		}
 	};
 	it "should work when mandatory option missing" => sub {
@@ -327,8 +327,8 @@ describe "mandatory" => sub {
 			option 'myoption';
 			my ($res) = mandatory 'myoption';
 			ok $res eq 'myoption';
-			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
-			ok context->{options}->{myoption}->{seen};
+			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
+			ok Context->{options}->{myoption}->{seen};
 		}
 	};
 	it "should work when mandatory option missing and mandatory is nested" => sub {
@@ -336,8 +336,8 @@ describe "mandatory" => sub {
 			option 'myoption';
 			my ($res) = mandatory mandatory 'myoption';
 			ok $res eq 'myoption';
-			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
-			ok context->{options}->{myoption}->{seen};
+			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
+			ok Context->{options}->{myoption}->{seen};
 		}
 	};
 	it "should check options when several options presents" => sub {
@@ -353,26 +353,26 @@ describe "mandatory" => sub {
 			local $_ = 'abc';
 			my @options = ('myoption', 'myoption2');
 			options @options;
-			context->{options}->{myoption}->{value} = '123';
-			context->{options}->{myoption2}->{value} = '123';
+			Context->{options}->{myoption}->{value} = '123';
+			Context->{options}->{myoption2}->{value} = '123';
 			my @res = mandatory @options;
 			cmp_deeply [@res], [@options];
-			ok !defined context->{errors};
-			ok context->{options}->{myoption}->{seen};
-			ok context->{options}->{myoption2}->{seen};
+			ok !defined Context->{errors};
+			ok Context->{options}->{myoption}->{seen};
+			ok Context->{options}->{myoption2}->{seen};
 			ok $_ eq 'abc';
 		}
 	};
 	it "should work when 1 of 2 mandatory option presents" => sub {
 		localize sub {
 			options my @options = ('myoption', 'myoption2');
-			context->{options}->{myoption}->{value} = '123';
+			Context->{options}->{myoption}->{value} = '123';
 			my @res = mandatory @options;
 			cmp_deeply [@res], [@options];
-			ok defined context->{errors};
-			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption2' }];
-			ok context->{options}->{myoption}->{seen};
-			ok context->{options}->{myoption2}->{seen};
+			ok defined Context->{errors};
+			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption2' }];
+			ok Context->{options}->{myoption}->{seen};
+			ok Context->{options}->{myoption2}->{seen};
 		}
 	};
 	it "should work when 0 of 2 mandatory option presents" => sub {
@@ -380,10 +380,10 @@ describe "mandatory" => sub {
 			options my @options = ('myoption', 'myoption2');
 			my @res = mandatory @options;
 			cmp_deeply [@res], [@options];
-			ok defined context->{errors};
-			cmp_deeply context->{errors}, [ { format => 'mandatory', a => 'myoption' }, { format => 'mandatory', a => 'myoption2' }];
-			ok context->{options}->{myoption}->{seen};
-			ok context->{options}->{myoption2}->{seen};
+			ok defined Context->{errors};
+			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption' }, { format => 'mandatory', a => 'myoption2' }];
+			ok Context->{options}->{myoption}->{seen};
+			ok Context->{options}->{myoption2}->{seen};
 		}
 	};
 };
@@ -400,11 +400,11 @@ describe "optional" => sub {
 		it "should work when optional option exists" => sub {
 			localize sub {
 				option 'myoption';
-				context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption}->{value} = '123';
 				my ($res) = optional 'myoption';
 				ok $res eq 'myoption';
-				ok !defined context->{errors};
-				ok context->{options}->{myoption}->{seen};
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
 			}
 		};
 		it "should work when optional option missing" => sub {
@@ -412,8 +412,8 @@ describe "optional" => sub {
 				option 'myoption';
 				my ($res) = optional 'myoption';
 				ok $res eq 'myoption';
-				ok !defined context->{errors};;
-				ok context->{options}->{myoption}->{seen};
+				ok !defined Context->{errors};;
+				ok Context->{options}->{myoption}->{seen};
 			}
 		};
 	};
@@ -431,25 +431,25 @@ describe "optional" => sub {
 				local $_ = 'abc';
 				my @options = ('myoption', 'myoption2');
 				options @options;
-				context->{options}->{myoption}->{value} = '123';
-				context->{options}->{myoption2}->{value} = '123';
+				Context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption2}->{value} = '123';
 				my @res = optional @options;
 				cmp_deeply [@res], [@options];
-				ok !defined context->{errors};
-				ok context->{options}->{myoption}->{seen};
-				ok context->{options}->{myoption2}->{seen};
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
 				ok $_ eq 'abc';
 			}
 		};
 		it "should work when 1 of 2 optional option presents" => sub {
 			localize sub {
 				options my @options = ('myoption', 'myoption2');
-				context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption}->{value} = '123';
 				my @res = optional @options;
 				cmp_deeply [@res], [@options];
-				ok !defined context->{errors};
-				ok context->{options}->{myoption}->{seen};
-				ok context->{options}->{myoption2}->{seen};
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
 			}
 		};
 		it "should work when 0 of 2 optional option presents" => sub {
@@ -457,9 +457,9 @@ describe "optional" => sub {
 				options my @options = ('myoption', 'myoption2');
 				my @res = optional @options;
 				cmp_deeply [@res], [@options];
-				ok !defined context->{errors};
-				ok context->{options}->{myoption}->{seen};
-				ok context->{options}->{myoption2}->{seen};
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
 			}
 		};
 	};
@@ -478,22 +478,22 @@ describe "validate" => sub {
 			localize sub {
 				local $_ = 'abc';
 				validation 'myoption', 'myerror', sub { $_ > 10 };
-				context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption}->{value} = '123';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
-				ok !defined context->{errors};
-				ok context->{options}->{myoption}->{seen};
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
 				ok $_ eq 'abc';
 			}
 		};
 		it "should work when validation failed" => sub {
 			localize sub {
 				validation 'myoption', 'myerror', sub { $_ > 10 };
-				context->{options}->{myoption}->{value} = '7';
+				Context->{options}->{myoption}->{value} = '7';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
-				cmp_deeply context->{errors}, [ { format => 'myerror', a => 'myoption' }];
-				ok context->{options}->{myoption}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+				ok Context->{options}->{myoption}->{seen};
 			}
 		};
 	};
@@ -501,11 +501,11 @@ describe "validate" => sub {
 		it "should work" => sub {
 			localize sub {
 				option 'myoption';
-				context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption}->{value} = '123';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
-				ok !defined context->{errors};
-				ok context->{options}->{myoption}->{seen};
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
 			}
 		};
 	};
@@ -522,13 +522,13 @@ describe "validate" => sub {
 				options qw/myoption/;
 				validation 'myoption', 'myerror', sub { $_ > 10 };
 				validation 'myoption2', 'myerror2', sub { $_ > 9 };
-				context->{options}->{myoption}->{value} = '1';
-				context->{options}->{myoption2}->{value} = '2';
+				Context->{options}->{myoption}->{value} = '1';
+				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
 				cmp_deeply [@res], [qw/myoption myoption2/];
-				ok context->{options}->{myoption}->{seen};
-				ok context->{options}->{myoption2}->{seen};
-				cmp_deeply context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption2' }];
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
 		it "error order should match validation order" => sub {
@@ -536,10 +536,10 @@ describe "validate" => sub {
 				options qw/myoption/;
 				validation 'myoption', 'myerror', sub { $_ > 10 };
 				validation 'myoption2', 'myerror2', sub { $_ > 9 };
-				context->{options}->{myoption}->{value} = '1';
-				context->{options}->{myoption2}->{value} = '2';
+				Context->{options}->{myoption}->{value} = '1';
+				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption2 myoption/;
-				cmp_deeply context->{errors}, [ { format => 'myerror2', a => 'myoption2' }, { format => 'myerror', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }, { format => 'myerror', a => 'myoption' }];
 			}
 		};
 		it "should work when one failed" => sub {
@@ -547,26 +547,26 @@ describe "validate" => sub {
 				options qw/myoption/;
 				validation 'myoption', 'myerror', sub { $_ > 10 };
 				validation 'myoption2', 'myerror2', sub { $_ > 9 };
-				context->{options}->{myoption}->{value} = '11';
-				context->{options}->{myoption2}->{value} = '2';
+				Context->{options}->{myoption}->{value} = '11';
+				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
 				cmp_deeply [@res], [qw/myoption myoption2/];
-				ok context->{options}->{myoption}->{seen};
-				ok context->{options}->{myoption2}->{seen};
-				cmp_deeply context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
 		it "should work when one failed" => sub {
 			localize sub {
 				options qw/myoption/;
 				validation 'myoption2', 'myerror2', sub { $_ > 9 };
-				context->{options}->{myoption}->{value} = '2';
-				context->{options}->{myoption2}->{value} = '2';
+				Context->{options}->{myoption}->{value} = '2';
+				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
 				cmp_deeply [@res], [qw/myoption myoption2/];
-				ok context->{options}->{myoption}->{seen};
-				ok context->{options}->{myoption2}->{seen};
-				cmp_deeply context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
 	};
@@ -579,7 +579,7 @@ describe "scope" => sub {
 				option 'myoption';
 				my @res = scope 'myscope', 'myoption';
 				cmp_deeply [@res], ['myoption'];
-				cmp_deeply context->{options}->{myoption}->{scope}, ['myscope'];
+				cmp_deeply Context->{options}->{myoption}->{scope}, ['myscope'];
 			}
 		};
 		it "should work with one two scopes" => sub {
@@ -587,7 +587,7 @@ describe "scope" => sub {
 				option 'myoption';
 				my @res = scope 'outer', scope 'inner', 'myoption';
 				cmp_deeply [@res], ['myoption'];
-				cmp_deeply context->{options}->{myoption}->{scope}, ['outer', 'inner'];
+				cmp_deeply Context->{options}->{myoption}->{scope}, ['outer', 'inner'];
 			}
 		};
 	};
@@ -604,7 +604,7 @@ describe "scope" => sub {
 				options qw/o1 o2/;
 				my @res = scope 'sc', qw/o1 o2/;
 				cmp_deeply [@res], [qw/o1 o2/];
-				cmp_deeply context->{options}->{$_}->{scope}, ['sc'] for qw/o1 o2/;
+				cmp_deeply Context->{options}->{$_}->{scope}, ['sc'] for qw/o1 o2/;
 				ok $_ eq 'abc';
 			}
 		};
@@ -613,7 +613,7 @@ describe "scope" => sub {
 				options qw/o1 o2/;
 				my @res = scope 'outer', scope 'inner', qw/o1 o2/;
 				cmp_deeply [@res], [qw/o1 o2/];
-				cmp_deeply context->{options}->{$_}->{scope}, ['outer', 'inner'] for qw/o1 o2/;
+				cmp_deeply Context->{options}->{$_}->{scope}, ['outer', 'inner'] for qw/o1 o2/;
 			}
 		};
 	};
@@ -624,7 +624,7 @@ describe "present" => sub {
 		localize sub {
 			local $_ = 'abc';
 			option 'myoption';
-			context->{options}->{myoption}->{value} = 1;
+			Context->{options}->{myoption}->{value} = 1;
 			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
 			ok present('myoption');
 			ok $_ eq 'abc';
@@ -633,7 +633,7 @@ describe "present" => sub {
 	it "should work when option exists " => sub {
 		localize sub {
 			option 'myoption';
-			context->{options}->{myoption}->{value} = 1;
+			Context->{options}->{myoption}->{value} = 1;
 			ok present('myoption');
 		}
 	};
@@ -656,7 +656,7 @@ describe "custom" => sub {
 		localize sub {
 			my $res = custom 'myoption', 42; 1;
 			ok $res eq 'myoption';
-			cmp_deeply context->{options}->{myoption}, { name => 'myoption', value => 42, source => 'set' };
+			cmp_deeply Context->{options}->{myoption}, { name => 'myoption', value => 42, source => 'set' };
 		}
 	};
 };
@@ -665,14 +665,14 @@ describe "error" => sub {
 	it "should work" => sub {
 		localize sub {
 			error 'myerror';
-			cmp_deeply context->{errors}, ['myerror']; 
+			cmp_deeply Context->{errors}, ['myerror']; 
 		}
 	};
 	it "should push errors to stack" => sub {
 		localize sub {
 			error 'myerror';
 			error 'myerror2';
-			cmp_deeply context->{errors}, ['myerror', 'myerror2']; 
+			cmp_deeply Context->{errors}, ['myerror', 'myerror2']; 
 		}
 	};
 };
@@ -681,14 +681,14 @@ describe "warning" => sub {
 	it "should work" => sub {
 		localize sub {
 			warning 'myerror';
-			cmp_deeply context->{warnings}, ['myerror']; 
+			cmp_deeply Context->{warnings}, ['myerror']; 
 		}
 	};
 	it "should push warnings to stack" => sub {
 		localize sub {
 			warning 'mywarning';
 			warning 'mywarning2';
-			cmp_deeply context->{warnings}, ['mywarning', 'mywarning2']; 
+			cmp_deeply Context->{warnings}, ['mywarning', 'mywarning2']; 
 		}
 	};
 };
@@ -735,11 +735,39 @@ describe "error to message" => sub {
 	};
 };
 
+describe "errors_or_warnings_to_messages" => sub {
+	it "should work without params when format defined" => sub {
+		my $c = create_engine();
+		$c->{messages}->{a} = 'xyz';
+		cmp_deeply [$c->errors_or_warnings_to_messages([{format => 'a'}])], ['xyz'];
+	};
+	it "should work without params when format not defined" => sub {
+		my $c = create_engine();
+		cmp_deeply [$c->errors_or_warnings_to_messages(['xyz'])], ['xyz'];
+	};
+	it "should work with params when format defined" => sub {
+		my $c = create_engine();
+		$c->{messages}->{a} = 'xyz';
+		App::MtAws::ConfigEngineNew->expects("error_to_message")->returns(sub{shift;{@_}})->once;
+		cmp_deeply [$c->errors_or_warnings_to_messages([{ format => 'a', x => 'y'}])], [format => 'a', x => 'y'];
+	};
+	it "should work list" => sub {
+		my $c = create_engine();
+		$c->{messages}->{a} = 'xyz';
+		cmp_deeply [$c->errors_or_warnings_to_messages([{format => 'a'}, 'abc'])], ['xyz', 'abc'];
+	};
+	it "should return undef" => sub {
+		my $c = create_engine();
+		ok ! defined $c->errors_or_warnings_to_messages(undef);
+		ok ! defined $c->errors_or_warnings_to_messages();
+	};
+};
+
 describe 'message' => sub {
 	it "should work" => sub {
 		localize sub {
 			is message("a", "b"), "a";
-			is context->{messages}{"a"}, "b";
+			is Context->{messages}{"a"}, "b";
 		};
 	};
 	it "should prohibit redeclaration" => sub {
@@ -762,7 +790,7 @@ describe 'error' => sub {
 			message("mymessage", "some text");
 			my @res = error("mymessage", a => 1, b => 42);
 			ok @res == 0;
-			cmp_deeply context->{errors}, [{ format => "mymessage", a => 1, b => 42}];
+			cmp_deeply Context->{errors}, [{ format => "mymessage", a => 1, b => 42}];
 		};
 	};
 	it "should die if message undeclared and variables specified" => sub {
@@ -783,7 +811,7 @@ describe 'error' => sub {
 			message("mymessage", "some text");
 			my @res = error("mymessage");
 			ok @res == 0;
-			cmp_deeply context->{errors}, [{ format => "mymessage"}];
+			cmp_deeply Context->{errors}, [{ format => "mymessage"}];
 		};
 	};
 	it "should work if message undeclared and no variables specified" => sub {
@@ -791,7 +819,7 @@ describe 'error' => sub {
 			message("mymessage", "some text");
 			my @res = error("mymessage1");
 			ok @res == 0;
-			cmp_deeply context->{errors}, ["mymessage1"];
+			cmp_deeply Context->{errors}, ["mymessage1"];
 		};
 	};
 };
