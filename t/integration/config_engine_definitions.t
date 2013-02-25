@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 204;
+use Test::More tests => 215;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -769,17 +769,19 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 }
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $fname = undef;
+	local *App::MtAws::ConfigEngineNew::read_config = sub { (undef, $fname) = @_; { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig', default => 43;
 		option 'myoption';
-		option 'config', default => 'c';
+		option 'config', default => 'cx';
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'},
+	is $fname, 'cx', "should read right config file";
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'cx'},
 		"config should work even if there is  default for config"); 
 }
 
@@ -824,6 +826,20 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok $@ =~ /must be seen/, "should catch when config option not seen";
 }
 
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { return; };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig', default => 44;
+		option 'myoption';
+		option 'config';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'cx');
+	cmp_deeply $res->{error_texts}, ['Cannot read config file: cx'], "should broken config"; 
+	cmp_deeply $res->{errors}, [{ format => 'cannot_read_config', config => 'cx' }], "should broken config"; 
+}
 
 sub create_engine
 {

@@ -121,6 +121,7 @@ sub define($&)
 	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
 	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
+	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
 	$block->();
 }
 
@@ -180,13 +181,17 @@ sub parse_options
 			my $cfg_value = $cfg_opt->{value};
 			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
 			if (defined $cfg_value) { # we should also check that config is 'seen'. we can only check below (so it must be seen)
-				my $cfg = $self->read_config($cfg_opt->{value});
-				for (keys %$cfg) {
-					my $optref = $self->{options}->{$_};
-					unless (defined $optref->{value}) {
-						# fill from config
-						@{$optref}{qw/value source/} = ($cfg->{$_}, 'config');
+				my $cfg = $self->read_config($cfg_value);
+				if (defined $cfg) {
+					for (keys %$cfg) {
+						my $optref = $self->{options}->{$_};
+						unless (defined $optref->{value}) {
+							# fill from config
+							@{$optref}{qw/value source/} = ($cfg->{$_}, 'config');
+						}
 					}
+				} else {
+					error("cannot_read_config", config => $cfg_value);
 				}
 			}
 		}
