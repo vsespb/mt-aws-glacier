@@ -84,7 +84,7 @@ use Data::Dumper;
 	$c->define(sub {
 		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2');
-		command 'mycommand' => sub { mandatory('myoption') };
+		command 'mycommand' => sub { mandatory('myoption'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}], "mandatory should work"; 
@@ -96,7 +96,7 @@ use Data::Dumper;
 	$c->define(sub {
 		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
-		command 'mycommand' => sub { mandatory('myoption', 'myoption3') };
+		command 'mycommand' => sub { mandatory('myoption', 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "should perform first mandatory check out of two"; 
@@ -108,7 +108,7 @@ use Data::Dumper;
 	$c->define(sub {
 		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
-		command 'mycommand' => sub { mandatory(optional('myoption'), 'myoption3') };
+		command 'mycommand' => sub { mandatory(optional('myoption'), 'myoption3'), optional 'myoption2' };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption3"}], "mandatory should work if inner optional() exists"; 
@@ -120,7 +120,7 @@ use Data::Dumper;
 	$c->define(sub {
 		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
-		command 'mycommand' => sub { mandatory(mandatory('myoption'), 'myoption3') };
+		command 'mycommand' => sub { mandatory(mandatory('myoption'), 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "nested mandatoy should work"; 
@@ -133,7 +133,7 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		options('myoption', 'myoption2');
-		command 'mycommand' => sub { optional('myoption') };
+		command 'mycommand' => sub { optional('myoption'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	ok ! defined $res->{errors}, "optional should work";
@@ -143,7 +143,7 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		options('myoption', 'myoption2', 'myoption3');
-		command 'mycommand' => sub { optional('myoption', 'myoption3') };
+		command 'mycommand' => sub { optional('myoption', 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	ok !defined $res->{errors}, 'should perform two optional checks'; 
@@ -154,7 +154,7 @@ use Data::Dumper;
 	$c->define(sub {
 		message 'mandatory', "Please specify %option a%";
 		options('myoption', 'myoption2', 'myoption3');
-		command 'mycommand' => sub { optional(mandatory('myoption'), 'myoption3') };
+		command 'mycommand' => sub { optional(mandatory('myoption'), 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}], "optional should work right if inner mandatory() exists";
@@ -165,7 +165,7 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		options('myoption', 'myoption2', 'myoption3');
-		command 'mycommand' => sub { optional(optional('myoption'), 'myoption3') };
+		command 'mycommand' => sub { optional(optional('myoption'), 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	ok ! defined $res->{errors}, 'nested optional should work'; 
@@ -428,17 +428,16 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		message 'mutual', "%option a% and %option b% are mutual exclusive";
 		options 'o1', 'o2';
 		command 'mycommand' => sub {
+			optional('o1'), mandatory('o2');
 			if (present('o1') && present('o2')) {
 				error('mutual', a => 'o1', b => 'o2');
-			} else {
-				optional('o1'), mandatory('o2')
 			}
 		};
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
 	ok ! defined $res->{warnings}||$res->{warning_texts};
 	cmp_deeply $res->{error_texts}, [q{"--o1" and "--o2" are mutual exclusive}], "error should work"; 
-	cmp_deeply $res->{errors}, [{format => 'mutual', a => 'o1', b => 'o2'}], "error should work"; 
+	cmp_deeply $res->{errors}, [{format => 'mutual', a => 'o1', b => 'o2'}], "error should work";
 }
 
 {
@@ -446,10 +445,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		options 'o1', 'o2';
 		command 'mycommand' => sub {
+			optional('o1'), mandatory('o2');
 			if (present('o1') && present('o2')) {
 				error('mymessage');
-			} else {
-				optional('o1'), mandatory('o2')
 			}
 		};
 	});
@@ -465,10 +463,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		options 'o1', 'o2';
 		message 'mymessage', 'some text';
 		command 'mycommand' => sub {
+			optional('o1'), mandatory('o2');
 			if (present('o1') && present('o2')) {
 				error('mymessage');
-			} else {
-				optional('o1'), mandatory('o2')
 			}
 		};
 	});
@@ -483,10 +480,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		options 'o1', 'o2';
 		command 'mycommand' => sub {
+			optional('o1'), mandatory('o2');
 			if (present('o1') && present('o2')) {
 				error('mymessage');
-			} else {
-				optional('o1'), mandatory('o2')
 			}
 		};
 	});
@@ -502,7 +498,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
-		command 'mycommand', alias => 'commandofmine', sub {};
+		command 'mycommand', alias => 'commandofmine', sub { optional 'o1' };
 	});
 	my $res = $c->parse_options('commandofmine', '-o1', '11');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
@@ -513,7 +509,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
-		command 'mycommand', alias => ['c1', 'c2'], sub {};
+		command 'mycommand', alias => ['c1', 'c2'], sub { optional 'o1' };
 	});
 	my $res = $c->parse_options('c2', '-o1', '11');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
@@ -525,7 +521,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'o1';
 		message 'deprecated_command', "command %command% is deprecated";
-		command 'mycommand', deprecated => 'commandofmine', sub {};
+		command 'mycommand', deprecated => 'commandofmine', sub { optional 'o1' };
 	});
 	my $res = $c->parse_options('commandofmine', '-o1', '11');
 	ok ! defined ($res->{errors}||$res->{error_texts});
@@ -543,6 +539,25 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		ok ! defined eval { command 'mycommand', deprecated => 'commandofmine', sub {}; 1 }, "deprecated command should die if message undeclated"
 	});
 }
+
+# parse options
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok defined $res->{errors};
+	ok defined $res->{error_texts};
+	ok ! defined $res->{warnings};
+	ok ! defined $res->{warning_texts};
+	ok ! defined $res->{command}, "command should be undefined in case of errors";
+	cmp_deeply $res->{error_texts}, ['Unexpected option "--o2"'], "should catch unexpected options"; 
+	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'o2' }], "should catch unexpected options"; 
+}
+
 
 sub create_engine
 {

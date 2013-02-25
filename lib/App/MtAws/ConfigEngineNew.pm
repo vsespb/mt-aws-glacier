@@ -111,6 +111,16 @@ sub arrayref_or_undef($)
 	defined($ref) && @$ref > 0 ? $ref : undef;
 }
 
+
+sub message($;$)
+{
+	my ($message, $format) = @_;
+	$format = $message unless defined $format;
+	confess "message $message already defined" if defined $context->{messages}->{$message};
+	$context->{messages}->{$message} = $format;
+	$message;
+}
+
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
@@ -122,6 +132,7 @@ sub parse_options
 	} values %{$self->{options}};
 	GetOptions(\my %results, @getopts);
 	
+	message 'unexpected_option', 'Unexpected option %option option%';
 	for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
 		my ($optref, $is_alias);
 		if ($self->{options}->{$_}) {
@@ -132,6 +143,8 @@ sub parse_options
 		}
 		
 		error(ALREADY_SPECIFIED_IN_ALIAS, a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
+		
+		
 		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
 	}
 	
@@ -139,13 +152,20 @@ sub parse_options
 	my $command = undef;
 	unless ($self->{errors}) {
 		my $original_command = $command = shift @ARGV;
+		confess "no command specified" unless defined $command;
 		confess "unknown command or alias" unless
 			$self->{commands}->{$command} ||
 			(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
 		 
 		$self->{commands}->{$command}->{cb}->();
-		$self->unflatten_scope();
-		warning(DEPRECATED_COMMAND, command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+		
+		for (values %{$self->{options}}) {
+			error('unexpected_option', option => $_->{name}) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
+		}
+		unless ($self->{errors}) {
+			$self->unflatten_scope();
+			warning(DEPRECATED_COMMAND, command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+		}
 	}
 	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
 	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];
@@ -217,14 +237,6 @@ sub options(@) {
 	} @_;
 };
 
-sub message($;$)
-{
-	my ($message, $format) = @_;
-	$format = $message unless defined $format;
-	confess "message $message already defined" if defined $context->{messages}->{$message};
-	$context->{messages}->{$message} = $format;
-	$message;
-}
 
 sub validation($$&)
 {
@@ -321,7 +333,7 @@ sub custom($$)
 };
 
 
-sub error($;%)
+sub error($;%) 
 {
 	my ($name, %data) = @_;
 	push @{$context->{errors}},
