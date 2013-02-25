@@ -119,6 +119,7 @@ sub define($&)
 	message 'deprecated_option', 'Option %option option% is deprecated', allow_redefine=>1;
 	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
 	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
+	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
 	$block->();
 }
 
@@ -131,22 +132,25 @@ sub parse_options
 	my @getopts = map {
 		map { "$_=s" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] }
 	} values %{$self->{options}};
-	GetOptions(\my %results, @getopts);
 	
-	for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
-		my ($optref, $is_alias);
-		if ($self->{options}->{$_}) {
-			($optref, $is_alias) = ($self->{options}->{$_}, 0);
-		} else {
-			($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
-			warning('deprecated_option', option => $_) if $self->{deprecated_options}->{$_};
+	error('getopts_error') unless GetOptions(\my %results, @getopts);
+	
+	unless ($self->{errors}) {
+		for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
+			my ($optref, $is_alias);
+			if ($self->{options}->{$_}) {
+				($optref, $is_alias) = ($self->{options}->{$_}, 0);
+			} else {
+				($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
+				warning('deprecated_option', option => $_) if $self->{deprecated_options}->{$_};
+			}
+			
+			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
+			
+			# fill from options from command line
+			@{$optref}{qw/value source original_option is_alias/} =
+				(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
 		}
-		
-		error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
-		
-		# fill from options from command line
-		@{$optref}{qw/value source original_option is_alias/} =
-			(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
 	}
 	
 	

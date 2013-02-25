@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 196;
+use Test::More tests => 200;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -683,6 +683,18 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	cmp_deeply $res->{error_texts}, ['Command typo [zz]'], "should catch unknown command with custom message"; 
 	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command with custom message"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		command 'mycommand' => sub { };
+	});
+	my $res = $c->parse_options('--f--');
+	ok $res->{errors} && $res->{error_texts};
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should catch error parsing options"; 
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should catch error parsing options"; 
 }
 
 # config
