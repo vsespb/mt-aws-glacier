@@ -119,7 +119,6 @@ sub parse_options
 			warning("deprecated_option", option => $_) if $self->{deprecated_options}->{$_};
 		}
 		
-		# TODO: exit sub, don't analyze anything
 		error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
 	}
@@ -170,6 +169,7 @@ sub assert_option { $context->{options}->{$_} or confess "undeclared option $_";
 #TODO: die if redefining options??
 sub option($;%) {
 	my ($name, %opts) = @_;
+	confess "option already declared" if $context->{options}->{$name};
 	if (%opts) {
 		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref ''); # TODO: common code for two subs, move out
 		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
@@ -188,7 +188,11 @@ sub option($;%) {
 };
 
 sub options(@) {
-	map { $context->{options}->{$_} = { name => $_ } unless $context->{options}->{$_}; $_	} @_
+	map {
+		confess "option already declared" if $context->{options}->{$_};
+		$context->{options}->{$_} = { name => $_ };
+		$_
+	} @_;
 };
 
 sub message($$)
@@ -202,7 +206,7 @@ sub message($$)
 sub validation($$&)
 {
 	my ($name, $message, $cb) = @_;
-	option($name);
+	confess "undeclared option" unless defined $context->{options}->{$name};
 	push @{ $context->{options}->{$name}->{validations} }, { 'message' => $message, cb => $cb };
 	$name;
 }

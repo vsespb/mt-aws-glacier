@@ -198,15 +198,11 @@ describe "option" => sub {
 			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption'}
 		}
 	};
-	it "should not overwrite existing option" => sub {
+	it "should die if option already declared" => sub {
 		localize sub {
 			local $_ = 'abc';
 			option 'myoption';
-			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption'};
-			mandatory 'myoption';
-			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
-			option 'myoption';
-			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', 'seen' => 1};
+			ok ! defined eval { option 'myoption'; 1 };
 			ok $_ eq 'abc';
 		}
 	};
@@ -318,31 +314,19 @@ describe "options" => sub {
 			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2'};
 		}
 	};
-	it "should not overwrite existing options with one argument" => sub {
+	it "should die if option is already declared. one argument" => sub {
 		localize sub {
 			local $_ = 'abc';
 			options 'myoption1', 'myoption2';
-			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1'};
-			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2'};
-			mandatory 'myoption1';
-			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
-			options 'myoption1';
-			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
+			ok ! defined eval { options 'myoption1'; 1 };
 			ok $_ eq 'abc';
 		}
 	};
-	it "should not overwrite existing options with many arguments" => sub {
+	it "should die if option is already declared. many arguments" => sub {
 		localize sub {
 			local $_ = 'abc';
 			options 'myoption1', 'myoption2';
-			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1'};
-			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2'};
-			mandatory 'myoption1', 'myoption2';
-			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
-			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
-			options 'myoption1', 'myoption2';
-			cmp_deeply Context->{options}->{myoption1}, {'name' => 'myoption1', 'seen' => 1};
-			cmp_deeply Context->{options}->{myoption2}, {'name' => 'myoption2', 'seen' => 1};
+			ok ! defined eval { options 'myoption1', 'myoption2'; 1 };
 			ok $_ eq 'abc';
 		}
 	};
@@ -375,16 +359,10 @@ describe "validation" => sub {
 			ok !$v->{cb}->() for (10);
 		}
 	};
-	it "should work without option" => sub {
+	it "should check if option is declared" => sub {
 		localize sub {
 			local $_ = 'abc';
-			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
-			ok $r eq 'myoption';
-			ok Context->{options}->{'myoption'};
-			cmp_deeply [sort keys %{Context->{options}->{'myoption'}}], [sort qw/name validations/];
-			ok 'myoption' eq Context->{options}->{'myoption'}->{name};
-			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
-			ok $_ eq 'abc';
+			ok ! defined eval { validation 'myoption', 'test message', sub { $_ > 10 }; 1; }
 		}
 	};
 };
@@ -582,7 +560,7 @@ describe "validate" => sub {
 		it "should work when validation passed" => sub {
 			localize sub {
 				local $_ = 'abc';
-				validation 'myoption', 'myerror', sub { $_ > 10 };
+				validation option('myoption'), 'myerror', sub { $_ > 10 };
 				Context->{options}->{myoption}->{value} = '123';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
@@ -593,7 +571,7 @@ describe "validate" => sub {
 		};
 		it "should work when validation failed" => sub {
 			localize sub {
-				validation 'myoption', 'myerror', sub { $_ > 10 };
+				validation option('myoption'), 'myerror', sub { $_ > 10 };
 				Context->{options}->{myoption}->{value} = '7';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
@@ -624,9 +602,8 @@ describe "validate" => sub {
 		};
 		it "should work when both failed" => sub {
 			localize sub {
-				options qw/myoption/;
-				validation 'myoption', 'myerror', sub { $_ > 10 };
-				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				validation option('myoption'), 'myerror', sub { $_ > 10 };
+				validation option('myoption2'), 'myerror2', sub { $_ > 9 };
 				Context->{options}->{myoption}->{value} = '1';
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
@@ -638,9 +615,8 @@ describe "validate" => sub {
 		};
 		it "error order should match validation order" => sub {
 			localize sub {
-				options qw/myoption/;
-				validation 'myoption', 'myerror', sub { $_ > 10 };
-				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				validation option('myoption'), 'myerror', sub { $_ > 10 };
+				validation option('myoption2'), 'myerror2', sub { $_ > 9 };
 				Context->{options}->{myoption}->{value} = '1';
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption2 myoption/;
@@ -649,9 +625,8 @@ describe "validate" => sub {
 		};
 		it "should work when one failed" => sub {
 			localize sub {
-				options qw/myoption/;
-				validation 'myoption', 'myerror', sub { $_ > 10 };
-				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				validation option('myoption'), 'myerror', sub { $_ > 10 };
+				validation option('myoption2'), 'myerror2', sub { $_ > 9 };
 				Context->{options}->{myoption}->{value} = '11';
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
@@ -664,7 +639,7 @@ describe "validate" => sub {
 		it "should work when one failed" => sub {
 			localize sub {
 				options qw/myoption/;
-				validation 'myoption2', 'myerror2', sub { $_ > 9 };
+				validation option('myoption2'), 'myerror2', sub { $_ > 9 };
 				Context->{options}->{myoption}->{value} = '2';
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
