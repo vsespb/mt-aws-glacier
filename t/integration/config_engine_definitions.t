@@ -23,13 +23,14 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 149;
+use Test::More tests => 169;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
 use Carp;
 use Data::Dumper;
 
+no warnings 'redefine';
 
 # validation
 
@@ -127,6 +128,19 @@ use Data::Dumper;
 	cmp_deeply $res->{errors}, [{format => 'mandatory', a => 'myoption'}, {format => 'mandatory', a => 'myoption3'}], "nested mandatoy should work";
 }
 
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		message 'mandatory', "Please specify %option a%";
+		option 'myoption', default => 42;
+		option 'myoption2';
+		command 'mycommand' => sub { mandatory('myoption', 'myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption2', 31);
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{options}, { myoption => 42, myoption2 => 31}, "mandatory should work with default values";
+}
+
 # optional
 
 {
@@ -137,6 +151,18 @@ use Data::Dumper;
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	ok ! defined $res->{errors}, "optional should work";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option ('myoption');
+		option 'myoption2', default => 42;
+		command 'mycommand' => sub { optional('myoption'), optional('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31);
+	ok ! defined $res->{errors}, "optional should work";
+	cmp_deeply $res->{options}, { myoption => 31, myoption2 => 42}, "optional should work with default values";
 }
 
 {
@@ -186,6 +212,22 @@ use Data::Dumper;
 	ok ! defined $res->{warning_texts}, "option should work - no warnings";
 	is $res->{command}, 'mycommand', "option should work - right command";
 	cmp_deeply($res->{options}, { myoption => 31 }, "option should work should work"); 
+}
+
+# option default
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'myoption';
+		option 'myoption2', default => 42;
+		command 'mycommand' => sub { optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31);
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "default option should work - right command";
+	cmp_deeply($res->{options}, { myoption => 31 },
+		"option with default values should work - default values should not appear in data if not requested");
 }
 
 
@@ -559,9 +601,98 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 }
 
 
+# config
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig';
+		option 'myoption';
+		option 'config';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "config should work - right command";
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should work"); 
+}
+
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig', default => 43;
+		option 'myoption';
+		option 'config';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should override default"); 
+}
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig', default => 43;
+		option 'myoption';
+		option 'config', default => 'c';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31);
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'},
+		"config should work even if there is  default for config"); 
+}
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig';
+		option 'myoption';
+		option 'config';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43);
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 43 , config => 'c'}, "command line should override config"); 
+}
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig', default => 44;
+		option 'myoption';
+		option 'config';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43);
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 43 , config => 'c'}, "command line should override config and default"); 
+}
+
+{
+	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'fromconfig', default => 44;
+		option 'myoption';
+		option 'config';
+		command 'mycommand' => sub { optional('fromconfig', 'myoption') };
+	});
+	ok ! defined eval { $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43); 1; };
+	ok $@ =~ /must be seen/, "should catch when config option not seen";
+}
+
+
 sub create_engine
 {
-	App::MtAws::ConfigEngineNew->new();
+	App::MtAws::ConfigEngineNew->new(@_);
 }
 
 1;

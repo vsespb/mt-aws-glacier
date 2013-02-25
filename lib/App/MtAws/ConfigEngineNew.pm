@@ -47,7 +47,10 @@ our $context;
 sub new
 {
 	my ($class, %args) = @_;
-	my $self = \%args;
+	my $self = {
+		ConfigOption => 'config',
+		%args
+	};
 	bless $self, $class;
 	return $self;
 }
@@ -144,7 +147,7 @@ sub parse_options
 		
 		error(ALREADY_SPECIFIED_IN_ALIAS, a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 		
-		
+		# fill from options from command line
 		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
 	}
 	
@@ -157,16 +160,42 @@ sub parse_options
 			$self->{commands}->{$command} ||
 			(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
 		 
+		my $cfg_opt = undef;
+		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
+			my $cfg_value = $cfg_opt->{value};
+			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
+			if (defined $cfg_value) {
+				my $cfg = $self->read_config($cfg_opt->{value});
+				for (keys %$cfg) {
+					my $optref = $self->{options}->{$_};
+					unless (defined $optref->{value}) {
+						# fill from config
+						@{$optref}{qw/value source/} = ($cfg->{$_}, 'config');
+					}
+				}
+			}
+		}
+		
+		for (values %{$self->{options}}) {
+			# fill from default values
+			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} && 
+		}
+		 
 		$self->{commands}->{$command}->{cb}->();
+		
+		if ($cfg_opt) {
+			confess "Config (option '$self->{ConfigOption}') must be seen" unless $cfg_opt->{seen};
+		}
 		
 		for (values %{$self->{options}}) {
 			error('unexpected_option', option => $_->{name}) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
 		}
 		unless ($self->{errors}) {
-			$self->unflatten_scope();
 			warning(DEPRECATED_COMMAND, command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+			$self->unflatten_scope();
 		}
 	}
+		
 	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
 	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];
 	
@@ -186,11 +215,13 @@ sub unflatten_scope
 	my $options = {};
 	for my $k (keys %{$self->{options}}) {
 		my $v = $self->{options}->{$k};
-		my $dest = $options;
-		for (@{$v->{scope}||[]}) {
-			$dest = $dest->{$_} ||= {};
+		if ($v->{seen}) {
+			my $dest = $options;
+			for (@{$v->{scope}||[]}) {
+				$dest = $dest->{$_} ||= {};
+			}
+			$dest->{$k} = $v->{value};
 		}
-		$dest->{$k} = $v->{value};
 	}
 	$self->{data} = $options;
 }
@@ -203,8 +234,6 @@ sub option($;%) {
 	my ($name, %opts) = @_;
 	confess "option already declared" if $context->{options}->{$name};
 	if (%opts) {
-		
-		
 		
 		if (defined $opts{alias}) {
 			require_message(ALREADY_SPECIFIED_IN_ALIAS);
@@ -328,7 +357,7 @@ sub custom($$)
 {
 	my ($name, $value) = @_;
 	confess if ($context->{options}->{$name});
-	$context->{options}->{$name} = {source => 'set', value => $value, name => $name };
+	$context->{options}->{$name} = {source => 'set', value => $value, name => $name, seen => 1 };
 	return $name;
 };
 
@@ -353,7 +382,27 @@ sub warning($;%)
 	return;
 };
 	
-
+sub read_config
+{
+	my ($self, $filename) = @_;
+	return unless -f $filename && -r $filename; #TODO test
+	open (my $F, "<:crlf:encoding(UTF-8)", $filename) || return;
+	my %newconfig;
+	while (<$F>) {
+		chomp;
+		next if /^\s*$/;
+		next if /^\s*\#/;
+		/^([^=]+)=(.*)$/;
+		my ($name, $value) = ($1,$2); # TODO: test lines with wrong format
+		$name =~ s/^[ \t]*//;
+		$name =~ s/[ \t]*$//;
+		$value =~ s/^[ \t]*//;
+		$value =~ s/[ \t]*$//;
+		$newconfig{$name} = $value;
+	}
+	close $F;
+	return \%newconfig;
+}
 
 1;
 

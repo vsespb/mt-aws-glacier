@@ -765,7 +765,7 @@ describe "custom" => sub {
 		localize sub {
 			my $res = custom 'myoption', 42; 1;
 			ok $res eq 'myoption';
-			cmp_deeply Context->{options}->{myoption}, { name => 'myoption', value => 42, source => 'set' };
+			cmp_deeply Context->{options}->{myoption}, { name => 'myoption', value => 42, source => 'set', seen => 1 };
 		}
 	};
 };
@@ -968,22 +968,42 @@ describe 'unflatten_scope' => sub {
 	it "should work" => sub {
 		my $c = create_engine();
 		$c->{options} = {
-			a => { value => 1},
-			b => { value => 2, scope => ['x']},
+			a => { value => 1, seen => 1},
+			b => { value => 2, scope => ['x'], seen => 1},
 		};
 		$c->unflatten_scope();
 		cmp_deeply $c->{data}, { a => 1, x => { b => 2 }};
-		cmp_deeply $c->{options}->{a}, { value => 1}, "it should not autovivify scope";
+		cmp_deeply $c->{options}->{a}, { value => 1, seen => 1}, "it should not autovivify scope";
+	};
+	it "should not work if option not seen, and we have scope" => sub {
+		my $c = create_engine();
+		$c->{options} = {
+			a => { value => 1, seen => 1},
+			b => { value => 2, scope => ['x']},
+		};
+		$c->unflatten_scope();
+		cmp_deeply $c->{data}, { a => 1};
+		cmp_deeply $c->{options}->{a}, { value => 1, seen => 1}, "it should not autovivify scope";
+	};
+	it "should not work if option not seen" => sub {
+		my $c = create_engine();
+		$c->{options} = {
+			a => { value => 1 },
+			b => { value => 2, scope => ['x'], seen => 1},
+		};
+		$c->unflatten_scope();
+		cmp_deeply $c->{data}, { x => { b => 2 }};
+		cmp_deeply $c->{options}->{a}, { value => 1 }, "it should not autovivify scope";
 	};
 	it "should work with nested scopes" => sub {
 		my $c = create_engine();
 		$c->{options} = {
-			a => { value => 1},
-			b => { value => 2, scope => ['x', 'y']},
+			a => { value => 1, seen => 1},
+			b => { value => 2, scope => ['x', 'y'], seen => 1},
 		};
 		$c->unflatten_scope();
 		cmp_deeply $c->{data}, { a => 1, x => { y => { b => 2 }}};
-		cmp_deeply $c->{options}->{a}, { value => 1}, "it should not autovivify scope";
+		cmp_deeply $c->{options}->{a}, { value => 1, seen => 1}, "it should not autovivify scope";
 	};
 	it "should work with empty data" => sub {
 		my $c = create_engine();
