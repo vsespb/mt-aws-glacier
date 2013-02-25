@@ -149,9 +149,12 @@ sub parse_options
 			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 			
 			# fill from options from command line
-			error("options_encoding_error", encoding => 'UTF-8') unless defined eval {
+			unless (defined eval {
 				@{$optref}{qw/value source original_option is_alias/} =
 					(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
+			}) {
+				error("options_encoding_error", encoding => 'UTF-8');
+				last;
 			}
 		}
 	}

@@ -637,6 +637,32 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { optional('o1'), optional('o2') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', "\xA0", '-o2', "\xA1");
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	ok ! defined $res->{command}, "command should be undefined";
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8 just once"; 
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 just once"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { optional('o1')};
+	});
+	my $res = $c->parse_options('mycommand', '-o1', "ok", '-o2', "\xA1");
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	ok ! defined $res->{command}, "command should be undefined";
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8 even if option is not used"; 
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 even if option is not used"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
 		command 'mycommand' => sub { };
 	});
 	my $res = $c->parse_options('mycommand');
