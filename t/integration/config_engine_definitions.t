@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 146;
+use Test::More tests => 142;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -59,18 +59,15 @@ use Data::Dumper;
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
-		command 'mycommand' => sub { validate optional('myoption') };
+		ok ! defined eval { validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 }; 1; },
+			"validation should die if option undeclared"
 	});
-	my $res = $c->parse_options('mycommand', '-myoption', 31);
-	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work withithout option"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "validation should work withithout option"; 
 }
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		validation option('myoption'), message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
 		validation 'myoption', message('way_too_high', "%option a% should be less than 100 for sure"), sub { $_ < 100 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
@@ -196,14 +193,8 @@ use Data::Dumper;
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'myoption';
-		option 'myoption';
-		command 'mycommand' => sub { optional('myoption') };
+		ok ! defined eval { option 'myoption'; 1 }, "option should not work if specified twice";
 	});
-	my $res = $c->parse_options('mycommand', '-myoption', 31);
-	ok ! defined $res->{errors}, "option should work even if specified twice";
-	ok ! defined $res->{warnings}, "option should work even if specified twice";
-	is $res->{command}, 'mycommand';
-	cmp_deeply($res->{options}, { myoption => 31 }, "option should work even if specified twice");
 }
 
 # options
