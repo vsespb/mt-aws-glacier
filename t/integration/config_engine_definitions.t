@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 191;
+use Test::More tests => 196;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -563,6 +563,21 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
+		command 'mycommand', deprecated => 'commandofmine', sub { optional 'o1' };
+	});
+	my $res = $c->parse_options('commandofmine', '-o1', '11');
+	ok ! defined ($res->{errors}||$res->{error_texts});
+	is $res->{command}, 'mycommand', 'alias should work';
+	ok $res->{warnings};
+	ok $res->{warning_texts};
+	cmp_deeply $res->{warning_texts}, ['Command "commandofmine" is deprecated'], "deprecated commands should work"; 
+	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1';
 		message 'deprecated_command', "command %command% is deprecated";
 		command 'mycommand', deprecated => 'commandofmine', sub { optional 'o1' };
 	});
@@ -573,14 +588,6 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok $res->{warning_texts};
 	cmp_deeply $res->{warning_texts}, ["command commandofmine is deprecated"], "deprecated commands should work"; 
 	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work"; 
-}
-
-{
-	my $c  = create_engine();
-	$c->define(sub {
-		option 'o1';
-		ok ! defined eval { command 'mycommand', deprecated => 'commandofmine', sub {}; 1 }, "deprecated command should die if message undeclated"
-	});
 }
 
 # parse options
