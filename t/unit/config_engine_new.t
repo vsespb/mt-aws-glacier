@@ -420,6 +420,7 @@ describe "mandatory" => sub {
 	it "should check option" => sub {
 		localize sub {
 			option 'myoption';
+			message 'mandatory', "Please specify %option a%";
 			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
 			mandatory('myoption2');
 		}
@@ -437,6 +438,7 @@ describe "mandatory" => sub {
 	it "should work when mandatory option missing" => sub {
 		localize sub {
 			option 'myoption';
+			message 'mandatory', "Please specify %option a%";
 			my ($res) = mandatory 'myoption';
 			ok $res eq 'myoption';
 			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
@@ -446,6 +448,7 @@ describe "mandatory" => sub {
 	it "should work when mandatory option missing and mandatory is nested" => sub {
 		localize sub {
 			option 'myoption';
+			message 'mandatory', "Please specify %option a%";
 			my ($res) = mandatory mandatory 'myoption';
 			ok $res eq 'myoption';
 			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption' }];
@@ -454,6 +457,7 @@ describe "mandatory" => sub {
 	};
 	it "should check options when several options presents" => sub {
 		localize sub {
+			message 'mandatory', "Please specify %option a%";
 			my @options = ('myoption', 'myoption2');
 			options @options;
 			App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
@@ -477,6 +481,7 @@ describe "mandatory" => sub {
 	};
 	it "should work when 1 of 2 mandatory option presents" => sub {
 		localize sub {
+			message 'mandatory', "Please specify %option a%";
 			options my @options = ('myoption', 'myoption2');
 			Context->{options}->{myoption}->{value} = '123';
 			my @res = mandatory @options;
@@ -489,6 +494,7 @@ describe "mandatory" => sub {
 	};
 	it "should work when 0 of 2 mandatory option presents" => sub {
 		localize sub {
+			message 'mandatory', "Please specify %option a%";
 			options my @options = ('myoption', 'myoption2');
 			my @res = mandatory @options;
 			cmp_deeply [@res], [@options];
@@ -496,6 +502,13 @@ describe "mandatory" => sub {
 			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'myoption' }, { format => 'mandatory', a => 'myoption2' }];
 			ok Context->{options}->{myoption}->{seen};
 			ok Context->{options}->{myoption2}->{seen};
+		}
+	};
+	it "should catch if mandatory message is undefined" => sub {
+		localize sub {
+			options my @options = ('myoption', 'myoption2');
+			ok ! defined eval { mandatory @options; 1 };
+			ok $@ =~ /mandatory.*undefined/i;
 		}
 	};
 };

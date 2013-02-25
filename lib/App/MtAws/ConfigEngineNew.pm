@@ -305,7 +305,7 @@ sub mandatory(@) {
 		assert_option;
 		unless ($context->{options}->{$_}->{seen}) {
 			$context->{options}->{$_}->{seen} = 1;
-			push @{$context->{errors}}, { format => "mandatory", a => $_ } unless defined($context->{options}->{$_}->{value});
+			error("mandatory", a => $_) unless defined($context->{options}->{$_}->{value});
 		}
 		$_;
 	} @_;
