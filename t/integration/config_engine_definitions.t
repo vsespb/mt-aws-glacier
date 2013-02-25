@@ -23,7 +23,8 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 169;
+use Encode;
+use Test::More tests => 172;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -600,6 +601,18 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'o2' }], "should catch unexpected options"; 
 }
 
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', encode("UTF-8", 'тест'));
+	ok !defined( $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "command should be defined";
+	cmp_deeply $res->{options}, { o1 => 'тест'}, "Should decode UTF options";
+}
 
 # config
 

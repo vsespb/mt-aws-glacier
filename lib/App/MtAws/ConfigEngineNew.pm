@@ -148,7 +148,8 @@ sub parse_options
 		error(ALREADY_SPECIFIED_IN_ALIAS, a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 		
 		# fill from options from command line
-		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
+		@{$optref}{qw/value source original_option is_alias/} =
+			(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
 	}
 	
 	
@@ -164,7 +165,7 @@ sub parse_options
 		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
 			my $cfg_value = $cfg_opt->{value};
 			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
-			if (defined $cfg_value) {
+			if (defined $cfg_value) { # we should also check that config is 'seen'. we can only check below (so it must be seen)
 				my $cfg = $self->read_config($cfg_opt->{value});
 				for (keys %$cfg) {
 					my $optref = $self->{options}->{$_};
