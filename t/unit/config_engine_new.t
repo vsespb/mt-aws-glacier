@@ -383,7 +383,7 @@ describe "validation" => sub {
 			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
 			my $v = Context->{options}->{'myoption'}->{validations}->[0];
 			cmp_deeply [sort keys %$v], [sort qw/message cb/]; 
-			ok $v->{message} eq 'test message';
+			is $v->{message}, 'test message';
 			ok $v->{cb}->() for (11);
 			ok !$v->{cb}->() for (10);
 		}
@@ -860,7 +860,7 @@ describe "error to message" => sub {
 describe "errors_or_warnings_to_messages" => sub {
 	it "should work without params when format defined" => sub {
 		my $c = create_engine();
-		$c->{messages}->{a} = 'xyz';
+		$c->{messages}->{a} = { format => 'xyz' };
 		cmp_deeply [$c->errors_or_warnings_to_messages([{format => 'a'}])], ['xyz'];
 	};
 	it "should work without params when format not defined" => sub {
@@ -869,13 +869,13 @@ describe "errors_or_warnings_to_messages" => sub {
 	};
 	it "should work with params when format defined" => sub {
 		my $c = create_engine();
-		$c->{messages}->{a} = 'xyz';
+		$c->{messages}->{a} = { format => 'xyz' };
 		App::MtAws::ConfigEngineNew->expects("error_to_message")->returns(sub{shift;{@_}})->once;
 		cmp_deeply [$c->errors_or_warnings_to_messages([{ format => 'a', x => 'y'}])], [format => 'a', x => 'y'];
 	};
 	it "should work list" => sub {
 		my $c = create_engine();
-		$c->{messages}->{a} = 'xyz';
+		$c->{messages}->{a} = {format => 'xyz' };
 		cmp_deeply [$c->errors_or_warnings_to_messages([{format => 'a'}, 'abc'])], ['xyz', 'abc'];
 	};
 	it "should return undef" => sub {
@@ -914,13 +914,13 @@ describe 'message' => sub {
 	it "should work" => sub {
 		localize sub {
 			is message("a", "b"), "a";
-			is Context->{messages}{"a"}, "b";
+			cmp_deeply Context->{messages}{"a"}, {format => "b"};
 		};
 	};
 	it "should work without second argument" => sub {
 		localize sub {
 			is message("a"), "a";
-			is Context->{messages}{"a"}, "a";
+			cmp_deeply Context->{messages}{"a"}, { format => "a" };
 		};
 	};
 	it "should prohibit redeclaration" => sub {
@@ -933,6 +933,30 @@ describe 'message' => sub {
 		localize sub {
 			message "a", "0";
 			ok ! defined eval { message "a", "0"; 1 };
+		};
+	};
+	it "should not prohibit redeclaration" => sub {
+		localize sub {
+			message "a", "b", allow_redefine => 1;
+			is message("a", "c"), "a";
+			cmp_deeply Context->{messages}{"a"}, {format => "c"};
+		};
+	};
+	it "should not prohibit redeclaration twice " => sub {
+		localize sub {
+			message "a", "b", allow_redefine => 1;
+			is message("a", "c", allow_redefine => 1), "a";
+			cmp_deeply Context->{messages}{"a"}, {format => "c", allow_redefine => 1};
+			is message("a", "d"), "a";
+			cmp_deeply Context->{messages}{"a"}, {format => "d"};
+		};
+	};
+	it "should prohibit redeclaration second time " => sub {
+		localize sub {
+			message "a", "b", allow_redefine => 1;
+			is message("a", "c"), "a";
+			cmp_deeply Context->{messages}{"a"}, {format => "c"};
+			ok ! defined eval { message("a", "d"); 1 };
 		};
 	};
 };

@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 172;
+use Test::More tests => 191;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -612,6 +612,70 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok !defined( $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "command should be defined";
 	cmp_deeply $res->{options}, { o1 => 'тест'}, "Should decode UTF options";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		command 'mycommand' => sub { };
+	});
+	my $res = $c->parse_options('mycommand');
+	ok !defined( $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "should work without options";
+	cmp_deeply $res->{options}, {}, "should work without options";
+}
+
+# parse options - system messages
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		command 'mycommand' => sub { };
+	});
+	my $res = $c->parse_options();
+	ok $res->{errors} && $res->{error_texts};
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{error_texts}, ['No command specified'], "should catch no command"; 
+	cmp_deeply $res->{errors}, [{ format => 'no_command' }], "should catch no command"; 
+}
+
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		message 'no_command', "Command missing";
+		command 'mycommand' => sub { };
+	});
+	my $res = $c->parse_options();
+	ok $res->{errors} && $res->{error_texts};
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{error_texts}, ['Command missing'], "should catch no command with custom message"; 
+	cmp_deeply $res->{errors}, [{ format => 'no_command' }], "should catch no command with custom message"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		command 'mycommand' => sub { };
+	});
+	my $res = $c->parse_options('zz');
+	ok $res->{errors} && $res->{error_texts};
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{error_texts}, ['Unknown command "zz"'], "should catch unknown command"; 
+	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		message 'unknown_command', "Command typo [%a%]";
+		command 'mycommand' => sub { };
+	});
+	my $res = $c->parse_options('zz');
+	ok $res->{errors} && $res->{error_texts};
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{error_texts}, ['Command typo [zz]'], "should catch unknown command with custom message"; 
+	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command with custom message"; 
 }
 
 # config

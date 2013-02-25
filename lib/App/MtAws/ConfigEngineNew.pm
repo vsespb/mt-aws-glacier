@@ -55,12 +55,6 @@ sub new
 	return $self;
 }
 
-sub define($&)
-{
-	my ($self, $block) = @_;
-	local $context = $self;
-	$block->();
-}
 
 sub error_to_message
 {
@@ -71,6 +65,9 @@ sub error_to_message
 			if (lc $format eq lc 'option') {
 				defined(my $value = $data{$name})||confess;
 				qq{"--$value"};
+			} elsif (lc $format eq lc 'command') {
+				defined(my $value = $data{$name})||confess;
+				qq{"$value"};
 			} else {
 				defined(my $value = $data{$name})||confess;
 				sprintf("%$format", $value);
@@ -93,7 +90,7 @@ sub errors_or_warnings_to_messages
 	map {
 		if (ref($_) eq ref({})) {
 			my $name = $_->{format} || confess "format not defined";
-			confess qq{message $name not defined} unless my $format = $self->{messages}->{$name};
+			confess qq{message $name not defined} unless $self->{messages}->{$name} and my $format = $self->{messages}->{$name}->{format};
 			error_to_message($format, %$_);
 		} else {
 			$_;
@@ -115,13 +112,23 @@ sub arrayref_or_undef($)
 }
 
 
-sub message($;$)
+sub message($;$%)
 {
-	my ($message, $format) = @_;
+	my ($message, $format, %opts) = @_;
 	$format = $message unless defined $format;
-	confess "message $message already defined" if defined $context->{messages}->{$message};
-	$context->{messages}->{$message} = $format;
+	confess "message $message already defined" if defined $context->{messages}->{$message} and !$context->{messages}->{$message}->{allow_redefine};
+	$context->{messages}->{$message} = { %opts, format => $format };
 	$message;
+}
+
+sub define($&)
+{
+	my ($self, $block) = @_;
+	local $context = $self;
+	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
+	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
+	message 'no_command', 'No command specified', allow_redefine=>1;
+	$block->();
 }
 
 sub parse_options
@@ -135,7 +142,6 @@ sub parse_options
 	} values %{$self->{options}};
 	GetOptions(\my %results, @getopts);
 	
-	message 'unexpected_option', 'Unexpected option %option option%';
 	for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
 		my ($optref, $is_alias);
 		if ($self->{options}->{$_}) {
@@ -154,13 +160,20 @@ sub parse_options
 	
 	
 	my $command = undef;
+	
 	unless ($self->{errors}) {
 		my $original_command = $command = shift @ARGV;
-		confess "no command specified" unless defined $command;
-		confess "unknown command or alias" unless
-			$self->{commands}->{$command} ||
-			(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
-		 
+		if (defined($command)) {
+			error("unknown_command", a => $original_command) unless
+				$self->{commands}->{$command} ||
+				(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
+			warning(DEPRECATED_COMMAND, command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+		} else {
+			error("no_command") unless defined $command;
+		}
+	}
+	
+	unless ($self->{errors}) {
 		my $cfg_opt = undef;
 		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
 			my $cfg_value = $cfg_opt->{value};
@@ -192,7 +205,6 @@ sub parse_options
 			error('unexpected_option', option => $_->{name}) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
 		}
 		unless ($self->{errors}) {
-			warning(DEPRECATED_COMMAND, command => $original_command) if ($self->{deprecated_commands}->{$original_command});
 			$self->unflatten_scope();
 		}
 	}
