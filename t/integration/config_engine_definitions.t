@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 200;
+use Test::More tests => 204;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -619,6 +619,19 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok !defined( $res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "command should be defined";
 	cmp_deeply $res->{options}, { o1 => 'тест'}, "Should decode UTF options";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', "\xA0");
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	ok ! defined $res->{command}, "command should be undefined";
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8"; 
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8"; 
 }
 
 {

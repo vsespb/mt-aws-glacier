@@ -120,6 +120,7 @@ sub define($&)
 	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
 	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
+	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
 	$block->();
 }
 
@@ -148,8 +149,10 @@ sub parse_options
 			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 			
 			# fill from options from command line
-			@{$optref}{qw/value source original_option is_alias/} =
-				(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
+			error("options_encoding_error", encoding => 'UTF-8') unless defined eval {
+				@{$optref}{qw/value source original_option is_alias/} =
+					(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
+			}
 		}
 	}
 	
