@@ -127,8 +127,9 @@ describe "command" => sub {
 	describe "deprecated", sub {
 		it "should work with alias option when it's a scalar" => sub {
 			localize sub {
+				message 'deprecated_command';
 				my $code = sub { $_*2 };
-				my @res = command 'mycommand', deprecated => 'abc', abc => 'xyz',$code;
+				my @res = command 'mycommand', deprecated => 'abc', abc => 'xyz', $code;
 				ok @res == 0;
 				cmp_deeply Context->{commands}->{'mycommand'}, { cb => $code, deprecated => ['abc'], abc => 'xyz' };
 				cmp_deeply Context->{aliasmap}->{'abc'}, 'mycommand';
@@ -137,6 +138,7 @@ describe "command" => sub {
 		};
 		it "should work with alias option when it's an array" => sub {	
 			localize sub {
+				message 'deprecated_command';
 				my $code = sub { $_*2 };
 				my @res = command 'mycommand', deprecated => [qw/abc def/],$code;
 				ok @res == 0;
@@ -150,6 +152,7 @@ describe "command" => sub {
 		it "should die if command already defined" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
+				message 'deprecated_command';
 				command 'mycommand', $code;
 				ok !defined eval { command 'newcommand', deprecated => 'mycommand', $code; 1 };
 			};
@@ -157,12 +160,14 @@ describe "command" => sub {
 		it "should die if alias already defined" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
+				message 'deprecated_command';
 				command 'mycommand', alias => 'myalias', $code;
 				ok !defined eval { command 'newcommand', deprecated => 'myalias', $code; 1 };
 			};
 		};
 		it "should die if deprecated alias already defined" => sub {
 			localize sub {
+				message 'deprecated_command';
 				my $code = sub { $_*2 };
 				command 'mycommand', deprecated => 'myalias', $code;
 				ok !defined eval { command 'newcommand', deprecated => 'myalias', $code; 1 };
@@ -170,12 +175,14 @@ describe "command" => sub {
 		};
 		it "should die if alias deprecated defined in same statement" => sub {
 			localize sub {
+				message 'deprecated_command';
 				my $code = sub { $_*2 };
 				ok !defined eval { command 'newcommand', deprecated => ['myalias', 'myalias'], $code; 1 };
 			};
 		};
 		it "should die if alias deprecated and alias redefined in same statement" => sub {
 			localize sub {
+				message 'deprecated_command';
 				my $code = sub { $_*2 };
 				ok !defined eval { command 'newcommand', deprecated => 'myalias', alias => 'myalias', $code; 1 };
 				ok !defined eval { command 'newcommand', alias => 'myalias', deprecated => 'myalias', $code; 1 };
@@ -183,6 +190,7 @@ describe "command" => sub {
 		};
 		it "should die if alias already defined, in case alias is an array" => sub {
 			localize sub {
+				message 'deprecated_command';
 				my $code = sub { $_*2 };
 				command 'mycommand', alias => ['myalias1', 'myalias2'], $code;
 				ok !defined eval { command 'newcommand', deprecated => ['myalias3', 'myalias2'], $code; 1 };
@@ -215,6 +223,7 @@ describe "option" => sub {
 	describe "alias" => sub {
 		it "should work with alias if it's scalar" => sub {
 			localize sub {
+				message 'already_specified_in_alias';
 				is option('myoption', alias => 'oldoption'), 'myoption';
 				cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', alias => ['oldoption']};
 				is Context->{optaliasmap}->{'oldoption'}, 'myoption'
@@ -222,6 +231,7 @@ describe "option" => sub {
 		};
 		it "should work with alias if it's array" => sub {
 			localize sub {
+				message 'already_specified_in_alias';
 				is option('myoption', alias => ['o1', 'o2']), 'myoption';
 				cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', alias => ['o1', 'o2']};
 				is Context->{optaliasmap}->{'o1'}, 'myoption';
@@ -230,34 +240,43 @@ describe "option" => sub {
 		};
 		it "should die if alias redefining option" => sub {
 			localize sub {
+				message 'already_specified_in_alias';
 				option 'o2';
 				ok ! defined eval { option('myoption', alias => ['o1', 'o2']); 1 };
 			}
 		};
 		it "should die if alias redefining alias" => sub {
 			localize sub {
+				message 'already_specified_in_alias';
 				option 'old', alias => 'o2';
 				ok ! defined eval { option('myoption', alias => ['o1', 'o2']); 1 };
 			}
 		};
 		it "should die if alias redefining alias in same statement" => sub {
 			localize sub {
+				message 'already_specified_in_alias';
 				ok ! defined eval { option('myoption', alias => ['o1', 'o1']); 1 };
 			}
 		};
 		it "should die if alias redefining deprecated" => sub {
 			localize sub {
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				option 'old', deprecated => 'o2';
 				ok ! defined eval { option('myoption', alias => ['o1', 'o2']); 1 };
 			}
 		};
 		it "should die if deprecation redefining deprecation  in same statement" => sub {
 			localize sub {
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				ok ! defined eval { option('myoption', deprecated => ['o1', 'o1']); 1 };
 			}
 		};
 		it "should die if deprecation redefining alias in same statement" => sub {
 			localize sub {
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				ok ! defined eval { option('myoption', deprecated => 'o1', alias => 'o1'); 1 };
 				ok ! defined eval { option('myoption', alias => 'o1', deprecated => 'o1'); 1 };
 			}
@@ -266,6 +285,8 @@ describe "option" => sub {
 	describe "deprecated" => sub {
 		it "should work with alias if it's scalar" => sub {
 			localize sub {
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				is option('myoption', deprecated => 'oldoption'), 'myoption';
 				cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', deprecated => ['oldoption']};
 				is Context->{optaliasmap}->{'oldoption'}, 'myoption'
@@ -273,6 +294,8 @@ describe "option" => sub {
 		};
 		it "should work with alias if it's array" => sub {
 			localize sub {
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				is option('myoption', deprecated => ['o1', 'o2']), 'myoption';
 				cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', deprecated => ['o1', 'o2']};
 				is Context->{optaliasmap}->{'o1'}, 'myoption';
@@ -282,17 +305,23 @@ describe "option" => sub {
 		it "should die if deprecated redefining option" => sub {
 			localize sub {
 				option 'o2';
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				ok ! defined eval { option('myoption', deprecated => ['o1', 'o2']); 1 };
 			}
 		};
 		it "should die if deprecated redefining alias" => sub {
 			localize sub {
+				message 'already_specified_in_alias';
+				message 'deprecated_option';
 				option 'old', alias => 'o2';
 				ok ! defined eval { option('myoption', deprecated => ['o1', 'o2']); 1 };
 			}
 		};
 		it "should die if deprecated redefining deprecated" => sub {
 			localize sub {
+				message 'deprecated_option';
+				message 'already_specified_in_alias';
 				option 'old', deprecated => 'o2';
 				ok ! defined eval { option('myoption', deprecated => ['o1', 'o2']); 1 };
 			}
@@ -873,6 +902,12 @@ describe 'message' => sub {
 		localize sub {
 			is message("a", "b"), "a";
 			is Context->{messages}{"a"}, "b";
+		};
+	};
+	it "should work without second argument" => sub {
+		localize sub {
+			is message("a"), "a";
+			is Context->{messages}{"a"}, "a";
 		};
 	};
 	it "should prohibit redeclaration" => sub {

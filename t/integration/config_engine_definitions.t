@@ -234,6 +234,7 @@ use Data::Dumper;
 {
 	my $c  = create_engine();
 	$c->define(sub {
+		message 'already_specified_in_alias';
 		option 'o1', alias => 'old';
 		command 'mycommand', sub { optional('o1') };
 	});
@@ -248,8 +249,8 @@ use Data::Dumper;
 for (['-old', '11', '-o1', '42'], ['-o1', '42', '-old', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'o1', alias => 'old';
 		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		option 'o1', alias => 'old';
 		command 'mycommand', sub { optional('o1') };
 	});
 	cmp_deeply [sort qw/old o1/], [qw/o1 old/];
@@ -264,8 +265,8 @@ for (['-old', '11', '-o1', '42'], ['-o1', '42', '-old', '11']) {
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'o1', alias => 'o0';
 		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		option 'o1', alias => 'o0';
 		command 'mycommand', sub { optional('o1') };
 	});
 	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
@@ -282,8 +283,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'x', alias => ['o1', 'o0'];
 		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		option 'x', alias => ['o1', 'o0'];
 		command 'mycommand', sub { optional('x') };
 	});
 	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
@@ -300,9 +301,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'x', deprecated => ['o1', 'o0'];
 		message 'deprecated_option', "option %option option% is deprecated";
 		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		option 'x', deprecated => ['o1', 'o0'];
 		command 'mycommand', sub { optional('x') };
 	});
 	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
@@ -318,9 +319,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'x', deprecated => 'o1', alias => 'o0';
 		message 'deprecated_option', "option %option option% is deprecated";
 		message 'already_specified_in_alias', "both options %option a% and %option b% are specified. however they are aliases";
+		option 'x', deprecated => 'o1', alias => 'o0';
 		command 'mycommand', sub { optional('x') };
 	});
 	cmp_deeply [sort qw/o0 o1/], [qw/o0 o1/];
@@ -337,8 +338,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'o1', deprecated => 'old';
 		message 'deprecated_option', "option %option option% is deprecated";
+		message 'already_specified_in_alias';
+		option 'o1', deprecated => 'old';
 		command 'mycommand', sub { optional('o1') };
 	});
 	my $res = $c->parse_options('mycommand', '-old', '11');
@@ -538,9 +540,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1';
-		command 'mycommand', deprecated => 'commandofmine', sub {};
+		ok ! defined eval { command 'mycommand', deprecated => 'commandofmine', sub {}; 1 }, "deprecated command should die if message undeclated"
 	});
-	ok ! defined eval { $c->parse_options('commandofmine', '-o1', '11'); 1 }, "deprecated command should die if message undeclated"
 }
 
 sub create_engine

@@ -28,10 +28,15 @@ use List::Util qw/first/;
 use strict;
 use warnings;
 use utf8;
+
+use constant DEPRECATED_OPTION => "deprecated_option";
+use constant DEPRECATED_COMMAND => "deprecated_command";
+use constant ALREADY_SPECIFIED_IN_ALIAS => 'already_specified_in_alias';
+
 			use Data::Dumper;
-require Exporter;                                                                                                                                                                                                                                                              
-use base qw/Exporter/;                                                                                                                                                                                                                                                         
-                                                                                                                                                                                                                                                                               
+require Exporter;
+use base qw/Exporter/;
+
 our @EXPORT = qw/option options command validation message
 				mandatory optional validate scope
 				present custom error warning/;
@@ -93,6 +98,13 @@ sub errors_or_warnings_to_messages
 	} @{$err};
 }
 
+sub require_message($)
+{
+	my ($name) = @_;
+	confess "message $name not declared" unless defined $context->{messages}->{$name};
+	$name;
+}
+
 sub arrayref_or_undef($)
 {
 	my ($ref) = @_;
@@ -116,10 +128,10 @@ sub parse_options
 			($optref, $is_alias) = ($self->{options}->{$_}, 0);
 		} else {
 			($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
-			warning("deprecated_option", option => $_) if $self->{deprecated_options}->{$_};
+			warning(DEPRECATED_OPTION, option => $_) if $self->{deprecated_options}->{$_};
 		}
 		
-		error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
+		error(ALREADY_SPECIFIED_IN_ALIAS, a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 		@{$optref}{qw/value source original_option is_alias/} = ($results{$_}, 'option', $_, $is_alias);
 	}
 	
@@ -133,7 +145,7 @@ sub parse_options
 		 
 		$self->{commands}->{$command}->{cb}->();
 		$self->unflatten_scope();
-		warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+		warning(DEPRECATED_COMMAND, command => $original_command) if ($self->{deprecated_commands}->{$original_command});
 	}
 	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
 	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];
@@ -171,9 +183,19 @@ sub option($;%) {
 	my ($name, %opts) = @_;
 	confess "option already declared" if $context->{options}->{$name};
 	if (%opts) {
-		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref ''); # TODO: common code for two subs, move out
-		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
 		
+		
+		
+		if (defined $opts{alias}) {
+			require_message(ALREADY_SPECIFIED_IN_ALIAS);
+			$opts{alias} = [$opts{alias}] if ref $opts{alias} eq ref ''; # TODO: common code for two subs, move out
+		}
+		
+		if (defined $opts{deprecated}) {
+			require_message(DEPRECATED_OPTION);
+			require_message(ALREADY_SPECIFIED_IN_ALIAS);
+			$opts{deprecated} = [$opts{deprecated}] if ref $opts{deprecated} eq ref '';
+		}
 		
 		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
 			confess "option $_ already declared" if defined $context->{options}->{$_};
@@ -195,10 +217,11 @@ sub options(@) {
 	} @_;
 };
 
-sub message($$)
+sub message($;$)
 {
 	my ($message, $format) = @_;
-	confess if defined $context->{messages}->{$message};
+	$format = $message unless defined $format;
+	confess "message $message already defined" if defined $context->{messages}->{$message};
 	$context->{messages}->{$message} = $format;
 	$message;
 }
@@ -219,6 +242,9 @@ sub command($%;$)
 	confess "alias $name already declared" if defined $context->{aliasmap}->{$name};
 	if (%opts) {
 		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref '');
+		
+		require_message(DEPRECATED_COMMAND) if defined $opts{deprecated};
+		
 		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
 		
 		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
