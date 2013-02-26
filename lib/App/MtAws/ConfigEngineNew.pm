@@ -32,7 +32,7 @@ use utf8;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT = qw/option options command validation message
+our @EXPORT = qw/option options positional command validation message
 				mandatory optional validate scope
 				present custom error warning/;
 				
@@ -122,6 +122,8 @@ sub define($&)
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
 	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
 	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
+	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
+	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
 	$block->();
 }
 
@@ -133,7 +135,7 @@ sub parse_options
 	
 	my @getopts = map {
 		map { "$_=s" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] }
-	} values %{$self->{options}};
+	} grep { !$_->{positional} } values %{$self->{options}};
 	
 	error('getopts_error') unless GetOptions(\my %results, @getopts);
 	
@@ -176,6 +178,10 @@ sub parse_options
 	}
 	
 	unless ($self->{errors}) {
+		$self->{positional_tail} = \@ARGV;
+	}
+	
+	unless ($self->{errors}) {
 		my $cfg_opt = undef;
 		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
 			my $cfg_value = $cfg_opt->{value};
@@ -210,6 +216,17 @@ sub parse_options
 		for (values %{$self->{options}}) {
 			error('unexpected_option', option => $_->{name}) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
 		}
+		
+		unless ($self->{errors}) {
+			if (@ARGV) {
+				unless (defined eval {
+					error('unexpected_argument', a => decode("UTF-8", shift @ARGV, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)); 1;
+				}) {
+					error("options_encoding_error", encoding => 'UTF-8');
+				}
+			}
+		}
+		
 		unless ($self->{errors}) {
 			$self->unflatten_scope();
 		}
@@ -234,7 +251,7 @@ sub unflatten_scope
 	my $options = {};
 	for my $k (keys %{$self->{options}}) {
 		my $v = $self->{options}->{$k};
-		if ($v->{seen}) {
+		if ($v->{seen} && defined($v->{value})) {
 			my $dest = $options;
 			for (@{$v->{scope}||[]}) {
 				$dest = $dest->{$_} ||= {};
@@ -248,7 +265,6 @@ sub unflatten_scope
 
 sub assert_option { $context->{options}->{$_} or confess "undeclared option $_"; }
 
-#TODO: die if redefining options??
 sub option($;%) {
 	my ($name, %opts) = @_;
 	confess "option already declared" if $context->{options}->{$name};
@@ -273,6 +289,11 @@ sub option($;%) {
 	$context->{options}->{$name} = { %opts, name => $name } unless $context->{options}->{$name};
 	return $name;
 };
+
+sub positional($;%)
+{
+	option shift, @_, positional => 1;
+}
 
 sub options(@) {
 	map {
@@ -314,11 +335,33 @@ sub command($%;$)
 	return;
 };
 
+sub seen
+{
+	my $o = @_ ? shift : $_;
+	my $option = $context->{options}->{$o} or confess "undeclared option $o";
+	unless ($option->{seen}) {
+		$option->{seen} = 1;
+		if ($option->{positional}) {
+			my $v = shift @{$context->{positional_tail}};
+			if (defined $v) {
+				unless (defined eval {
+					@{$option}{qw/value source/} = (decode("UTF-8", $v, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'positional');
+				}) {
+					error("options_encoding_error", encoding => 'UTF-8');
+				}
+			}
+		}
+	}
+	$o;
+}
+
 sub mandatory(@) {
 	return map {
 		assert_option;
 		unless ($context->{options}->{$_}->{seen}) {
-			$context->{options}->{$_}->{seen} = 1;
+			seen;
+			confess "mandatory positional argument goes after optional one"
+				if ($context->{options}->{$_}->{positional} and ($context->{positional_level} ||= 'mandatory') ne 'mandatory');
 			error("mandatory", a => $_) unless defined($context->{options}->{$_}->{value});
 		}
 		$_;
@@ -328,8 +371,8 @@ sub mandatory(@) {
 sub optional(@)
 {
 	return map {
-		assert_option;
-		$context->{options}->{$_}->{seen} = 1;
+		seen;
+		$context->{positional_level} = 'optional' if ($context->{options}->{$_}->{positional});
 		$_;
 	} @_;
 };
@@ -337,10 +380,8 @@ sub optional(@)
 sub validate(@)
 {
 	return map {
-		assert_option;
-		my $option = $_;
+		my $option = seen;
 		my $optionref = $context->{options}->{$option};
-		$optionref->{seen} = 1;
 		for my $v (@{ $optionref->{validations} }) {
 			for ($optionref->{value}) {
 				error ({ format => $v->{message}, a => $option}) unless $v->{cb}->();

@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 215;
+use Test::More tests => 264;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -152,6 +152,7 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	ok ! defined $res->{errors}, "optional should work";
+	cmp_deeply $res->{options}, { myoption2 => 31}, "optional should work right when option is missing";
 }
 
 {
@@ -214,6 +215,234 @@ no warnings 'redefine';
 	is $res->{command}, 'mycommand', "option should work - right command";
 	cmp_deeply($res->{options}, { myoption => 31 }, "option should work should work"); 
 }
+
+# positional
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { optional('myoption') };
+	});
+	my @my_args = ('mycommand', 'zyx');
+	my $res = $c->parse_options(@my_args);
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "positional should work";
+	cmp_deeply($res->{options}, { myoption => 'zyx' }, "positional should work");
+	cmp_deeply \@my_args, ['mycommand', 'zyx'], "should not alter args";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { optional('myoption') };
+	});
+	my @my_args = ('mycommand', '-myoption', 'def');
+	my $res = $c->parse_options(@my_args);
+	
+	cmp_deeply $res->{error_texts}, ['Error parsing options'],
+		"should not work if option with same name supplied as normal option";
+	cmp_deeply $res->{errors}, [{ format => "getopts_error"}],
+		"should not work if option with same name supplied as normal option";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2';
+		command 'mycommand' => sub { optional('myoption'), optional('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx', 'abc');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "positional should work with two args";
+	cmp_deeply($res->{options}, { myoption => 'zyx', 'myoption2' => 'abc' }, "positional should work with two args");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2';
+		command 'mycommand' => sub { optional('myoption2'), optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx', 'abc');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { myoption2 => 'zyx', 'myoption' => 'abc' }, "order of args should be defined");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { mandatory('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myoption' => 'zyx' }, "should work with mandatory");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2';
+		command 'mycommand' => sub { mandatory('myoption'), mandatory('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx', 'abc');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myoption' => 'zyx', 'myoption2' => 'abc' }, "should work with two mandatory");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2';
+		command 'mycommand' => sub { mandatory('myoption'), optional('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx', 'abc');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myoption' => 'zyx', 'myoption2' => 'abc' }, "should work with mandatory and optional");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2';
+		command 'mycommand' => sub { mandatory('myoption'), optional('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myoption' => 'zyx'}, "should work with mandatory and optional when optional option is missing");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { }, "should work with optional when optional option is missing");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption', default => 42;
+		command 'mycommand' => sub { optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { myoption => 42 },
+		"should work with optional when optional option is missing and have a default value");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2', default => 42;
+		command 'mycommand' => sub { mandatory('myoption'), optional('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', 'zyx');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand';
+	cmp_deeply($res->{options}, { 'myoption' => 'zyx', myoption2 => 42},
+		"should work with mandatory and optional when optional option is missing and have default value");
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { mandatory('myoption') };
+	});
+	my $res = $c->parse_options('mycommand');
+	cmp_deeply $res->{error_texts}, ['Option "--myoption" is mandatory'], "mandatory positional arg should work when missing";
+	cmp_deeply $res->{errors}, [{ format => "mandatory", a => 'myoption'}], "mandatory positional arg should work when missing";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { mandatory('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', 'xx', 'zz');
+	cmp_deeply $res->{error_texts}, ['Unexpected argument in command line: zz'], "should catch unexpected arguments";
+	cmp_deeply $res->{errors}, [{ format => "unexpected_argument", a => 'zz'}], "should catch unexpected arguments";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		command 'mycommand' => sub { mandatory('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', 'xx', "\xA0");
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8"; 
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'o1';
+		positional 'o2';
+		command 'mycommand' => sub { optional('o1'), mandatory('o2') };
+	});
+	ok ! defined eval { $c->parse_options('mycommand'); 1 }, "mandatory can't go after optional";
+	ok $@ =~ /mandatory positional argument goes after optional one/i;
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'o1';
+		positional 'o2';
+		positional 'o3';
+		command 'mycommand' => sub { optional('o1'), optional('o2'), mandatory('o3') };
+	});
+	ok ! defined eval { $c->parse_options('mycommand'); 1 }, "mandatory can't go after two optional";
+	ok $@ =~ /mandatory positional argument goes after optional one/i;
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'p';
+		option 'o';
+		command 'mycommand' => sub { optional('o'), mandatory('p') };
+	});
+	my $res = $c->parse_options('mycommand', 'xyz', '-o', '42');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{options}, { o => '42', p => 'xyz' }, "should work together with options";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'o1';
+		command 'mycommand' => sub { optional('o1')};
+	});
+	
+	my $res = $c->parse_options('mycommand', encode("UTF-8", 'тест'));
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{options}, { o1 => 'тест' }, "positional args should work with UTF-8";
+}
+
 
 # option default
 
@@ -605,7 +834,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined $res->{warning_texts};
 	ok ! defined $res->{command}, "command should be undefined in case of errors";
 	cmp_deeply $res->{error_texts}, ['Unexpected option "--o2"'], "should catch unexpected options"; 
-	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'o2' }], "should catch unexpected options"; 
+	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'o2' }], "should catch unexpected options";
+	ok ! defined $App::MtAws::ConfigEngineNew::context, "context should be always localized"; 
 }
 
 

@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec;
+use Encode;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
 use Data::Dumper;
@@ -199,6 +200,27 @@ describe "command" => sub {
 	};
 };
 
+describe "positional" => sub {
+	it "should work" => sub {
+		localize sub {
+			positional 'myoption';
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', positional => 1}
+		}
+	};
+	it "should allow args" => sub {
+		localize sub {
+			positional 'myoption', myarg => 42;
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', positional => 1, myarg => 42}
+		}
+	};
+	it "should prohibit overwrite positional" => sub {
+		localize sub {
+			positional 'myoption', positional => 0;
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption', positional => 1}
+		}
+	};
+};
+
 describe "option" => sub {
 	it "should work" => sub {
 		localize sub {
@@ -212,6 +234,18 @@ describe "option" => sub {
 			option 'myoption';
 			ok ! defined eval { option 'myoption'; 1 };
 			ok $_ eq 'abc';
+		}
+	};
+	it "should die if positional already declared" => sub {
+		localize sub {
+			option 'myoption';
+			ok ! defined eval { positional 'myoption'; 1 };
+		}
+	};
+	it "positional should die if option already declared" => sub {
+		localize sub {
+			positional 'myoption';
+			ok ! defined eval { option 'myoption'; 1 };
 		}
 	};
 	it "should return option name as scalar" => sub {
@@ -524,7 +558,7 @@ describe "optional" => sub {
 		it "should check option" => sub {
 			localize sub {
 				option 'myoption';
-				App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+				App::MtAws::ConfigEngineNew->expects("seen")->once();
 				optional('myoption2');
 			}
 		};
@@ -553,7 +587,7 @@ describe "optional" => sub {
 			localize sub {
 				my @options = ('myoption', 'myoption2');
 				options @options;
-				App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+				App::MtAws::ConfigEngineNew->expects("seen")->exactly(2);
 				optional @options;
 			}
 		};
@@ -600,7 +634,7 @@ describe "validate" => sub {
 	it "should check option" => sub {
 		localize sub {
 			option 'myoption';
-			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			App::MtAws::ConfigEngineNew->expects("seen")->once();
 			validate('myoption2');
 		}
 	};
@@ -644,7 +678,7 @@ describe "validate" => sub {
 		it "should check option" => sub {
 			localize sub {
 				options qw/myoption myoption2/;
-				App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+				App::MtAws::ConfigEngineNew->expects("seen")->exactly(2);
 				validate(qw/myoption2 myoption/);
 			}
 		};
@@ -1013,6 +1047,75 @@ describe 'error' => sub {
 	};
 };
 
+describe "seen" => sub {
+	it "should work" => sub {
+		localize sub {
+			option 'o1';
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1 };
+		};
+	};
+	it 'should work with \$_' => sub {
+		localize sub {
+			option 'o1';
+			App::MtAws::ConfigEngineNew::seen for ('o1');
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1 };
+		};
+	};
+	it "should not work twice" => sub {
+		localize sub {
+			positional 'o1';
+			Context->{positional_tail} = ['a'];
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{positional_tail}, [];
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, value => 'a', positional => 1, source => 'positional' };
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{positional_tail}, [];
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, value => 'a', positional => 1, source => 'positional' };
+		};
+	};
+	it "should die if option undeclared" => sub {
+		localize sub {
+			option 'o1';
+			ok ! defined eval { App::MtAws::ConfigEngineNew::seen('o2'); 1 };
+		};
+	};
+	it "should work with positional option" => sub {
+		localize sub {
+			positional 'o1';
+			Context->{positional_tail} = ['a'];
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, value => 'a', positional => 1, source => 'positional' };
+		};
+	};
+	it "should work with positional option if value missed" => sub {
+		localize sub {
+			positional 'o1';
+			Context->{positional_tail} = [];
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, positional => 1};
+		};
+	};
+	it "should decode UTF-8" => sub {
+		localize sub {
+			positional 'o1';
+			Context->{positional_tail} = [encode("UTF-8", 'тест')];
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, positional => 1, source => 'positional', value => 'тест'};
+		};
+	};
+	it "should throw error if broken UTF found" => sub {
+		localize sub {
+			positional 'o1';
+			message 'options_encoding_error', 'bad coding';
+			Context->{positional_tail} = ["\xA0"];
+			App::MtAws::ConfigEngineNew::seen('o1');
+			cmp_deeply Context->{errors}, [{format => 'options_encoding_error', encoding => 'UTF-8'}];
+			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, positional => 1 };
+		};
+	};
+};
+
 describe 'unflatten_scope' => sub {
 	it "should work" => sub {
 		my $c = create_engine();
@@ -1043,6 +1146,16 @@ describe 'unflatten_scope' => sub {
 		$c->unflatten_scope();
 		cmp_deeply $c->{data}, { x => { b => 2 }};
 		cmp_deeply $c->{options}->{a}, { value => 1 }, "it should not autovivify scope";
+	};
+	it "should not work if option has no value" => sub {
+		my $c = create_engine();
+		$c->{options} = {
+			a => { name => 'a', seen => 1 },
+			b => { name => 'b', value => 2, scope => ['x'], seen => 1},
+		};
+		$c->unflatten_scope();
+		cmp_deeply $c->{data}, { x => { b => 2 }};
+		cmp_deeply $c->{options}->{a}, { name => 'a', seen => 1 }, "it should not autovivify scope";
 	};
 	it "should work with nested scopes" => sub {
 		my $c = create_engine();

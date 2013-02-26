@@ -100,8 +100,15 @@ sub get_config
 		options qw/base-dir include exclude partsize journal filename stdin wait chunksize zz/;
 		
 		message 'mandatory', "Please specify %option a%";
+		#positional 'vault-name';
+		#validation 'vault-name', sub { /\w+/ };
 	
 		validation 'concurrency', message('concurrency_too_high', "%option option% should be less than 30"), sub { $_ < 30 };
+		
+		
+		command 'create-vault' => sub {
+			mandatory('vault-name')
+		};
 		
 		command 'sync' => sub {
 			 mandatory( mandatory(@remote), 'journal',  mandatory('dir'), check_base_dir, optional('partsize'), filter_options ); 
