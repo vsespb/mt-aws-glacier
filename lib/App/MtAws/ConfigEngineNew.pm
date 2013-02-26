@@ -39,6 +39,17 @@ our @EXPORT = qw/option options positional command validation message
 
 our $context; 
 
+
+sub message($;$%)
+{
+	my ($message, $format, %opts) = @_;
+	$format = $message unless defined $format;
+	confess "message $message already defined" if defined $context->{messages}->{$message} and !$context->{messages}->{$message}->{allow_redefine};
+	$context->{messages}->{$message} = { %opts, format => $format };
+	$message;
+}
+
+
 sub new
 {
 	my ($class, %args) = @_;
@@ -47,6 +58,19 @@ sub new
 		%args
 	};
 	bless $self, $class;
+	local $context = $self;
+	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
+	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
+	message 'no_command', 'No command specified', allow_redefine=>1;
+	message 'deprecated_option', 'Option %option option% is deprecated', allow_redefine=>1;
+	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
+	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
+	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
+	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
+	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
+	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
+	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
+	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
 	return $self;
 }
 
@@ -100,31 +124,10 @@ sub arrayref_or_undef($)
 }
 
 
-sub message($;$%)
-{
-	my ($message, $format, %opts) = @_;
-	$format = $message unless defined $format;
-	confess "message $message already defined" if defined $context->{messages}->{$message} and !$context->{messages}->{$message}->{allow_redefine};
-	$context->{messages}->{$message} = { %opts, format => $format };
-	$message;
-}
-
 sub define($&)
 {
 	my ($self, $block) = @_;
-	local $context = $self;
-	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
-	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
-	message 'no_command', 'No command specified', allow_redefine=>1;
-	message 'deprecated_option', 'Option %option option% is deprecated', allow_redefine=>1;
-	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
-	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
-	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
-	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
-	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
-	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
-	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
-	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
+	local $context = $self; # TODO: create wrapper like 'localize sub ..'
 	$block->();
 }
 
