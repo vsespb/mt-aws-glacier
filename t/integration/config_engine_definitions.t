@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 264;
+use Test::More tests => 266;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -370,8 +370,20 @@ no warnings 'redefine';
 		command 'mycommand' => sub { mandatory('myoption') };
 	});
 	my $res = $c->parse_options('mycommand');
-	cmp_deeply $res->{error_texts}, ['Option "--myoption" is mandatory'], "mandatory positional arg should work when missing";
-	cmp_deeply $res->{errors}, [{ format => "mandatory", a => 'myoption'}], "mandatory positional arg should work when missing";
+	cmp_deeply $res->{error_texts}, ['Positional argument #1 (myoption) is mandatory'], "mandatory positional arg should work when missing";
+	cmp_deeply $res->{errors}, [{ format => "positional_mandatory", a => 'myoption', n => 1}], "mandatory positional arg should work when missing";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		positional 'myoption';
+		positional 'myoption2';
+		command 'mycommand' => sub { mandatory('myoption', 'myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', 'z');
+	cmp_deeply $res->{error_texts}, ['Positional argument #2 (myoption2) is mandatory'], "mandatory positional arg should work when missing";
+	cmp_deeply $res->{errors}, [{ format => "positional_mandatory", a => 'myoption2', n => 2}], "mandatory positional arg should work when missing";
 }
 
 {

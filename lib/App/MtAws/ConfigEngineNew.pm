@@ -123,6 +123,7 @@ sub define($&)
 	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
 	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
 	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
+	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
 	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
 	$block->();
 }
@@ -344,6 +345,7 @@ sub seen
 		if ($option->{positional}) {
 			my $v = shift @{$context->{positional_tail}};
 			if (defined $v) {
+				push @{$context->{positional_backlog}}, $o;
 				unless (defined eval {
 					@{$option}{qw/value source/} = (decode("UTF-8", $v, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'positional');
 				}) {
@@ -357,12 +359,16 @@ sub seen
 
 sub mandatory(@) {
 	return map {
-		assert_option;
-		unless ($context->{options}->{$_}->{seen}) {
+		my $opt = assert_option;
+		unless ($opt->{seen}) {
 			seen;
 			confess "mandatory positional argument goes after optional one"
-				if ($context->{options}->{$_}->{positional} and ($context->{positional_level} ||= 'mandatory') ne 'mandatory');
-			error("mandatory", a => $_) unless defined($context->{options}->{$_}->{value});
+				if ($opt->{positional} and ($context->{positional_level} ||= 'mandatory') ne 'mandatory');
+			unless (defined($opt->{value})) {
+				$opt->{positional} ?
+					error("positional_mandatory", a => $_, n => scalar @{$context->{positional_backlog}||[]}+1) :
+					error("mandatory", a => $_);
+			}
 		}
 		$_;
 	} @_;

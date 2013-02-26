@@ -445,7 +445,7 @@ describe "assert_option" => sub {
 	it "should not confess if option is declared" => sub {
 		localize sub {
 			option 'myoption';
-			ok defined eval { App::MtAws::ConfigEngineNew::assert_option for ('myoption'); 1; };
+			is App::MtAws::ConfigEngineNew::assert_option, Context->{options}->{myoption} for ('myoption');
 		}
 	};
 	it "should not confess if option is declared and option is '0' " => sub {
@@ -461,7 +461,8 @@ describe "mandatory" => sub {
 		localize sub {
 			option 'myoption';
 			message 'mandatory', "Please specify %option a%";
-			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			App::MtAws::ConfigEngineNew->expects("assert_option")->once(); # TODO: weird test..
+			App::MtAws::ConfigEngineNew->expects("seen")->once();
 			mandatory('myoption2');
 		}
 	};
