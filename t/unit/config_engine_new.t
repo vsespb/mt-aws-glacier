@@ -220,6 +220,12 @@ describe "option" => sub {
 			ok $name eq 'myoption';
 		}
 	};
+	it "should not be able to overwrite name" => sub {
+		localize sub {
+			option 'myoption', name => 'xx';
+			cmp_deeply Context->{options}->{myoption}, {'name' => 'myoption' };
+		}
+	};
 	describe "alias" => sub {
 		it "should work with alias if it's scalar" => sub {
 			localize sub {
@@ -957,6 +963,12 @@ describe 'message' => sub {
 			is message("a", "c"), "a";
 			cmp_deeply Context->{messages}{"a"}, {format => "c"};
 			ok ! defined eval { message("a", "d"); 1 };
+		};
+	};
+	it "should not be able to overwrite format" => sub {
+		localize sub {
+			message "a", "b", format => 'xx';
+			cmp_deeply Context->{messages}{"a"}, {format => "b"};
 		};
 	};
 };

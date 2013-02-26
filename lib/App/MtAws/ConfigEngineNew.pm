@@ -270,7 +270,7 @@ sub option($;%) {
 		
 		$context->{deprecated_options}->{$_} = 1 for (@{$opts{deprecated}||[]});
 	}
-	$context->{options}->{$name} = { name => $name, %opts } unless $context->{options}->{$name};
+	$context->{options}->{$name} = { %opts, name => $name } unless $context->{options}->{$name};
 	return $name;
 };
 
