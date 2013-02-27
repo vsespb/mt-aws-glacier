@@ -24,10 +24,10 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 7;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use File::Path;
-
+use TestUtils;
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 mkpath($mtroot);
@@ -36,36 +36,33 @@ my $file = "$mtroot/config_engine_v08_test.txt";
 rmtree($file);
 
 
-my %disable_validations = ( 
-	'override_validations' => {
-		journal => undef,
-		secret  => undef,
-		key => undef, 
-	},
-);
-
-
 my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to-vault=myvault --journal x";
 {
 	unlink $file;
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $line));
-	ok( $errors && !$result, "should catch missed config file");
-	ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch missed config file error message");
+	disable_validations sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
+		ok( $errors && !$result, "should catch missed config file");
+		ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch missed config file error message");
+	};
 }
 
 {
 	mkpath($file);
- 	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $line));
-	ok( $errors && !$result, "should catch missed config file");
-	ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch when config file is a directory");
+	disable_validations sub {
+ 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
+		ok( $errors && !$result, "should catch missed config file");
+		ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch when config file is a directory");
+	}
 }
 
 {
 	rmtree($file);
 	open F, ">", $file;
 	close F;
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $line));
-	ok( !$errors && $result, "should work with empty config file");
+	disable_validations sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
+		ok( !$errors && $result, "should work with empty config file");
+	}
 }
 
 {
@@ -74,8 +71,10 @@ my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to
 	print F " ";
 	close F;
 	chmod 0000, $file;
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $line));
-	ok( $errors && !$result, "should catch permission problems with config file");
-	ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch when config file is a directory");
+	disable_validations sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
+		ok( $errors && !$result, "should catch permission problems with config file");
+		ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch when config file is a directory");
+	}
 }
 1;

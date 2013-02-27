@@ -23,13 +23,18 @@ package TestUtils;
 require Exporter;
 use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
-our @EXPORT = qw/fake_config config_create_and_parse/;
+our @EXPORT = qw/fake_config config_create_and_parse disable_validations/;
 
 sub fake_config(@)
 {
 	my ($cb, %data) = (pop @_, @_);
 	no warnings 'redefine';
 	local *App::MtAws::ConfigEngine::read_config = sub { %data ? { %data } : { (key=>'mykey', secret => 'mysecret', region => 'myregion') } };
+	disable_validations($cb);
+}
+
+sub disable_validations
+{
 	local %disable_validations = ( 
 		'override_validations' => {
 			journal => undef,
@@ -37,7 +42,7 @@ sub fake_config(@)
 			key => undef, 
 		},
 	);
-	$cb->();
+	shift->();
 }
 
 sub config_create_and_parse(@)
