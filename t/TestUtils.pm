@@ -23,7 +23,7 @@ package TestUtils;
 require Exporter;
 use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
-our @EXPORT = qw/fake_config config_create_and_parse disable_validations/;
+our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations/;
 
 sub fake_config(@)
 {
@@ -33,16 +33,29 @@ sub fake_config(@)
 	disable_validations($cb);
 }
 
+sub no_disable_validations
+{
+	local %disable_validations = undef;
+	shift->();
+}
+
 sub disable_validations
 {
-	local %disable_validations = ( 
+	my ($cb, @data) = (pop @_, @_);
+	local %disable_validations = @data ?
+	( 
+		'override_validations' => {
+			map { $_ => undef } @data
+		},
+	) :
+	( 
 		'override_validations' => {
 			journal => undef,
 			secret  => undef,
 			key => undef, 
 		},
 	);
-	shift->();
+	$cb->();
 }
 
 sub config_create_and_parse(@)
