@@ -25,22 +25,11 @@ use warnings;
 use utf8;
 use Test::More tests => 6;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
-
-no warnings 'redefine';
-
-local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
-
-my %disable_validations = ( 
-	'override_validations' => {
-		journal => undef,
-		secret  => undef,
-		key => undef, 
-	},
-);
+use TestUtils;
 
 
 
@@ -54,17 +43,19 @@ my ($default_concurrency, $default_partsize) = (4, 16);
 for (
 	qq!create-vault myvault --config=glacier.cfg!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && !$warnings, "$_ error/warnings");
-	ok ($command eq 'create-vault', "$_ command");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		'vault-name'=>'myvault',
-		config=>'glacier.cfg',
-	}, "$_ result");
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && !$warnings, "$_ error/warnings");
+		ok ($command eq 'create-vault', "$_ command");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			'vault-name'=>'myvault',
+			config=>'glacier.cfg',
+		}, "$_ result");
+	}
 }
 
 
@@ -73,17 +64,19 @@ for (
 for (
 	qq!delete-vault myvault --config=glacier.cfg!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && !$warnings, "$_ error/warnings");
-	ok ($command eq 'delete-vault', "$_ command");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		'vault-name'=>'myvault',
-		config=>'glacier.cfg',
-	}, "$_ result");
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && !$warnings, "$_ error/warnings");
+		ok ($command eq 'delete-vault', "$_ command");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			'vault-name'=>'myvault',
+			config=>'glacier.cfg',
+		}, "$_ result");
+	}
 }
 
 

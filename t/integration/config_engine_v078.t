@@ -25,22 +25,11 @@ use warnings;
 use utf8;
 use Test::More tests => 178;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
-no warnings 'redefine';
-
-local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
-
-my %disable_validations = ( 
-	'override_validations' => {
-		journal => undef,
-		secret  => undef,
-		key => undef, 
-	},
-);
-
+use TestUtils;
 
 #	print Dumper({errors => $errors, warnings => $warnings, result => $result});
 
@@ -56,21 +45,23 @@ for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		partsize => $default_partsize,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			partsize => $default_partsize,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	};
 }
 
 
@@ -80,19 +71,21 @@ for (
 	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
 	qq!sync --key=mykey --secret=mysecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors, "should understand line without config $_");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		partsize => $default_partsize,
-		journal => 'journal.log',
-	}, "$_ result");
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors, "should understand line without config $_");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			partsize => $default_partsize,
+			journal => 'journal.log',
+		}, "$_ result");
+	};
 }
 
 for (
@@ -101,41 +94,43 @@ for (
 	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --partsize=$default_partsize!,
 	qq!sync --config=glacier.cfg --key=mykey --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --partsize=$default_partsize!,
 ){
-	local *App::MtAws::ConfigEngine::read_config = sub { { secret => 'mysecret' } };
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors, "should understand part of config $_");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		config => 'glacier.cfg',
-		vault=>'myvault',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		partsize => $default_partsize,
-		journal => 'journal.log',
-	}, "$_ result");
+	fake_config secret => 'mysecret', sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors, "should understand part of config $_");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			config => 'glacier.cfg',
+			vault=>'myvault',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			partsize => $default_partsize,
+			journal => 'journal.log',
+		}, "$_ result");
+	}
 }
 
 for (
 	qq!sync --config=glacier.cfg --key=mykey --secret=newsecret --region myregion --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
 ){
-	local *App::MtAws::ConfigEngine::read_config = sub { { secret => 'mysecret' } };
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors, "command line should override config $_");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'newsecret',
-		region => 'myregion',
-		protocol => 'http',
-		config => 'glacier.cfg',
-		vault=>'myvault',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		partsize => $default_partsize,
-		journal => 'journal.log',
-	}, "$_ result");
+	fake_config secret => 'mysecret', sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors, "command line should override config $_");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'newsecret',
+			region => 'myregion',
+			protocol => 'http',
+			config => 'glacier.cfg',
+			vault=>'myvault',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			partsize => $default_partsize,
+			journal => 'journal.log',
+		}, "$_ result");
+	};
 }
 
 for (
@@ -146,21 +141,23 @@ for (
 # TODO: this one will not work
 #	qq! -partsize 2 -from-dir /data/backup -config glacier.cfg -to-vault=myvault -journal=journal.log -concurrency 8 sync !,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => 8,
-		partsize => 2,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => 8,
+			partsize => 2,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	}
 }
 
 
@@ -170,9 +167,11 @@ for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --journal=journal.log --concurrency=8 --partsize=2!,
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --concurrency=8 --partsize=2!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( $errors && !$result, "$_ - should catch missed options");
-	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( $errors && !$result, "$_ - should catch missed options");
+		ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	}
 }
 
 for (
@@ -182,9 +181,11 @@ for (
 	qq!sync sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3!,
 	qq!sync --dir x --config y -journal z -to-va va extra -conc 9 --partsize=3!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( $errors && !$result, "$_ - should catch non option");
-	ok( $errors->[0] =~ /Extra argument/, "$_ - should catch non option");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( $errors && !$result, "$_ - should catch non option");
+		ok( $errors->[0] =~ /Extra argument/, "$_ - should catch non option");
+	}
 }
 for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --max-number-of-files=42!,
@@ -192,22 +193,24 @@ for (
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=42 --partsize=$default_partsize!,
 	qq!sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency --max-number-of-files=42 --partsize=$default_partsize!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		'max-number-of-files' => 42,
-		partsize => $default_partsize,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			'max-number-of-files' => 42,
+			partsize => $default_partsize,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	}
 }
 
 #
@@ -221,19 +224,21 @@ for (
 # TODO: this one will not work
 #	qq! -partsize 2 -from-dir /data/backup -config glacier.cfg -to-vault=myvault -journal=journal.log -concurrency 8 sync !,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-#	print $errors->[0];
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault is not needed for this command','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+	#	print $errors->[0];
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault is not needed for this command','from-dir deprecated, use dir instead'], "$_ warnings text");
+	}
 }
 
 for (
@@ -241,9 +246,11 @@ for (
 	qq!check-local-hash --config=glacier.cfg --to-vault=myvault --journal=journal.log!,
 	qq!check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( $errors && !$result, "$_ - should catch missed options");
-	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( $errors && !$result, "$_ - should catch missed options");
+		ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	};
 }
 
 
@@ -254,21 +261,23 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=21 --concurrency=$default_concurrency!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=21!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		'max-number-of-files' => 21,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			'max-number-of-files' => 21,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	}
 }
 
 
@@ -277,21 +286,23 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9 --max-number-of-files=21!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal journal.log --max-number-of-files=21 --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => 9,
-		'max-number-of-files' => 21,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => 9,
+			'max-number-of-files' => 21,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	};
 }
 
 for (
@@ -307,9 +318,11 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --max-number-of-files=21 --concurrency=9!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( $errors && !$result, "$_ - should catch missed options");
-	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( $errors && !$result, "$_ - should catch missed options");
+		ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	};
 }
 
 
@@ -319,20 +332,22 @@ for (
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log !,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => $default_concurrency,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => $default_concurrency,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	};
 }
 
 for (
@@ -340,20 +355,22 @@ for (
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9 !,
 	qq!restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal journal.log  --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		dir => '/data/backup',
-		concurrency => 9,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			concurrency => 9,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+	};
 }
 
 
@@ -370,9 +387,11 @@ for (
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --concurrency=9!,
 	qq!restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( $errors && !$result, "$_ - should catch missed options");
-	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( $errors && !$result, "$_ - should catch missed options");
+		ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	};
 }
 
 
@@ -385,19 +404,21 @@ for (
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=$default_concurrency!,
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log !,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		concurrency => $default_concurrency,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			concurrency => $default_concurrency,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], "$_ warnings text");
+	};
 }
 
 
@@ -406,19 +427,21 @@ for (
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup  --journal=journal.log  --concurrency=9 --to-vault=myvault!,
 	qq!purge-vault --config glacier.cfg --from-dir=/data/backup  --journal=journal.log  --concurrency=9 --to-vault=myvault!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && $warnings, "$_ error/warnings");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		vault=>'myvault',
-		config=>'glacier.cfg',
-		concurrency => 9,
-		journal => 'journal.log',
-	}, "$_ result");
-	is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], "$_ warnings text");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && $warnings, "$_ error/warnings");
+		is_deeply($result, {
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			concurrency => 9,
+			journal => 'journal.log',
+		}, "$_ result");
+		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], "$_ warnings text");
+	};
 }
 
 
@@ -427,9 +450,11 @@ for (
 	qq!purge-vault --config=glacier.cfg  --journal=journal.log  --concurrency=9!,
 	qq!purge-vault --config=glacier.cfg --to-vault=myvault  --concurrency=9!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( $errors && !$result, "$_ - should catch missed options");
-	ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	fake_config  sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( $errors && !$result, "$_ - should catch missed options");
+		ok( $errors->[0] =~ /Please specify/, "$_ - should catch missed options and give error");
+	};
 }
 
 
