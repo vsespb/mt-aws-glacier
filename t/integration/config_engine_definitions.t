@@ -655,7 +655,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined ($res->{errors}||$res->{error_texts});
 	ok $res->{warnings} && $res->{warning_texts};
 	cmp_deeply $res->{warning_texts}, ['option "--old" is deprecated'], "deprecated options should work"; 
-	cmp_deeply $res->{warnings}, [{format => 'deprecated_option', option => 'old'}], "deprecated options should work"; 
+	cmp_deeply $res->{warnings}, [{format => 'deprecated_option', option => 'old', main => 'o1'}], "deprecated options should work"; 
 	cmp_deeply($res->{options}, { o1 => '11' }, "deprecated options should work");
 	cmp_deeply($c->{options}->{o1},
 		{ value => '11', name => 'o1', seen => 1, deprecated => ['old'], source => 'option', original_option => 'old', is_alias => 1 },

@@ -59,7 +59,7 @@ for (
 			partsize => $default_partsize,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
 	};
 }
 
@@ -155,7 +155,7 @@ for (
 			partsize => 2,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
 	}
 }
 
@@ -174,11 +174,11 @@ for (
 }
 
 for (
-	qq!sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra!,
-	qq!sync --from-dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra!,
-	qq!sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=3!,
-	qq!sync sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3!,
-	qq!sync --dir x --config y -journal z -to-va va extra -conc 9 --partsize=3!,
+	qq!sync --dir x --config y -journal z -to-va va -conc 9 --partsize=2 extra!,
+	qq!sync --from-dir x --config y -journal z -to-va va -conc 9 --partsize=2 extra!,
+	qq!sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=2!,
+	qq!sync sync --dir x --config y -journal z -to-va va -conc 9 --partsize=2!,
+	qq!sync --dir x --config y -journal z -to-va va extra -conc 9 --partsize=2!,
 ){
 	fake_config  sub {
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
@@ -208,7 +208,7 @@ for (
 			partsize => $default_partsize,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
 	}
 }
 
@@ -236,7 +236,8 @@ for (
 			dir => '/data/backup',
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault is not needed for this command','from-dir deprecated, use dir instead'], "$_ warnings text");
+		cmp_deeply($warnings, set('vault is not needed for this command','from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'),
+			"$_ warnings text");
 	}
 }
 
@@ -275,7 +276,7 @@ for (
 			'max-number-of-files' => 21,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'), "$_ warnings text");
 	}
 }
 
@@ -300,7 +301,7 @@ for (
 			'max-number-of-files' => 21,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'), "$_ warnings text");
 	};
 }
 
@@ -345,7 +346,7 @@ for (
 			concurrency => $default_concurrency,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'), "$_ warnings text");
 	};
 }
 
@@ -368,7 +369,7 @@ for (
 			concurrency => 9,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'], "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead'), "$_ warnings text");
 	};
 }
 
@@ -416,10 +417,9 @@ for (
 			concurrency => $default_concurrency,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead', 'options from-dir/dir deprecated for this command'), "$_ warnings text");
 	};
 }
-
 
 for (
 	qq!purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log  --concurrency=9!,
@@ -439,9 +439,10 @@ for (
 			concurrency => 9,
 			journal => 'journal.log',
 		}, "$_ result");
-		is_deeply($warnings, ['to-vault deprecated, use vault instead','from-dir is not needed for this command'], "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead', 'options from-dir/dir deprecated for this command'), "$_ warnings text");
 	};
 }
+
 
 
 for (

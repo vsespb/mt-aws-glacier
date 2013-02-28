@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 49;
+use Test::More tests => 48;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -61,7 +61,10 @@ sub assert_config_throw_error($$$)
 		'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=2  --from-dir z'
 		));
 		ok( $errors && $errors->[0] =~ /specified.*already defined/, 'delect already defined deprecated parameter');
-		ok( $warnings && $warnings->[0] =~ /to-vault deprecated, use vault instead/, 'delect already defined deprecated parameter');
+		ok( $warnings &&
+			($warnings->[0] =~ /to-vault deprecated, use vault instead/) ||
+			($warnings->[1] =~ /to-vault deprecated, use vault instead/),
+		'delect already defined deprecated parameter');
 	}
 }
 {
@@ -96,8 +99,7 @@ sub assert_config_throw_error($$$)
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'purge-vault --config=glacier.cfg --dir /data/backup --to-vault=myvault -journal=journal.log'
 		));
-		ok( $errors && !$warnings && !$result, "should not accept dir but accept from-dir" );
-		is_deeply($errors, ['Error parsing options'], "should not accept dir but accept from-dir");
+		ok( !$errors && $warnings && $result, "should accept dir just like from-dir" );
 	}
 }
 
@@ -161,14 +163,14 @@ sub assert_config_throw_error($$$)
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'synx'
 		));
-		ok( $errors && $errors->[0] eq 'Unknown command', "should catch unknown command" );
+		ok( $errors && $errors->[0] =~ /Unknown command/, "should catch unknown command" );
 	}
 }
 
 {
 	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
-		'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3 extra'
+		'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=4 extra'
 		));
 		ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option" );
 	}
@@ -177,9 +179,9 @@ sub assert_config_throw_error($$$)
 {
 	fake_config key=>'mykey', region => 'myregion', vault => 'newvault', sub {
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
-		'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=3'
+		'sync --dir x --config y -journal z -to-va va -conc 9 --partsize=4'
 		));
-		ok( $errors && $errors->[0] eq 'Please specify --secret OR add "secret=..." into the config file', "should catch missed secret" );
+		ok( $errors && $errors->[0] =~ /Please specify.*secret/, "should catch missed secret" );
 	}
 }
 
@@ -188,7 +190,7 @@ sub assert_config_throw_error($$$)
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'sync --key a --region b --dir x -journal z -to-va va -conc 9 --partsize=3'
 		));
-		ok( $errors && $errors->[0] eq 'Please specify --secret OR specify --config and put "secret=..." into the config file', "should catch missed secret without config" );
+		ok( $errors && $errors->[0] =~ /Please specify.*secret/, "should catch missed secret without config" );
 	}
 }
 
@@ -197,7 +199,7 @@ sub assert_config_throw_error($$$)
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'sync --config a --region b --dir x -to-va va -conc 9 --partsize=4'
 		));
-		ok( $errors && $errors->[0] eq 'Please specify --journal', "should catch missed journal with config ");
+		ok( $errors && $errors->[0] =~ /Please specify.*journal/, "should catch missed journal with config ");
 	}
 }
 
@@ -206,7 +208,7 @@ sub assert_config_throw_error($$$)
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'sync --key a --secret b --region c --dir x -to-va va -conc 9 --partsize=4'
 		));
-		ok( $errors && $errors->[0] eq 'Please specify --journal', "should catch missed journal without config ");
+		ok( $errors && $errors->[0] =~ /Please specify.*journal/, "should catch missed journal without config ");
 	}
 }
 
@@ -214,7 +216,7 @@ sub assert_config_throw_error($$$)
 {
 	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
-		'sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=3'
+		'sync --from -dir x --config y -journal z -to-va va -conc 9 --partsize=4'
 		));
 		ok( $errors && $errors->[0] =~ /Extra argument/i, "should catch non option 2" );
 	}
@@ -322,7 +324,7 @@ for ('restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1') {
 	my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 	'create-vault --config=glacier.cfg'
 	));
-	ok( $errors && $errors->[0] eq 'Please specify another argument in command line: vault-name', "show throw error is positional argument is missing" );
+	ok( $errors && $errors->[0] eq 'Positional argument #1 (vault-name) is mandatory', "show throw error is positional argument is missing" );
 	}
 }
 
