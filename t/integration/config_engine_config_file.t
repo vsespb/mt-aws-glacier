@@ -25,7 +25,6 @@ use warnings;
 use utf8;
 use Test::More tests => 7;
 use lib qw{.. ../lib ../../lib};
-use App::MtAws::ConfigEngine;
 use File::Path;
 use TestUtils;
 
