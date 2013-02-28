@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 266;
+use Test::More tests => 267;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -56,6 +56,16 @@ no warnings 'redefine';
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work with option inline"; 
 	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "validation should work with option inline"; 
+}
+
+{
+	my $c  = create_engine(override_validations => { myoption => undef });
+	$c->define(sub {
+		validation option('myoption'), message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		command 'mycommand' => sub { validate optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31);
+	ok !defined($res->{errors} || $res->{error_texts});
 }
 
 {

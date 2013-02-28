@@ -428,6 +428,14 @@ describe "validation" => sub {
 			ok !$v->{cb}->() for (10);
 		}
 	};
+	it "it should not work if we override_validations" => sub {
+		localize sub {
+			option 'myoption';
+			Context->{override_validations} = {myoption => undef };
+			my $r = validation 'myoption', 'test message', sub { $_ > 10 };
+			ok ! Context->{options}->{'myoption'}->{validations};
+		}
+	};
 	it "should check if option is declared" => sub {
 		localize sub {
 			local $_ = 'abc';

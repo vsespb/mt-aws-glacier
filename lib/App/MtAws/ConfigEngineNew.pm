@@ -312,7 +312,8 @@ sub validation($$&)
 {
 	my ($name, $message, $cb) = @_;
 	confess "undeclared option" unless defined $context->{options}->{$name};
-	push @{ $context->{options}->{$name}->{validations} }, { 'message' => $message, cb => $cb };
+	push @{ $context->{options}->{$name}->{validations} }, { 'message' => $message, cb => $cb }
+		unless $context->{override_validations} && exists($context->{override_validations}->{$name});
 	$name;
 }
 
