@@ -26,7 +26,6 @@ use utf8;
 use Test::More tests => 178;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
-use App::MtAws::ConfigEngine;
 use Test::MockModule;
 use Data::Dumper;
 use TestUtils;

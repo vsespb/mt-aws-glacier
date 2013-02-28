@@ -20,6 +20,7 @@
 
 package TestUtils;
 
+use App::MtAws::ConfigEngine;
 require Exporter;
 use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
