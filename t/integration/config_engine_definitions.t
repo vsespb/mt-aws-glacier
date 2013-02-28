@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 267;
+use Test::More tests => 272;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngineNew;
@@ -85,9 +85,23 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 200);
 
-	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}, q{"--myoption" should be less than 100 for sure}], "should perform two validations"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}, {format => 'way_too_high', a => 'myoption'}], "should perform two validations"; 
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should not perform two validations"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "should not perform two validations"; 
 }
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		validation option('myoption'), message('way_too_high', "%option a% should be less than 100 for sure"), sub { $_ < 100 };
+		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		command 'mycommand' => sub { validate optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 42);
+
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should perform 2nd validation"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "should perform 2nd validations"; 
+}
+
 
 # mandatory
 
@@ -714,7 +728,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 }
 
 
-# error, message, present
+# error, message, present, value
 
 {
 	my $c  = create_engine();
@@ -776,6 +790,23 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub {
 			optional('o1'), mandatory('o2');
 			if (present('o1') && present('o2')) {
+				error('mymessage');
+			}
+		};
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
+	ok ! defined $res->{warnings}||$res->{warning_texts};
+	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables"; 
+	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1', 'o2';
+		command 'mycommand' => sub {
+			optional('o1'), mandatory('o2');
+			if (value('o1') == 11 and value('o2') == 21) {
 				error('mymessage');
 			}
 		};

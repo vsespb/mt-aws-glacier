@@ -34,10 +34,10 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
 				mandatory optional validate scope
-				present custom error warning/;
+				present value custom error warning/;
 				
 
-our $context; 
+our $context;
 
 
 sub message($;$%)
@@ -92,7 +92,7 @@ sub error_to_message
 				sprintf("%$format", $value);
 			}
 		} else {
-			defined(my $value = $data{$match})||confess;
+			defined(my $value = $data{$match})||confess $spec;
 			$value;
 		}
 	};
@@ -211,7 +211,7 @@ sub parse_options
 			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} && 
 		}
 		 
-		$self->{commands}->{$command}->{cb}->();
+		$self->{commands}->{$command}->{cb}->(); # the callback!
 		
 		if ($cfg_opt) {
 			confess "Config (option '$self->{ConfigOption}') must be seen" unless $cfg_opt->{seen};
@@ -301,7 +301,7 @@ sub positional($;%)
 
 sub options(@) {
 	map {
-		confess "option already declared" if $context->{options}->{$_};
+		confess "option already declared $_" if $context->{options}->{$_};
 		$context->{options}->{$_} = { name => $_ };
 		$_
 	} @_;
@@ -392,9 +392,9 @@ sub validate(@)
 	return map {
 		my $option = seen;
 		my $optionref = $context->{options}->{$option};
-		for my $v (@{ $optionref->{validations} }) {
+		VALIDATION: for my $v (@{ $optionref->{validations} }) {
 			for ($optionref->{value}) {
-				error ({ format => $v->{message}, a => $option}) unless $v->{cb}->();
+				error ({ format => $v->{message}, a => $option}), last VALIDATION if defined && !$v->{cb}->();
 			}
 		}
 		$_;
@@ -416,6 +416,14 @@ sub present($)
 	my ($name) = @_;
 	assert_option for $name;
 	return defined($context->{options}->{$name}->{value})
+};
+
+sub value($)
+{
+	my ($name) = @_;
+	assert_option for $name;
+	confess "value not defined" unless defined($context->{options}->{$name}->{value});
+	return $context->{options}->{$name}->{value};
 };
 
 sub custom($$)

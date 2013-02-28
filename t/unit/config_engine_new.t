@@ -683,7 +683,31 @@ describe "validate" => sub {
 			}
 		};
 	};
-	describe "several validation" => sub {
+	describe "several validations for one option" => sub {
+		it "should not perform second validation if first failed" => sub {
+			localize sub {
+				validation option('myoption'), 'myerror', sub { $_ > 10 };
+				validation 'myoption', 'myerror2', sub { $_ > 9 };
+				Context->{options}->{myoption}->{value} = '1';
+				my (@res) = validate qw/myoption/;
+				cmp_deeply [@res], [qw/myoption/];
+				ok Context->{options}->{myoption}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+			}
+		};
+		it "should perform second validation if first passed" => sub {
+			localize sub {
+				validation option('myoption'), 'myerror', sub { $_ % 2 == 0 };
+				validation 'myoption', 'myerror2', sub { $_ > 9 };
+				Context->{options}->{myoption}->{value} = 6;
+				my (@res) = validate qw/myoption/;
+				cmp_deeply [@res], [qw/myoption/];
+				ok Context->{options}->{myoption}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption' }];
+			}
+		};
+	};
+	describe "several validations, max. one per option" => sub {
 		it "should check option" => sub {
 			localize sub {
 				options qw/myoption myoption2/;
@@ -812,6 +836,37 @@ describe "present" => sub {
 		localize sub {
 			option 'myoption';
 			ok ! present 'myoption'
+		}
+	};
+};
+
+describe "value" => sub {
+	it "should check option " => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = 42;
+			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			is 42, value('myoption');
+		}
+	};
+	it "should work when option exists " => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = 42;
+			is 42, value('myoption');
+		}
+	};
+	it "should work when option exists and empty string" => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = '';
+			is '', value('myoption');
+		}
+	};
+	it "should die when option not exists " => sub {
+		localize sub {
+			option 'myoption';
+			ok ! defined eval { value 'myoption'; 1 };
 		}
 	};
 };
