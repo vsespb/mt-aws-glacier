@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::ConfigEngine;
+package App::MtAws::ConfigEngineNew;
 
 use Getopt::Long;
 use Encode;
@@ -28,231 +28,444 @@ use List::Util qw/first/;
 use strict;
 use warnings;
 use utf8;
+			use Data::Dumper;
+require Exporter;
+use base qw/Exporter/;
+
+our @EXPORT = qw/option options positional command validation message
+				mandatory optional validate scope
+				present value raw_option custom error warning/;
+				
+
+our $context;
 
 
-my @config_opts = qw/key secret region protocol/;
-
-my %deprecations = (
-'from-dir'            => 'dir' ,
-'to-dir'              => 'dir' ,
-'to-vault'            => 'vault',
-);
-	
-my %options = (
-'config'              => { type => 's' },
-'journal'             => { type => 's', validate => [
-	['Journal file not found' => sub { my ($command, $results, $value) = @_;
-		if ($command eq 'sync') {
-			return 1;
-		} else {
-			return -r $value;
-		}
-	},
-	'Journal file not writable' => sub { my ($command, $results, $value) = @_;
-		if ($command =~ /^(sync|purge\-vault|restore|download\-inventory)$/) {
-			return (-f $value && -w $value && ! -d $value) || (! -d $value); # TODO: more strict test + actualyy create empty journal file when sync + unit test this
-		} else {
-			return 1;
-		}
-	} ],
-] },
-'new-journal'             => { type => 's', validate =>
-	[
-	'Journal file not empty - please provide empty file no write new journal' => sub { my ($command, $results, $value) = @_;
-		if ($command eq 'download-inventory') {
-			return ! -s $value;
-		} else {
-			return 1;
-		}
-	},	 ],
-},
-'job-id'             => { type => 's' },
-'dir'                 => { type => 's' },
-'vault'               => { type => 's' },
-'key'                 => { type => 's', validate => ['Invalid format of "key"', sub { $_[2] =~ /^[A-Za-z0-9]{20}$/; } ] },
-'secret'              => { type => 's', validate => ['Invalid format of "secret"', sub { $_[2] =~ /^[\x21-\x7e]{40}$/ } ] },
-'region'              => { type => 's', validate => ['Invalid format of "region"', sub { $_[2] =~ /^[A-Za-z0-9\-]{3,20}$/; } ] },
-'concurrency'         => { type => 'i', default => 4, validate =>
-	['Max concurrency is 30,  Min is 1' => sub { my ($command, $results, $value) = @_;
-		$value >= 1 && $value <= 30
-	}],
-},
-'partsize'            => { type => 'i', default => 16, validate =>
-	['Part size must be power of two'   => sub { my ($command, $results, $value) = @_;
-		($value != 0) && (($value & ($value - 1)) == 0)
-	}],
-},
-'max-number-of-files' => { type => 'i'},
-'protocol'             => { type => 's', default => 'http', validate => [
-	['protocol must be "https" or "http"' => sub { my ($command, $results, $value) = @_;
-		($value =~ /^https?$/)
-	}, ],
-	['IO::Socket::SSL or LWP::Protocol::https is not installed' => sub { my ($command, $results, $value) = @_;
-		$value ne 'https' || LWP::UserAgent->is_protocol_supported("https"); # TODO: only LWP::UserAgent->new->is_protocol_supported is documented
-	}, ],
-	['LWP::UserAgent 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
-		$value ne 'https' || LWP->VERSION() >= 6
-	}, ],
-	['LWP::Protocol::https 6.x required to use HTTPS' => sub { my ($command, $results, $value) = @_;
-		if ($value eq 'https') {
-			require LWP::Protocol::https;
-			LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6
-		} else {
-			1;
-		}
-	}, ],
-] },
-'vault-name'            => { validate =>
-	['Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'   => sub { my ($command, $results, $value) = @_;
-		$value =~ /^[A-Za-z0-9\.\-_]{1,255}$/;
-	}],
-},
-
-);
-
-my %commands = (
-'create-vault'      => { args=> ['vault-name'], req => [@config_opts]},
-'delete-vault'      => { args=> ['vault-name'], req => [@config_opts]},
-'sync'              => { req => [@config_opts, qw/journal dir vault concurrency partsize/], optional => [qw/max-number-of-files/]},
-'purge-vault'       => { req => [@config_opts, qw/journal vault concurrency/], optional => [qw//], deprecated => [qw/from-dir/] },
-'restore'           => { req => [@config_opts, qw/journal dir vault max-number-of-files concurrency/], },
-'restore-completed' => { req => [@config_opts, qw/journal vault dir concurrency/], optional => [qw//]},
-'check-local-hash'  => { req => [@config_opts, qw/journal dir/], deprecated => [qw/to-vault/] },
-'retrieve-inventory' => { req => [@config_opts, qw/vault/], optional => [qw//]},
-'download-inventory' => { req => [@config_opts, qw/vault new-journal/], optional => [qw//]},
-);
+sub message($;$%)
+{
+	my ($message, $format, %opts) = @_;
+	$format = $message unless defined $format;
+	confess "message $message already defined" if defined $context->{messages}->{$message} and !$context->{messages}->{$message}->{allow_redefine};
+	$context->{messages}->{$message} = { %opts, format => $format };
+	$message;
+}
 
 
 sub new
 {
 	my ($class, %args) = @_;
-	my $self = \%args;
+	my $self = {
+		ConfigOption => 'config',
+		%args
+	};
 	bless $self, $class;
+	local $context = $self;
+	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
+	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
+	message 'no_command', 'No command specified', allow_redefine=>1;
+	message 'deprecated_option', 'Option %option% is deprecated, use %optional main% instead', allow_redefine=>1;
+	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
+	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
+	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
+	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
+	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
+	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
+	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
+	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
 	return $self;
 }
 
+
+sub error_to_message
+{
+	my ($spec, %data) = @_;
+	my $rep = sub {
+		my ($match) = @_;
+		if (my ($format, $name) = $match =~ /^([\w]+)\s+([\w]+)$/) {
+			if (lc $format eq lc 'option') {
+				defined(my $value = $data{$name})||confess;
+				qq{"--$value"};
+			} elsif (lc $format eq lc 'command') {
+				defined(my $value = $data{$name})||confess;
+				qq{"$value"};
+			} else {
+				defined(my $value = $data{$name})||confess;
+				sprintf("%$format", $value);
+			}
+		} else {
+			defined(my $value = $data{$match})||confess $spec;
+			$value;
+		}
+	};
+	
+	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge if %data; # in new perl versions \w also means unicode chars..
+	$spec;
+}
+
+
+sub errors_or_warnings_to_messages
+{
+	my ($self, $err) = @_;
+	return unless defined $err;
+	map {
+		if (ref($_) eq ref({})) {
+			my $name = $_->{format} || confess "format not defined";
+			confess qq{message $name not defined} unless $self->{messages}->{$name} and my $format = $self->{messages}->{$name}->{format};
+			error_to_message($format, %$_);
+		} else {
+			$_;
+		}
+	} @{$err};
+}
+
+sub arrayref_or_undef($)
+{
+	my ($ref) = @_;
+	defined($ref) && @$ref > 0 ? $ref : undef;
+}
+
+
+sub define($&)
+{
+	my ($self, $block) = @_;
+	local $context = $self; # TODO: create wrapper like 'localize sub ..'
+	$block->();
+}
 
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
 	
-	my (@warnings);
-	my %reverse_deprecations;
 	
-	for my $o (keys %deprecations) {
-		$reverse_deprecations{ $deprecations{$o} } ||= [];
-		push @{ $reverse_deprecations{ $deprecations{$o} } }, $o;
-	}
-
-	my $command = shift @ARGV;
-	return (["Please specify command"], undef) unless $command;
-	return (undef, undef, 'help', undef) if $command =~ /\b(help|h)\b/i;
-	my $command_ref = $commands{$command};
-	return (["Unknown command"], undef) unless $command_ref;
+	return { command => 'help', map { $_ => undef } qw/errors error_texts warnings warning_texts options/} 
+		if (@ARGV && $ARGV[0] =~ /\b(help|h)\b/i);
 	
-	my @getopts;
-	for my $o ( @{$command_ref->{req}}, @{$command_ref->{optional}}, @{$command_ref->{deprecated}}, 'config' ) {
-		my $option = $options{$o};
-		my $type = $option->{type}||'s';
-		my $opt_spec = join ('|', $o, @{ $option->{alias}||[] });
-		push @getopts, "$opt_spec=$type";
-		
-		if ($reverse_deprecations{$o}) {
-			my $type = $option->{type}||'s';
-			for my $dep_o (@{ $reverse_deprecations{$o} }) {
-				push @getopts, "$dep_o=$type";
+	local $context = $self;
+	
+	my @getopts = map {
+		map { "$_=s" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] }
+	} grep { !$_->{positional} } values %{$self->{options}};
+	
+	error('getopts_error') unless GetOptions(\my %results, @getopts);
+	
+	unless ($self->{errors}) {
+		for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
+			my ($optref, $is_alias);
+			if ($self->{options}->{$_}) {
+				($optref, $is_alias) = ($self->{options}->{$_}, 0);
+			} else {
+				($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
+				warning('deprecated_option', option => $_, main => $self->{optaliasmap}->{$_}) if $self->{deprecated_options}->{$_};
+			}
+			
+			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
+			
+			# fill from options from command line
+			unless (defined eval {
+				@{$optref}{qw/value source original_option is_alias/} =
+					(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
+			}) {
+				error("options_encoding_error", encoding => 'UTF-8');
+				last;
 			}
 		}
 	}
-
-    my %result; # TODO: deafult hash, config from file
-	
-	return (["Error parsing options"], @warnings ? \@warnings : undef) unless GetOptions(\%result, @getopts);
-	$result{$_} = decode("UTF-8", $result{$_}, 1) for (keys %result);
-
-	# Special config handling
-	#return (["Please specify --config"], @warnings ? \@warnings : undef) unless $result{config};
 	
 	
-	my %source;
-	if ($result{config}) {
-		my $config_result = $self->read_config($result{config});
-		return (["Cannot read config file \"$result{config}\""], @warnings ? \@warnings : undef) unless defined $config_result;
-		
-		my (%merged);
-		
-		@merged{keys %$config_result} = values %$config_result; # TODO: throw away and ignore any unknown config options
-		$source{$_} = 'config' for (keys %$config_result);
+	my $command = undef;
 	
-		@merged{keys %result} = values %result;
-		$source{$_} = 'command' for (keys %result);
-	
-	
-		%result =%merged;
-	} else {
-		$source{$_} = 'command' for (keys %result);
-	}
-
-	if ($command_ref->{args}) {
-		for (@{$command_ref->{args}}) {
-			confess if defined $result{$_}; # we should not have arguments and options with same-name in our ConfigEngine config
-			my $val = shift @ARGV;
-			return (["Please specify another argument in command line: $_"], @warnings ? \@warnings : undef) unless defined $val;
-			$result{$_} = decode("UTF-8", $val);
-			$source{$_} = 'args';
+	unless ($self->{errors}) {
+		my $original_command = $command = shift @ARGV;
+		if (defined($command)) {
+			error("unknown_command", a => $original_command) unless
+				$self->{commands}->{$command} ||
+				(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
+			warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
+		} else {
+			error("no_command") unless defined $command;
 		}
 	}
-	return (["Extra argument in command line: $ARGV[0]"], @warnings ? \@warnings : undef) if @ARGV;
 	
-
-	for my $o (keys %deprecations) {
-		if ($result{$o}) {
-			if (first { $_ eq $o } @{ $command_ref->{deprecated} }) {
-				push @warnings, "$o is not needed for this command";
-				delete $result{$o};
-			} else {
-				if ($result{ $deprecations{$o} } && $source{ $deprecations{$o} } eq 'command') {
-					return (["$o specified, while $deprecations{$o} already defined "], @warnings ? \@warnings : undef);
+	unless ($self->{errors}) {
+		$self->{positional_tail} = \@ARGV;
+	}
+	
+	unless ($self->{errors}) {
+		my $cfg_opt = undef;
+		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
+			my $cfg_value = $cfg_opt->{value};
+			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
+			if (defined $cfg_value) { # we should also check that config is 'seen'. we can only check below (so it must be seen)
+				my $cfg = $self->read_config($cfg_value);
+				if (defined $cfg) {
+					for (keys %$cfg) {
+						my $optref = $self->{options}->{$_};
+						unless (defined $optref->{value}) {
+							# fill from config
+							@{$optref}{qw/value source/} = ($cfg->{$_}, 'config');
+						}
+					}
 				} else {
-					push @warnings, "$o deprecated, use $deprecations{$o} instead";
-					$result{ $deprecations{$o} } = delete $result{$o};
+					error("cannot_read_config", config => $cfg_value);
 				}
 			}
 		}
-	}
-
-	for my $o (@{$command_ref->{req}}) {
-		unless ($result{$o}) {
-			if (defined($options{$o}->{default})) { # Options from config are used here!
-				$result{$o} = $options{$o}->{default};
-			} else {
-				if (first { $_ eq $o } @config_opts) {
-					return ([
-						defined($result{config}) ?
-						"Please specify --$o OR add \"$o=...\" into the config file" :
-						"Please specify --$o OR specify --config and put \"$o=...\" into the config file"
-					],@warnings ? \@warnings : undef);
-				} else {
-					return (["Please specify --$o"], @warnings ? \@warnings : undef);
+		
+		for (values %{$self->{options}}) {
+			# fill from default values
+			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} && 
+		}
+		 
+		$self->{commands}->{$command}->{cb}->(); # the callback!
+		
+		if ($cfg_opt) {
+			confess "Config (option '$self->{ConfigOption}') must be seen" unless $cfg_opt->{seen};
+		}
+		
+		for (values %{$self->{options}}) {
+			error('unexpected_option', option => $_->{name}) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
+		}
+		
+		unless ($self->{errors}) {
+			if (@ARGV) {
+				unless (defined eval {
+					error('unexpected_argument', a => decode("UTF-8", shift @ARGV, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)); 1;
+				}) {
+					error("options_encoding_error", encoding => 'UTF-8');
 				}
 			}
 		}
-	}
-	for my $o (keys %result) {
-		if (my $validations = exists $self->{override_validations}->{$o} ? $self->{override_validations}->{$o} : $options{$o}{validate}) {
-			my $validations_array = ref $validations->[0] eq 'ARRAY' ? $validations : [ $validations ];
-			for my $v (@$validations_array) {
-				my ($message, $test) = @$v;
-				return (["$message"], @warnings ? \@warnings : undef) unless ($test->($command, \%result, $result{$o}));
-			}
+		
+		unless ($self->{errors}) {
+			$self->unflatten_scope();
 		}
 	}
+		
+	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
+	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];
 	
+	return {
+		errors => arrayref_or_undef $self->{errors},
+		error_texts => arrayref_or_undef $self->{error_texts},
+		warnings => arrayref_or_undef $self->{warnings},
+		warning_texts => arrayref_or_undef $self->{warning_texts},
+		command => $self->{errors} ? undef : $command,
+		options => $self->{data}
+	};
+}
 
-	return (undef, @warnings ? \@warnings : undef, $command, \%result);
+sub unflatten_scope
+{
+	my ($self) = @_;
+	my $options = {};
+	for my $k (keys %{$self->{options}}) {
+		my $v = $self->{options}->{$k};
+		if ($v->{seen} && defined($v->{value})) {
+			my $dest = $options;
+			for (@{$v->{scope}||[]}) {
+				$dest = $dest->{$_} ||= {};
+			}
+			$dest->{$k} = $v->{value};
+		}
+	}
+	$self->{data} = $options;
 }
 
 
+sub assert_option { $context->{options}->{$_} or confess "undeclared option $_"; }
+
+sub option($;%) {
+	my ($name, %opts) = @_;
+	confess "option already declared" if $context->{options}->{$name};
+	if (%opts) {
+		
+		if (defined $opts{alias}) {
+			$opts{alias} = [$opts{alias}] if ref $opts{alias} eq ref ''; # TODO: common code for two subs, move out
+		}
+		
+		if (defined $opts{deprecated}) {
+			$opts{deprecated} = [$opts{deprecated}] if ref $opts{deprecated} eq ref '';
+		}
+		
+		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
+			confess "option $_ already declared" if defined $context->{options}->{$_};
+			confess "alias $_ already declared" if defined $context->{optaliasmap}->{$_};
+			$context->{optaliasmap}->{$_} = $name;
+		}
+		
+		$context->{deprecated_options}->{$_} = 1 for (@{$opts{deprecated}||[]});
+	}
+	$context->{options}->{$name} = { %opts, name => $name } unless $context->{options}->{$name};
+	return $name;
+};
+
+sub positional($;%)
+{
+	option shift, @_, positional => 1;
+}
+
+sub options(@) {
+	map {
+		confess "option already declared $_" if $context->{options}->{$_};
+		$context->{options}->{$_} = { name => $_ };
+		$_
+	} @_;
+};
+
+
+sub validation($$&)
+{
+	my ($name, $message, $cb) = @_;
+	confess "undeclared option" unless defined $context->{options}->{$name};
+	push @{ $context->{options}->{$name}->{validations} }, { 'message' => $message, cb => $cb }
+		unless $context->{override_validations} && exists($context->{override_validations}->{$name});
+	$name;
+}
+
+sub command($%;$)
+{
+	my ($name, $cb, %opts) = (shift, pop, @_); # firs arg is name, last is cb, optional middle is opt
+
+	confess "command $name already declared" if defined $context->{commands}->{$name};
+	confess "alias $name already declared" if defined $context->{aliasmap}->{$name};
+	if (%opts) {
+		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref '');
+		
+		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
+		
+		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
+			confess "command $_ already declared" if defined $context->{commands}->{$_};
+			confess "alias $_ already declared" if defined $context->{aliasmap}->{$_};
+			$context->{aliasmap}->{$_} = $name;
+		}
+
+		$context->{deprecated_commands}->{$_} = 1 for (@{$opts{deprecated}||[]});
+	}
+	$context->{commands}->{$name} = { cb => $cb, %opts };
+	return;
+};
+
+sub seen
+{
+	my $o = @_ ? shift : $_;
+	my $option = $context->{options}->{$o} or confess "undeclared option $o";
+	unless ($option->{seen}) {
+		$option->{seen} = 1;
+		if ($option->{positional}) {
+			my $v = shift @{$context->{positional_tail}};
+			if (defined $v) {
+				push @{$context->{positional_backlog}}, $o;
+				unless (defined eval {
+					@{$option}{qw/value source/} = (decode("UTF-8", $v, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'positional');
+				}) {
+					error("options_encoding_error", encoding => 'UTF-8');
+				}
+			}
+		}
+	}
+	$o;
+}
+
+sub mandatory(@) {
+	return map {
+		my $opt = assert_option;
+		unless ($opt->{seen}) {
+			seen;
+			confess "mandatory positional argument goes after optional one"
+				if ($opt->{positional} and ($context->{positional_level} ||= 'mandatory') ne 'mandatory');
+			unless (defined($opt->{value})) {
+				$opt->{positional} ?
+					error("positional_mandatory", a => $_, n => scalar @{$context->{positional_backlog}||[]}+1) :
+					error("mandatory", a => $_);
+			}
+		}
+		$_;
+	} @_;
+};
+
+sub optional(@)
+{
+	return map {
+		seen;
+		$context->{positional_level} = 'optional' if ($context->{options}->{$_}->{positional});
+		$_;
+	} @_;
+};
+
+sub validate(@)
+{
+	return map {
+		my $option = seen;
+		my $optionref = $context->{options}->{$option};
+		VALIDATION: for my $v (@{ $optionref->{validations} }) {
+			for ($optionref->{value}) {
+				error ({ format => $v->{message}, a => $option}), last VALIDATION if defined && !$v->{cb}->();
+			}
+		}
+		$_;
+	} @_;
+};
+
+sub scope($@)
+{
+	my $scopename = shift; 
+	return map {
+		assert_option;
+		unshift @{$context->{options}->{$_}->{scope}}, $scopename;
+		$_;
+	} @_;
+};
+
+sub present($)
+{
+	my ($name) = @_;
+	assert_option for $name;
+	return defined($context->{options}->{$name}->{value})
+};
+
+sub value($)
+{
+	my ($name) = @_;
+	assert_option for $name;
+	confess "option not present" unless defined($context->{options}->{$name}->{value});
+	return $context->{options}->{$name}->{value};
+};
+
+sub raw_option($)
+{
+	my ($name) = @_;
+	assert_option for $name;
+	confess "option not present" unless defined($context->{options}->{$name}->{value});
+	return $context->{options}->{$name};
+};
+
+sub custom($$)
+{
+	my ($name, $value) = @_;
+	confess if ($context->{options}->{$name});
+	$context->{options}->{$name} = {source => 'set', value => $value, name => $name, seen => 1 };
+	return $name;
+};
+
+
+sub error($;%) 
+{
+	my ($name, %data) = @_;
+	push @{$context->{errors}},
+		defined($context->{messages}->{$name}) ?
+			{ format => $name, %data } :
+			(%data ? confess("message '$name' is undefined") : $name);
+	return;
+};
+	
+sub warning($;%)
+{
+	my ($name, %data) = @_;
+	push @{$context->{warnings}},
+		defined($context->{messages}->{$name}) ?
+			{ format => $name, %data } :
+			(%data ? confess("message '$name' is undefined") : $name);
+	return;
+};
 	
 sub read_config
 {
@@ -277,3 +490,8 @@ sub read_config
 }
 
 1;
+
+
+
+
+
