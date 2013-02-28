@@ -26,17 +26,17 @@ use utf8;
 use Test::Spec;
 use Encode;
 use lib qw{../lib ../../lib};
-use App::MtAws::ConfigEngineNew;
+use App::MtAws::ConfigEngine;
 use Data::Dumper;
 
 sub Context()
 {
-	$App::MtAws::ConfigEngineNew::context
+	$App::MtAws::ConfigEngine::context
 }
 
 sub localize(&)
 {
-	local $App::MtAws::ConfigEngineNew::context;
+	local $App::MtAws::ConfigEngine::context;
 	shift->();
 }
 
@@ -447,19 +447,19 @@ describe "validation" => sub {
 describe "assert_option" => sub {
 	it "should confess if option not declared" => sub {
 		localize sub {
-			ok ! defined eval { App::MtAws::ConfigEngineNew::assert_option for ('myoption'); 1; };
+			ok ! defined eval { App::MtAws::ConfigEngine::assert_option for ('myoption'); 1; };
 		}
 	};
 	it "should not confess if option is declared" => sub {
 		localize sub {
 			option 'myoption';
-			is App::MtAws::ConfigEngineNew::assert_option, Context->{options}->{myoption} for ('myoption');
+			is App::MtAws::ConfigEngine::assert_option, Context->{options}->{myoption} for ('myoption');
 		}
 	};
 	it "should not confess if option is declared and option is '0' " => sub {
 		localize sub {
 			option '0';
-			ok defined eval { App::MtAws::ConfigEngineNew::assert_option for ('0'); 1; };
+			ok defined eval { App::MtAws::ConfigEngine::assert_option for ('0'); 1; };
 		}
 	};
 };
@@ -469,8 +469,8 @@ describe "mandatory" => sub {
 		localize sub {
 			option 'myoption';
 			message 'mandatory', "Please specify %option a%";
-			App::MtAws::ConfigEngineNew->expects("assert_option")->once(); # TODO: weird test..
-			App::MtAws::ConfigEngineNew->expects("seen")->once();
+			App::MtAws::ConfigEngine->expects("assert_option")->once(); # TODO: weird test..
+			App::MtAws::ConfigEngine->expects("seen")->once();
 			mandatory('myoption2');
 		}
 	};
@@ -509,7 +509,7 @@ describe "mandatory" => sub {
 			message 'mandatory', "Please specify %option a%";
 			my @options = ('myoption', 'myoption2');
 			options @options;
-			App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+			App::MtAws::ConfigEngine->expects("assert_option")->exactly(2);
 			mandatory @options;
 		}
 	};
@@ -567,7 +567,7 @@ describe "optional" => sub {
 		it "should check option" => sub {
 			localize sub {
 				option 'myoption';
-				App::MtAws::ConfigEngineNew->expects("seen")->once();
+				App::MtAws::ConfigEngine->expects("seen")->once();
 				optional('myoption2');
 			}
 		};
@@ -596,7 +596,7 @@ describe "optional" => sub {
 			localize sub {
 				my @options = ('myoption', 'myoption2');
 				options @options;
-				App::MtAws::ConfigEngineNew->expects("seen")->exactly(2);
+				App::MtAws::ConfigEngine->expects("seen")->exactly(2);
 				optional @options;
 			}
 		};
@@ -643,7 +643,7 @@ describe "validate" => sub {
 	it "should check option" => sub {
 		localize sub {
 			option 'myoption';
-			App::MtAws::ConfigEngineNew->expects("seen")->once();
+			App::MtAws::ConfigEngine->expects("seen")->once();
 			validate('myoption2');
 		}
 	};
@@ -711,7 +711,7 @@ describe "validate" => sub {
 		it "should check option" => sub {
 			localize sub {
 				options qw/myoption myoption2/;
-				App::MtAws::ConfigEngineNew->expects("seen")->exactly(2);
+				App::MtAws::ConfigEngine->expects("seen")->exactly(2);
 				validate(qw/myoption2 myoption/);
 			}
 		};
@@ -789,7 +789,7 @@ describe "scope" => sub {
 	describe "with several arguments" => sub {
 		it "should check option" => sub {
 			localize sub {
-				App::MtAws::ConfigEngineNew->expects("assert_option")->exactly(2);
+				App::MtAws::ConfigEngine->expects("assert_option")->exactly(2);
 				scope 'myscope', qw/myoption myoption2/;
 			}
 		};
@@ -820,7 +820,7 @@ describe "present" => sub {
 			local $_ = 'abc';
 			option 'myoption';
 			Context->{options}->{myoption}->{value} = 1;
-			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			App::MtAws::ConfigEngine->expects("assert_option")->once();
 			ok present('myoption');
 			ok $_ eq 'abc';
 		}
@@ -845,7 +845,7 @@ describe "value" => sub {
 		localize sub {
 			option 'myoption';
 			Context->{options}->{myoption}->{value} = 42;
-			App::MtAws::ConfigEngineNew->expects("assert_option")->once();
+			App::MtAws::ConfigEngine->expects("assert_option")->once();
 			is 42, value('myoption');
 		}
 	};
@@ -920,7 +920,7 @@ describe "warning" => sub {
 };
 
 describe "error to message" => sub {
-	sub error_to_message { &App::MtAws::ConfigEngineNew::error_to_message };
+	sub error_to_message { &App::MtAws::ConfigEngine::error_to_message };
 	
 	it "should work without format" => sub {
 		ok error_to_message("option is mandatory") eq "option is mandatory";
@@ -974,7 +974,7 @@ describe "errors_or_warnings_to_messages" => sub {
 	it "should work with params when format defined" => sub {
 		my $c = create_engine();
 		$c->{messages}->{a} = { format => 'xyz' };
-		App::MtAws::ConfigEngineNew->expects("error_to_message")->returns(sub{shift;{@_}})->once;
+		App::MtAws::ConfigEngine->expects("error_to_message")->returns(sub{shift;{@_}})->once;
 		cmp_deeply [$c->errors_or_warnings_to_messages([{ format => 'a', x => 'y'}])], [format => 'a', x => 'y'];
 	};
 	it "should work list" => sub {
@@ -991,24 +991,24 @@ describe "errors_or_warnings_to_messages" => sub {
 
 describe "arrayref_or_undef" => sub {
 	it "should work" => sub {
-		cmp_deeply App::MtAws::ConfigEngineNew::arrayref_or_undef([1]), [1];
+		cmp_deeply App::MtAws::ConfigEngine::arrayref_or_undef([1]), [1];
 	};
 	it "should work with array of undef" => sub {
-		cmp_deeply App::MtAws::ConfigEngineNew::arrayref_or_undef([undef]), [undef];
+		cmp_deeply App::MtAws::ConfigEngine::arrayref_or_undef([undef]), [undef];
 	};
 	it "should work with empty array" => sub {
-		ok ! defined App::MtAws::ConfigEngineNew::arrayref_or_undef([]);
+		ok ! defined App::MtAws::ConfigEngine::arrayref_or_undef([]);
 	};
 	it "should work with undef" => sub {
-		ok ! defined App::MtAws::ConfigEngineNew::arrayref_or_undef(undef);
+		ok ! defined App::MtAws::ConfigEngine::arrayref_or_undef(undef);
 	};
 	it "should return undef, not empty list" => sub {
-		my @a = App::MtAws::ConfigEngineNew::arrayref_or_undef(undef);
+		my @a = App::MtAws::ConfigEngine::arrayref_or_undef(undef);
 		ok @a == 1;
 		ok !defined $a[0];
 	};
 	it "should return undef, not empty list" => sub {
-		my @a = App::MtAws::ConfigEngineNew::arrayref_or_undef([]);
+		my @a = App::MtAws::ConfigEngine::arrayref_or_undef([]);
 		ok @a == 1;
 		ok !defined $a[0];
 	};
@@ -1115,14 +1115,14 @@ describe "seen" => sub {
 	it "should work" => sub {
 		localize sub {
 			option 'o1';
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1 };
 		};
 	};
 	it 'should work with \$_' => sub {
 		localize sub {
 			option 'o1';
-			App::MtAws::ConfigEngineNew::seen for ('o1');
+			App::MtAws::ConfigEngine::seen for ('o1');
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1 };
 		};
 	};
@@ -1130,10 +1130,10 @@ describe "seen" => sub {
 		localize sub {
 			positional 'o1';
 			Context->{positional_tail} = ['a'];
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{positional_tail}, [];
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, value => 'a', positional => 1, source => 'positional' };
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{positional_tail}, [];
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, value => 'a', positional => 1, source => 'positional' };
 		};
@@ -1141,14 +1141,14 @@ describe "seen" => sub {
 	it "should die if option undeclared" => sub {
 		localize sub {
 			option 'o1';
-			ok ! defined eval { App::MtAws::ConfigEngineNew::seen('o2'); 1 };
+			ok ! defined eval { App::MtAws::ConfigEngine::seen('o2'); 1 };
 		};
 	};
 	it "should work with positional option" => sub {
 		localize sub {
 			positional 'o1';
 			Context->{positional_tail} = ['a'];
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, value => 'a', positional => 1, source => 'positional' };
 		};
 	};
@@ -1156,7 +1156,7 @@ describe "seen" => sub {
 		localize sub {
 			positional 'o1';
 			Context->{positional_tail} = [];
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, positional => 1};
 		};
 	};
@@ -1164,7 +1164,7 @@ describe "seen" => sub {
 		localize sub {
 			positional 'o1';
 			Context->{positional_tail} = [encode("UTF-8", 'тест')];
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, positional => 1, source => 'positional', value => 'тест'};
 		};
 	};
@@ -1173,7 +1173,7 @@ describe "seen" => sub {
 			positional 'o1';
 			message 'options_encoding_error', 'bad coding';
 			Context->{positional_tail} = ["\xA0"];
-			App::MtAws::ConfigEngineNew::seen('o1');
+			App::MtAws::ConfigEngine::seen('o1');
 			cmp_deeply Context->{errors}, [{format => 'options_encoding_error', encoding => 'UTF-8'}];
 			cmp_deeply Context->{options}->{o1}, { name => 'o1', seen => 1, positional => 1 };
 		};
@@ -1241,7 +1241,7 @@ describe 'unflatten_scope' => sub {
 
 sub create_engine
 {
-	App::MtAws::ConfigEngineNew->new();
+	App::MtAws::ConfigEngine->new();
 }
 
 runtests unless caller;

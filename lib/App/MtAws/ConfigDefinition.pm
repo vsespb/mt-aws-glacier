@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 
-use App::MtAws::ConfigEngineNew;
+use App::MtAws::ConfigEngine;
 
 sub filter_options
 {
@@ -92,7 +92,7 @@ sub check_wait
 sub existing_journal
 {
 	my ($journal) = @_;
-	if (defined($journal) && present($journal) && !exists $App::MtAws::ConfigEngineNew::context->{override_validations}->{journal}) { # TODO: this is hack!
+	if (defined($journal) && present($journal) && !exists $App::MtAws::ConfigEngine::context->{override_validations}->{journal}) { # TODO: this is hack!
 		error('Journal file not found') unless -r value($journal);
 	}
 	$journal;
@@ -149,7 +149,7 @@ sub get_config
 {
 	my (%args) = @_;
 	
-	my $c  = App::MtAws::ConfigEngineNew->new(%args);
+	my $c  = App::MtAws::ConfigEngine->new(%args);
 	
 	$c->define(sub {
 		

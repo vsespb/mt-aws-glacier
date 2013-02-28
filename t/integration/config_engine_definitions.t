@@ -27,7 +27,7 @@ use Encode;
 use Test::More tests => 272;
 use Test::Deep;
 use lib qw{../lib ../../lib};
-use App::MtAws::ConfigEngineNew;
+use App::MtAws::ConfigEngine;
 use Carp;
 use Data::Dumper;
 
@@ -888,7 +888,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined $res->{command}, "command should be undefined in case of errors";
 	cmp_deeply $res->{error_texts}, ['Unexpected option "--o2"'], "should catch unexpected options"; 
 	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'o2' }], "should catch unexpected options";
-	ok ! defined $App::MtAws::ConfigEngineNew::context, "context should be always localized"; 
+	ok ! defined $App::MtAws::ConfigEngine::context, "context should be always localized"; 
 }
 
 
@@ -1022,7 +1022,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 # config
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	local *App::MtAws::ConfigEngine::read_config = sub { { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig';
@@ -1038,7 +1038,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	local *App::MtAws::ConfigEngine::read_config = sub { { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig', default => 43;
@@ -1053,7 +1053,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 
 {
 	my $fname = undef;
-	local *App::MtAws::ConfigEngineNew::read_config = sub { (undef, $fname) = @_; { fromconfig => 42 } };
+	local *App::MtAws::ConfigEngine::read_config = sub { (undef, $fname) = @_; { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig', default => 43;
@@ -1069,7 +1069,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 }
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	local *App::MtAws::ConfigEngine::read_config = sub { { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig';
@@ -1083,7 +1083,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 }
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	local *App::MtAws::ConfigEngine::read_config = sub { { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig', default => 44;
@@ -1097,7 +1097,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 }
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { { fromconfig => 42 } };
+	local *App::MtAws::ConfigEngine::read_config = sub { { fromconfig => 42 } };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig', default => 44;
@@ -1111,7 +1111,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 
 
 {
-	local *App::MtAws::ConfigEngineNew::read_config = sub { return; };
+	local *App::MtAws::ConfigEngine::read_config = sub { return; };
 	my $c  = create_engine(ConfigOption => 'config');
 	$c->define(sub {
 		option 'fromconfig', default => 44;
@@ -1126,7 +1126,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 
 sub create_engine
 {
-	App::MtAws::ConfigEngineNew->new(@_);
+	App::MtAws::ConfigEngine->new(@_);
 }
 
 1;

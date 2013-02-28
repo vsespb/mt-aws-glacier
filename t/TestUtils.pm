@@ -21,7 +21,7 @@
 package TestUtils;
 
 use App::MtAws::ConfigDefinition;
-use App::MtAws::ConfigEngineNew;
+use App::MtAws::ConfigEngine;
 require Exporter;
 use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
@@ -31,7 +31,7 @@ sub fake_config(@)
 {
 	my ($cb, %data) = (pop @_, @_);
 	no warnings 'redefine';
-	local *App::MtAws::ConfigEngineNew::read_config = sub { %data ? { %data } : { (key=>'mykey', secret => 'mysecret', region => 'myregion') } };
+	local *App::MtAws::ConfigEngine::read_config = sub { %data ? { %data } : { (key=>'mykey', secret => 'mysecret', region => 'myregion') } };
 	disable_validations($cb);
 }
 
