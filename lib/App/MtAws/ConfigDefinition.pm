@@ -92,7 +92,7 @@ sub check_wait
 sub existing_journal
 {
 	my ($journal) = @_;
-	if (defined($journal) && present($journal)) {
+	if (defined($journal) && present($journal) && !exists $App::MtAws::ConfigEngineNew::context->{override_validations}->{journal}) { # TODO: this is hack!
 		error('Journal file not found') unless -r value($journal);
 	}
 	$journal;
@@ -131,27 +131,39 @@ sub deprecate_from_dir
 {
 	if (present('dir')) {
 		warning('options from-dir/dir deprecated for this command');
+		undef raw_option('dir')->{value};
 	}
 	return;
 }
 
 sub deprecate_to_vault
 {
-	if (present('to_vault')) {
-		warning('options to-vault/vault deprecated for this command');
+	if (present('vault')) {
+		warning('vault is not needed for this command');
+		undef raw_option('vault')->{value};
 	}
 	return;
 }
 
 sub get_config
 {
-	my (%args);
+	my (%args) = @_;
+	
 	my $c  = App::MtAws::ConfigEngineNew->new(%args);
 	
 	$c->define(sub {
+		
+		message 'no_command', 'Please specify command', allow_redefine=>1;
+		message 'already_specified_in_alias', '%option b% specified, while %option a% already defined', allow_redefine => 1;
+		message 'unexpected_argument', "Extra argument in command line: %a%", allow_redefine => 1;
+		message 'mandatory', "Please specify %option a%", allow_redefine => 1;
+		message 'cannot_read_config', 'Cannot read config file "%config%"';
+		message 'deprecated_option', '%option% deprecated, use %main% instead';
+		
+		
 		option 'dir', deprecated => ['to-dir', 'from-dir'];
 		option 'vault', deprecated => 'to-vault';
-		options 'config', 'journal', 'job-id', 'max-number-of-files';
+		options 'config', 'journal', 'job-id', 'max-number-of-files', 'new-journal';
 		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be an integer number');
@@ -174,7 +186,7 @@ sub get_config
 		}
 		
 		
-		validation positional('vault-name'), 'Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"', sub {
+		validation positional('vault-name'), message('Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'), sub {
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
 		
@@ -208,7 +220,7 @@ sub get_config
 		};
 		
 		command 'download-inventory' => sub {
-			validate(mandatory(optional('config'), @config_opts, qw/vault new-journal/))
+			validate(mandatory(optional('config'), @config_opts, 'vault', empty_journal('new-journal')))
 		};
 	});
 	return $c;
