@@ -42,7 +42,7 @@ use App::MtAws::InventoryFetchJob;
 use File::Find ;
 use File::Spec;
 use App::MtAws::Journal;
-use App::MtAws::ConfigEngine;
+use App::MtAws::ConfigDefinition;
 use App::MtAws::ForkEngine;
 use Carp;
 use File::stat;
@@ -89,8 +89,8 @@ sub main
 	my $config_filename;
 	
 	
-	my ($errors, $warnings, $action, $options) = App::MtAws::ConfigEngine->new()->parse_options(@ARGV);
-	
+	my $res = App::MtAws::ConfigDefinition::get_config()->parse_options(@ARGV);
+	my ($errors, $warnings, $action, $options) = ($res->{error_texts}, $res->{warning_texts}, $res->{command}, $res->{options});
 	
 	for (@$warnings) {
 		warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
