@@ -34,7 +34,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
 				mandatory optional validate scope
-				present value custom error warning/;
+				present value raw_option custom error warning/;
 				
 
 our $context;
@@ -62,7 +62,7 @@ sub new
 	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
 	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
 	message 'no_command', 'No command specified', allow_redefine=>1;
-	message 'deprecated_option', 'Option %option option% is deprecated', allow_redefine=>1;
+	message 'deprecated_option', 'Option %option% is deprecated, use %optional main% instead', allow_redefine=>1;
 	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
 	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
@@ -135,6 +135,10 @@ sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
 	
+	
+	return { command => 'help', map { $_ => undef } qw/errors error_texts warnings warning_texts options/} 
+		if (@ARGV && $ARGV[0] =~ /\b(help|h)\b/i);
+	
 	local $context = $self;
 	
 	my @getopts = map {
@@ -150,7 +154,7 @@ sub parse_options
 				($optref, $is_alias) = ($self->{options}->{$_}, 0);
 			} else {
 				($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
-				warning('deprecated_option', option => $_) if $self->{deprecated_options}->{$_};
+				warning('deprecated_option', option => $_, main => $self->{optaliasmap}->{$_}) if $self->{deprecated_options}->{$_};
 			}
 			
 			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
