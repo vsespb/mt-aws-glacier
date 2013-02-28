@@ -20,7 +20,8 @@
 
 package TestUtils;
 
-use App::MtAws::ConfigEngine;
+use App::MtAws::ConfigDefinition;
+use App::MtAws::ConfigEngineNew;
 require Exporter;
 use base qw/Exporter/;
                                                                                                                                                                                                                                                                                
@@ -30,7 +31,7 @@ sub fake_config(@)
 {
 	my ($cb, %data) = (pop @_, @_);
 	no warnings 'redefine';
-	local *App::MtAws::ConfigEngine::read_config = sub { %data ? { %data } : { (key=>'mykey', secret => 'mysecret', region => 'myregion') } };
+	local *App::MtAws::ConfigEngineNew::read_config = sub { %data ? { %data } : { (key=>'mykey', secret => 'mysecret', region => 'myregion') } };
 	disable_validations($cb);
 }
 
@@ -61,8 +62,11 @@ sub disable_validations
 
 sub config_create_and_parse(@)
 {
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(@_);
-	($errors, $warnings, $command, $result);
+#	use Data::Dumper;
+#	die Dumper {%disable_validations};
+	my $c = App::MtAws::ConfigDefinition::get_config(%disable_validations);
+	my $res = $c->parse_options(@_);
+	($res->{error_texts}, $res->{warning_texts}, $res->{command}, $res->{options});
 }
 
 1;
