@@ -422,8 +422,16 @@ sub value($)
 {
 	my ($name) = @_;
 	assert_option for $name;
-	confess "value not defined" unless defined($context->{options}->{$name}->{value});
+	confess "option not present" unless defined($context->{options}->{$name}->{value});
 	return $context->{options}->{$name}->{value};
+};
+
+sub raw_option($)
+{
+	my ($name) = @_;
+	assert_option for $name;
+	confess "option not present" unless defined($context->{options}->{$name}->{value});
+	return $context->{options}->{$name};
 };
 
 sub custom($$)

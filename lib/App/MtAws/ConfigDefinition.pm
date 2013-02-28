@@ -95,6 +95,7 @@ sub existing_journal
 	if (defined($journal) && present($journal)) {
 		error('Journal file not found') unless -r value($journal);
 	}
+	$journal;
 }
 
 sub writable_journal
@@ -103,10 +104,8 @@ sub writable_journal
 	if (defined($journal) && present($journal)) {
 		my $value = value($journal);
 		error('Journal file not writable') unless (-f $value && -w $value && ! -d $value) || (! -d $value);
-		$journal;
-	} else {
-		return;
 	}
+	$journal;
 }
 
 sub empty_journal
@@ -114,10 +113,8 @@ sub empty_journal
 	my ($journal) = @_;
 	if (defined($journal) && present($journal)) {
 		error('Journal file not empty - please provide empty file no write new journal') unless ! -s value($journal);
-		$journal;
-	} else {
-		return;
 	}
+	$journal;
 }
 
 sub check_https
@@ -128,6 +125,22 @@ sub check_https
 		require LWP::Protocol::https;
 		error('LWP::Protocol::https 6.x required to use HTTPS') unless LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6;
 	}
+}
+
+sub deprecate_from_dir
+{
+	if (present('dir')) {
+		warning('options from-dir/dir deprecated for this command');
+	}
+	return;
+}
+
+sub deprecate_to_vault
+{
+	if (present('to_vault')) {
+		warning('options to-vault/vault deprecated for this command');
+	}
+	return;
 }
 
 sub get_config
@@ -141,7 +154,7 @@ sub get_config
 		options 'config', 'journal', 'job-id', 'max-number-of-files';
 		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
-		my $must_be_an_integer = message('must_be_an_integer', '"%option a% must be an integer number"');
+		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be an integer number');
 
 		my @config_opts = (
 			validation(option('key'), $invalid_format, sub { /^[A-Za-z0-9]{20}$/ }),
@@ -150,7 +163,10 @@ sub get_config
 			validation(option('protocol', default => 'http'), message('protocol must be "https" or "http"'), sub { /^https?$/ }),
 		);
 		
-		validation option('concurrency', default => 4), message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
+		for (option('concurrency', default => 4)) {
+			validation $_, $must_be_an_integer, sub { $_ =~ /^\d+$/ }; # TODO: type=i
+			validation $_, message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
+		}
 		
 		for (option('partsize', default => 16)) {
 			validation $_, $must_be_an_integer, sub { $_ =~ /^\d+$/ }; # TODO: type=i
@@ -171,7 +187,7 @@ sub get_config
 		
 		command 'purge-vault' => sub {
 			# TODO: deprecated option from-dir
-			validate(mandatory(optional('config'), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal'))))
+			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecate_from_dir(optional('dir'))  ))
 		};
 		
 		command 'restore' => sub {
@@ -184,7 +200,7 @@ sub get_config
 		
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
-			validate(mandatory(optional('config'), @config_opts, qw/dir/, existing_journal('journal')))
+			validate(mandatory(  optional('config'), @config_opts, qw/dir/, existing_journal('journal'), deprecate_to_vault(optional('vault')) ))
 		};
 		
 		command 'retrieve-inventory' => sub {
