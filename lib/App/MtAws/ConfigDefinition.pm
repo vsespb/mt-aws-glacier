@@ -127,23 +127,6 @@ sub check_https
 	}
 }
 
-sub deprecate_from_dir
-{
-	if (present('dir')) {
-		warning('options from-dir/dir deprecated for this command');
-		undef raw_option('dir')->{value};
-	}
-	return;
-}
-
-sub deprecate_to_vault
-{
-	if (present('vault')) {
-		warning('vault is not needed for this command');
-		undef raw_option('vault')->{value};
-	}
-	return;
-}
 
 sub get_config
 {
@@ -199,7 +182,7 @@ sub get_config
 		
 		command 'purge-vault' => sub {
 			# TODO: deprecated option from-dir
-			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecate_from_dir(optional('dir'))  ))
+			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecated('dir')  ))
 		};
 		
 		command 'restore' => sub {
@@ -212,7 +195,7 @@ sub get_config
 		
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
-			validate(mandatory(  optional('config'), @config_opts, qw/dir/, existing_journal('journal'), deprecate_to_vault(optional('vault')) ))
+			validate(mandatory(  optional('config'), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault') ))
 		};
 		
 		command 'retrieve-inventory' => sub {

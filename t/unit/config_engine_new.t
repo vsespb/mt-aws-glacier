@@ -639,6 +639,115 @@ describe "optional" => sub {
 	};
 };
 
+describe "deprecated" => sub {
+	describe "one argument" => sub {
+		it "should check option" => sub {
+			localize sub {
+				option 'myoption';
+				App::MtAws::ConfigEngine->expects("seen")->once();
+				optional('myoption2');
+			}
+		};
+		it "should work when deprecated option exists" => sub {
+			localize sub {
+				message 'option_deprecated_for_command';
+				option 'myoption';
+				Context->{options}->{myoption}->{value} = '123';
+				my ($res) = deprecated 'myoption';
+				ok $res eq 'myoption';
+				ok !defined Context->{errors};
+				cmp_deeply Context->{warnings}, [{format => 'option_deprecated_for_command', a => 'myoption'}];
+				ok Context->{options}->{myoption}->{seen};
+				ok ! defined Context->{options}->{myoption}->{value};
+			}
+		};
+		it "should work when deprecated alias option exists" => sub {
+			localize sub {
+				message 'option_deprecated_for_command';
+				option 'myoption', alias => 'old';
+				Context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption}->{original_option} = 'old';
+				my ($res) = deprecated 'myoption';
+				ok $res eq 'myoption';
+				ok !defined Context->{errors};
+				cmp_deeply Context->{warnings}, [{format => 'option_deprecated_for_command', a => 'old'}];
+				ok Context->{options}->{myoption}->{seen};
+				ok ! defined Context->{options}->{myoption}->{value};
+			}
+		};
+		it "should die if used with positional argument" => sub {
+			localize sub {
+				message 'option_deprecated_for_command';
+				positional 'myoption';
+				Context->{options}->{myoption}->{value} = '123';
+				ok ! defined eval { deprecated 'myoption'; 1; }
+			}
+		};
+		it "should work when deprecated option missing" => sub {
+			localize sub {
+				option 'myoption';
+				my ($res) = deprecated 'myoption';
+				ok $res eq 'myoption';
+				ok !defined Context->{errors};;
+				ok !defined Context->{warnings};
+				ok Context->{options}->{myoption}->{seen};
+				ok ! defined Context->{options}->{myoption}->{value};
+			}
+		};
+	};
+	describe "many arguments" => sub {
+		it "should check options" => sub {
+			localize sub {
+				my @options = ('myoption', 'myoption2');
+				options @options;
+				App::MtAws::ConfigEngine->expects("seen")->exactly(2);
+				deprecated @options;
+			}
+		};
+		it "should work when 2 of 2 optional option presents" => sub {
+			localize sub {
+				local $_ = 'abc';
+				message 'option_deprecated_for_command';
+				my @options = ('myoption', 'myoption2');
+				options @options;
+				Context->{options}->{myoption}->{value} = '123';
+				Context->{options}->{myoption2}->{value} = '123';
+				my @res = deprecated @options;
+				cmp_deeply [@res], [@options];
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
+				cmp_deeply Context->{warnings}, [{format => 'option_deprecated_for_command', a => 'myoption'}, {format => 'option_deprecated_for_command', a => 'myoption2'}];
+				ok $_ eq 'abc';
+			}
+		};
+		it "should work when 1 of 2 optional option presents" => sub {
+			localize sub {
+				message 'option_deprecated_for_command';
+				options my @options = ('myoption', 'myoption2');
+				Context->{options}->{myoption}->{value} = '123';
+				my @res = deprecated @options;
+				cmp_deeply [@res], [@options];
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
+				cmp_deeply Context->{warnings}, [{format => 'option_deprecated_for_command', a => 'myoption'}];
+			}
+		};
+		it "should work when 0 of 2 optional option presents" => sub {
+			localize sub {
+				message 'option_deprecated_for_command';
+				options my @options = ('myoption', 'myoption2');
+				my @res = deprecated @options;
+				cmp_deeply [@res], [@options];
+				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption2}->{seen};
+			}
+		};
+	};
+};
+
 describe "validate" => sub {
 	it "should check option" => sub {
 		localize sub {

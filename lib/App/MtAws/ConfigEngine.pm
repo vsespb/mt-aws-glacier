@@ -33,7 +33,7 @@ require Exporter;
 use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
-				mandatory optional validate scope
+				mandatory optional deprecated validate scope
 				present value raw_option custom error warning/;
 				
 
@@ -71,6 +71,7 @@ sub new
 	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
 	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
 	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
+	message 'option_deprecated_for_command', "Option %option a% deprecated for this command", allow_redefine => 1;
 	return $self;
 }
 
@@ -391,6 +392,19 @@ sub optional(@)
 	} @_;
 };
 
+sub deprecated(@)
+{
+	return map {
+		assert_option;
+		my $opt = $context->{options}->{ seen() };
+		confess "positional options can't be deprecated" if $opt->{positional};
+		if (defined $opt->{value}) {
+			warning('option_deprecated_for_command', a => (defined($opt->{original_option}) ? $opt->{original_option} : $opt->{name}));
+			undef $opt->{value};
+		}
+		$_;
+	} @_;
+};
 sub validate(@)
 {
 	return map {

@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 272;
+use Test::More tests => 278;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -222,6 +222,35 @@ no warnings 'redefine';
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
 	ok ! defined $res->{errors}, 'nested optional should work'; 
 }
+
+# deprecated
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options('myoption', 'myoption2');
+		command 'mycommand' => sub { optional('myoption'), deprecated('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption2', 31);
+	ok ! defined $res->{errors}, "optional should work";
+	cmp_deeply $res->{warnings}, [{format => 'option_deprecated_for_command', a => 'myoption2'}];
+	cmp_deeply $res->{options}, { }, "deprecated should work";
+}
+
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'myoption';
+		option 'myoption2', alias => 'old';
+		command 'mycommand' => sub { optional('myoption'), deprecated('myoption2') };
+	});
+	my $res = $c->parse_options('mycommand', '-old', 31);
+	ok ! defined $res->{errors}, "optional should work";
+	cmp_deeply $res->{warnings}, [{format => 'option_deprecated_for_command', a => 'old'}];
+	cmp_deeply $res->{options}, { }, "deprecated should work with alias";
+}
+
 
 # option
 

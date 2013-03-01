@@ -236,7 +236,7 @@ for (
 			dir => '/data/backup',
 			journal => 'journal.log',
 		}, "$_ result");
-		cmp_deeply($warnings, set('vault is not needed for this command','from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'),
+		cmp_deeply($warnings, set('Option "--to-vault" deprecated for this command','from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'),
 			"$_ warnings text");
 	}
 }
@@ -417,7 +417,7 @@ for (
 			concurrency => $default_concurrency,
 			journal => 'journal.log',
 		}, "$_ result");
-		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead', 'options from-dir/dir deprecated for this command'), "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead', 'Option "--from-dir" deprecated for this command'), "$_ warnings text");
 	};
 }
 
@@ -439,7 +439,7 @@ for (
 			concurrency => 9,
 			journal => 'journal.log',
 		}, "$_ result");
-		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead', 'options from-dir/dir deprecated for this command'), "$_ warnings text");
+		cmp_deeply($warnings, set('to-vault deprecated, use vault instead','from-dir deprecated, use dir instead', 'Option "--from-dir" deprecated for this command'), "$_ warnings text");
 	};
 }
 
