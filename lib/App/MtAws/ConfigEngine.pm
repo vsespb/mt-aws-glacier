@@ -223,7 +223,7 @@ sub parse_options
 		}
 		
 		for (values %{$self->{options}}) {
-			error('unexpected_option', option => $_->{name}) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
+			error('unexpected_option', option => _real_option_name($_)) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
 		}
 		
 		unless ($self->{errors}) {
@@ -345,6 +345,12 @@ sub command($%;$)
 	return;
 };
 
+sub _real_option_name($)
+{
+	my ($opt) = @_;
+	defined($opt->{original_option}) ? $opt->{original_option} : $opt->{name};
+}
+
 sub seen
 {
 	my $o = @_ ? shift : $_;
@@ -376,7 +382,7 @@ sub mandatory(@) {
 			unless (defined($opt->{value})) {
 				$opt->{positional} ?
 					error("positional_mandatory", a => $_, n => scalar @{$context->{positional_backlog}||[]}+1) :
-					error("mandatory", a => $_);
+					error("mandatory", a => _real_option_name($opt)); # actually does not have much sense
 			}
 		}
 		$_;
@@ -399,7 +405,7 @@ sub deprecated(@)
 		my $opt = $context->{options}->{ seen() };
 		confess "positional options can't be deprecated" if $opt->{positional};
 		if (defined $opt->{value}) {
-			warning('option_deprecated_for_command', a => (defined($opt->{original_option}) ? $opt->{original_option} : $opt->{name}));
+			warning('option_deprecated_for_command', a => _real_option_name $opt);
 			undef $opt->{value};
 		}
 		$_;
@@ -408,11 +414,10 @@ sub deprecated(@)
 sub validate(@)
 {
 	return map {
-		my $option = seen;
-		my $optionref = $context->{options}->{$option};
-		VALIDATION: for my $v (@{ $optionref->{validations} }) {
-			for ($optionref->{value}) {
-				error ({ format => $v->{message}, a => $option}), last VALIDATION if defined && !$v->{cb}->();
+		my $opt = $context->{options}->{seen()};
+		VALIDATION: for my $v (@{ $opt->{validations} }) {
+			for ($opt->{value}) {
+				error ({ format => $v->{message}, a => _real_option_name $opt}), last VALIDATION if defined && !$v->{cb}->();
 			}
 		}
 		$_;

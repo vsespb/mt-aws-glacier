@@ -494,6 +494,17 @@ describe "mandatory" => sub {
 			ok Context->{options}->{myoption}->{seen};
 		}
 	};
+	it "should work with alias" => sub {
+		localize sub {
+			option 'myoption', alias => 'old';
+			message 'mandatory', "Please specify %option a%";
+			Context->{options}->{myoption}->{original_option} = 'old';
+			my ($res) = mandatory 'myoption';
+			ok $res eq 'myoption';
+			cmp_deeply Context->{errors}, [ { format => 'mandatory', a => 'old' }];
+			ok Context->{options}->{myoption}->{seen};
+		}
+	};
 	it "should work when mandatory option missing and mandatory is nested" => sub {
 		localize sub {
 			option 'myoption';
@@ -776,6 +787,17 @@ describe "validate" => sub {
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
 				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+				ok Context->{options}->{myoption}->{seen};
+			}
+		};
+		it "should work when validation failed with alias" => sub {
+			localize sub {
+				validation option('myoption', alias => 'old'), 'myerror', sub { $_ > 10 };
+				Context->{options}->{myoption}->{value} = '7';
+				Context->{options}->{myoption}->{original_option} = 'old';
+				my ($res) = validate 'myoption';
+				ok $res eq 'myoption';
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'old' }];
 				ok Context->{options}->{myoption}->{seen};
 			}
 		};

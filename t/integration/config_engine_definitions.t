@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Encode;
-use Test::More tests => 278;
+use Test::More tests => 296;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -45,6 +45,30 @@ no warnings 'redefine';
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work"; 
 	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "validation should work"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option('myoption', alias => 'old');
+		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		command 'mycommand' => sub { validate optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', '-old', 31);
+	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with alias"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old'}], "validation should work with alias"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option('myoption', deprecated => 'old');
+		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		command 'mycommand' => sub { validate optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', '-old', 31);
+	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with deprecated"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old'}], "validation should work with deprecated"; 
 }
 
 {
@@ -920,6 +944,40 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined $App::MtAws::ConfigEngine::context, "context should be always localized"; 
 }
 
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1';
+		option 'o2', alias => 'old';
+		command 'mycommand' => sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-old', '21');
+	ok defined $res->{errors};
+	ok defined $res->{error_texts};
+	ok ! defined $res->{warnings};
+	ok ! defined $res->{warning_texts};
+	ok ! defined $res->{command}, "command should be undefined in case of errors";
+	cmp_deeply $res->{error_texts}, ['Unexpected option "--old"'], "should catch unexpected options when alias"; 
+	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'old' }], "should catch unexpected options when alias";
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'o1';
+		option 'o2', deprecated => 'old';
+		command 'mycommand' => sub { optional('o1') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', '11', '-old', '21');
+	ok defined $res->{errors};
+	ok defined $res->{error_texts};
+	ok defined $res->{warnings};
+	ok defined $res->{warning_texts};
+	ok ! defined $res->{command}, "command should be undefined in case of errors";
+	cmp_deeply $res->{error_texts}, ['Unexpected option "--old"'], "should catch unexpected options when alias"; 
+	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'old' }], "should catch unexpected options when alias";
+}
 
 {
 	my $c  = create_engine();
