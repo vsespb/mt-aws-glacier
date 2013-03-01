@@ -22,9 +22,10 @@
 
 use strict;
 use warnings;
+use warnings FATAL => 'all';
 use utf8;
 use Encode;
-use Test::More tests => 296;
+use Test::More tests => 298;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -103,7 +104,7 @@ no warnings 'redefine';
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		validation option('myoption'), message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
+		validation option('myoption'), message('too_high', "%option a% should be less than 30"), stop => 1, sub { $_ < 30 };
 		validation 'myoption', message('way_too_high', "%option a% should be less than 100 for sure"), sub { $_ < 100 };
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
@@ -111,6 +112,20 @@ no warnings 'redefine';
 
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should not perform two validations"; 
 	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "should not perform two validations"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		validation option('myoption'), message('too_high', "%option a% should be less than 30"), stop => 0, sub { $_ < 30 };
+		validation 'myoption', message('way_too_high', "%option a% should be less than 100 for sure"), sub { $_ < 100 };
+		command 'mycommand' => sub { validate optional('myoption') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 200);
+
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}, q{"--myoption" should be less than 100 for sure}],
+		"should perform two validations"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}, {format => 'way_too_high', a => 'myoption'}], "should perform two validations"; 
 }
 
 {

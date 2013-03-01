@@ -24,7 +24,6 @@ use Getopt::Long;
 use Encode;
 use Carp;
 use List::Util qw/first/;
-
 use strict;
 use warnings;
 use utf8;
@@ -37,8 +36,12 @@ our @EXPORT = qw/option options positional command validation message
 				present value raw_option custom error warning/;
 				
 
-our $context;
+our $context; # it's a not a global. always localized in code
 
+# TODOS
+#implement type=i
+#refactor messages %option a% vs %option option%
+#options_encoding_error specify source of problem
 
 sub message($;$%)
 {
@@ -62,7 +65,7 @@ sub new
 	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
 	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
 	message 'no_command', 'No command specified', allow_redefine=>1;
-	message 'deprecated_option', 'Option %option% is deprecated, use %optional main% instead', allow_redefine=>1;
+	message 'deprecated_option', 'Option %option% is deprecated, use %option main% instead', allow_redefine=>1;
 	message 'deprecated_command', 'Command %command command% is deprecated', allow_redefine=>1;
 	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
@@ -313,11 +316,11 @@ sub options(@) {
 };
 
 
-sub validation($$&)
+sub validation(@_)
 {
-	my ($name, $message, $cb) = @_;
+	my ($name, $message, $cb, %opts) = (shift, shift, pop @_, @_);
 	confess "undeclared option" unless defined $context->{options}->{$name};
-	push @{ $context->{options}->{$name}->{validations} }, { 'message' => $message, cb => $cb }
+	push @{ $context->{options}->{$name}->{validations} }, {  %opts, 'message' => $message, cb => $cb }
 		unless $context->{override_validations} && exists($context->{override_validations}->{$name});
 	$name;
 }
@@ -417,7 +420,7 @@ sub validate(@)
 		my $opt = $context->{options}->{seen()};
 		VALIDATION: for my $v (@{ $opt->{validations} }) {
 			for ($opt->{value}) {
-				error ({ format => $v->{message}, a => _real_option_name $opt}), last VALIDATION if defined && !$v->{cb}->();
+				error ({ format => $v->{message}, a => _real_option_name $opt}), $v->{stop} && last VALIDATION if defined && !$v->{cb}->();
 			}
 		}
 		$_;

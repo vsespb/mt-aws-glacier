@@ -159,12 +159,12 @@ sub get_config
 		);
 		
 		for (option('concurrency', default => 4)) {
-			validation $_, $must_be_an_integer, sub { $_ =~ /^\d+$/ }; # TODO: type=i
+			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
 			validation $_, message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
 		}
 		
 		for (option('partsize', default => 16)) {
-			validation $_, $must_be_an_integer, sub { $_ =~ /^\d+$/ }; # TODO: type=i
+			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
 			validation $_, message('Part size must be power of two'), sub { ($_ != 0) && (($_ & ($_ - 1)) == 0) };
 		}
 		

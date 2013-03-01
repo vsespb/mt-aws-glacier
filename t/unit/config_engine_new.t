@@ -428,6 +428,34 @@ describe "validation" => sub {
 			ok !$v->{cb}->() for (10);
 		}
 	};
+	it "should work with options" => sub {
+		localize sub {
+			option 'myoption';
+			my $r = validation 'myoption', 'test message', a => 1, b => 2, sub { $_ > 10 };
+			ok $r eq 'myoption';
+			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
+			my $v = Context->{options}->{'myoption'}->{validations}->[0];
+			cmp_deeply [sort keys %$v], [sort qw/a b message cb/];
+			is $v->{a}, 1; 
+			is $v->{b}, 2; 
+			is $v->{message}, 'test message';
+			ok $v->{cb}->() for (11);
+			ok !$v->{cb}->() for (10);
+		}
+	};
+	it "should work with options but not override system options" => sub {
+		localize sub {
+			option 'myoption';
+			my $r = validation 'myoption', 'test message', message => 1, cb => 2, sub { $_ > 10 };
+			ok $r eq 'myoption';
+			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
+			my $v = Context->{options}->{'myoption'}->{validations}->[0];
+			cmp_deeply [sort keys %$v], [sort qw/message cb/];
+			is $v->{message}, 'test message';
+			ok $v->{cb}->() for (11);
+			ok !$v->{cb}->() for (10);
+		}
+	};
 	it "it should not work if we override_validations" => sub {
 		localize sub {
 			option 'myoption';
@@ -815,7 +843,18 @@ describe "validate" => sub {
 		};
 	};
 	describe "several validations for one option" => sub {
-		it "should not perform second validation if first failed" => sub {
+		it "should not perform second validation if stop is true and first failed" => sub {
+			localize sub {
+				validation option('myoption'), 'myerror', stop => 1, sub { $_ > 10 };
+				validation 'myoption', 'myerror2', sub { $_ > 9 };
+				Context->{options}->{myoption}->{value} = '1';
+				my (@res) = validate qw/myoption/;
+				cmp_deeply [@res], [qw/myoption/];
+				ok Context->{options}->{myoption}->{seen};
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+			}
+		};
+		it "should perform second validation if stop is false and first failed" => sub {
 			localize sub {
 				validation option('myoption'), 'myerror', sub { $_ > 10 };
 				validation 'myoption', 'myerror2', sub { $_ > 9 };
@@ -823,7 +862,7 @@ describe "validate" => sub {
 				my (@res) = validate qw/myoption/;
 				cmp_deeply [@res], [qw/myoption/];
 				ok Context->{options}->{myoption}->{seen};
-				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption' }];
 			}
 		};
 		it "should perform second validation if first passed" => sub {
