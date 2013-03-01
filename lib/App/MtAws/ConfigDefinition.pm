@@ -149,7 +149,7 @@ sub get_config
 		options 'config', 'journal', 'job-id', 'max-number-of-files', 'new-journal';
 		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
-		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be an integer number');
+		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
 
 		my @config_opts = (
 			validation(option('key'), $invalid_format, sub { /^[A-Za-z0-9]{20}$/ }),
@@ -158,12 +158,12 @@ sub get_config
 			validation(option('protocol', default => 'http'), message('protocol must be "https" or "http"'), sub { /^https?$/ }),
 		);
 		
-		for (option('concurrency', default => 4)) {
+		for (option('concurrency', type => 'i', default => 4)) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
 			validation $_, message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
 		}
 		
-		for (option('partsize', default => 16)) {
+		for (option('partsize', type => 'i', default => 16)) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
 			validation $_, message('Part size must be power of two'), sub { ($_ != 0) && (($_ & ($_ - 1)) == 0) };
 		}

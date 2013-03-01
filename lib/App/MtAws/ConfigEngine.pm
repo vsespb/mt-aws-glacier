@@ -146,7 +146,8 @@ sub parse_options
 	local $context = $self;
 	
 	my @getopts = map {
-		map { "$_=s" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] }
+		my $type = $_->{type}||'s';
+		map { "$_=$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
 	} grep { !$_->{positional} } values %{$self->{options}};
 	
 	error('getopts_error') unless GetOptions(\my %results, @getopts);

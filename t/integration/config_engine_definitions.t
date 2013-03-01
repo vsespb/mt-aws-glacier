@@ -25,7 +25,7 @@ use warnings;
 use warnings FATAL => 'all';
 use utf8;
 use Encode;
-use Test::More tests => 298;
+use Test::More tests => 302;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1119,6 +1119,19 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should catch error parsing options"; 
 	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should catch error parsing options"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', type => 'i';
+		command 'mycommand' => sub { mandatory('o1') };
+	});
+	my $res = $c->parse_options('--o1=3.3');
+	ok $res->{errors} && $res->{error_texts};
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should allow to define option types"; 
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should allow to define option types"; 
 }
 
 # config
