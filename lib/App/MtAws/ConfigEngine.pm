@@ -33,7 +33,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
 				mandatory optional deprecated validate scope
-				present value raw_option custom error warning/;
+				present valid value raw_option custom error warning/;
 				
 
 our $context; # it's a not a global. always localized in code
@@ -419,11 +419,17 @@ sub validate(@)
 {
 	return map {
 		my $opt = $context->{options}->{seen()};
-		VALIDATION: for my $v (@{ $opt->{validations} }) {
-			for ($opt->{value}) {
-				error ({ format => $v->{message}, a => _real_option_name $opt}), $v->{stop} && last VALIDATION if defined && !$v->{cb}->();
+		if (defined($opt->{value}) && !$opt->{validated}) {
+			$opt->{validated} = $opt->{valid} = 1;
+			VALIDATION: for my $v (@{ $opt->{validations} }) {
+				for ($opt->{value}) {
+					error ({ format => $v->{message}, a => _real_option_name $opt}),
+					$opt->{valid} = 0,
+					$v->{stop} && last VALIDATION
+						unless $v->{cb}->();
+				}
 			}
-		}
+		};
 		$_;
 	} @_;
 };
@@ -443,6 +449,14 @@ sub present($)
 	my ($name) = @_;
 	assert_option for $name;
 	return defined($context->{options}->{$name}->{value})
+};
+
+sub valid($)
+{
+	my ($name) = @_;
+	assert_option for $name;
+	confess "validation not performed yet" unless $context->{options}->{$name}->{validated};
+	return $context->{options}->{$name}->{valid};
 };
 
 sub value($)

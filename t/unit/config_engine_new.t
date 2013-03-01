@@ -804,7 +804,7 @@ describe "validate" => sub {
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
 				ok !defined Context->{errors};
-				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated} && Context->{options}->{myoption}->{valid};
 				ok $_ eq 'abc';
 			}
 		};
@@ -815,7 +815,8 @@ describe "validate" => sub {
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
 				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
-				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
+				ok !Context->{options}->{myoption}->{valid};
 			}
 		};
 		it "should work when validation failed with alias" => sub {
@@ -826,7 +827,8 @@ describe "validate" => sub {
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
 				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'old' }];
-				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
+				ok !Context->{options}->{myoption}->{valid};
 			}
 		};
 	};
@@ -838,7 +840,19 @@ describe "validate" => sub {
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
 				ok !defined Context->{errors};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated} && Context->{options}->{myoption}->{valid};
+			}
+		};
+	};
+	describe "option is not present" => sub {
+		it "should work" => sub {
+			localize sub {
+				option 'myoption';
+				my ($res) = validate 'myoption';
+				ok $res eq 'myoption';
+				ok !defined Context->{errors};
 				ok Context->{options}->{myoption}->{seen};
+				ok ! (Context->{options}->{myoption}->{validated} || Context->{options}->{myoption}->{valid});
 			}
 		};
 	};
@@ -850,7 +864,8 @@ describe "validate" => sub {
 				Context->{options}->{myoption}->{value} = '1';
 				my (@res) = validate qw/myoption/;
 				cmp_deeply [@res], [qw/myoption/];
-				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
+				ok !Context->{options}->{myoption}->{valid};
 				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
 			}
 		};
@@ -861,7 +876,8 @@ describe "validate" => sub {
 				Context->{options}->{myoption}->{value} = '1';
 				my (@res) = validate qw/myoption/;
 				cmp_deeply [@res], [qw/myoption/];
-				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
+				ok !Context->{options}->{myoption}->{valid};
 				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption' }];
 			}
 		};
@@ -872,7 +888,8 @@ describe "validate" => sub {
 				Context->{options}->{myoption}->{value} = 6;
 				my (@res) = validate qw/myoption/;
 				cmp_deeply [@res], [qw/myoption/];
-				ok Context->{options}->{myoption}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
+				ok !Context->{options}->{myoption}->{valid};
 				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption' }];
 			}
 		};
@@ -893,8 +910,10 @@ describe "validate" => sub {
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
 				cmp_deeply [@res], [qw/myoption myoption2/];
-				ok Context->{options}->{myoption}->{seen};
-				ok Context->{options}->{myoption2}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
+				ok !Context->{options}->{myoption}->{valid};
+				ok Context->{options}->{myoption2}->{seen} && Context->{options}->{myoption2}->{validated};
+				ok !Context->{options}->{myoption2}->{valid};
 				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
@@ -916,8 +935,9 @@ describe "validate" => sub {
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption myoption2/;
 				cmp_deeply [@res], [qw/myoption myoption2/];
-				ok Context->{options}->{myoption}->{seen};
-				ok Context->{options}->{myoption2}->{seen};
+				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated} && Context->{options}->{myoption}->{valid};
+				ok Context->{options}->{myoption2}->{seen} && Context->{options}->{myoption2}->{validated};
+				ok !Context->{options}->{myoption2}->{valid};
 				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
 			}
 		};
@@ -1037,6 +1057,44 @@ describe "value" => sub {
 		localize sub {
 			option 'myoption';
 			ok ! defined eval { value 'myoption'; 1 };
+		}
+	};
+};
+
+describe "valid" => sub {
+	it "should check option " => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = 42;
+			Context->{options}->{myoption}->{validated} = 1;
+			Context->{options}->{myoption}->{valid} = 1;
+			App::MtAws::ConfigEngine->expects("assert_option")->once();
+			ok valid('myoption');
+		}
+	};
+	it "should work when option valid " => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = 42;
+			Context->{options}->{myoption}->{validated} = 1;
+			Context->{options}->{myoption}->{valid} = 1;
+			ok valid('myoption');
+		}
+	};
+	it "should work when option not valid " => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = 42;
+			Context->{options}->{myoption}->{validated} = 1;
+			Context->{options}->{myoption}->{valid} = 0;
+			ok !valid('myoption');
+		}
+	};
+	it "should die when option not validated " => sub {
+		localize sub {
+			option 'myoption';
+			Context->{options}->{myoption}->{value} = 42;
+			ok ! defined eval { ok valid('myoption'); 1 };
 		}
 	};
 };

@@ -25,7 +25,7 @@ use warnings;
 use warnings FATAL => 'all';
 use utf8;
 use Encode;
-use Test::More tests => 302;
+use Test::More tests => 305;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -41,7 +41,7 @@ no warnings 'redefine';
 	$c->define(sub {
 		option('myoption');
 		validation 'myoption', message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
-		command 'mycommand' => sub { validate optional('myoption') };
+		command 'mycommand' => sub { validate(optional('myoption')), ok !valid('myoption'); };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work"; 
@@ -76,7 +76,7 @@ no warnings 'redefine';
 	my $c  = create_engine();
 	$c->define(sub {
 		validation option('myoption'), message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
-		command 'mycommand' => sub { validate optional('myoption') };
+		command 'mycommand' => sub { validate(optional('myoption')), ok !valid('myoption'); };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work with option inline"; 
@@ -87,7 +87,7 @@ no warnings 'redefine';
 	my $c  = create_engine(override_validations => { myoption => undef });
 	$c->define(sub {
 		validation option('myoption'), message('too_high', "%option a% should be less than 30"), sub { $_ < 30 };
-		command 'mycommand' => sub { validate optional('myoption') };
+		command 'mycommand' => sub { validate(optional('myoption')), ok valid('myoption'); };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	ok !defined($res->{errors} || $res->{error_texts});
