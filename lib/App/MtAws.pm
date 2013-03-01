@@ -90,18 +90,21 @@ sub main
 	
 	
 	my $res = App::MtAws::ConfigDefinition::get_config()->parse_options(@ARGV);
-	my ($errors, $warnings, $action, $options) = ($res->{error_texts}, $res->{warning_texts}, $res->{command}, $res->{options});
+	my ($action, $options) = ($res->{command}, $res->{options});
 	
-	for (@$warnings) {
-		warn "WARNING: $_" unless /deprecated/; # TODO: temporary disable warning
-	}	
-	if ($errors) {
-		print STDERR "ERROR: ".$errors->[0]." ( use --help for help )\n\n";
-		exit(1);
+	if ($res->{warnings}) {
+		while (@{$res->{warnings}}) {
+			my ($warning, $warning_text) = (shift @{$res->{warnings}}, shift @{$res->{warning_texts}});
+			print STDERR "WARNING: $warning_text\n" unless $warning->{format} =~ /^(deprecated_option|deprecated_command|option_deprecated_for_command)$/; # TODO: temporary disable warning
+		}
 	}
-	
-	
-	
+	if ($res->{error_texts}) {
+		for (@{$res->{error_texts}}) {
+			print STDERR "ERROR: ".$_."\n";
+		}
+		print STDERR "\n";
+		exit 1;
+	}
 	
 	if ($action eq 'sync') {
 		die "Not a directory $options->{dir}" unless -d $options->{dir};
