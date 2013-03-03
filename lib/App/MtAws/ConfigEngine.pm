@@ -32,14 +32,13 @@ require Exporter;
 use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
-				mandatory optional deprecated validate scope
+				mandatory optional seen deprecated validate scope
 				present valid value raw_option custom error warning/;
 				
 
 our $context; # it's a not a global. always localized in code
 
 # TODOS
-#implement type=i
 #refactor messages %option a% vs %option option%
 #options_encoding_error specify source of problem
 
@@ -145,9 +144,10 @@ sub parse_options
 	
 	local $context = $self;
 	
-	my @getopts = map {
-		my $type = $_->{type}||'s';
-		map { "$_=$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
+	my @getopts = map { # TODO: test
+		my $type = defined($_->{type}) ? $_->{type} : 's';
+		$type =  "=$type" unless $type eq '';
+		map { "$_$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
 	} grep { !$_->{positional} } values %{$self->{options}};
 	
 	error('getopts_error') unless GetOptions(\my %results, @getopts);
