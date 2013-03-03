@@ -23,6 +23,7 @@ package App::MtAws::ConfigDefinition;
 use strict;
 use warnings;
 use utf8;
+use File::Spec;
 
 use App::MtAws::ConfigEngine;
 
@@ -50,28 +51,43 @@ sub check_dir_or_relname
 		custom('data-type', 'filename'), mandatory('filename'), do {
 			if (present('set-rel-filename')) {
 				if (present('dir')) {
-					error('mutual', a => 'set-rel-filename', b => 'dir');
+					error('mutual', a => seen('set-rel-filename'), b => seen('dir'));
 				} else {
 					custom('name-type', 'rel-filename'), mandatory('set-rel-filename');
 				}
 			} elsif (present('dir')) {
-				custom('name-type', 'dir'), mandatory('dir');
+				custom('relfilename', do {
+					validate 'dir', 'filename';
+					if (valid('dir') && valid('filename')) {
+						my $relfilename = File::Spec->abs2rel(value('filename'), value('dir'));
+						if ($relfilename =~ m!^\.\./!) {
+							error(message('filename_inside_dir',
+								'File specified with "option a" should be inside directory specified in %option b%'),
+								a => 'filename', b => 'dir'),
+							undef;
+						} else {
+							$relfilename
+						}
+					} else {
+						undef;
+					}
+				}), custom('name-type', 'dir'), mandatory('dir');
 			} else {
-				error('please specify set-rel-filename or dir')
+				error(message('either', 'Please specify %option a% or %option b%'), a => 'set-rel-filename', b => 'dir');
 			}
 		}
 	} elsif (present('stdin')) {
 		if (present('set-rel-filename')) {
 			if (present('dir')) {
-				error('mutual', a => 'set-rel-filename', b => 'dir');
+				seen('stdin'), error('mutual', a => seen('set-rel-filename'), b => seen('dir'));
 			} else {
 				custom('name-type', 'rel-filename'), custom('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin')
 			}
 		} else {
-			error('need use set-rel-filename together with stdin')
+			error(message 'Need to use set-rel-filename together with stdin'), seen('stdin')
 		}
 	} else {
-		error('please specify filename or stdin')
+		error(message 'Please specify filename or stdin')
 	}
 }
 
@@ -144,7 +160,15 @@ sub get_config
 		message 'deprecated_option', '%option% deprecated, use %main% instead';
 		
 		
-		option 'dir', deprecated => ['to-dir', 'from-dir'];
+		for (option 'dir', deprecated => ['to-dir', 'from-dir']) {
+			validation $_, message('%option a% should be less than 512 characters'), sub { length($_) < 512 }; # TODO: check that dir is dir
+		}
+		
+		option 'base-dir';
+		option 'filename';
+		option 'set-rel-filename';
+		option 'stdin', type=>'';
+		
 		option 'vault', deprecated => 'to-vault';
 		options 'config', 'journal', 'job-id', 'max-number-of-files', 'new-journal';
 		
@@ -180,8 +204,12 @@ sub get_config
 			validate(mandatory(optional('config'), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal')), optional(qw/max-number-of-files/) )
 		};
 		
+		command 'upload-file' => sub {
+			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal('journal'), check_dir_or_relname, check_base_dir, optional 'partsize'  ))
+		};
+				
+		
 		command 'purge-vault' => sub {
-			# TODO: deprecated option from-dir
 			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecated('dir')  ))
 		};
 		
