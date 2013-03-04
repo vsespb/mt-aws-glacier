@@ -147,8 +147,15 @@ sub main
 		$FE->start_children();
 		
 		$j->read_journal(should_exist => 0);
-		$j->open_for_write();
 		
+		die <<"END"
+File with same name alredy exists in Journal.
+In the current version of mtglacier you are disallowed to store multiple versions of same file.
+Multiversion will be implemented in the future versions.
+END
+			if (defined $j->{journal_h}->{$relfilename});
+		
+		$j->open_for_write();
 		
 		my $ft = ($options->{'data-type'} eq 'filename') ?
 			App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(
