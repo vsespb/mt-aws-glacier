@@ -30,6 +30,7 @@ mt-aws-glacier is a client application for Glacier.
 * File name and modification times are stored as Glacier metadata
 * Ability to re-create journal file from Amazon Glacier metadata
 * UTF-8 support
+* Upload from STDIN
 * User selectable HTTPS support. Currently defaults to plaintext HTTP
 
 ## Coming-soon features
@@ -37,7 +38,6 @@ mt-aws-glacier is a client application for Glacier.
 * Multipart download (using HTTP Range header)
 * Use journal file as flock() mutex
 * Checking integrity of remote files
-* Upload from STDIN
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
 * Split code to re-usable modules, publishing on CPAN (Currently there are great existing Glacier modules on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*) 
