@@ -30,6 +30,7 @@ use File::Spec;
 use Encode;
 use Carp;
 use IO::Handle;
+use App::MtAws::Utils qw/sanity_relative_filename/;
 
 sub new
 {
@@ -262,19 +263,6 @@ sub absfilename
 	my ($self, $relfilename) = @_;
 	confess unless defined($self->{root_dir});
 	return File::Spec->rel2abs($relfilename, $self->{root_dir});
-}
-
-# Class method
-# Does not work with directory names
-sub sanity_relative_filename
-{
-	my ($filename) = @_;
-	return undef if $filename =~ m!^//!g;
-	$filename =~ s!^/!!;
-	return undef if $filename =~ m![\r\n\t]!g;
-	$filename = File::Spec->catdir( map {return undef if m!^\.\.?$!; $_; } split('/', File::Spec->canonpath($filename)) );
-	return undef if $filename eq '';
-	return $filename;
 }
 
 sub _is_file_exists
