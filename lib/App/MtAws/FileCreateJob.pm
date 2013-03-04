@@ -34,7 +34,7 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    defined($self->{filename})||die;
+    defined($self->{filename}||$self->{stdin})||die;
     defined($self->{relfilename})||die;
     $self->{partsize}||die;
     $self->{raised} = 0;
@@ -49,12 +49,18 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		my $filesize = -s $self->{filename};
-		$self->{mtime} = stat($self->{filename})->mtime; # TODO: how could we assure file not modified when uploading btw?
-		die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
-	    open my $fh, "<$self->{filename}" or confess "ERROR: unable to open task file $self->{filename} for reading: $!";
-	    binmode $fh;
-	    $self->{fh} = $fh;
+		
+		if ($self->{stdin}) {
+			$self->{mtime} = time();
+		    binmode $self->{fh} = *STDIN;
+		} else {
+			my $filesize = -s $self->{filename};
+			$self->{mtime} = stat($self->{filename})->mtime; # TODO: how could we assure file not modified when uploading btw?
+			die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
+		    open my $fh, "<$self->{filename}" or confess "ERROR: unable to open task file $self->{filename} for reading: $!";
+		    binmode $fh;
+		    $self->{fh} = $fh;
+		}
 		return ("ok", App::MtAws::Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}
 }
@@ -67,7 +73,6 @@ sub finish_task
 		return ("ok replace", App::MtAws::FileUploadJob->new(
 			fh => $self->{fh},
 			relfilename => $self->{relfilename},
-			filename => $self->{filename},
 			partsize => $self->{partsize},
 			upload_id => $task->{result}->{upload_id},
 			mtime => $self->{mtime},

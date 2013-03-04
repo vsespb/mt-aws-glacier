@@ -71,7 +71,7 @@ sub process
 				my $r = $req->upload_part($data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
 				return undef unless $r;
 				$result = { uploaded => $data->{start} } ;
-				$console_out = "Uploaded part for $data->{filename} at offset [$data->{start}]";
+				$console_out = "Uploaded part for $data->{relfilename} at offset [$data->{start}]";
 			} elsif ($action eq 'finish_upload') {
 				# TODO: move vault to task, not to options!
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
@@ -90,7 +90,7 @@ sub process
 						relfilename => $data->{relfilename}
 					},
 				};
-				$console_out = "Finished $data->{filename} hash [$data->{final_hash}] archive_id [$archive_id]";
+				$console_out = "Finished $data->{relfilename} hash [$data->{final_hash}] archive_id [$archive_id]";
 			} elsif ($action eq 'delete_archive') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->delete_archive($data->{archive_id});

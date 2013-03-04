@@ -32,7 +32,6 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    defined($self->{filename})||die;
     defined($self->{relfilename})||die;
     $self->{partsize}||die;
     defined($self->{mtime})||die;
@@ -65,7 +64,7 @@ sub get_task
 				start => $self->{position},
 				upload_id => $self->{upload_id},
 				part_final_hash => $part_final_hash,
-				filename => $self->{filename}, # TODO: LOG ONLY
+				relfilename => $self->{relfilename}
 			}, attachment => \$data,
 			);
 			$self->{position} += $r;
@@ -77,7 +76,7 @@ sub get_task
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
 				# TODO: why do we have to have two FileFinishJob->new ??
-				return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, filename => $self->{filename}, th => $self->{th}));
+				return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, th => $self->{th}));
 			} else {
 				return ("wait");
 			}
@@ -91,8 +90,7 @@ sub finish_task
 	my ($self, $task) = @_;
 	delete $self->{uploadparts}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{uploadparts}} == 0) {
-		# TODO: $self->{filename} LOG ONLY
-		return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filename => $self->{filename},  relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
+		return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
 	} else {
 		return ("ok");
 	}
