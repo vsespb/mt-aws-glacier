@@ -232,7 +232,7 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 ## Additional command line options
 
-1. `concurrency` (with `sync`, `upload-file`, `restore` commands) - number of parallel upload streams to run. (default 4)
+1. `concurrency` (with `sync`, `upload-file`, `restore`, `restore-completed` commands) - number of parallel upload streams to run. (default 4)
 
 		--concurrency=4
 
