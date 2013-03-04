@@ -1,3 +1,8 @@
+2013-03-04: v0.88 beta
+	* upload-file command implemented (upload from STDIN or single upload from file). See README
+	* Internal: New Config Engine (config/command line options processing) - will help implement advanced functionality in the future
+	* Fix possible crash when read(2) system call can return partial result, see http://www.perlmonks.org/?node_id=435814
+
 2013-02-23: v0.87 beta
 	* More verbose error message if we found broken UTF-8 in filenames
 	* More verbose error message in case of permission problems when reading files from disk 
