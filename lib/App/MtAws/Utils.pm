@@ -22,7 +22,7 @@ package App::MtAws::Utils;
 
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use utf8;
 use File::Spec;
 use Carp;
@@ -30,13 +30,15 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT_OK = qw(sanity_relative_filename);
+
+our @EXPORT_OK = qw(sanity_relative_filename is_relative_filename);
 
 
 # Does not work with directory names
 sub sanity_relative_filename
 {
 	my ($filename) = @_;
+	return undef unless defined $filename;
 	return undef if $filename =~ m!^//!g;
 	$filename =~ s!^/!!;
 	return undef if $filename =~ m![\r\n\t]!g;
@@ -45,6 +47,12 @@ sub sanity_relative_filename
 	return $filename;
 }
 
+sub is_relative_filename # TODO: test
+{
+	my ($filename) = @_;
+	my $newname = sanity_relative_filename($filename);
+	return defined($newname) && ($filename eq $newname); 
+}
 
 1;
 

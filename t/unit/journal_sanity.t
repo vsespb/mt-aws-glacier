@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 82;
+use Test::More tests => 83;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::Utils;
@@ -38,6 +38,7 @@ for (qw!тест тест/тест тест/test тест/test/тест ф!) {
 	ok ( App::MtAws::Utils::sanity_relative_filename($_) eq $_, "should not alter normal UTF-8 filenames");
 }
 
+ok ( !defined App::MtAws::Utils::sanity_relative_filename(), "should disallow undef");
 ok ( !defined App::MtAws::Utils::sanity_relative_filename('/'), "should disallow empty path");
 ok ( !defined App::MtAws::Utils::sanity_relative_filename(''), "should disallow empty path");
 ok ( !defined App::MtAws::Utils::sanity_relative_filename('//'), "should disallow empty path");
