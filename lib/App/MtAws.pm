@@ -354,14 +354,14 @@ Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
 Common options:
 	--config - config file
 	--journal - journal file (append only)
-	--from-dir - source local directory
-	--to-vault - Glacier vault name
+	--dir - source local directory
+	--vault - Glacier vault name
 	--concurrency - number of parallel workers to run
 	--max-number-of-files - max number of files to sync/restore
 	--protocol - Use http or https to connect to Glacier
+	--partsize - Glacier multipart upload part size
 Commands:
 	sync
-		--partsize - Glacier multipart upload part size
 	purge-vault
 	restore
 	restore-completed
