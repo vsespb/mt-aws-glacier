@@ -132,6 +132,7 @@ assert_passes "should work with stdin and set-rel-filename",
 	'name-type' => 'rel-filename',
 	'data-type' => 'stdin',
 	stdin => 1,
+	relfilename => 'x/y/z',
 	'set-rel-filename' => 'x/y/z';
 
 

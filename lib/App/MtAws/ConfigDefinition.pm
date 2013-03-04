@@ -87,7 +87,8 @@ sub check_dir_or_relname
 			if (present('dir')) {
 				seen('stdin'), error('mutual', a => seen('set-rel-filename'), b => seen('dir'));
 			} else {
-				custom('name-type', 'rel-filename'), custom('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin')
+				custom('name-type', 'rel-filename'), custom('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin'),
+				custom('relfilename', value('set-rel-filename'));
 			}
 		} else {
 			error(message 'Need to use set-rel-filename together with stdin'), seen('stdin')
