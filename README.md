@@ -168,13 +168,75 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 [Amazon Glacier metadata format used by mt-aws glacier]:https://github.com/vsespb/mt-aws-glacier/blob/86031708866c7b444b6f8efa4900f42536c91c5a/MetaData.pm#L35
 
+## Other commands
+
+### `upload-file`
+
+Uploads a single file into Amazon Glacier. File will be tracked with Journal (just like when using `sync` command).
+
+There are several possible combinations of options for `upload-file`:
+
+1. **--filename** and **--dir**
+	
+	_Uploads what_: a file, pointed by `filename`.
+	
+	_Filename in Journal and Amazon Glacier metadata_: A relative path from `dir` to `filename`
+
+		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --dir /data/backup --filename=/data/backup/dir1/myfile
+		
+	(this will upload content of `/data/backup/dir1/myfile` to Amazon Glacier and use `dir1/myfile` as filename for Journal )
+
+		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --dir data/backup --filename=data/backup/dir1/myfile
+		
+	(Let's assume current directory is `/home`. Then this will upload content of `/home/data/backup/dir1/myfile` to Amazon Glacier and use `dir1/myfile` as filename for Journal)
+	
+	(NOTE: file `filename` should be inside directory `dir`)
+
+2. **--filename** and  **--set-rel-filename**
+	
+	_Uploads what_: a file, pointed by `filename`.
+	
+	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-file-filename`
+
+		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --filename=/tmp/myfile --set-rel-filename a/b/c
+		
+	(this will upload content of `/tmp/myfile` to Amazon Glacier and use `a/b/c` as filename for Journal )
+
+	(NOTE: `set-rel-filename` should be a _relative_ filename i.e. must not start with `/`)
+
+3. **--stdin**, **--set-rel-filename** and **--check-max-file-size**
+	
+	_Uploads what_: a file, read from STDIN
+	
+	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-file-filename`
+
+	Also, as file size is not known until the very end of upload, need to be sure that file will not exceed 10 000 parts limit, and you must
+	specify `check-max-file-size` -- maximum possible size of file (in Megabytes), that you can expect. What this option do is simply throw error
+	if `check-max-file-size`/`partsize` > 10 000 parts (in that case it's recommended to adjust `partsize`). That's all. I remind that you can put this (and
+	any other option to config file)
+	
+	
+		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --stdin --set-rel-filename path/to/file --check-max-file-size=131
+		
+	(this will upload content of file read from STDIN to Amazon Glacier and use `path/to/file` as filename for Journal. )
+
+	(NOTE: `set-rel-filename` should be a _relative_ filename i.e. must not start with `/`)
+
+
+NOTES:
+
+1. In the current version of mtglacier you are disallowed to store multiple versions of same file. I.e. upload multiple files with same relative filename
+to a single Amazon Glacier vault and single Journal. Simple file versioning will be implemented in the future versions.
+
+2. You can use other optional options with this command (`concurrency`, `partsize`)
+
 ## Additional command line options
 
-1. `concurrency` (with `sync` or `restore` commands) - number of parallel upload streams to run. (default 4)
+1. `concurrency` (with `sync`, `upload-file`, `restore` commands) - number of parallel upload streams to run. (default 4)
 
 		--concurrency=4
 
-2. `partsize` (with `sync` command) - size of file chunk to upload at once, in Megabytes. (default 16)
+2. `partsize` (with `sync`, `upload-file` command) - size of file chunk to upload at once, in Megabytes. (default 16)
 
 		--partsize=16
 
