@@ -49,10 +49,19 @@ sub check_base_dir
 #	custom 'abs-dir', File::Spec->rel2abs(value('dir'));
 #}
 
+sub mandatory_maxsize
+{
+	unless (present(optional('max-file-size'))) {
+		error('mandatory_with', a => 'max-file-size', b => seen('stdin'));
+	}
+	'max-file-size'
+}
+
 sub check_dir_or_relname
 {
 	
 	message 'mutual', "%option a% and %option b% are mutual exclusive";
+	message 'mandatory_with', "Need to use %option b% together with %option a%";
 	if (present('filename')) {
 		custom('data-type', 'filename'), mandatory('filename'), do {
 			if (present('set-rel-filename')) {
@@ -85,13 +94,13 @@ sub check_dir_or_relname
 	} elsif (present('stdin')) {
 		if (present('set-rel-filename')) {
 			if (present('dir')) {
-				seen('stdin'), error('mutual', a => seen('set-rel-filename'), b => seen('dir'));
+				seen('stdin'), mandatory_maxsize, error('mutual', a => seen('set-rel-filename'), b => seen('dir'));
 			} else {
 				custom('name-type', 'rel-filename'), custom('data-type', 'stdin'), mandatory('set-rel-filename'), mandatory('stdin'),
-				custom('relfilename', value('set-rel-filename'));
+				custom('relfilename', value('set-rel-filename')), mandatory_maxsize;
 			}
 		} else {
-			error(message 'Need to use set-rel-filename together with stdin'), seen('stdin')
+			error('mandatory_with', a => 'set-rel-filename', b => seen('stdin'))
 		}
 	} else {
 		error(message 'Please specify filename or stdin')
@@ -150,6 +159,21 @@ sub check_https
 	}
 }
 
+sub check_max_size
+{
+	if (present('max-file-size')) {
+		if (value('max-file-size')/value('partsize') > 10_000) {
+			seen('max-file-size'), error(message('partsize_vs_maxsize',
+				"With current partsize %d partsizevalue%MiB and maximum allowed file size %d maxsizevalue%MiB, upload might exceed 10 000 parts.".
+				"Increase %option partsize% or decrease %option maxsize%"),
+				partsize => 'partsize', maxsize => 'max-file-size', partsizevalue => value('partsize'), maxsizevalue => value('max-file-size'));
+		} else {
+			seen('max-file-size')
+		}
+	} else {
+		return;
+	}
+}
 
 sub get_config
 {
@@ -202,8 +226,14 @@ sub get_config
 		);
 		
 		for (option('concurrency', type => 'i', default => 4)) {
-			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
+			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
+		}
+		
+		for (option('max-file-size', type => 'i')) {
+			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
+			validation $_, message('max-file-size should be greater than 0'), stop => 1, sub { $_ > 0 };
+			validation $_, message('max-file-size should be less than or equal to 40 000 000'), stop => 1, sub { $_ <= 40_000_000 };
 		}
 		
 		for (option('partsize', type => 'i', default => 16)) {
@@ -224,7 +254,8 @@ sub get_config
 		};
 		
 		command 'upload-file' => sub {
-			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal('journal'), check_dir_or_relname, check_base_dir, optional 'partsize'  ))
+			validate(mandatory(  optional('config'), @config_opts, qw/vault concurrency/, writable_journal('journal'),
+				check_dir_or_relname, check_base_dir, mandatory('partsize'), check_max_size  ))
 		};
 				
 		

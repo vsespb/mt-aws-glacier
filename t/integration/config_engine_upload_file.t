@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 62;
+use Test::More tests => 82;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -128,10 +128,11 @@ assert_passes "should work with filename and dir when file right inside dir when
 ## set-rel-filename
 
 assert_passes "should work with stdin and set-rel-filename",
-	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z!,
+	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --max-file-size 100!,
 	'name-type' => 'rel-filename',
 	'data-type' => 'stdin',
 	stdin => 1,
+	'max-file-size' => 100,
 	relfilename => 'x/y/z',
 	'set-rel-filename' => 'x/y/z';
 
@@ -198,15 +199,27 @@ assert_fails "filename with fail without set-rel-filename or dir",
 ## stdin
 ##
 
-assert_fails "filename, set-rel-filename should fail with dir",
+assert_fails "filename, set-rel-filename should be used with stdin",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin!,
 	[],
-	'Need to use set-rel-filename together with stdin'; 
+	'mandatory_with', a => 'set-rel-filename', b => 'stdin'; 
+
+assert_fails "max-file-size should be used with stdin",
+	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z!,
+	['dir'],
+	'mandatory_with', a => 'max-file-size', b => 'stdin';
+
+for ([1, 10001], [2, 20001], [4, 40001], [8, 90000]) {
+	assert_fails "max-file-size should catch wrong partsize",
+		qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --partsize $_->[0] --max-file-size $_->[1]!,
+		['dir'],
+		'partsize_vs_maxsize', 'maxsize' => 'max-file-size', 'partsize' => 'partsize', 'partsizevalue' => $_->[0], 'maxsizevalue' => $_->[1];
+}
 
 ## set-rel-filename
 
-assert_fails "filename, set-rel-filename should fail with dir",
-	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --dir abc!,
+assert_fails "set-rel-filename and dir as mutual exclusize",
+	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --dir abc --max-file-size 100!,
 	['dir'],
 	'mutual', a => 'set-rel-filename', b => 'dir'; 
 

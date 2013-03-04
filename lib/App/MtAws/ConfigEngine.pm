@@ -444,7 +444,7 @@ sub scope($@)
 	} @_;
 };
 
-sub present($)
+sub present(@) # TODO: test that it works with arrays
 {
 	my ($name) = @_;
 	assert_option for $name;
