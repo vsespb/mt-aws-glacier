@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 56;
+use Test::More tests => 62;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -59,8 +59,8 @@ sub assert_passes($$%)
 	my ($msg, $query, %result) = @_;
 	fake_config sub {
 		my $res = config_create_and_parse(split(' ', $query));
-		ok !($res->{errors}||$res->{warnings});
-		is $res->{command}, 'upload-file';
+		ok !($res->{errors}||$res->{warnings}), $msg;
+		is $res->{command}, 'upload-file', $msg;
 		is_deeply($res->{options}, {
 			%common,
 			%result
@@ -77,6 +77,7 @@ sub assert_passes($$%)
 assert_passes "should work with filename and set-rel-filename",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename x/y/z!,
 	'name-type' => 'rel-filename',
+	relfilename => 'x/y/z',
 	'data-type' => 'filename',
 	'set-rel-filename' => 'x/y/z',
 	filename => '/tmp/dir/a/myfile';
@@ -100,6 +101,23 @@ assert_passes "should work with filename and dir when file right inside dir",
 	dir => '/tmp/dir',
 	filename => '/tmp/dir/myfile';
 
+assert_passes "should work with filename and dir when filename and dir are relative",
+	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename tmp/dir/a/myfile --dir tmp/dir!,
+	'name-type' => 'dir',
+	'data-type' => 'filename',
+	relfilename => 'a/myfile',
+	dir => 'tmp/dir',
+	filename => 'tmp/dir/a/myfile';
+
+
+assert_passes "should work with filename and dir when file right inside dir when filename and dir are relative",
+	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename tmp/dir/myfile --dir tmp/dir!,
+	'name-type' => 'dir',
+	'data-type' => 'filename',
+	relfilename => 'myfile',
+	dir => 'tmp/dir',
+	filename => 'tmp/dir/myfile';
+
 ##
 ## stdin
 ##
@@ -122,10 +140,9 @@ sub assert_fails($$%)
 	my ($msg, $query, $error, %opts) = @_;
 	fake_config sub {
 		my $res = config_create_and_parse(split(' ', $query));
-		ok $res->{errors};
-		ok !defined $res->{warnings};
-		ok !defined $res->{command};
-#		print Dumper $res->{errors};
+		ok $res->{errors}, $msg;
+		ok !defined $res->{warnings}, $msg;
+		ok !defined $res->{command}, $msg;
 		is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
 	}
 }

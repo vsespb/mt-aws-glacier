@@ -44,6 +44,11 @@ sub check_base_dir
 	}
 }
 
+#sub abs_dir()
+#{
+#	custom 'abs-dir', File::Spec->rel2abs(value('dir'));
+#}
+
 sub check_dir_or_relname
 {
 	
@@ -54,7 +59,7 @@ sub check_dir_or_relname
 				if (present('dir')) {
 					error('mutual', a => seen('set-rel-filename'), b => seen('dir'));
 				} else {
-					custom('name-type', 'rel-filename'), mandatory('set-rel-filename');
+					custom('name-type', 'rel-filename'), mandatory('set-rel-filename'), custom('relfilename', value('set-rel-filename'));
 				}
 			} elsif (present('dir')) {
 				custom('relfilename', do {
