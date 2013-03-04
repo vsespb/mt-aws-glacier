@@ -60,7 +60,7 @@ sub eat_file
 {
 	my ($self, $fh) = @_;
 	while (1) {
-		my $r = sysread($fh, my $data, $self->{unit});
+		my $r = sysread($fh, my $data, $self->{unit}); # TODO: use read instead
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {

@@ -50,7 +50,7 @@ sub get_task
 	if ($self->{all_raised}) {
 		return ("wait");
 	} else {
-		my $r = sysread($self->{fh}, my $data, $self->{partsize});
+		my $r = read($self->{fh}, my $data, $self->{partsize});
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {
@@ -59,7 +59,6 @@ sub get_task
 			$part_th->calc_tree();
 			
 			my $part_final_hash = $part_th->get_final_hash();
-			
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"upload_part", data => {
 				start => $self->{position},
 				upload_id => $self->{upload_id},
