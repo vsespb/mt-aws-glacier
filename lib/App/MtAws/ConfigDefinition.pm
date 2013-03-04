@@ -167,11 +167,17 @@ sub get_config
 		
 		
 		for (option 'dir', deprecated => ['to-dir', 'from-dir']) {
-			validation $_, message('%option a% should be less than 512 characters'), sub { length($_) < 512 }; # TODO: check that dir is dir
+			validation $_, message('%option a% should be less than 512 characters'), stop => 1, sub { length($_) < 512 }; # TODO: check that dir is dir
+			validation $_, message('%option a% not a directory'), stop => 1, sub { -d };
 		}
 		
 		option 'base-dir';
-		option 'filename';
+		for (option 'filename') {
+			validation $_, message('%option a% not a file'), stop => 1, sub { -f };
+			validation $_, message('%option a% file not readable'), stop => 1, sub { -r };
+		}
+		
+		
 		for (option 'set-rel-filename') {
 			validation $_, message('require_relative_filename', '%option a% should be canonical relative filename'),
 				stop => 1,

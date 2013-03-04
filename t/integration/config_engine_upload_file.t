@@ -58,13 +58,16 @@ sub assert_passes($$%)
 {
 	my ($msg, $query, %result) = @_;
 	fake_config sub {
-		my $res = config_create_and_parse(split(' ', $query));
-		ok !($res->{errors}||$res->{warnings}), $msg;
-		is $res->{command}, 'upload-file', $msg;
-		is_deeply($res->{options}, {
-			%common,
-			%result
-		}, $msg);
+		disable_validations qw/journal secret key filename dir/ => sub {
+			my $res = config_create_and_parse(split(' ', $query));
+			#print Dumper $res;
+			ok !($res->{errors}||$res->{warnings}), $msg;
+			is $res->{command}, 'upload-file', $msg;
+			is_deeply($res->{options}, {
+				%common,
+				%result
+			}, $msg);
+		}
 	}
 }
 
@@ -137,18 +140,21 @@ assert_passes "should work with stdin and set-rel-filename",
 
 sub assert_fails($$%)
 {
-	my ($msg, $query, $error, %opts) = @_;
+	my ($msg, $query, $novalidations, $error, %opts) = @_;
 	fake_config sub {
-		my $res = config_create_and_parse(split(' ', $query));
-		ok $res->{errors}, $msg;
-		ok !defined $res->{warnings}, $msg;
-		ok !defined $res->{command}, $msg;
-		is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
+		disable_validations qw/journal key secret/, @$novalidations => sub {
+			my $res = config_create_and_parse(split(' ', $query));
+			ok $res->{errors}, $msg;
+			ok !defined $res->{warnings}, $msg;
+			ok !defined $res->{command}, $msg;
+			is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
+		}
 	}
 }
 
 assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j!,
+	[],
 	'Please specify filename or stdin'; 
 
 ###
@@ -158,17 +164,20 @@ assert_fails "filename, set-rel-filename should fail with dir",
 
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile!,
+	['filename'],
 	'either', a => 'set-rel-filename', b => 'dir'; 
 
 ## set-rel-filename
 
 assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename x/y/z --dir abc!,
+	['filename', 'dir'],
 	'mutual', a => 'set-rel-filename', b => 'dir'; 
 
 for (qw!/x/y/z x/../y/z ../y x/./y!) {
 assert_fails "should check set-rel-filename to be relative filename for $_",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename $_!,
+	['filename'],
 	'require_relative_filename', a => 'set-rel-filename';
 }
 
@@ -176,10 +185,12 @@ assert_fails "should check set-rel-filename to be relative filename for $_",
 
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir /tmp/notdir!,
+	['filename', 'dir'],
 	'filename_inside_dir', a => 'filename', b => 'dir'; 
 
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir !.("x" x 2048),
+	['filename'],
 	'%option a% should be less than 512 characters', a => 'dir'; # TODO: test also for bad filename 
 
 ##
@@ -188,12 +199,14 @@ assert_fails "filename with fail without set-rel-filename or dir",
 
 assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin!,
+	[],
 	'Need to use set-rel-filename together with stdin'; 
 
 ## set-rel-filename
 
 assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --dir abc!,
+	['dir'],
 	'mutual', a => 'set-rel-filename', b => 'dir'; 
 
 

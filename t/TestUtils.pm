@@ -66,6 +66,7 @@ sub config_create_and_parse(@)
 #	die Dumper {%disable_validations};
 	my $c = App::MtAws::ConfigDefinition::get_config(%disable_validations);
 	my $res = $c->parse_options(@_);
+	$res->{_config} = $c;
 	wantarray ? ($res->{error_texts}, $res->{warning_texts}, $res->{command}, $res->{options}) : $res;
 }
 
