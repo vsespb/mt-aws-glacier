@@ -144,7 +144,7 @@ sub parse_options
 	
 	local $context = $self;
 	
-	my @getopts = map { # TODO: test
+	my @getopts = map {
 		my $type = defined($_->{type}) ? $_->{type} : 's';
 		$type =  "=$type" unless $type eq '';
 		map { "$_$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
@@ -227,7 +227,7 @@ sub parse_options
 		}
 		
 		for (values %{$self->{options}}) {
-			error('unexpected_option', option => _real_option_name($_)) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen};
+			error('unexpected_option', option => _real_option_name($_)) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen}; # TODO: test validation same way
 		}
 		
 		unless ($self->{errors}) {
