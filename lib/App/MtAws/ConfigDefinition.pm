@@ -172,9 +172,11 @@ sub get_config
 		}
 		
 		option 'base-dir';
+		
 		for (option 'filename') {
 			validation $_, message('%option a% not a file'), stop => 1, sub { -f };
 			validation $_, message('%option a% file not readable'), stop => 1, sub { -r };
+			validation $_, message('%option a% file size is zero'), stop => 1, sub { -s };
 		}
 		
 		
