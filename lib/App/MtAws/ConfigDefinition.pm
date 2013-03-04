@@ -51,10 +51,10 @@ sub check_base_dir
 
 sub mandatory_maxsize
 {
-	unless (present(optional('max-file-size'))) {
-		error('mandatory_with', a => 'max-file-size', b => seen('stdin'));
+	unless (present(optional('check-max-file-size'))) {
+		error('mandatory_with', a => 'check-max-file-size', b => seen('stdin'));
 	}
-	'max-file-size'
+	'check-max-file-size'
 }
 
 sub check_dir_or_relname
@@ -161,14 +161,14 @@ sub check_https
 
 sub check_max_size
 {
-	if (present('max-file-size')) {
-		if (value('max-file-size')/value('partsize') > 10_000) {
-			seen('max-file-size'), error(message('partsize_vs_maxsize',
+	if (present('check-max-file-size')) {
+		if (value('check-max-file-size')/value('partsize') > 10_000) {
+			seen('check-max-file-size'), error(message('partsize_vs_maxsize',
 				"With current partsize %d partsizevalue%MiB and maximum allowed file size %d maxsizevalue%MiB, upload might exceed 10 000 parts.".
 				"Increase %option partsize% or decrease %option maxsize%"),
-				partsize => 'partsize', maxsize => 'max-file-size', partsizevalue => value('partsize'), maxsizevalue => value('max-file-size'));
+				partsize => 'partsize', maxsize => 'check-max-file-size', partsizevalue => value('partsize'), maxsizevalue => value('check-max-file-size'));
 		} else {
-			seen('max-file-size')
+			seen('check-max-file-size')
 		}
 	} else {
 		return;
@@ -230,10 +230,10 @@ sub get_config
 			validation $_, message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
 		}
 		
-		for (option('max-file-size', type => 'i')) {
+		for (option('check-max-file-size', type => 'i')) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
-			validation $_, message('max-file-size should be greater than 0'), stop => 1, sub { $_ > 0 };
-			validation $_, message('max-file-size should be less than or equal to 40 000 000'), stop => 1, sub { $_ <= 40_000_000 };
+			validation $_, message('check-max-file-size should be greater than 0'), stop => 1, sub { $_ > 0 }; # TODO: %option .. %
+			validation $_, message('check-max-file-size should be less than or equal to 40 000 000'), stop => 1, sub { $_ <= 40_000_000 };
 		}
 		
 		for (option('partsize', type => 'i', default => 16)) {
