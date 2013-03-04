@@ -371,6 +371,11 @@ Commands:
 		--new-journal - Write inventory as new journal
 	create-vault VAULT-NAME
 	delete-vault VAULT-NAME
+	upload-file
+		--filename - File to upload
+		--set-rel-filename - Relative filename to use in Journal (if dir not specified)
+		--stdin - Upload from STDIN
+		--check-max-file-size - Specify to ensure there will be less than 10 000 parts
 Config format (text file):
 	key=YOURKEY
 	secret=YOURSECRET
