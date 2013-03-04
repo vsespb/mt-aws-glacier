@@ -54,7 +54,8 @@ sub disable_validations
 		'override_validations' => {
 			journal => undef,
 			secret  => undef,
-			key => undef, 
+			key => undef,
+			dir => undef,
 		},
 	);
 	$cb->();
