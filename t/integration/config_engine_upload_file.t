@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 40;
+use Test::More tests => 56;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -149,6 +149,11 @@ assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename x/y/z --dir abc!,
 	'mutual', a => 'set-rel-filename', b => 'dir'; 
 
+for (qw!/x/y/z x/../y/z ../y x/./y!) {
+assert_fails "should check set-rel-filename to be relative filename for $_",
+	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename $_!,
+	'require_relative_filename', a => 'set-rel-filename';
+}
 
 ## dir
 

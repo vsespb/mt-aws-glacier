@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use File::Spec;
+use App::MtAws::Utils qw/is_relative_filename/;
 
 use App::MtAws::ConfigEngine;
 
@@ -166,7 +167,11 @@ sub get_config
 		
 		option 'base-dir';
 		option 'filename';
-		option 'set-rel-filename';
+		for (option 'set-rel-filename') {
+			validation $_, message('require_relative_filename', '%option a% should be canonical relative filename'),
+				stop => 1,
+				sub { is_relative_filename($_) };
+		}
 		option 'stdin', type=>'';
 		
 		option 'vault', deprecated => 'to-vault';
