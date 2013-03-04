@@ -25,9 +25,10 @@ package App::MtAws;
 use strict;
 use warnings;
 use utf8;
-use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
 our $VERSION = "0.87beta";
+
+use constant ONE_MB => 1024*1024;
 
 use App::MtAws::ParentWorker;
 use App::MtAws::ChildWorker;
@@ -80,6 +81,8 @@ sub dcs
 
 sub main
 {
+	binmode STDOUT, ":encoding(UTF-8)";
+	binmode STDERR, ":encoding(UTF-8)";
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 	
 	my ($P) = @_;
@@ -123,7 +126,7 @@ sub main
 		my @joblist;
 		for (@{ $j->{newfiles_a} }) {
 			my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => 1048576*$partsize));
+			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$partsize));
 			push @joblist, $ft;
 		}
 		if (scalar @joblist) {
@@ -131,6 +134,34 @@ sub main
 			my $R = $FE->{parent_worker}->process_task($lt, $j);
 			die unless $R;
 		}
+		$j->close_for_write();
+		$FE->terminate_children();
+	} elsif ($action eq 'upload-file') {
+		
+		defined(my $relfilename = $options->{relfilename})||confess;
+		my $partsize = delete $options->{partsize};
+		
+		my $j = App::MtAws::Journal->new(journal_file => $options->{journal});
+		
+		my $FE = App::MtAws::ForkEngine->new(options => $options);
+		$FE->start_children();
+		
+		$j->read_journal(should_exist => 0);
+		$j->open_for_write();
+		
+		
+		my $ft = ($options->{'data-type'} eq 'filename') ?
+			App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(
+				filename => $options->{filename},
+				relfilename => $relfilename,
+				partsize => ONE_MB*$partsize)) :
+			App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(
+				stdin => 1,
+				relfilename => $relfilename,
+				partsize => ONE_MB*$partsize));
+		
+		my $R = $FE->{parent_worker}->process_task($ft, $j);
+		die unless $R;
 		$j->close_for_write();
 		$FE->terminate_children();
 	} elsif ($action eq 'purge-vault') {
