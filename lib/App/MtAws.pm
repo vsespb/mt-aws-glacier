@@ -155,6 +155,11 @@ Multiversion will be implemented in the future versions.
 END
 			if (defined $j->{journal_h}->{$relfilename});
 		
+		if ($options->{'data-type'} ne 'filename') {
+			binmode STDIN;
+			check_stdin_not_empty(); # after we fork, but before we touch Journal for write and create Amazon Glacier upload id
+		}
+		
 		$j->open_for_write();
 		
 		my $ft = ($options->{'data-type'} eq 'filename') ?
@@ -389,6 +394,12 @@ END
 	} else {
 		die "Wrong usage";
 	}
+}
+
+sub check_stdin_not_empty
+{
+	die "Empty input from STDIN - cannot upload empty archive"
+		if eof(STDIN); # we block until first byte arrive, then we put it back in to buffer
 }
 
 1;

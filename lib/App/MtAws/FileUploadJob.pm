@@ -25,6 +25,7 @@ use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
 use App::MtAws::FileFinishJob;
+use Carp;
 
 
 sub new
@@ -72,7 +73,7 @@ sub get_task
 			$self->{th}->eat_data(\$data);
 			return ("ok", $task);
 		} else {
-			die "Cannot create zero-size archive" unless ($self->{position});
+			confess "Unexpected: zero-size archive" unless ($self->{position});
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
 				# TODO: why do we have to have two FileFinishJob->new ??

@@ -52,7 +52,7 @@ sub get_task
 		
 		if ($self->{stdin}) {
 			$self->{mtime} = time();
-		    binmode $self->{fh} = *STDIN;
+		    $self->{fh} = *STDIN;
 		} else {
 			my $filesize = -s $self->{filename};
 			$self->{mtime} = stat($self->{filename})->mtime; # TODO: how could we assure file not modified when uploading btw?
