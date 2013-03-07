@@ -47,8 +47,8 @@ FILENAME (character string)
 	with known encoding.
 MTIME (time)
 	is file last modification time with 1 second resolution. Can be below Y1970.
-	Internal representation is epoch time, so it can be any valid epoch time, including negative values. On some system it's
-	32bit signed, another are 64bit signed, for some filesystems it's 34 bit signed etc.
+	Internal representation is epoch time, so it can be any valid epoch time (including negative values and zero). On some system it's
+	32bit signed, on others 64bit signed, for some filesystems it's 34 bit signed etc.
 
 Function definitions:
 
