@@ -196,7 +196,7 @@ There are several possible combinations of options for `upload-file`:
 	
 	_Uploads what_: a file, pointed by `filename`.
 	
-	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-file-filename`
+	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-rel-filename`
 
 		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --filename=/tmp/myfile --set-rel-filename a/b/c
 		
@@ -208,7 +208,7 @@ There are several possible combinations of options for `upload-file`:
 	
 	_Uploads what_: a file, read from STDIN
 	
-	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-file-filename`
+	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-rel-filename`
 
 	Also, as file size is not known until the very end of upload, need to be sure that file will not exceed 10 000 parts limit, and you must
 	specify `check-max-file-size` -- maximum possible size of file (in Megabytes), that you can expect. What this option do is simply throw error
