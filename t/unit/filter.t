@@ -23,13 +23,26 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 120;
+use Test::More tests => 122;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
 use App::MtAws::Filter qw/_parse_filters/;
 use Data::Dumper;
 
+
+
+sub assert_parse_filter_error($$)
+{
+	my ($data, $err) = @_;
+	cmp_deeply [_parse_filters($data)], [undef, $err];
+}
+
+sub assert_parse_filter_ok(@$)
+{
+	my ($expected, @data) = (pop, @_);
+	cmp_deeply [_parse_filters(@data)], [$expected, undef];
+}
 
 
 my @spaces = ('', ' ', '  ');
@@ -39,7 +52,7 @@ for my $before (@spaces) {
 	for my $after (@spaces) {
 		for my $sign (qw/+ -/) {
 			for my $last (@spaces) {
-				cmp_deeply [_parse_filters("${before}${sign}${after}*.gz${last}")], [[$sign, '*.gz']];
+				assert_parse_filter_ok "${before}${sign}${after}*.gz${last}", [[$sign, '*.gz']];
 			}
 		}
 	}
@@ -49,29 +62,36 @@ for my $between (' ', '  ') {
 	for my $before (@onespace) {
 		for my $after (@onespace) {
 			for my $last (@onespace) {
-				cmp_deeply [_parse_filters("${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}")], [['+', '*.gz'], ['-', '*.txt']];
-
-				cmp_deeply [_parse_filters(
+				my ($res, $err);
+				
+				assert_parse_filter_ok "${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}", [['+', '*.gz'], ['-', '*.txt']];
+				
+				assert_parse_filter_ok
 					"${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}"
-				)], [['+', '*.gz'], ['-', '*.txt'], ['-', '*.jpeg'], ['+', '*.png']];
+					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
+					[['+', '*.gz'], ['-', '*.txt'], ['-', '*.jpeg'], ['+', '*.png']];
 
-				cmp_deeply [_parse_filters(
+				assert_parse_filter_ok
 					"${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}"
-				)], [['+', '*.gz'], ['-', '*.txt'], ['-', '*.jpeg']];
-
-				cmp_deeply [_parse_filters(
+					"${before}-${after}*.jpeg${last}${between}",
+					[['+', '*.gz'], ['-', '*.txt'], ['-', '*.jpeg']];
+				
+				assert_parse_filter_ok
 					"${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}"
-				)], [['-', '*.txt'], ['-', '*.jpeg'], ['+', '*.png']];
+					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
+					[['-', '*.txt'], ['-', '*.jpeg'], ['+', '*.png']];
 			}
 		}
 	}
 }
 
-ok ! defined eval { _parse_filters(' +z  p +a'); 1 };
-ok ! defined eval { _parse_filters('+z z'); 1 };
+
+assert_parse_filter_error ' +z  p +a', 'p +a';
+assert_parse_filter_error '+z z', 'z';
+assert_parse_filter_error '', '';
+assert_parse_filter_error ' ', ' ';
+
+
 
 
 1;

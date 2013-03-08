@@ -45,18 +45,21 @@ sub substitutions
 
 # '+abc -*.gz +'
 # '+ abc - *.gz
+
+
 sub _parse_filters
 {
-	my (@data) = @_;
-	map {
+	[map {
 		[ /\s*([+-])\s*([^+ ]+)\s*/ ] # this will return arrayref with two elements - first + or -, second - the filter
 	} map {
-		my @a = /\G(\s*[+-]\s*\S+\s*)/g;
-		die "[$_]" unless @a;
-		die "[$']" if !@a || (defined($') && length($') > 0);
-		@a;
-	} @data;
+		my @parsed = /\G(\s*[+-]\s*\S+\s*)/g;
+		return undef, $_ unless @parsed;
+		return undef, $' if !@parsed || (defined($') && length($') > 0);
+		@parsed;
+	} @_], undef;
 }
+
+
 
 sub filters_to_regexp
 {
