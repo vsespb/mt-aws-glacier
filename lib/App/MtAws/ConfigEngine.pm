@@ -31,7 +31,7 @@ use utf8;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT = qw/option options positional command validation message
+our @EXPORT = qw/option options positional shared_list command validation message
 				mandatory optional seen deprecated validate scope
 				present valid value raw_option custom error warning/;
 				
@@ -136,19 +136,22 @@ sub define($&)
 
 sub decode_option_value
 {
-	my $decoded = eval {decode("UTF-8", shift, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)};
-	error("options_encoding_error", encoding => 'UTF-8') unless defined $decoded;
-	$decoded;
+	my ($val) = @_;
+	if (ref $val eq ref []) {
+		[map {
+			my $decoded = decode_option_value($_);
+			return unless defined $decoded;
+			$decoded;
+		} @$val];
+	} elsif (ref $val eq ref {}) {
+		( { %$val, value => decode_option_value($val->{value}) } );
+	} else {
+		my $decoded = eval {decode("UTF-8", $val, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)};
+		error("options_encoding_error", encoding => 'UTF-8') unless defined $decoded;
+		$decoded;
+	}
 }
 
-sub decode_option_array
-{
-	[map {
-		my $decoded = decode_option_value($_);
-		return unless defined $decoded;
-		$decoded;
-	} @{shift()}];
-}
 
 sub get_option_ref
 {
@@ -181,12 +184,14 @@ sub parse_options
 			} else {
 				$results{$sname} = $value; # TODO: catch double-declared options!
 			}
+			push @{ $results{ $optref->{shared_list_ref}->{name} } ||= [] }, { name => $optref->{name}, value =>  $value } # TODO: ??recursion - nested shared lists.. ;)
+				if (my $newopt = $optref->{shared_list_ref});
 		})
 	} map {
 		my $type = defined($_->{type}) ? $_->{type} : 's';
 		$type =  "=$type" unless $type eq '';
 		map { "$_$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
-	} grep { !$_->{positional} } values %{$self->{options}};
+	} grep { !$_->{positional} && !$_->{shared_list} } values %{$self->{options}}; # TODO: positional, shared_list - simplify
 	
 	error('getopts_error') unless GetOptions(@getopts);
 	
@@ -199,7 +204,7 @@ sub parse_options
 			
 			# fill from options from command line
 
-			my $decoded = (ref $results{$_} eq ref []) ? decode_option_array($results{$_}) : decode_option_value($results{$_});
+			my $decoded = decode_option_value($results{$_});
 			@{$optref}{qw/value source original_option is_alias/} =	($decoded, 'option', $_, $is_alias);
 			last unless defined $decoded;
 		}
@@ -335,6 +340,14 @@ sub option($;%) {
 sub positional($;%)
 {
 	option shift, @_, positional => 1;
+}
+
+sub shared_list($@)
+{
+	my $root = $context->{options}->{ option shift, shared_list => 1 };
+	for (@_) {
+		$context->{options}->{$_}->{shared_list_ref} = $root;
+	}
 }
 
 sub options(@) {
