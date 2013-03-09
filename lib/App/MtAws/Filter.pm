@@ -108,7 +108,7 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT_OK = qw/parse_filters _filters_to_pattern _filters_to_regexp/;
+our @EXPORT_OK = qw/parse_filters _filters_to_pattern _patterns_to_regexp/;
 				
 
 
@@ -152,7 +152,7 @@ sub _substitutions
 	return $all_re, \%subst;
 }
 
-sub _filter_to_regexp
+sub _pattern_to_regexp
 {
 	my ($filter, $all, $subst) = @_;
 	confess unless defined $filter;
@@ -166,11 +166,11 @@ sub _filter_to_regexp
 }
 
 
-sub _filters_to_regexp
+sub _patterns_to_regexp
 {
 	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*');
 	map {
-		$_->{re} = _filter_to_regexp($_->{pattern}, $all, $subst);
+		$_->{re} = _pattern_to_regexp($_->{pattern}, $all, $subst);
 		$_;
 	} @_;
 }

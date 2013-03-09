@@ -29,7 +29,7 @@ use Test::More tests => 234;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
-use App::MtAws::Filter qw/_filters_to_pattern parse_filters _filters_to_regexp/;
+use App::MtAws::Filter qw/parse_filters _filters_to_pattern _patterns_to_regexp/;
 use Data::Dumper;
 
 
@@ -101,7 +101,7 @@ assert_parse_filter_error ' ', ' ';
 sub check
 {
 	my ($filter, %lists) = @_;
-	my ($re) = _filters_to_regexp({pattern => $filter});
+	my ($re) = _patterns_to_regexp({pattern => $filter});
 	for (@{$lists{ismatch}}) {
 		$_ = "/$_";
 		ok $_ =~ $re->{re}, "[$filter], [$re->{re}],$_";
