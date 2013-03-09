@@ -29,7 +29,7 @@ use Test::More tests => 257;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
-use App::MtAws::Filter qw/parse_filters _filters_to_pattern _patterns_to_regexp/;
+use App::MtAws::Filter qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions/;
 use Data::Dumper;
 
 
@@ -239,8 +239,32 @@ for (' ', 'a/ ', '/a/ ', 'a/b/ ', '/a/b/ ', '*', '/*', '/a/*', 'a*', 'a/b/* *', 
 }
 
 
+#
+# _patterns_to_regexp correctness of escapes
+#
+
+
+check 'z/ex.mple',
+	ismatch => ['z/ex.mple'],
+	nomatch => ['z/exNmple'];
+
+check 'z/ex\\dmple',
+	ismatch => ['z/ex\\dmple'],
+	nomatch => ['z/ex1mple'];
+
+check 'z/ex{1,2}mple',
+	ismatch => ['z/ex{1,2}mple'],
+	nomatch => ['z/exmple', 'z/exxmple'];
+
+check 'z/ex[1|2]mple',
+	ismatch => ['z/ex[1|2]mple'],
+	nomatch => ['z/ex2mple', 'z/ex1mple'];
+
+cmp_deeply [_substitutions('**' => '.*', '*' => '[^/]*')], ['(\\\\\\*\\\\\\*|\\\\\\*)',{'\\*' => '[^/]*','\\*\\*' => '.*'}], "substitutions work";
+cmp_deeply [_substitutions('*' => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "substitutions work";
 
 1;
+
 __END__
 check '??',
 	ismatch => [],
