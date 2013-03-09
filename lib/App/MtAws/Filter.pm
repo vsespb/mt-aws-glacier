@@ -108,10 +108,40 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT_OK = qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions parse_filters/;
+our @EXPORT_OK = qw/parse_filters _filters_to_pattern
+	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir/;
 				
+sub check_filenames
+{
+	my $filters = shift;
+	grep { defined } map {
+		my $res = $_; # default action - include!
+		my $filename = "/$_";
+		for my $filter (@$filters) {
+			if ($filename =~ $filter->{re}) {
+				$res = $filter->{action} eq '+' ? $_ : undef;
+				last;
+			}
+		}
+		$res;
+	} @_;
+}
 
-
+sub check_dir
+{
+	my ($filters, $dir) = @_;
+	my $res = 1; # default action - include!
+	my $match_subdirs = undef;
+	for my $filter (@$filters) {
+		$match_subdirs = 0 if ($filter->{action} eq '+'); # match_subdirs true only when we exclude this filename and we can to exclude all subdirs
+		if ("/$dir" =~ $filter->{re}) {
+			$res = !!($filter->{action} eq '+');
+			$match_subdirs = $filter->{match_subdirs} unless defined $match_subdirs;
+			last;
+		}
+	}
+	return $res, $match_subdirs;
+}
 
 sub parse_filters
 {
@@ -121,19 +151,14 @@ sub parse_filters
 	return $res, undef;
 }
 
-
-# '+abc -*.gz +'
-# '+ abc - *.gz
-
-
 sub _filters_to_pattern
 {
 	[map { # for each +/-PATTERN
 	 # this will return arrayref with two elements: first + or -, second: the PATTERN
-		 /\s*([+-])\s*([^+ ]+)\s*/ or confess;
+		 /^\s*([+-])\s*(\S*)\s*$/ or confess "[$_]";
 		 { action => $1, pattern => $2 }
 	} map { # for each of filter arguments
-		my @parsed = /\G(\s*[+-]\s*\S+\s*)/g;
+		my @parsed = /\G(\s*[+-]\s*\S*\s*)/g;
 		return undef, $_ unless @parsed; # regexp does not match
 		return undef, $' if length($') > 0; # not all of the string parsed
 		@parsed; # we can return multiple +/-PATTERNS for each filter argument 

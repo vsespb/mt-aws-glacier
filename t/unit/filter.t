@@ -25,11 +25,12 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 257;
+use Test::More tests => 335;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
-use App::MtAws::Filter qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions parse_filters/;
+use App::MtAws::Filter qw/parse_filters _filters_to_pattern
+	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir/;
 use Data::Dumper;
 
 
@@ -68,7 +69,7 @@ for my $between (' ', '  ') {
 		for my $after (@onespace) {
 			for my $last (@onespace) {
 				my ($res, $err);
-				
+
 				assert_parse_filter_ok "${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
 					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'}];
 				
@@ -92,6 +93,36 @@ for my $between (' ', '  ') {
 	}
 }
 
+assert_parse_filter_ok "+", [ { action => '+', pattern => ''} ];
+assert_parse_filter_ok "-", [ { action => '-', pattern => ''} ];
+assert_parse_filter_ok "+data/ -", [ { action => '+', pattern => 'data/'}, { action => '-', pattern => ''} ];
+assert_parse_filter_ok "++", [ { action => '+', pattern => '+'} ];
+assert_parse_filter_ok "+++", [ { action => '+', pattern => '++'} ];
+assert_parse_filter_ok "--", [ { action => '-', pattern => '-'} ];
+assert_parse_filter_ok "---", [ { action => '-', pattern => '--'} ];
+assert_parse_filter_ok "+ ", [ { action => '+', pattern => ''} ];
+assert_parse_filter_ok " + ", [ { action => '+', pattern => ''} ];
+assert_parse_filter_ok "  +  ", [ { action => '+', pattern => ''} ];
+
+assert_parse_filter_ok "-+", [ { action => '-', pattern => '+'} ];
+assert_parse_filter_ok "+-", [ { action => '+', pattern => '-'} ];
+
+assert_parse_filter_ok "-data/  +  ", [  { action => '-', pattern => 'data/'}, { action => '+', pattern => ''} ];
+assert_parse_filter_ok "-data/  +", [  { action => '-', pattern => 'data/'}, { action => '+', pattern => ''} ];
+assert_parse_filter_ok "-data/  ++", [  { action => '-', pattern => 'data/'}, { action => '+', pattern => '+'} ];
+assert_parse_filter_ok "-data/  -+", [  { action => '-', pattern => 'data/'}, { action => '-', pattern => '+'} ];
+
+
+for my $first (qw/+ -/) {
+	for my $second (qw/+ -/) {
+		for my $before (@spaces) {
+			for my $after (@spaces) {
+				assert_parse_filter_ok "${second}*data/ ${before}${first}${after}${second}${before}",
+					[  { action => $second, pattern => '*data/'}, { action => $first, pattern => $second} ];
+			}
+		}
+	}
+}
 
 assert_parse_filter_error ' +z  p +a', 'p +a';
 assert_parse_filter_error '+z z', 'z';
@@ -303,6 +334,66 @@ cmp_deeply [parse_filters('-abc -dir/ +*.gz', '-*.txt')],
  ];
 
 
+#
+# check_filenames
+#
+
+my ($filter, $error);
+
+($filter, $error) = parse_filters('+*.gz -/data/ +');
+cmp_deeply [check_filenames($filter,
+	qw{1.gz 1.txt data/1.txt data/z/1.txt data/2.gz f data/p/33.gz})],
+	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}],
+	"should work";
+
+($filter, $error) = parse_filters('-/data/ +*.gz -');
+cmp_deeply [check_filenames($filter,
+	qw{1.gz p/1.gz data/ data/1.gz data/a/1.gz})],
+	[qw{1.gz p/1.gz}],
+	"should work again";
+
+($filter, $error) = parse_filters('+*.gz -/data/');
+cmp_deeply [check_filenames($filter,
+	qw{1.gz 1.txt data/1.txt data/z/1.txt data/2.gz f data/p/33.gz})],
+	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}],
+	"default action - include";
+
+($filter, $error) = parse_filters('+*.gz +/data/ -');
+cmp_deeply [check_filenames($filter,
+	qw{x/y x/y/z.gz /data/1 /data/d/2 abc})],
+	[qw{x/y/z.gz /data/1 /data/d/2}],
+	"default action - exclude";
+
+#
+# check_dir
+#
+
+($filter, $error) = parse_filters('+*.gz -/data/ +');
+cmp_deeply [check_dir $filter, 'data/'], ['', 0];
+
+($filter, $error) = parse_filters('-/data/ +*.gz +');
+cmp_deeply [check_dir $filter, 'data/'], ['', 1];
+
+($filter, $error) = parse_filters('+*.gz -/data** +');
+cmp_deeply [check_dir $filter, 'datadir/'], ['', 0];
+
+($filter, $error) = parse_filters('-/data** +*.gz +');
+cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
+
+($filter, $error) = parse_filters('-*.gz -/data** +');
+cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
+
+($filter, $error) = parse_filters('-/data** -*.gz -/data** +');
+cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
+
+($filter, $error) = parse_filters('+1.txt -*.gz -/data** +');
+cmp_deeply [check_dir $filter, 'datadir/'], ['', 0];
+
+($filter, $error) = parse_filters('-1.txt -*.gz +/data** +');
+cmp_deeply [check_dir $filter, 'datadir/'], [1, 0];
+
+($filter, $error) = parse_filters('+/data/ +');
+cmp_deeply [check_dir $filter, 'data/'], [1, 0];
 
 1;
 
