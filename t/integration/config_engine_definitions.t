@@ -25,7 +25,7 @@ use warnings;
 use warnings FATAL => 'all';
 use utf8;
 use Encode;
-use Test::More tests => 307;
+use Test::More tests => 309;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;

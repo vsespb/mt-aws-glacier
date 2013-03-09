@@ -160,13 +160,24 @@ sub parse_options
 	
 	local $context = $self;
 	
+	my %results;
 	my @getopts = map {
+		($_ => sub {
+			my ($name, $value) = @_;
+			my $sname = "$name";# can be object instead of name.. object interpolates to string well
+			if (defined($self->{options}{$sname}) && defined($self->{options}{$sname}{type}) and $self->{options}{$sname}{type} =~ /\@/) {
+				push @{ $results{$sname} ||= [] }, $value;
+			} else {
+				$results{$sname} = $value;
+			}
+		})
+	} map {
 		my $type = defined($_->{type}) ? $_->{type} : 's';
 		$type =  "=$type" unless $type eq '';
 		map { "$_$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
 	} grep { !$_->{positional} } values %{$self->{options}};
 	
-	error('getopts_error') unless GetOptions(\my %results, @getopts);
+	error('getopts_error') unless GetOptions(@getopts);
 	
 	unless ($self->{errors}) {
 		for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
