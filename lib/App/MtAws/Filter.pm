@@ -108,7 +108,7 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT_OK = qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions/;
+our @EXPORT_OK = qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions parse_filters/;
 				
 
 

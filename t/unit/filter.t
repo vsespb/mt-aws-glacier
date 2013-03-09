@@ -29,7 +29,7 @@ use Test::More tests => 257;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
-use App::MtAws::Filter qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions/;
+use App::MtAws::Filter qw/parse_filters _filters_to_pattern _patterns_to_regexp _substitutions parse_filters/;
 use Data::Dumper;
 
 
@@ -260,8 +260,49 @@ check 'z/ex[1|2]mple',
 	ismatch => ['z/ex[1|2]mple'],
 	nomatch => ['z/ex2mple', 'z/ex1mple'];
 
+# simply test with fixtures
+
 cmp_deeply [_substitutions('**' => '.*', '*' => '[^/]*')], ['(\\\\\\*\\\\\\*|\\\\\\*)',{'\\*' => '[^/]*','\\*\\*' => '.*'}], "substitutions work";
 cmp_deeply [_substitutions('*' => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "substitutions work";
+
+#
+# parse_filters
+#
+
+# simply test with fixtures
+
+cmp_deeply [parse_filters('-abc -dir/ +*.gz', '-*.txt')],
+ [
+          [
+            {
+              'pattern' => 'abc',
+              're' => qr/(^|\/)abc$/,
+              'action' => '-',
+              'match_subdirs' => ''
+            },
+            {
+              'pattern' => 'dir/',
+              're' => qr!(^|/)dir\/!,
+              'action' => '-',
+              'match_subdirs' => 1
+            },
+            {
+              'pattern' => '*.gz',
+              're' => qr/(^|\/)[^\/]*\.gz$/,
+              'action' => '+',
+              'match_subdirs' => ''
+            },
+            {
+              'pattern' => '*.txt',
+              're' => qr/(^|\/)[^\/]*\.txt$/,
+              'action' => '-',
+              'match_subdirs' => ''
+            }
+          ],
+          undef
+ ];
+
+
 
 1;
 
