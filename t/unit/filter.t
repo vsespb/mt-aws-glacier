@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 335;
+use Test::More tests => 353;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -159,6 +159,20 @@ check '*img*',
 check 'img*',
 	ismatch => ['img', 'img_01.jpeg', 'a/img_01.jpeg',  'b/c/img_01.jpeg'],
 	nomatch => ['im/g', 'b/c/the_img_01.jpeg'];
+
+# '?' wildcard
+
+check '??.gz',
+	ismatch => ['12.gz', 'a/34.gz', 'b/c/d/xy.gz'],
+	nomatch => ['1.gz', 'a/345.gz', 'b/c/d/p.gz'];
+
+check 'x?z.gz',
+	ismatch => ['xyz.gz', 'a/xpz.gz', 'b/c/d/xxz.gz'],
+	nomatch => ['xz.gz', 'a/xDDz.gz', 'b/c/d/ppz.gz'];
+
+check 'a/?',
+	ismatch => ['a/1', 'a/2', 'a/3'],
+	nomatch => ['a/11', 'a1', 'a/123'];
 
 
 # file, any dir

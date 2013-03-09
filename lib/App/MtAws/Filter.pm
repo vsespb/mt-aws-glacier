@@ -192,7 +192,7 @@ sub _pattern_to_regexp
 
 sub _patterns_to_regexp
 {
-	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*');
+	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*', '?' => '[^/]');
 	map {
 		%$_ = (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst));
 		$_;
