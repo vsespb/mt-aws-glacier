@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 234;
+use Test::More tests => 257;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -34,7 +34,7 @@ use Data::Dumper;
 
 
 #
-# _parse_filters
+# _filters_to_pattern
 #
 
 sub assert_parse_filter_error($$)
@@ -98,6 +98,10 @@ assert_parse_filter_error '+z z', 'z';
 assert_parse_filter_error '', '';
 assert_parse_filter_error ' ', ' ';
 
+#
+# _patterns_to_regexp regexp correctness
+#
+
 sub check
 {
 	my ($filter, %lists) = @_;
@@ -108,6 +112,8 @@ sub check
 	}
 	for (@{$lists{nomatch}}) {
 		$_ = "/$_";
+		
+		#print Dumper $re;
 		ok $_ !~ $re->{re}, "[$filter], [$re->{re}], $_";
 	}
 }
@@ -216,6 +222,23 @@ check 'z/example',
 check '',
 	ismatch => ['a', 'a/b', 'a/b/c'];
 		
+
+#
+# _patterns_to_regexp match_subdirs
+#
+
+
+for ('', 'a/', '/a/', 'a/b/', '/a/b/', '**', '/**', '/a/**', 'a**', 'a/b/**', 'a/b**') {
+	my ($re) = _patterns_to_regexp({pattern => $_});
+	ok $re->{match_subdirs}, "match subdirs [$_]";
+}
+
+for (' ', 'a/ ', '/a/ ', 'a/b/ ', '/a/b/ ', '*', '/*', '/a/*', 'a*', 'a/b/* *', 'a/b** *', 'a/b**c') {
+	my ($re) = _patterns_to_regexp({pattern => $_});
+	ok !$re->{match_subdirs}, "does not match subdirs [$_]";
+}
+
+
 
 1;
 __END__

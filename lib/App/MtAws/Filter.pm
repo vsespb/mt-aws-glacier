@@ -87,7 +87,7 @@ kind of PATTERN matched.
 3) In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
 This only can happen when mtgalcier absolutely sure that it won't break (2) behaviour.
 It's guaraneed that traversal stop only in case when
-a) directory match EXCLUDE rule, ending with '/' or '**'
+a) directory match EXCLUDE rule, ending with '/' or '**', or empty rule
 "dir/"
 "/some/dir/"
 "prefix**
@@ -117,7 +117,7 @@ sub parse_filters
 {
 	my ($res, $error) = _filters_to_pattern(@_);
 	return undef, $error if defined $error;
-	_filters_to_regexp(@$res);
+	_patterns_to_regexp(@$res);
 	return $res, undef;
 }
 
@@ -156,21 +156,20 @@ sub _pattern_to_regexp
 {
 	my ($filter, $all, $subst) = @_;
 	confess unless defined $filter;
-	return qr// unless length($filter);
+	return match_subdirs => 1, re => qr// unless length($filter);
+
 	my $re = quotemeta $filter;
 	$re =~ s!$all!$subst->{$&}!ge;
-	#$re = ($filter =~ m!(/.|\*\*)!) ? "^/?$re" : "(^|/)$re";
 	$re = ($filter =~ m!(/.)!) ? "^/?$re" : "(^|/)$re";
 	$re .= '$' unless ($filter =~ m!/$!);
-	qr/$re/;
+	return match_subdirs => !!($filter =~ m!(^|/|\*\*)$!), re => qr/$re/;
 }
-
 
 sub _patterns_to_regexp
 {
 	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*');
 	map {
-		$_->{re} = _pattern_to_regexp($_->{pattern}, $all, $subst);
+		%$_ = (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst));
 		$_;
 	} @_;
 }
