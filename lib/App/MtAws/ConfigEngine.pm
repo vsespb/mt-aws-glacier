@@ -329,7 +329,7 @@ sub options(@) {
 };
 
 
-sub validation(@_)
+sub validation(@)
 {
 	my ($name, $message, $cb, %opts) = (shift, shift, pop @_, @_);
 	confess "undeclared option" unless defined $context->{options}->{$name};
@@ -338,7 +338,7 @@ sub validation(@_)
 	$name;
 }
 
-sub command($%;$)
+sub command($@)
 {
 	my ($name, $cb, %opts) = (shift, pop, @_); # firs arg is name, last is cb, optional middle is opt
 
