@@ -150,6 +150,16 @@ sub decode_option_array
 	} @{shift()}];
 }
 
+sub get_option_ref
+{
+	my ($self, $name) = @_;
+	if ($self->{options}->{$name}) {
+		return ($self->{options}->{$name}, 0);
+	} else {
+		return (($self->{options}->{ $self->{optaliasmap}->{$name} } || confess "unknown option $name"), 1);
+	}
+}
+
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
@@ -165,10 +175,11 @@ sub parse_options
 		($_ => sub {
 			my ($name, $value) = @_;
 			my $sname = "$name";# can be object instead of name.. object interpolates to string well
-			if (defined($self->{options}{$sname}) && defined($self->{options}{$sname}{type}) and $self->{options}{$sname}{type} =~ /\@/) {
+			my ($optref, undef) = $self->get_option_ref($sname);
+			if (defined($optref->{type}) && $optref->{type} =~ /\@/) {
 				push @{ $results{$sname} ||= [] }, $value;
 			} else {
-				$results{$sname} = $value;
+				$results{$sname} = $value; # TODO: catch double-declared options!
 			}
 		})
 	} map {
@@ -181,13 +192,8 @@ sub parse_options
 	
 	unless ($self->{errors}) {
 		for (sort keys %results) { # sort needed here to define a/b order for already_specified_in_alias 
-			my ($optref, $is_alias);
-			if ($self->{options}->{$_}) {
-				($optref, $is_alias) = ($self->{options}->{$_}, 0);
-			} else {
-				($optref, $is_alias) = (($self->{options}->{ $self->{optaliasmap}->{$_} } || confess "unknown option $_"), 1);
-				warning('deprecated_option', option => $_, main => $self->{optaliasmap}->{$_}) if $self->{deprecated_options}->{$_};
-			}
+			my ($optref, $is_alias) = $self->get_option_ref($_);
+			warning('deprecated_option', option => $_, main => $self->{optaliasmap}->{$_}) if $is_alias && $self->{deprecated_options}->{$_};
 			
 			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 			

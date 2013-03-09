@@ -25,7 +25,7 @@ use warnings;
 use warnings FATAL => 'all';
 use utf8;
 use Encode;
-use Test::More tests => 309;
+use Test::More tests => 314;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1058,7 +1058,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 
 # parse options - array options
 
- {
+{
 	my $c  = create_engine();
 	$c->define(sub {
 		option 'o1', type => 's@';
@@ -1066,7 +1066,30 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', 'a', '-o1', 'b');
 	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "should work without options"; 
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', alias => 'o2', type => 's@';
+		command 'mycommand' => sub { optional 'o1' };
+	});
+	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o2', 'b');
+	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with aliases"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', deprecated => 'o2', type => 's@';
+		command 'mycommand' => sub { optional 'o1' };
+	});
+	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o2', 'b');
+	ok !defined($res->{errors}||$res->{error_texts});
+	ok $res->{warnings} && $res->{warning_texts};
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with deprecations"; 
 }
 
 
