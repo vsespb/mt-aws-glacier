@@ -63,13 +63,15 @@ PATTERN:
 1) if the pattern starts with a / then it is anchored to a particular spot in the hierarchy of files, otherwise it is matched against the final
 component of the filename.
 2) if the pattern ends with a / then it will only match a directory and all files/subdirectories inside this directory. It won't match regular file.
-Note that if directory is empty, it won't be synchronized to Amazon Glacier, as it does not support directories  
-3) Wildcard '*' matches any path component, but it stops at slashes.
-4) Wildcard '**' matches anything, including slashes.
-5) TBD: a '?' matches any character except a slash (/).   
-6) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
+Note that if directory is empty, it won't be synchronized to Amazon Glacier, as it does not support directories
+3) if pattern does not end with a '/', it won't match directory (directories are not supported by Amazon Glacier, so it has no sense to match a directory
+without subdirectories). However if, in future versions we find a way to store empty directories in glacier, this behaviour could change.
+4) Wildcard '*' matches any path component, but it stops at slashes.
+5) Wildcard '**' matches anything, including slashes.
+6) TBD: a '?' matches any character except a slash (/).
+7) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
 Otherwise it is matched only against the final component of the filename.
-7) if PATTERN is empty, it matches anything.
+8) if PATTERN is empty, it matches anything.
  
 (IV)
 

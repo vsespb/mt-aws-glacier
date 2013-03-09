@@ -193,10 +193,6 @@ check '**/*tmp',
 	ismatch => ['p/xtmp', 'tmp', 'ztmp'],
 	nomatch => [];
 
-#check 'tmp**',
-#	ismatch => ['tmpz', 'tmp/z', 'tmpz/z', 'tmp/z', ],
-#	nomatch => ['ptmpz', 'x/tmpz', 'x/tmpz/z'];
-
 check 'tmp**',
 	ismatch => ['tmpz', 'tmp/z', 'tmpz/z', 'tmp/z', 'x/tmpz', 'x/tmpz/z'],
 	nomatch => ['ptmpz'];
@@ -218,12 +214,11 @@ check 'z/example',
 	nomatch => ['tmp/pz/example/a'];
 	
 check '',
-	ismatch => ['a', 'a/b', 'a/b/c'];	
+	ismatch => ['a', 'a/b', 'a/b/c'];
 		
-#print Dumper [parse_filters('+*.gz -home/ -*.txt')];
 
 1;
 __END__
-check '/data',
+check '??',
 	ismatch => [],
 	nomatch => [];
