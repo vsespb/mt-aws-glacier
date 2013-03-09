@@ -1056,6 +1056,20 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	cmp_deeply $res->{options}, {}, "should work without options";
 }
 
+# parse options - array options
+
+ {
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', type => 's@';
+		command 'mycommand' => sub { optional 'o1' };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', 'a', '-o1', 'b');
+	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "should work without options"; 
+}
+
+
 # parse options - system messages
 
 {

@@ -134,6 +134,22 @@ sub define($&)
 	$block->();
 }
 
+sub decode_option_value
+{
+	my $decoded = eval {decode("UTF-8", shift, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)};
+	error("options_encoding_error", encoding => 'UTF-8') unless defined $decoded;
+	$decoded;
+}
+
+sub decode_option_array
+{
+	[map {
+		my $decoded = decode_option_value($_);
+		return unless defined $decoded;
+		$decoded;
+	} @{shift()}];
+}
+
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
@@ -165,16 +181,12 @@ sub parse_options
 			error('already_specified_in_alias', a => $optref->{original_option}, b => $_) if ((defined $optref->{value}) && $optref->{source} eq 'option');
 			
 			# fill from options from command line
-			unless (defined eval {
-				@{$optref}{qw/value source original_option is_alias/} =
-					(decode("UTF-8", $results{$_}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'option', $_, $is_alias);
-			}) {
-				error("options_encoding_error", encoding => 'UTF-8');
-				last;
-			}
+
+			my $decoded = (ref $results{$_} eq ref []) ? decode_option_array($results{$_}) : decode_option_value($results{$_});
+			@{$optref}{qw/value source original_option is_alias/} =	($decoded, 'option', $_, $is_alias);
+			last unless defined $decoded;
 		}
 	}
-	
 	
 	my $command = undef;
 	
@@ -206,7 +218,7 @@ sub parse_options
 						my $optref = $self->{options}->{$_};
 						unless (defined $optref->{value}) {
 							# fill from config
-							@{$optref}{qw/value source/} = ($cfg->{$_}, 'config');
+							@{$optref}{qw/value source/} = ($cfg->{$_}, 'config'); # TODO: support for array options??
 						}
 					}
 				} else {

@@ -68,7 +68,7 @@ Note that if directory is empty, it won't be synchronized to Amazon Glacier, as 
 without subdirectories). However if, in future versions we find a way to store empty directories in glacier, this behaviour could change.
 4) Wildcard '*' matches any path component, but it stops at slashes.
 5) Wildcard '**' matches anything, including slashes.
-6) TBD: a '?' matches any character except a slash (/).
+6) Wildcard '?' matches any character except a slash (/).
 7) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
 Otherwise it is matched only against the final component of the filename.
 8) if PATTERN is empty, it matches anything.
