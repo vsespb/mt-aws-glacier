@@ -34,6 +34,7 @@ use TestUtils;
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
+my %misc_opts = ('journal-encoding' => 'UTF-8', 'filenames-encoding' => 'UTF-8', 'terminal-encoding' => 'UTF-8', 'config-encoding' => 'UTF-8');
 
 # retrieve-inventory
 
@@ -45,6 +46,7 @@ for (
 		ok( !$errors && !$warnings, "$_ error/warnings");
 		ok ($command eq 'retrieve-inventory', "$_ command");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -65,6 +67,7 @@ for (
 		ok( !$errors && !$warnings, "$_ error/warnings");
 		ok ($command eq 'download-inventory', "$_ command");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',

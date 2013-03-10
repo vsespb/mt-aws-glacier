@@ -814,7 +814,7 @@ describe "validate" => sub {
 				Context->{options}->{myoption}->{value} = '7';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
-				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption', value => 7 }];
 				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
 				ok !Context->{options}->{myoption}->{valid};
 			}
@@ -826,7 +826,7 @@ describe "validate" => sub {
 				Context->{options}->{myoption}->{original_option} = 'old';
 				my ($res) = validate 'myoption';
 				ok $res eq 'myoption';
-				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'old' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'old', value => 7 }];
 				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
 				ok !Context->{options}->{myoption}->{valid};
 			}
@@ -866,7 +866,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption/];
 				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
 				ok !Context->{options}->{myoption}->{valid};
-				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption', value =>1 }];
 			}
 		};
 		it "should perform second validation if stop is false and first failed" => sub {
@@ -878,7 +878,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption/];
 				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
 				ok !Context->{options}->{myoption}->{valid};
-				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption', value => 1 }, { format => 'myerror2', a => 'myoption', value => 1 }];
 			}
 		};
 		it "should perform second validation if first passed" => sub {
@@ -890,7 +890,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption/];
 				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated};
 				ok !Context->{options}->{myoption}->{valid};
-				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption', value => 6 }];
 			}
 		};
 	};
@@ -914,7 +914,8 @@ describe "validate" => sub {
 				ok !Context->{options}->{myoption}->{valid};
 				ok Context->{options}->{myoption2}->{seen} && Context->{options}->{myoption2}->{validated};
 				ok !Context->{options}->{myoption2}->{valid};
-				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption' }, { format => 'myerror2', a => 'myoption2' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror', a => 'myoption', value => 1 },
+					{ format => 'myerror2', a => 'myoption2', value => 2 }];
 			}
 		};
 		it "error order should match validation order" => sub {
@@ -924,7 +925,8 @@ describe "validate" => sub {
 				Context->{options}->{myoption}->{value} = '1';
 				Context->{options}->{myoption2}->{value} = '2';
 				my (@res) = validate qw/myoption2 myoption/;
-				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }, { format => 'myerror', a => 'myoption' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2', value => 2 },
+					{ format => 'myerror', a => 'myoption', value => 1 }];
 			}
 		};
 		it "should work when one failed" => sub {
@@ -938,7 +940,7 @@ describe "validate" => sub {
 				ok Context->{options}->{myoption}->{seen} && Context->{options}->{myoption}->{validated} && Context->{options}->{myoption}->{valid};
 				ok Context->{options}->{myoption2}->{seen} && Context->{options}->{myoption2}->{validated};
 				ok !Context->{options}->{myoption2}->{valid};
-				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2', value => 2 }];
 			}
 		};
 		it "should work when one failed" => sub {
@@ -951,7 +953,7 @@ describe "validate" => sub {
 				cmp_deeply [@res], [qw/myoption myoption2/];
 				ok Context->{options}->{myoption}->{seen};
 				ok Context->{options}->{myoption2}->{seen};
-				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2' }];
+				cmp_deeply Context->{errors}, [ { format => 'myerror2', a => 'myoption2', value => 2 }];
 			}
 		};
 	};

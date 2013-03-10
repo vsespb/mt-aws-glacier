@@ -36,6 +36,7 @@ use TestUtils;
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
+my %misc_opts = ('journal-encoding' => 'UTF-8', 'filenames-encoding' => 'UTF-8', 'terminal-encoding' => 'UTF-8', 'config-encoding' => 'UTF-8');
 
 # SYNC
 for (
@@ -48,6 +49,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -74,6 +76,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors, "should understand line without config $_");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -97,6 +100,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors, "should understand part of config $_");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -118,6 +122,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors, "command line should override config $_");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'newsecret',
 			region => 'myregion',
@@ -144,6 +149,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -196,6 +202,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -228,6 +235,7 @@ for (
 		ok( !$errors && $warnings, "$_ error/warnings");
 	#	print $errors->[0];
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -265,6 +273,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -290,6 +299,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -336,6 +346,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -359,6 +370,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -408,6 +420,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -430,6 +443,7 @@ for (
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
 		ok( !$errors && $warnings, "$_ error/warnings");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',

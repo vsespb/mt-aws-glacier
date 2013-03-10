@@ -50,6 +50,10 @@ my %common = (
 			protocol => 'http',
 			vault =>'myvault',
 			config=>'glacier.cfg',
+			'journal-encoding' => 'UTF-8',
+			'filenames-encoding' => 'UTF-8',
+			'terminal-encoding' => 'UTF-8',
+			'config-encoding' => 'UTF-8'
 );
 
 #### PASS
@@ -180,7 +184,7 @@ for (qw!/x/y/z x/../y/z ../y x/./y!) {
 assert_fails "should check set-rel-filename to be relative filename for $_",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename $_!,
 	['filename'],
-	'require_relative_filename', a => 'set-rel-filename';
+	'require_relative_filename', a => 'set-rel-filename', value => $_;
 }
 
 ## dir
@@ -193,7 +197,7 @@ assert_fails "filename with fail without set-rel-filename or dir",
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir !.("x" x 2048),
 	['filename'],
-	'%option a% should be less than 512 characters', a => 'dir'; # TODO: test also for bad filename 
+	'%option a% should be less than 512 characters', a => 'dir', value => ("x" x 2048); # TODO: test also for bad filename 
 
 ##
 ## stdin

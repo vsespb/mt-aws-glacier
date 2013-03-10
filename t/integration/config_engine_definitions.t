@@ -46,7 +46,7 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "validation should work"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 31}], "validation should work"; 
 }
 
 {
@@ -58,7 +58,7 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-old', 31);
 	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with alias"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old'}], "validation should work with alias"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old', value => 31}], "validation should work with alias"; 
 }
 
 {
@@ -70,7 +70,7 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-old', 31);
 	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with deprecated"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old'}], "validation should work with deprecated"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old', value => 31}], "validation should work with deprecated"; 
 }
 
 {
@@ -81,7 +81,7 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work with option inline"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "validation should work with option inline"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 31}], "validation should work with option inline"; 
 }
 
 {
@@ -112,7 +112,7 @@ no warnings 'redefine';
 	my $res = $c->parse_options('mycommand', '-myoption', 200);
 
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should not perform two validations"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "should not perform two validations"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 200}], "should not perform two validations"; 
 }
 
 {
@@ -126,7 +126,8 @@ no warnings 'redefine';
 
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}, q{"--myoption" should be less than 100 for sure}],
 		"should perform two validations"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}, {format => 'way_too_high', a => 'myoption'}], "should perform two validations"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 200},
+		{format => 'way_too_high', a => 'myoption', value => 200}], "should perform two validations"; 
 }
 
 {
@@ -139,7 +140,7 @@ no warnings 'redefine';
 	my $res = $c->parse_options('mycommand', '-myoption', 42);
 
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should perform 2nd validation"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption'}], "should perform 2nd validations"; 
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 42}], "should perform 2nd validations"; 
 }
 
 

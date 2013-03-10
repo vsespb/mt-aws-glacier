@@ -36,6 +36,7 @@ use TestUtils;
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
+my %misc_opts = ('journal-encoding' => 'UTF-8', 'filenames-encoding' => 'UTF-8', 'terminal-encoding' => 'UTF-8', 'config-encoding' => 'UTF-8');
 
 # create-vault
 
@@ -47,6 +48,7 @@ for (
 		ok( !$errors && !$warnings, "$_ error/warnings");
 		ok ($command eq 'create-vault', "$_ command");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
@@ -68,6 +70,7 @@ for (
 		ok( !$errors && !$warnings, "$_ error/warnings");
 		ok ($command eq 'delete-vault', "$_ command");
 		is_deeply($result, {
+			%misc_opts,
 			key=>'mykey',
 			secret => 'mysecret',
 			region => 'myregion',
