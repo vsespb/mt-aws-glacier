@@ -184,13 +184,11 @@ sub parse_options
 			warning('deprecated_option', option => $_->{name}, main => $self->{optaliasmap}->{$_->{name}})
 				if $is_alias && $self->{deprecated_options}->{$_->{name}};
 			
-			if ((defined $optref->{value}) && !$optref->{list} && $optref->{source} eq 'option' ) {
-				if ($optref->{original_option} lt $_->{name}) {
-					error('already_specified_in_alias', a => $optref->{original_option}, b => $_->{name});
-				} else {
-					error('already_specified_in_alias', b => $optref->{original_option}, a => $_->{name});
-				}
-			}
+			error('already_specified_in_alias', ($optref->{original_option} lt $_->{name}) ?
+					(a => $optref->{original_option}, b => $_->{name}) :
+					(b => $optref->{original_option}, a => $_->{name})
+				)
+					if ((defined $optref->{value}) && !$optref->{list} && $optref->{source} eq 'option' );
 			
 			# fill from options from command line
 
