@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use File::Spec;
+use Encode;
 use App::MtAws::Utils qw/is_relative_filename/;
 
 use App::MtAws::ConfigEngine;
@@ -216,11 +217,13 @@ sub get_config
 		option 'config', binary => 1;
 		options 'journal', 'job-id', 'max-number-of-files', 'new-journal';
 		
-		my @encodings = (
-			option('terminal-encoding', binary => 1),
-			option('config-encoding', binary => 1),
-			option('filenames-encoding', binary => 1),
-			option('journal-encoding', binary => 1));
+		my @encodings =
+			map { option($_, binary =>1, default => 'UTF-8') }
+			qw/terminal-encoding config-encoding filenames-encoding journal-encoding/;
+
+		for (@encodings) {
+			validation $_, 'unknown_encoding', sub { find_encoding($_) };
+		}
 		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
@@ -253,42 +256,42 @@ sub get_config
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
 		
-		command 'create-vault' => sub { validate(optional('config', @encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
-		command 'delete-vault' => sub { validate(optional('config', @encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
+		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
+		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
 		
 		command 'sync' => sub {
-			validate(mandatory(optional('config', @encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal')), optional(qw/max-number-of-files/) )
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal')), optional(qw/max-number-of-files/) )
 		};
 		
 		command 'upload-file' => sub {
-			validate(mandatory(  optional('config', @encodings), @config_opts, qw/vault concurrency/, writable_journal('journal'),
+			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/, writable_journal('journal'),
 				check_dir_or_relname, check_base_dir, mandatory('partsize'), check_max_size  ))
 		};
 				
 		
 		command 'purge-vault' => sub {
-			validate(mandatory(  optional('config', @encodings), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecated('dir')  ))
+			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecated('dir')  ))
 		};
 		
 		command 'restore' => sub {
-			validate(mandatory(optional('config', @encodings), @config_opts, qw/dir vault max-number-of-files concurrency/, writable_journal(existing_journal('journal'))))
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/, writable_journal(existing_journal('journal'))))
 		};
 		
 		command 'restore-completed' => sub {
-			validate(mandatory(optional('config', @encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal')))
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal')))
 		};
 		
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
-			validate(mandatory(  optional('config', @encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault') ))
+			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault') ))
 		};
 		
 		command 'retrieve-inventory' => sub {
-			validate(mandatory(optional('config', @encodings), @config_opts, qw/vault/))
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/vault/))
 		};
 		
 		command 'download-inventory' => sub {
-			validate(mandatory(optional('config', @encodings), @config_opts, 'vault', empty_journal('new-journal')))
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, 'vault', empty_journal('new-journal')))
 		};
 	});
 	return $c;

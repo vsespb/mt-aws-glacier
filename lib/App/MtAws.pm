@@ -81,8 +81,6 @@ sub dcs
 
 sub main
 {
-	binmode STDOUT, ":encoding(UTF-8)";
-	binmode STDERR, ":encoding(UTF-8)";
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 	
 	my ($P) = @_;
@@ -108,13 +106,18 @@ sub main
 		print STDERR "\n";
 		exit 1;
 	}
+
+	binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
+	binmode STDERR, ":encoding($options->{'terminal-encoding'})";
+	
+	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
 	
 	if ($action eq 'sync') {
 		die "Not a directory $options->{dir}" unless -d $options->{dir};
 		
 		my $partsize = delete $options->{partsize};
 		
-		my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
 		
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
@@ -141,7 +144,7 @@ sub main
 		defined(my $relfilename = $options->{relfilename})||confess;
 		my $partsize = delete $options->{partsize};
 		
-		my $j = App::MtAws::Journal->new(journal_file => $options->{journal});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal});
 		
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
@@ -177,7 +180,7 @@ END
 		$j->close_for_write();
 		$FE->terminate_children();
 	} elsif ($action eq 'purge-vault') {
-		my $j = App::MtAws::Journal->new(journal_file => $options->{journal});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal});
 		
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
@@ -197,7 +200,7 @@ END
 		$j->close_for_write();
 		$FE->terminate_children();
 	} elsif ($action eq 'restore') {
-		my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
 		confess unless $options->{'max-number-of-files'};
 				
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
@@ -220,7 +223,7 @@ END
 		$j->close_for_write();
 		$FE->terminate_children();
 	} elsif ($action eq 'restore-completed') {
-		my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
 		
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
@@ -239,7 +242,7 @@ END
 		}
 		$FE->terminate_children();
 	} elsif ($action eq 'check-local-hash') {
-		my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
 		$j->read_journal(should_exist => 1);
 		my $files = $j->{journal_h};
 		
@@ -281,7 +284,6 @@ END
 		exit(1) if $error_hash || $error_size || $error_missed;
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
-		#my $j = App::MtAws::Journal->new(journal_file => $options->{journal}, root_dir => $options->{dir});
 				
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
@@ -295,7 +297,7 @@ END
 		$FE->terminate_children();
 	} elsif ($action eq 'download-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
-		my $j = App::MtAws::Journal->new(journal_file => $options->{'new-journal'});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{'new-journal'});
 				
 		my $FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();

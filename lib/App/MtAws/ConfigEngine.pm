@@ -74,7 +74,7 @@ sub new
 	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
 	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
 	message 'option_deprecated_for_command', "Option %option a% deprecated for this command", allow_redefine => 1;
-	message 'unknown_encoding', 'Unknown encoding "%s encoding%" in option %option a%', allow_redefine => 1;
+	message 'unknown_encoding', 'Unknown encoding "%s value%" in option %option a%', allow_redefine => 1;
 	return $self;
 }
 
@@ -521,7 +521,7 @@ sub validate(@)
 			$opt->{validated} = $opt->{valid} = 1;
 			VALIDATION: for my $v (@{ $opt->{validations} }) {
 				for ($opt->{value}) {
-					error ({ format => $v->{message}, a => _real_option_name $opt}),
+					error ({ format => $v->{message}, a => _real_option_name $opt, value => $_}),
 					$opt->{valid} = 0,
 					$v->{stop} && last VALIDATION
 						unless $v->{cb}->();

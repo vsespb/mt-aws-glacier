@@ -37,7 +37,11 @@ sub new
 	my ($class, %args) = @_;
 	my $self = \%args;
 	bless $self, $class;
-	$self->{journal_file} || die;
+	
+	defined($self->{journal_encoding}) || confess;
+	defined($self->{filenames_encoding}) || confess;
+	
+	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
 	
 	$self->{used_versions} = {};
