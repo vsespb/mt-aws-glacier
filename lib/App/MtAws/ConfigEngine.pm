@@ -56,7 +56,6 @@ sub new
 {
 	my ($class, %args) = @_;
 	my $self = {
-		ConfigOption => 'config',
 		%args
 	};
 	bless $self, $class;
@@ -75,6 +74,7 @@ sub new
 	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
 	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
 	message 'option_deprecated_for_command', "Option %option a% deprecated for this command", allow_redefine => 1;
+	message 'unknown_encoding', 'Unknown encoding "%s encoding%" in option %option a%', allow_redefine => 1;
 	return $self;
 }
 
@@ -161,14 +161,14 @@ sub get_encoding
 	
 	if (defined $config && defined($config->{$name})) {
 		my $new_enc_obj = find_encoding($config->{$name});
-		error("Unknown encoding $config->{name}"), return unless $new_enc_obj;
+		error('unknown_encoding', encoding => $config->{$name}, a => $name), return unless $new_enc_obj;
 		$res = $new_enc_obj;
 	}
 		
 	my $new_encoding = first { $_->{name} eq $name } @$options;
 	if (defined $new_encoding && defined $new_encoding->{value}) {
 		my $new_enc_obj = find_encoding($new_encoding->{value});
-		error("Unknown encoding $new_encoding->{value}"), return unless $new_enc_obj;
+		error('unknown_encoding', encoding => $new_encoding->{value}, a => $name), return unless $new_enc_obj;
 		$res = $new_enc_obj;
 	}
 	
@@ -223,7 +223,7 @@ sub parse_options
 		
 		if (defined(my $cfg_enc = $self->{ConfigEncoding})) {
 			if (my $cfg_ref = $self->{options}->{$cfg_enc}) {
-				confess "CmdEncoding option should be declared as binary" unless $cfg_ref->{binary};
+				confess "ConfigEncoding option should be declared as binary" unless $cfg_ref->{binary};
 			}
 		}
 		
@@ -319,8 +319,8 @@ sub parse_options
 		
 		$self->{commands}->{$command}->{cb}->(); # the callback!
 		
-		if ($cfg_opt) {
-			confess "Config (option '$self->{ConfigOption}') must be seen" unless $cfg_opt->{seen};
+		for (qw/ConfigOption ConfigEncoding CmdEncoding/) {
+			confess "Special option '$_' must be seen" if $self->{$_} && !$self->{options}{$self->{$_}}{seen};
 		}
 		
 		for (values %{$self->{options}}) {
