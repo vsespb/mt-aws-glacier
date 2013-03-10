@@ -38,8 +38,8 @@ sub new
 	my $self = \%args;
 	bless $self, $class;
 	
-	defined($self->{journal_encoding}) || confess;
-	defined($self->{filenames_encoding}) || confess;
+	$self->{journal_encoding} ||= 'UTF-8';
+	$self->{filenames_encoding} ||= 'UTF-8';
 	
 	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
@@ -63,7 +63,7 @@ sub read_journal
 	confess unless length($self->{journal_file});
 	confess if -d $self->{journal_file};
 	# TODO: croak here and elsewhere when checking for open files
-	open (F, "<:encoding(UTF-8)", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess; # TODO: this break coverage
+	open (F, "<:encoding($self->{journal_encoding})", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess; # TODO: this break coverage
 	while (<F>) {
 		chomp;
 		$self->process_line($_);
@@ -75,7 +75,7 @@ sub read_journal
 sub open_for_write
 {
 	my ($self) = @_;
-  	open ($self->{append_file}, ">>:encoding(UTF-8)", $self->{journal_file}) || confess $self->{journal_file};
+  	open ($self->{append_file}, ">>:encoding($self->{journal_encoding})", $self->{journal_file}) || confess $self->{journal_file};
   	$self->{append_file}->autoflush();
 }
 
@@ -246,7 +246,7 @@ sub _read_files
 		}
 	}, preprocess => sub {
 		map {
-			if (defined(my $res = eval { decode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
+			if (defined(my $res = eval { decode($self->{filenames_encoding}, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
 				$res;
 			} else {
 				# TODO: how will this work with strict utf STDOUT mode?
