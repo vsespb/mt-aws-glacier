@@ -213,7 +213,8 @@ sub get_config
 		option 'stdin', type=>'';
 		
 		option 'vault', deprecated => 'to-vault';
-		options 'config', 'journal', 'job-id', 'max-number-of-files', 'new-journal';
+		option 'config', binary => 1;
+		options 'journal', 'job-id', 'max-number-of-files', 'new-journal';
 		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');

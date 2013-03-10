@@ -24,8 +24,9 @@ use strict;
 use warnings;
 use warnings FATAL => 'all';
 use utf8;
+use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 322;
+use Test::More tests => 365;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1032,6 +1033,24 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 just once"; 
 }
 
+
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { return { o1 => "\xA0", o2 => "\xA0"} };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		options 'o1', 'o2';
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('o1'), optional('o2'), optional('config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	ok !defined( $res->{warnings}||$res->{warning_texts});
+	ok ! defined $res->{command}, "command should be undefined";
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in config file'], "should catch broken utf-8 in config just once"; 
+	cmp_deeply $res->{errors}, [{ format => 'config_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 in config just once"; 
+}
+
+
 {
 	my $c  = create_engine();
 	$c->define(sub {
@@ -1237,7 +1256,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig';
 		option 'myoption';
-		option 'config';
+		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
@@ -1253,7 +1272,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig', default => 43;
 		option 'myoption';
-		option 'config';
+		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
@@ -1268,7 +1287,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig', default => 43;
 		option 'myoption';
-		option 'config', default => 'cx';
+		option 'config', default => 'cx', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
@@ -1284,7 +1303,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig';
 		option 'myoption';
-		option 'config';
+		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43);
@@ -1298,7 +1317,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig', default => 44;
 		option 'myoption';
-		option 'config';
+		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43);
@@ -1312,7 +1331,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig', default => 44;
 		option 'myoption';
-		option 'config';
+		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption') };
 	});
 	ok ! defined eval { $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43); 1; };
@@ -1326,13 +1345,218 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		option 'fromconfig', default => 44;
 		option 'myoption';
-		option 'config';
+		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'cx');
 	cmp_deeply $res->{error_texts}, ['Cannot read config file: cx'], "should broken config"; 
 	cmp_deeply $res->{errors}, [{ format => 'cannot_read_config', config => 'cx' }], "should broken config"; 
 }
+
+# encodings
+
+{
+	my $c  = create_engine(CmdEncoding => 'encoding');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', encode('koi8-r', "тест"), '-encoding', 'koi8-r');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r'}, "cmd encoding should work"); 
+}
+
+{
+	my $c  = create_engine(CmdEncoding => 'encoding');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', encode('utf-8', "тест"), '-encoding', 'utf-8');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'utf-8'}, "cmd encoding should work with utf8"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { encoding => 'koi8-r' } };
+	my $c  = create_engine(CmdEncoding => 'encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary=>1;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', encode('koi8-r', "тест"), '-config', 'c' );
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cmd encoding should work when specified in config"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { encoding => 'cp1251' } };
+	my $c  = create_engine(CmdEncoding => 'encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary=>1;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-o1', encode('koi8-r', "тест"), '-config', 'c', '-encoding', 'koi8-r' );
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cmd encoding should work when command line overrides"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { o1 => encode('koi8-r', "тест") } };
+	my $c  = create_engine(ConfigEncoding => 'encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary=>1;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c', '-encoding', 'koi8-r' );
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { o1 => encode('utf-8', "тест") } };
+	my $c  = create_engine(ConfigEncoding => 'encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary=>1;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c', '-encoding', 'utf-8' );
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'utf-8', config => 'c'}, "cfg encoding should work"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { o1 => encode('koi8-r', "тест"), encoding => 'koi8-r' } };
+	my $c  = create_engine(ConfigEncoding => 'encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary=>1;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work when specified in config"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { o1 => encode('koi8-r', "тест"), encoding => 'cp1251' } };
+	my $c  = create_engine(ConfigEncoding => 'encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary=>1;
+		option 'encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1'), optional('encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c', '-encoding', 'koi8-r');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work when specified in config"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { o1 => encode('koi8-r', "тест"), 'cmd-encoding' => 'cp1251' } };
+	my $c  = create_engine(ConfigEncoding => 'cfg-encoding', CmdEncoding => 'cmd-encoding', ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'o2';
+		option 'config', binary=>1;
+		option 'cfg-encoding', binary => 1;
+		option 'cmd-encoding', binary => 1;
+		command 'mycommand' => sub { optional('o1', 'o2'), optional('cmd-encoding', 'cfg-encoding', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c', '-cfg-encoding', 'koi8-r', '-o2', encode('cp1251', 'тест2'));
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options},
+		{ o1 => 'тест' , o2 => 'тест2', 'cmd-encoding' => 'cp1251', 'cfg-encoding' => 'koi8-r', config => 'c'},
+		"cfg and cmd encodings should work together"); 
+}
+
+{
+	my $c  = create_engine(CmdEncoding => 'cmd-encoding');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'cmd-encoding';
+		command 'mycommand' => sub { optional('o1', 'cmd-encoding') };
+	});
+	ok ! defined eval { $c->parse_options('mycommand', '-o1', '1'); 1 };
+	ok $@ =~ /declared as binary/i, "should catch cmd encoding binary";
+}
+
+{
+	my $c  = create_engine(ConfigEncoding => 'cmd-encoding');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'cmd-encoding';
+		command 'mycommand' => sub { optional('o1', 'cmd-encoding') };
+	});
+	ok ! defined eval { $c->parse_options('mycommand', '-o1', '1'); 1 };
+	ok $@ =~ /declared as binary/i, "should catch cfg encoding binary";
+}
+
+{
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config';
+		command 'mycommand' => sub { optional('o1', 'config') };
+	});
+	ok ! defined eval { $c->parse_options('mycommand', '-o1', '1'); 1 };
+	ok $@ =~ /ConfigOption.*declared as binary/i, "should catch cfg encoding binary";
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { return {} };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', default => 44;
+		option 'config', binary => 1;
+		command 'mycommand' => sub { optional('o1', 'config') };
+	});
+	my $res =  $c->parse_options('mycommand', '-o1', '1', '-config', encode('koi8-r', 'тест'));
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options},
+		{ o1 => 1, config => encode('koi8-r', 'тест')},
+		"should not decode binary command line options"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { return { o1 => encode('koi8-r', 'тест1'), o2 => encode('utf-8', 'тест2')} };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'o1', binary => 1;
+		option 'o2';
+		option 'config', binary => 1;
+		command 'mycommand' => sub { optional('o1', 'o2', 'config') };
+	});
+	my $res =  $c->parse_options('mycommand', '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "encodings - right command";
+	cmp_deeply($res->{options},
+		{ o1 => 1, config => 'c', o1 => encode('koi8-r', 'тест1'), o2 => 'тест2'},
+		"should not decode binary command line options in config"); 
+}
+
+
 
 sub create_engine
 {

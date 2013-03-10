@@ -69,6 +69,7 @@ sub new
 	message 'already_specified_in_alias', 'Both options %option a% and %option b% are specified. However they are aliases', allow_redefine=>1;
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
 	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
+	message 'config_encoding_error', 'Invalid %encoding% character in config file', allow_redefine => 1;
 	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
 	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
 	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
@@ -136,11 +137,43 @@ sub define($&)
 
 sub decode_option_value
 {
-	my $decoded = eval {decode("UTF-8", shift, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)};
-	error("options_encoding_error", encoding => 'UTF-8') unless defined $decoded;
+	my ($self, $val) = @_;
+	my $enc = $self->{cmd_encoding}||confess;
+	my $decoded = eval {decode($enc, $val, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)};
+	error("options_encoding_error", encoding => $enc) unless defined $decoded;
 	$decoded;
 }
 
+sub decode_config_value
+{
+	my ($self, $val) = @_;
+	my $enc = $self->{cfg_encoding}||confess;
+	my $decoded = eval {decode($enc, $val, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)};
+	error("config_encoding_error", encoding => $enc) unless defined $decoded;
+	$decoded;
+}
+
+sub get_encoding
+{
+	my ($name, $config, $options) = @_;
+	return undef unless defined $name;
+	my $res = undef;
+	
+	if (defined $config && defined($config->{$name})) {
+		my $new_enc_obj = find_encoding($config->{$name});
+		error("Unknown encoding $config->{name}"), return unless $new_enc_obj;
+		$res = $new_enc_obj;
+	}
+		
+	my $new_encoding = first { $_->{name} eq $name } @$options;
+	if (defined $new_encoding && defined $new_encoding->{value}) {
+		my $new_enc_obj = find_encoding($new_encoding->{value});
+		error("Unknown encoding $new_encoding->{value}"), return unless $new_enc_obj;
+		$res = $new_enc_obj;
+	}
+	
+	$res
+}
 
 sub get_option_ref
 {
@@ -178,6 +211,41 @@ sub parse_options
 	
 	error('getopts_error') unless GetOptions(@getopts);
 	
+	my $cfg = undef;
+	my $cfg_opt = undef;
+	
+	unless ($self->{errors}) {
+		if (defined(my $cmd_enc = $self->{CmdEncoding})) {
+			if (my $cmd_ref = $self->{options}->{$cmd_enc}) {
+				confess "CmdEncoding option should be declared as binary" unless $cmd_ref->{binary};
+			}
+		}
+		
+		if (defined(my $cfg_enc = $self->{ConfigEncoding})) {
+			if (my $cfg_ref = $self->{options}->{$cfg_enc}) {
+				confess "CmdEncoding option should be declared as binary" unless $cfg_ref->{binary};
+			}
+		}
+		
+		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
+			confess "ConfigOption option should be declared as binary" unless $cfg_opt->{binary};
+			my $cfg_value = first { $_->{name} eq $self->{ConfigOption} } @results;
+			$cfg_value = $cfg_value->{value} if defined $cfg_value;
+			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
+			if (defined $cfg_value) { # we should also check that config is 'seen'. we can only check below (so it must be seen)
+				$cfg = $self->read_config($cfg_value);
+				error("cannot_read_config", config => $cfg_value) unless defined $cfg;
+			}
+		}
+		
+		my $cmd_encoding = get_encoding($self->{CmdEncoding}, $cfg, \@results);
+		my $cfg_encoding = get_encoding($self->{ConfigEncoding}, $cfg, \@results);
+		$self->{cmd_encoding} = defined($cmd_encoding) ? $cmd_encoding : 'UTF-8';
+		$self->{cfg_encoding} = defined($cfg_encoding) ? $cfg_encoding : 'UTF-8';
+	}
+	
+	
+	
 	unless ($self->{errors}) {
 		for (@results) { # sort needed here to define a/b order for already_specified_in_alias 
 			my ($optref, $is_alias) = $self->get_option_ref($_->{name});
@@ -190,10 +258,13 @@ sub parse_options
 				)
 					if ((defined $optref->{value}) && !$optref->{list} && $optref->{source} eq 'option' );
 			
-			# fill from options from command line
-
-			my $decoded = decode_option_value($_->{value});
-			last unless defined $decoded;
+			my $decoded;
+			if ($optref->{binary}) {
+				$decoded = $_->{value};
+			} else {
+				$decoded = $self->decode_option_value($_->{value});
+				last unless defined $decoded;
+			}
 			
 			if ($optref->{list}) {
 				if (defined $optref->{value}) {
@@ -203,12 +274,11 @@ sub parse_options
 				}
 				push @{$self->{option_list} ||= []}, { name => $optref->{name}, value => $decoded };
 			} else {
+				# fill from options from command line
 				@{$optref}{qw/value source original_option is_alias/} =	($decoded, 'option', $_->{name}, $is_alias);
 			}
 		}
 	}
-	#print Dumper $self;
-	
 	my $command = undef;
 	
 	unless ($self->{errors}) {
@@ -228,31 +298,25 @@ sub parse_options
 	}
 	
 	unless ($self->{errors}) {
-		my $cfg_opt = undef;
-		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
-			my $cfg_value = $cfg_opt->{value};
-			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
-			if (defined $cfg_value) { # we should also check that config is 'seen'. we can only check below (so it must be seen)
-				my $cfg = $self->read_config($cfg_value);
-				if (defined $cfg) {
-					for (keys %$cfg) {
-						my $optref = $self->{options}->{$_};
-						unless (defined $optref->{value}) {
-							# fill from config
-							@{$optref}{qw/value source/} = ($cfg->{$_}, 'config'); # TODO: support for array options??
-						}
-					}
-				} else {
-					error("cannot_read_config", config => $cfg_value);
+		if (defined $cfg) {
+			for (keys %$cfg) {
+				my $optref = $self->{options}->{$_};
+				unless (defined $optref->{value}) {
+					# fill from config
+					my $decoded = $optref->{binary} ? $cfg->{$_} : $self->decode_config_value($cfg->{$_});
+					last unless defined $decoded;
+					@{$optref}{qw/value source/} = ($decoded, 'config'); # TODO: support for array options??
 				}
 			}
 		}
+	}
+	unless ($self->{errors}) {
 		
 		for (values %{$self->{options}}) {
 			# fill from default values
 			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} && 
 		}
-		 
+		
 		$self->{commands}->{$command}->{cb}->(); # the callback!
 		
 		if ($cfg_opt) {
@@ -542,7 +606,7 @@ sub read_config
 {
 	my ($self, $filename) = @_;
 	return unless -f $filename && -r $filename; #TODO test
-	open (my $F, "<:crlf:encoding(UTF-8)", $filename) || return;
+	open (my $F, "<:crlf", $filename) || return;
 	my %newconfig;
 	while (<$F>) {
 		chomp;

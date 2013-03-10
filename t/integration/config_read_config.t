@@ -123,8 +123,9 @@ sub read_as_config
 	print F $bytes;
 	close F;
 	my $C = App::MtAws::ConfigEngine->new();
-	return $C->read_config($file);
-	
+	my $r = $C->read_config($file);
+	return undef unless defined $r;
+	return ({map { decode("UTF-8", $_)  } %$r}); # UTF-8 decode hash
 }
 
 
