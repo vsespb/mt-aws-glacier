@@ -25,7 +25,7 @@ use warnings;
 use warnings FATAL => 'all';
 use utf8;
 use Encode;
-use Test::More tests => 316;
+use Test::More tests => 322;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1061,7 +1061,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'o1', type => 's@';
+		option 'o1', type => 's', list => 1;
 		command 'mycommand' => sub { optional 'o1' };
 	});
 	my $res = $c->parse_options('mycommand', '-o1', 'a', '-o1', 'b');
@@ -1072,7 +1072,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'o1', alias => 'o2', type => 's@';
+		option 'o1', alias => 'o2', type => 's', list => 1;
 		command 'mycommand' => sub { optional 'o1' };
 	});
 	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o2', 'b');
@@ -1083,7 +1083,29 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		option 'o1', deprecated => 'o2', type => 's@';
+		option 'o1', alias => 'o2', type => 's', list => 1;
+		command 'mycommand' => sub { optional 'o1' };
+	});
+	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o1', 'b');
+	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work when mixing aliases and options"; 
+}
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', deprecated => 'o2', type => 's', list => 1;
+		command 'mycommand' => sub { optional 'o1' };
+	});
+	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o1', 'b');
+	ok !defined($res->{errors}||$res->{error_texts});
+	ok $res->{warnings} && $res->{warning_texts};
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work when mixing deprecations and options";
+}
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option 'o1', deprecated => 'o2', type => 's', list => 1;
 		command 'mycommand' => sub { optional 'o1' };
 	});
 	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o2', 'b');
@@ -1092,33 +1114,31 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with deprecations"; 
 }
 
-# parse options - shared lists
+# option lists
 
 {
 	my $c  = create_engine();
 	$c->define(sub {
-		shared_list "rules",
-			option('include', type => 's@'),
-			option('exclude', type => 's@'),
-			option('filter', type => 's@');
-		command 'mycommand' => sub { optional qw/include exclude filter rules/ };
+		option('include', type => 's', list => 1),
+		option('exclude', list => 1),
+		option('filter', type => 's', list => 1);
+		command 'mycommand' => sub { optional qw/include exclude filter/ };
 	});
 	my $res = $c->parse_options('mycommand', qw/--include 1 --exclude 2 --filter 3 --filter 4 --include 5/);
 	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings} && $res->{warning_texts});
 	cmp_deeply $res->{options}, {
-		rules => [
+		include => [qw/1 5/],
+		exclude => [qw/2/],
+		filter => [qw/3 4/],
+	}, "shared lists should work";
+	cmp_deeply $res->{option_list}, [
 			{ name => 'include', value => 1 },
 			{ name => 'exclude', value => 2 },
 			{ name => 'filter', value => 3 },
 			{ name => 'filter', value => 4 },
 			{ name => 'include', value => 5 }, 
-		],
-		include => [qw/1 5/],
-		exclude => [qw/2/],
-		filter => [qw/3 4/],
-	}, "shared lists should work";
+	], "shared lists should work";
 }
-
 
 # parse options - system messages
 
