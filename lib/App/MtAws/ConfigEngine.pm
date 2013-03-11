@@ -294,10 +294,6 @@ sub parse_options
 	}
 	
 	unless ($self->{errors}) {
-		$self->{positional_tail} = \@ARGV;
-	}
-	
-	unless ($self->{errors}) {
 		if (defined $cfg) {
 			for (keys %$cfg) {
 				my $optref = $self->{options}->{$_};
@@ -317,6 +313,10 @@ sub parse_options
 			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} && 
 		}
 		
+		$self->{preinitialize}->() if $self->{preinitialize};
+		
+		$self->{positional_tail} = \@ARGV; #[map { decode($self->{cmd_encoding}, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @ARGV];
+
 		$self->{commands}->{$command}->{cb}->(); # the callback!
 		
 		for (qw/ConfigOption ConfigEncoding CmdEncoding/) {
@@ -330,9 +330,9 @@ sub parse_options
 		unless ($self->{errors}) {
 			if (@ARGV) {
 				unless (defined eval {
-					error('unexpected_argument', a => decode("UTF-8", shift @ARGV, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)); 1;
+					error('unexpected_argument', a => decode($self->{cmd_encoding}, shift @ARGV, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)); 1;
 				}) {
-					error("options_encoding_error", encoding => 'UTF-8');
+					error("options_encoding_error", encoding => $self->{cmd_encoding}); #TODO: not utf!
 				}
 			}
 		}
@@ -464,9 +464,9 @@ sub seen
 			if (defined $v) {
 				push @{$context->{positional_backlog}}, $o;
 				unless (defined eval {
-					@{$option}{qw/value source/} = (decode("UTF-8", $v, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'positional');
+					@{$option}{qw/value source/} = (decode($context->{cmd_encoding}||'UTF-8', $v, Encode::DIE_ON_ERR|Encode::LEAVE_SRC), 'positional');
 				}) {
-					error("options_encoding_error", encoding => 'UTF-8');
+					error("options_encoding_error", encoding => $context->{cmd_encoding}||'UTF-8'); # TODO: actually remove UTF and fix tests
 				}
 			}
 		}
