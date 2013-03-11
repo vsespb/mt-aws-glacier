@@ -22,6 +22,7 @@ package App::MtAws::ChildWorker;
 
 use App::MtAws::LineProtocol;
 use App::MtAws::GlacierRequest;
+use App::MtAws::Utils;
 use strict;
 use warnings;
 use utf8;
@@ -105,7 +106,7 @@ sub process
 				};
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
-				mkpath(dirname($data->{filename}));
+				mkpath(binaryfilename dirname($data->{filename}));
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
 				return undef unless $r;
