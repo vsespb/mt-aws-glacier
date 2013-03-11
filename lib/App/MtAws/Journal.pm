@@ -30,7 +30,7 @@ use File::Spec;
 use Encode;
 use Carp;
 use IO::Handle;
-use App::MtAws::Utils qw/sanity_relative_filename/;
+use App::MtAws::Utils;
 
 sub new
 {
@@ -39,7 +39,6 @@ sub new
 	bless $self, $class;
 	
 	$self->{journal_encoding} ||= 'UTF-8';
-	$self->{filenames_encoding} ||= 'UTF-8';
 	
 	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
@@ -61,21 +60,23 @@ sub read_journal
 	my ($self, %args) = @_;
 	confess unless defined $args{should_exist};
 	confess unless length($self->{journal_file});
-	confess if -d $self->{journal_file};
+	#####confess if -d $self->{journal_file};
 	# TODO: croak here and elsewhere when checking for open files
-	open (F, "<:encoding($self->{journal_encoding})", $self->{journal_file}) || ( !$args{should_exist} && return)|| confess; # TODO: this break coverage
-	while (<F>) {
-		chomp;
-		$self->process_line($_);
+	
+	if (my $F = open_file($self->{journal_file}, file_encoding => $self->{journal_encoding}, mode => '<', should_exist => $args{should_exist})) {
+		while (<$F>) {
+			chomp;
+			$self->process_line($_);
+		}
+		close $F;
 	}
-	close F;
 	return;
 }
 
 sub open_for_write
 {
 	my ($self) = @_;
-  	open ($self->{append_file}, ">>:encoding($self->{journal_encoding})", $self->{journal_file}) || confess $self->{journal_file};
+	$self->{append_file} = open_file($self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding});
   	$self->{append_file}->autoflush();
 }
 
@@ -188,7 +189,6 @@ sub _write_line
 	my ($self, $line) = @_;
 	confess unless $self->{append_file};
 	confess unless print { $self->{append_file} } $line."\n";
-	close F;
 	# TODO: fsync()
 }
 
@@ -234,32 +234,37 @@ sub _read_files
 			print "Found $i local files\n";
 		}
 		
-		my $filename = $_;
-		if ($self->_is_file_exists($filename)) {
-			my ($absfilename, $relfilename) = ($_, File::Spec->abs2rel($filename, $self->{root_dir}));
+		my $binaryfilename = $_;
+		my $filename;
+		unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
+			# TODO: how will this work with strict utf STDOUT mode?
+			# TODO: filename can't be printed + File::Find::dir should be encoded
+			print STDERR "=== ===\nERROR: file/dir name [$_] with invalid characters, inside directory [$File::Find::dir]\nDump of file name bytes:\n";
+			require Devel::Peek;
+			Devel::Peek::Dump($binaryfilename);
+			print STDERR "=== ===\n";
+			croak;
+		}
+
+		if ($self->_is_file_exists($binaryfilename)) {
+			my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 			
 			if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
 				my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 				confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
-				push @$filelist, { absfilename => $filename, relfilename => $relfilename };
+				
+				push @$filelist, { relfilename => $relfilename };
 			}
 		}
-	}, preprocess => sub {
-		map {
-			if (defined(my $res = eval { decode($self->{filenames_encoding}, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
-				$res;
-			} else {
-				# TODO: how will this work with strict utf STDOUT mode?
-				print STDERR "=== ===\nERROR: file/dir name [$_] with invalid characters, inside directory [$File::Find::dir]\nDump of file name bytes:\n";
-				require Devel::Peek;
-				Devel::Peek::Dump($_);
-				print STDERR "=== ===\n";
-				croak;
-			}
-		} @_;
-	}, no_chdir => 1 }, ($self->{root_dir}));
+	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
 	
 	$filelist;
+}
+
+sub _is_file_exists
+{
+	my ($self, $filename) = @_;
+	(-f $filename) && (-s $filename);
 }
 
 sub absfilename
@@ -269,11 +274,6 @@ sub absfilename
 	return File::Spec->rel2abs($relfilename, $self->{root_dir});
 }
 
-sub _is_file_exists
-{
-	my ($self, $filename) = @_;
-	(-f $filename) && (-s $filename);
-}
 
 sub _can_read_filename_for_mode
 {
@@ -296,8 +296,6 @@ sub _can_read_filename_for_mode
 	}
 	$ok;
 }
-
-
 
 
 
