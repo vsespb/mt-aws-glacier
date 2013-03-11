@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use File::Spec;
 use Encode;
-use App::MtAws::Utils qw/is_relative_filename/;
+use App::MtAws::Utils;
 
 use App::MtAws::ConfigEngine;
 
@@ -126,7 +126,7 @@ sub existing_journal
 {
 	my ($journal) = @_;
 	if (defined($journal) && present($journal) && !exists $App::MtAws::ConfigEngine::context->{override_validations}->{journal}) { # TODO: this is hack!
-		error('Journal file not found') unless -r value($journal);
+		error('Journal file not found') unless -r binaryfilename value($journal);
 	}
 	$journal;
 }
@@ -135,8 +135,8 @@ sub writable_journal
 {
 	my ($journal) = @_;
 	if (defined($journal) && present($journal)) {
-		my $value = value($journal);
-		error('Journal file not writable') unless (-f $value && -w $value && ! -d $value) || (! -d $value);
+		my $value = binaryfilename value($journal);
+		error('Journal file not writable') if (-e $value && (! -w $value or -d $value));
 	}
 	$journal;
 }
@@ -145,7 +145,7 @@ sub empty_journal
 {
 	my ($journal) = @_;
 	if (defined($journal) && present($journal)) {
-		error('Journal file not empty - please provide empty file no write new journal') unless ! -s value($journal);
+		error('Journal file not empty - please provide empty file no write new journal') unless ! -s binaryfilename value($journal);
 	}
 	$journal;
 }
@@ -182,6 +182,10 @@ sub get_config
 	
 	my $c  = App::MtAws::ConfigEngine->new(ConfigOption => 'config', CmdEncoding => 'terminal-encoding', ConfigEncoding => 'config-encoding', %args);
 	
+	$c->{preinitialize} = sub {
+		set_filename_encoding $c->{options}{'filenames-encoding'}{value};
+	};
+	
 	$c->define(sub {
 		
 		message 'no_command', 'Please specify command', allow_redefine=>1;
@@ -194,15 +198,15 @@ sub get_config
 		
 		for (option 'dir', deprecated => ['to-dir', 'from-dir']) {
 			validation $_, message('%option a% should be less than 512 characters'), stop => 1, sub { length($_) < 512 }; # TODO: check that dir is dir
-			validation $_, message('%option a% not a directory'), stop => 1, sub { -d };
+			validation $_, message('%option a% not a directory'), stop => 1, sub { -d binaryfilename };
 		}
 		
 		option 'base-dir';
 		
 		for (option 'filename') {
-			validation $_, message('%option a% not a file'), stop => 1, sub { -f };
-			validation $_, message('%option a% file not readable'), stop => 1, sub { -r };
-			validation $_, message('%option a% file size is zero'), stop => 1, sub { -s };
+			validation $_, message('%option a% not a file'), stop => 1, sub { -f binaryfilename };
+			validation $_, message('%option a% file not readable'), stop => 1, sub { -r binaryfilename };
+			validation $_, message('%option a% file size is zero'), stop => 1, sub { -s binaryfilename };
 		}
 		
 		
