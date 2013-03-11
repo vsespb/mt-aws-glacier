@@ -107,7 +107,7 @@ my $data = {
 		$File::Find::prune = 0;
 		my $filelist = $J->_read_files('all', $maxfiles);
 		
-		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]; 
+		my @expected = map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]; 
 		is_deeply($filelist, \@expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
@@ -131,7 +131,7 @@ my $data = {
 		$File::Find::prune = 1;
 		my $filelist = $J->_read_files('all', $maxfiles);
 		
-		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
+		my @expected = map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
 		is_deeply($filelist, \@expected);
 		ok($maxfiles >= scalar @filelist - 1);
 		ok($File::Find::prune == 0);
@@ -154,7 +154,7 @@ my $data = {
 		$File::Find::prune = 1;
 		my $filelist = $J->_read_files('all', 0);
 		
-		my @expected = map { { absfilename => $_, relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
+		my @expected = map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
 		is_deeply($filelist, \@expected);
 		ok($File::Find::prune == 0);
 }
@@ -215,7 +215,7 @@ my $data = {
 		ok($args->{no_chdir} == 1);
 		ok($root_dir eq $rootdir);
 		ok(defined($args->{wanted}));
-		ok(defined($args->{preprocess}));
+		ok(!defined($args->{preprocess}));
 }
 
 # preprocess sub should decode to utf8

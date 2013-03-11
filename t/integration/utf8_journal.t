@@ -59,7 +59,9 @@ my $testfiles1 = [
 ];
 
 for my $jv (qw/0 A/) {
-	my $J = JournalTest->new(create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
+	my $J = JournalTest->new(journal_encoding => 'UTF-8', filenames_encoding => 'UTF-8',
+		create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot,
+		journal_file => $journal_file, testfiles => $testfiles1);
 	$J->test_all();
 }
 
