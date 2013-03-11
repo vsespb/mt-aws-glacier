@@ -49,6 +49,7 @@ use Carp;
 use File::stat;
 use App::MtAws::CreateVaultJob;
 use App::MtAws::DeleteVaultJob;
+use App::MtAws::Utils;
 
 
 # TODO: can be replaced with perl pragmas
@@ -110,10 +111,11 @@ sub main
 	binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
 	binmode STDERR, ":encoding($options->{'terminal-encoding'})";
 	
+	
 	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
 	
 	if ($action eq 'sync') {
-		die "Not a directory $options->{dir}" unless -d $options->{dir};
+		die "Not a directory $options->{dir}" unless -d binaryfilename $options->{dir};
 		
 		my $partsize = delete $options->{partsize};
 		
@@ -251,18 +253,17 @@ END
 			my $file=$files->{$f};
 			my $th = App::MtAws::TreeHash->new();
 			my $absfilename = $j->absfilename($f);
-			if (-f $absfilename ) {
-				open my $F, "<", $absfilename;
-				binmode $F;
+			if (-f binaryfilename $absfilename ) {
+				my $F = open_file($absfilename, mode => '<', binary => 1);
 				$th->eat_file($F); # TODO: don't calc tree hash if size differs!
 				close $F;
 				$th->calc_tree();
 				my $treehash = $th->get_final_hash();
-				if (defined($file->{mtime}) && (my $actual_mtime = stat($absfilename)->mtime) != $file->{mtime}) {
+				if (defined($file->{mtime}) && (my $actual_mtime = stat(binaryfilename $absfilename)->mtime) != $file->{mtime}) {
 					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
 					++$error_mtime;
 				}
-				if (-s $absfilename == $file->{size}) {
+				if (-s binaryfilename($absfilename) == $file->{size}) {
 					if ($treehash eq $files->{$f}->{treehash}) {
 						print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
 						++$no_error;
@@ -310,7 +311,7 @@ END
 		# Inventory retriebal has key 'ArchiveList'
 		# TODO: implement it more clear way on level of Job/Tasks object
 		
-		croak if -s $options->{'new-journal'}; # TODO: fix race condition between this and opening file
+		croak if -s binaryfilename $options->{'new-journal'}; # TODO: fix race condition between this and opening file
 		$j->open_for_write();
 	
 		my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});
