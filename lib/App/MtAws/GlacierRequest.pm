@@ -29,6 +29,7 @@ use HTTP::Request::Common;
 use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
+use App::MtAws::Utils;
 use Carp;
 
 
@@ -210,7 +211,7 @@ sub retrieval_download_job
 	defined($filename)||confess;
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	$self->{content_file} = $filename; # TODO: use temp filename for transactional behaviour
+	$self->{content_file} = binaryfilename $filename; # TODO: use temp filename for transactional behaviour
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
