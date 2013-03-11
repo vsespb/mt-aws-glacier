@@ -29,7 +29,7 @@ mt-aws-glacier is a client application for Glacier.
 * Ability to limit number of archives to retrieve
 * File name and modification times are stored as Glacier metadata
 * Ability to re-create journal file from Amazon Glacier metadata
-* UTF-8 support
+* Full UTF-8 support (and full single-byte encoding support undef *BSD systems) 
 * Upload from STDIN
 * User selectable HTTPS support. Currently defaults to plaintext HTTP
 
@@ -245,6 +245,48 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 		--max-number-of-files=100
 
 4. `key/secret/region/vault/protocol` - you can override any option from config
+
+## Configuring Character Encoding
+
+Autodetection of locale/encodings not implemented yet, but currently there is ability to tune encodings manually.
+
+Below 4 options, that can be used in config file and in command line.
+
+1. `terminal-encoding` - Encoding of your terminal (STDOUT/STDERR for system messages)
+
+2. `filenames-encoding` - Encoding of filenames in filesystem.
+
+	Under most *nix filesystems filenames stored as byte sequences, not characters. So in theory application is responsible for managing encodings. 
+
+3. `config-encoding` - Encoding of your config file (`glacier.cfg` in examples above)
+
+4. `journal-encoding` - Encoding to be used for Journal file (when reading and writing journal specified with `--journal` and `--new-journal` options)
+
+
+Default value for all options is 'UTF-8'. Under Linux and Mac OS X you most likely don't need to change encodings.
+Under *BSD systems often single-byte encodings are used. Most likely yo'll need to change `terminal-encoding` and `filenames-encoding`. Optionaly you can also
+change `config-encoding` and `journal-encoding`.
+
+Notes:
+
+* Before switching `config-encoding` and `journal-encoding` you are responsible for reencoding file content of config and journal files manually.
+
+* You are responsible for encoding compatibility. Don't try to work with UTF-8 journal with non-Cyrilic characters and KOIR-8 (Cyrilic) filesystem.
+
+* Don't try to use UTF-16 for filesystem. It contains 0-bytes, which can't be stored in filesystem. 
+
+* Don't use `UTF8` - it does not validate data, use `UTF-8` (one with a dash) instead.
+
+* To list all encodings installed with your Perl run:
+
+		perl -MEncode -e 'print join qq{\n}, Encode->encodings(q{:all})'
+
+* Additional information about encoding support in Perl: [CPAN module Encode::Supported](http://search.cpan.org/~jhi/perl-5.8.1/ext/Encode/lib/Encode/Supported.pod)
+
+* Amazon Glacier metadata (on Amazon servers) is always stored in UTF-8. No way to override it. You can use Journal in any encoding with same
+metdata without problems and you can dump metadata to journals with different encodings (using `download-inventory` command)
+
+* See also [convmv tool](http://www.j3e.de/linux/convmv/man/)
 
 ## Test/Play with it
 
