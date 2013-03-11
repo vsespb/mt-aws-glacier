@@ -314,10 +314,6 @@ END
 		croak if -s binaryfilename $options->{'new-journal'}; # TODO: fix race condition between this and opening file
 		$j->open_for_write();
 	
-		open FF, ">_json.log";
-		binmode FF;
-		print FF $R->{response};
-		close FF;
 		my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});
 		my $now = time();
 		
