@@ -69,6 +69,7 @@ sub finish_task
 		if ($scalar->{Marker}) {
 			return ("ok replace", App::MtAws::InventoryFetchJob->new(marker => $scalar->{Marker}) );
 		} else {
+			# TODO: to handle the case when we don't have any inventory retrieved $task->{result}->{response}=undef;
 			return ("done");
 		}
 	} else {

@@ -239,7 +239,7 @@ sub _read_files
 		unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
 			# TODO: how will this work with strict utf STDOUT mode?
 			# TODO: filename can't be printed + File::Find::dir should be encoded
-			print STDERR "=== ===\nERROR: file/dir name [$_] with invalid characters, inside directory [$File::Find::dir]\nDump of file name bytes:\n";
+			print STDERR "=== ===\nERROR: file/dir with invalid characters\nDump of file name bytes:\n";
 			require Devel::Peek;
 			Devel::Peek::Dump($binaryfilename);
 			print STDERR "=== ===\n";
@@ -253,7 +253,7 @@ sub _read_files
 				my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 				confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 				
-				push @$filelist, { relfilename => $relfilename };
+				push @$filelist, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
 			}
 		}
 	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
