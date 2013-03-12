@@ -1,3 +1,6 @@
+2013-03-12: v0.89 beta
+	* Single-byte character encodings support for *BSD systems added (see "Configuring Character Encoding") in README.
+
 2013-03-04: v0.88 beta
 	* upload-file command implemented (upload from STDIN or single upload from file). See README
 	* Internal: New Config Engine (config/command line options processing) - will help implement advanced functionality in the future
