@@ -27,7 +27,7 @@ mt-aws-glacier is a client application for Glacier.
 * Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
-* File name and modification times are stored as Glacier metadata
+* File name and modification times are stored as Glacier metadata ([metadata format for developers][mt-aws-glacier Amazon Glacier meta-data format specification])
 * Ability to re-create journal file from Amazon Glacier metadata
 * Full UTF-8 support (and full single-byte encoding support undef *BSD systems) 
 * Upload from STDIN
@@ -44,6 +44,7 @@ mt-aws-glacier is a client application for Glacier.
 
 
 [Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier 
+[mt-aws-glacier Amazon Glacier meta-data format specification]:https://github.com/vsespb/mt-aws-glacier/blob/master/lib/App/MtAws/MetaData.pm
 
 ## Planned next version features
 
