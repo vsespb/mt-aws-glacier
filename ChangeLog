@@ -1,5 +1,6 @@
 2013-03-12: v0.89 beta
 	* Single-byte character encodings support for *BSD systems added (see "Configuring Character Encoding") in README.
+	* When uploading from STDIN and file is empty, don't create Amazon Glacier upload id before throwing error
 
 2013-03-04: v0.88 beta
 	* upload-file command implemented (upload from STDIN or single upload from file). See README
