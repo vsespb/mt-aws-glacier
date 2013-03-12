@@ -263,25 +263,28 @@ Below 4 options, that can be used in config file and in command line.
 4. `journal-encoding` - Encoding to be used for Journal file (when reading and writing journal specified with `--journal` and `--new-journal` options)
 
 
-Default value for all options is 'UTF-8'. Under Linux and Mac OS X you most likely don't need to change encodings.
+Default value for all options is 'UTF-8'. Under Linux and Mac OS X you usually don't need to change encodings.
 Under *BSD systems often single-byte encodings are used. Most likely yo'll need to change `terminal-encoding` and `filenames-encoding`. Optionaly you can also
 change `config-encoding` and `journal-encoding`.
 
 Notes:
 
-* Before switching `config-encoding` and `journal-encoding` you are responsible for reencoding file content of config and journal files manually.
+* Before switching `config-encoding` and `journal-encoding` you are responsible for transcoding file content of config and journal files manually.
 
-* You are responsible for encoding compatibility. Don't try to work with UTF-8 journal with non-Cyrilic characters and KOIR-8 (Cyrilic) filesystem.
+* You are responsible for encoding compatibility. For example Don't try to work with UTF-8 journal with non-Cyrilic characters and KOIR-8 (Cyrilic) filesystem.
 
-* Don't try to use UTF-16 for filesystem. It contains 0-bytes, which can't be stored in filesystem. 
+* Don't try to use UTF-16 for *nix filesystem. It's not ASCII compatible and contains \x00 bytes, which can't be stored in filesystem.
 
 * Don't use `UTF8` - it does not validate data, use `UTF-8` (one with a dash) instead.
 
-* To list all encodings installed with your Perl run:
+* To get list of encodings installed with your Perl run:
 
 		perl -MEncode -e 'print join qq{\n}, Encode->encodings(q{:all})'
+		
+* Config file name (specified with `--config`) can be in any encoding (it's used as is) Of course it will work only if your terminal encoding match your
+filesystem encoding or if your config file name consists of ASCII-7bit characters only.
 
-* Additional information about encoding support in Perl: [CPAN module Encode::Supported](http://search.cpan.org/~jhi/perl-5.8.1/ext/Encode/lib/Encode/Supported.pod)
+* Additional information about encoding support in Perl: [CPAN module Encode::Supported](http://search.cpan.org/perldoc?Encode%3A%3ASupported)
 
 * Amazon Glacier metadata (on Amazon servers) is always stored in UTF-8. No way to override it. You can use Journal in any encoding with same
 metdata without problems and you can dump metadata to journals with different encodings (using `download-inventory` command)
