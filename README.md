@@ -272,7 +272,7 @@ Notes:
 
 * Before switching `config-encoding` and `journal-encoding` you are responsible for transcoding file content of config and journal files manually.
 
-* You are responsible for encoding compatibility. For example Don't try to work with UTF-8 journal with non-Cyrilic characters and KOIR-8 (Cyrilic) filesystem.
+* You are responsible for encoding compatibility. For example Don't try to work with UTF-8 journal with non-Cyrilic characters and KOI8-R (Cyrilic) filesystem.
 
 * Don't try to use UTF-16 for *nix filesystem. It's not ASCII compatible and contains \x00 bytes, which can't be stored in filesystem.
 
