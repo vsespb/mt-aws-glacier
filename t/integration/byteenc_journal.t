@@ -20,10 +20,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 684;
+use Test::More;
 use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Utils;
@@ -32,8 +33,15 @@ use JournalTest;
 use Encode;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
-binmode Test::Simple->builder->output, ":utf8";
-binmode Test::Simple->builder->failure_output, ":utf8";
+if( $^O =~ /^(linux|freebsd|openbsd)$/i ) {
+      plan tests => 684;
+} else {
+      plan skip_all => 'Test cannot be performed on character-oriented filesystem';
+}
+  
+
+binmode Test::More->builder->output, ":utf8";
+binmode Test::More->builder->failure_output, ":utf8";
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 my $tmproot = "$mtroot/журнал-byteenc";
