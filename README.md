@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.89 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.933 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -247,7 +247,7 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 4. `key/secret/region/vault/protocol` - you can override any option from config
 
-## Configuring Character Encoding
+## Configuring Character Encodings
 
 Autodetection of locale/encodings not implemented yet, but currently there is ability to tune encodings manually.
 
