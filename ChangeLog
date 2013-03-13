@@ -2,6 +2,7 @@
 	* Fix crash in 'help' command, bug was introduced a day ago.
 	* New version numbering for beta versions - 0.9XY. Where 'X' is a month number of year 2013. 'Y' is number of release in this month.
 	So 0.933beta is 3rd release in April 2013
+	
 2013-03-12: v0.89 beta
 	* Single-byte character encodings support for *BSD systems added (see "Configuring Character Encoding") in README.
 	* When uploading from STDIN and file is empty, don't create Amazon Glacier upload id before throwing error
