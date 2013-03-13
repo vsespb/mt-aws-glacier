@@ -107,9 +107,10 @@ sub main
 		print STDERR "\n";
 		exit 1;
 	}
-
-	binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
-	binmode STDERR, ":encoding($options->{'terminal-encoding'})";
+	if ($action ne 'help') {
+		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
+		binmode STDERR, ":encoding($options->{'terminal-encoding'})";
+	}
 	
 	
 	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
