@@ -53,7 +53,7 @@ isoO8601() - input - time, output - character string
 	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
 
 {'filename': FILENAME, 'mtime': iso8601(MTIME)}
-	Hash with two keys: 'filename' and 'mtime'. Correspond to JSON 'Object'.
+	Hash with two keys: 'filename' and 'mtime'. Corresponds to JSON 'Object'.
 
 Input data:
 =====================
