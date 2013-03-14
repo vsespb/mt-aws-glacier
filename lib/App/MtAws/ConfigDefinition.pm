@@ -25,13 +25,29 @@ use warnings;
 use utf8;
 use File::Spec;
 use Encode;
+use Carp;
 use App::MtAws::Utils;
-
 use App::MtAws::ConfigEngine;
+use App::MtAws::Filter qw/parse_filters parse_include parse_exclude/;
 
 sub filter_options
 {
-	optional(qw/include exclude/);
+	my $filter_error = message 'filter_error', "Error in parsing filter %s a%"; 
+	scope 'filters', do {
+		my @l = optional(qw/include exclude filter/);
+		custom('parsed', [map {
+			if ($_->{name} eq 'filter') {
+				my ($data, $error) = parse_filters($_->{value});
+				$data ? @$data : return error $filter_error, a => $error;
+			} elsif ($_->{name} eq 'include') {
+				parse_include($_->{value});
+			} elsif ($_->{name} eq 'exclude') {
+				parse_exclude($_->{value});
+			} else {
+				confess;
+			}
+		} lists @l]), @l;
+	}
 }
 
 sub check_base_dir
@@ -229,6 +245,10 @@ sub get_config
 			validation $_, 'unknown_encoding', sub { find_encoding($_) };
 		}
 		
+		
+		my @filters = map { option($_, type => 's', list => 1) } qw/include exclude filter/;
+		
+		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
 
@@ -264,7 +284,11 @@ sub get_config
 		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
 		
 		command 'sync' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal')), optional(qw/max-number-of-files/) )
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal'),
+				optional(qw/max-number-of-files/),
+				filter_options
+			))
 		};
 		
 		command 'upload-file' => sub {
