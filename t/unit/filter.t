@@ -25,12 +25,12 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 441;
+use Test::More tests => 445;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
 use App::MtAws::Filter qw/parse_filters _filters_to_pattern
-	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir/;
+	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir parse_include parse_exclude/;
 use Data::Dumper;
 
 
@@ -364,6 +364,42 @@ cmp_deeply [parse_filters('-abc -dir/ +*.gz', '-!*.txt')],
           undef
  ];
 
+#
+# parse_include
+#
+
+cmp_deeply parse_include('*.gz'), {
+          'pattern' => '*.gz',
+          'notmatch' => bool(0),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '+',
+          'match_subdirs' => bool(0)
+        };
+
+cmp_deeply parse_include('!*.gz'), {
+          'pattern' => '!*.gz',
+          'notmatch' => bool(1),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '+',
+          'match_subdirs' => bool(0)
+        };
+
+
+cmp_deeply parse_exclude('*.gz'), {
+          'pattern' => '*.gz',
+          'notmatch' => bool(0),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '-',
+          'match_subdirs' => bool(0)
+        };
+
+cmp_deeply parse_exclude('!*.gz'), {
+          'pattern' => '!*.gz',
+          'notmatch' => bool(1),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '-',
+          'match_subdirs' => bool(0)
+        };
 
 #
 # check_filenames

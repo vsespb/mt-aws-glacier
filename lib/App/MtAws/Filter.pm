@@ -109,8 +109,8 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT_OK = qw/parse_filters _filters_to_pattern
-	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir/;
+our @EXPORT_OK = qw/parse_filters parse_include parse_exclude
+	_filters_to_pattern	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir /;
 				
 sub check_filenames
 {
@@ -150,6 +150,16 @@ sub parse_filters
 	return undef, $error if defined $error;
 	_patterns_to_regexp(@$res);
 	return $res, undef;
+}
+
+sub parse_include
+{
+	_patterns_to_regexp({ pattern => shift(), action => '+'});
+}
+
+sub parse_exclude
+{
+	_patterns_to_regexp({ pattern => shift(), action => '-'});
 }
 
 sub _filters_to_pattern
