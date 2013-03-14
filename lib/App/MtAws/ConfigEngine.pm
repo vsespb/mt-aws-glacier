@@ -544,7 +544,7 @@ sub scope($@)
 
 sub present(@) # TODO: test that it works with arrays
 {
-	my ($name) = @_;
+	my $name = @_ ? shift : $_;
 	assert_option for $name;
 	return defined($context->{options}->{$name}->{value})
 };
