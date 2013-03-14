@@ -33,7 +33,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
 				mandatory optional seen deprecated validate scope
-				present valid value raw_option custom error warning/;
+				present valid value lists raw_option custom error warning/;
 				
 
 our $context; # it's a not a global. always localized in code
@@ -564,6 +564,12 @@ sub value($)
 	confess "option not present" unless defined($context->{options}->{$name}->{value});
 	return $context->{options}->{$name}->{value};
 };
+
+sub lists(@)
+{
+	my @a = @_;
+	grep { my $o = $_; first { $_ eq $o->{name} } @a; } @{$context->{option_list}};
+}
 
 sub raw_option($)
 {

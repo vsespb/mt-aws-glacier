@@ -26,7 +26,7 @@ use warnings FATAL => 'all';
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 365;
+use Test::More tests => 370;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1159,6 +1159,47 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 			{ name => 'include', value => 5 }, 
 	], "shared lists should work";
 }
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option('include', type => 's', list => 1),
+		option('exclude', list => 1),
+		option('filter', type => 's', list => 1);
+		options('o1', 'o2');
+		command 'mycommand' => sub {
+			optional qw/o1 o2/;
+			cmp_deeply [lists optional qw/include exclude filter/], [
+					{ name => 'include', value => 1 },
+					{ name => 'exclude', value => 2 },
+					{ name => 'filter', value => 3 },
+					{ name => 'filter', value => 4 },
+					{ name => 'include', value => 5 }, 
+				], 'lists() should work';
+			cmp_deeply [lists('include')], [
+					{ name => 'include', value => 1 },
+					{ name => 'include', value => 5 }, 
+				], 'lists() should work';
+		};
+	});
+	my $res = $c->parse_options('mycommand', qw/--include 1 --exclude 2 --o2 2 --filter 3 --filter 4 --include 5 --o1 1/);
+	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings} && $res->{warning_texts});
+	cmp_deeply $res->{options}, {
+		include => [qw/1 5/],
+		exclude => [qw/2/],
+		filter => [qw/3 4/],
+		o1 => 1,
+		o2 => 2,
+	}, "shared lists should work";
+	cmp_deeply $res->{option_list}, [
+			{ name => 'include', value => 1 },
+			{ name => 'exclude', value => 2 },
+			{ name => 'filter', value => 3 },
+			{ name => 'filter', value => 4 },
+			{ name => 'include', value => 5 }, 
+	], "option_list should contain only lists arguments";
+}
+
 
 # parse options - system messages
 
