@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 353;
+use Test::More tests => 441;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -64,30 +64,32 @@ for my $before (@spaces) {
 	}
 }
 
-for my $between (' ', '  ') {
-	for my $before (@onespace) {
-		for my $after (@onespace) {
-			for my $last (@onespace) {
-				my ($res, $err);
-
-				assert_parse_filter_ok "${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'}];
-				
-				assert_parse_filter_ok
-					"${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
-					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'},
-					{ action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
-
-				assert_parse_filter_ok
-					"${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}",
-					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}];
-				
-				assert_parse_filter_ok
-					"${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
-					[{ action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
+for my $exclamation ('', '!') {
+	for my $between (' ', '  ') {
+		for my $before (@onespace) {
+			for my $after (@onespace) {
+				for my $last (@onespace) {
+					my ($res, $err);
+	
+					assert_parse_filter_ok "${before}+${after}${exclamation}*.gz${last}${between}${before}-${after}*.txt${last}",
+						[{ action => '+', pattern => "${exclamation}*.gz"}, { action => '-', pattern => '*.txt'}];
+					
+					assert_parse_filter_ok
+						"${before}+${after}${exclamation}*.gz${last}${between}${before}-${after}*.txt${last}",
+						"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
+						[{ action => '+', pattern => "${exclamation}*.gz"}, { action => '-', pattern => '*.txt'},
+						{ action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
+	
+					assert_parse_filter_ok
+						"${before}+${after}${exclamation}*.gz${last}${between}${before}-${after}*.txt${last}",
+						"${before}-${after}*.jpeg${last}${between}",
+						[{ action => '+', pattern => "${exclamation}*.gz"}, { action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}];
+					
+					assert_parse_filter_ok
+						"${between}${before}-${after}*.txt${last}",
+						"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
+						[{ action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
+				}
 			}
 		}
 	}
@@ -139,13 +141,13 @@ sub check
 	my ($re) = _patterns_to_regexp({pattern => $filter});
 	for (@{$lists{ismatch}}) {
 		$_ = "/$_";
-		ok $_ =~ $re->{re}, "[$filter], [$re->{re}],$_";
+		ok $re->{notmatch} ? ($_ !~ $re->{re}) : ($_ =~ $re->{re}), "[$filter], [$re->{re}],$_";
 	}
 	for (@{$lists{nomatch}}) {
 		$_ = "/$_";
 		
 		#print Dumper $re;
-		ok $_ !~ $re->{re}, "[$filter], [$re->{re}], $_";
+		ok $re->{notmatch} ? ($_ =~ $re->{re}) : ($_ !~ $re->{re}), "[$filter], [$re->{re}], $_";
 	}
 }
 
@@ -173,7 +175,6 @@ check 'x?z.gz',
 check 'a/?',
 	ismatch => ['a/1', 'a/2', 'a/3'],
 	nomatch => ['a/11', 'a1', 'a/123'];
-
 
 # file, any dir
 check '.gitignore',
@@ -206,6 +207,10 @@ check '.git/',
 	ismatch => [qw!.git/ .git/a x/.git/a x/.git/ x/.git/b/c x/y/.git/p x/y/.git/r/r!],
 	nomatch => [qw!.git x/.git x/y/.git!];
 
+check '!.git/',
+	nomatch => [qw!.git/ .git/a x/.git/a x/.git/ x/.git/b/c x/y/.git/p x/y/.git/r/r!],
+	ismatch => [qw!.git x/.git x/y/.git!];
+
 # wildcard, specific location
 check '/var/log/*.log',
 	ismatch => ['var/log/abc.log', 'var/log/def.log'],
@@ -236,6 +241,10 @@ check '**/.gitignore',
 	ismatch => ['.gitignore', 'a/.gitignore', 'b/c/.gitignore'],
 	nomatch => [];
 
+check '!**/.gitignore',
+	nomatch => ['.gitignore', 'a/.gitignore', 'b/c/.gitignore'],
+	ismatch => [];
+
 check '**/tmp',
 	ismatch => [],
 	nomatch => ['p/xtmp'];
@@ -255,6 +264,10 @@ check 'a/tmp**',
 check '/tmp**',
 	ismatch => ['tmpz', 'tmp/z', 'tmpz/z', 'tmp/z', ],
 	nomatch => ['ptmpz', 'x/tmpz', 'x/tmpz/z'];
+
+check '!/tmp**',
+	nomatch => ['tmpz', 'tmp/z', 'tmpz/z', 'tmp/z', ],
+	ismatch => ['ptmpz', 'x/tmpz', 'x/tmpz/z'];
 
 check 'example',
 	ismatch => [],
@@ -316,32 +329,36 @@ cmp_deeply [_substitutions('*' => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "
 
 # simply test with fixtures
 
-cmp_deeply [parse_filters('-abc -dir/ +*.gz', '-*.txt')],
+cmp_deeply [parse_filters('-abc -dir/ +*.gz', '-!*.txt')],
  [
           [
             {
               'pattern' => 'abc',
               're' => qr/(^|\/)abc$/,
               'action' => '-',
-              'match_subdirs' => ''
+              'match_subdirs' => '',
+              'notmatch' => '',
             },
             {
               'pattern' => 'dir/',
               're' => qr!(^|/)dir\/!,
               'action' => '-',
-              'match_subdirs' => 1
+              'match_subdirs' => 1,
+              'notmatch' => '',
             },
             {
               'pattern' => '*.gz',
               're' => qr/(^|\/)[^\/]*\.gz$/,
               'action' => '+',
-              'match_subdirs' => ''
+              'match_subdirs' => '',
+              'notmatch' => '',
             },
             {
-              'pattern' => '*.txt',
+              'pattern' => '!*.txt',
               're' => qr/(^|\/)[^\/]*\.txt$/,
               'action' => '-',
-              'match_subdirs' => ''
+              'match_subdirs' => '',
+              'notmatch' => '1',
             }
           ],
           undef
@@ -378,36 +395,53 @@ cmp_deeply [check_filenames($filter,
 	[qw{x/y/z.gz /data/1 /data/d/2}],
 	"default action - exclude";
 
+
+($filter, $error) = parse_filters('-!/data/ +*.gz +/data/backup/ -');
+cmp_deeply [check_filenames($filter,
+	qw{data/1 dir/1.gz data/2 data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt})],
+	[qw{data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}],
+	"exclamation mark should work";
+
 #
 # check_dir
 #
 
 ($filter, $error) = parse_filters('+*.gz -/data/ +');
-cmp_deeply [check_dir $filter, 'data/'], ['', 0];
+cmp_deeply [check_dir $filter, 'data/'], [bool(0), bool(0)];
 
 ($filter, $error) = parse_filters('-/data/ +*.gz +');
-cmp_deeply [check_dir $filter, 'data/'], ['', 1];
+cmp_deeply [check_dir $filter, 'data/'], [bool(0), bool(1)];
 
 ($filter, $error) = parse_filters('+*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 0];
+cmp_deeply [check_dir $filter, 'datadir/'], [bool(0), bool(0)];
 
 ($filter, $error) = parse_filters('-/data** +*.gz +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
+cmp_deeply [check_dir $filter, 'datadir/'], [bool(0), bool(1)];
 
 ($filter, $error) = parse_filters('-*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
+cmp_deeply [check_dir $filter, 'datadir/'], [bool(0), bool(1)];
 
 ($filter, $error) = parse_filters('-/data** -*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
+cmp_deeply [check_dir $filter, 'datadir/'], [bool(0), bool(1)];
 
 ($filter, $error) = parse_filters('+1.txt -*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 0];
+cmp_deeply [check_dir $filter, 'datadir/'], [bool(0), bool(0)];
 
 ($filter, $error) = parse_filters('-1.txt -*.gz +/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], [1, 0];
+cmp_deeply [check_dir $filter, 'datadir/'], [bool(1), bool(0)];
 
-($filter, $error) = parse_filters('+/data/ +');
-cmp_deeply [check_dir $filter, 'data/'], [1, 0];
+($filter, $error) = parse_filters('+/data/ -');
+cmp_deeply [check_dir $filter, 'data/'], [bool(1), bool(0)];
+
+($filter, $error) = parse_filters('+!/data/ -');
+cmp_deeply [check_dir $filter, 'somedir/'], [bool(1), bool(0)];
+
+($filter, $error) = parse_filters('-!/data/ +');
+cmp_deeply [check_dir $filter, 'somedir/'], [bool(0), bool(0)];
+
+($filter, $error) = parse_filters('-!/data/ +');
+cmp_deeply [check_dir $filter, 'somedir/'], [bool(0), bool(0)];
+
 
 1;
 
