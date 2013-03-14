@@ -190,7 +190,7 @@ sub _pattern_to_regexp
 	$re =~ s!$all!$subst->{$&}!ge;
 	$re = ($pattern =~ m!(/.)!) ? "^/?$re" : "(^|/)$re";
 	$re .= '$' unless ($pattern =~ m!/$!);
-	return match_subdirs => !!($pattern =~ m!(^|/|\*\*)$!) && !$notmatch, re => qr/$re/, notmatch => $notmatch;
+	return match_subdirs => $pattern =~ m!(^|/|\*\*)$! && !$notmatch, re => qr/$re/, notmatch => $notmatch;
 }
 
 sub _patterns_to_regexp
