@@ -109,13 +109,16 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
+
+# TODO: implement as object, allow merging
+
 our @EXPORT_OK = qw/parse_filters parse_include parse_exclude
 	_filters_to_pattern	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir /;
 				
 sub check_filenames
 {
 	my $filters = shift;
-	grep { defined } map {
+	map {
 		my $res = $_; # default action - include!
 		my $filename = "/$_";
 		for my $filter (@$filters) {
@@ -124,7 +127,7 @@ sub check_filenames
 				last;
 			}
 		}
-		$res;
+		defined $res ? $res : ();
 	} @_;
 }
 
