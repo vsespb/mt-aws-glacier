@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 82;
+use Test::More tests => 302;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -39,83 +39,147 @@ sub assert_filters($$@)
 	fake_config sub {
 		disable_validations qw/journal secret key filename dir/ => sub {
 			my $res = config_create_and_parse(@$queryref);
+			#print Dumper $res->{errors};
 			ok !($res->{errors}||$res->{warnings}), $msg;
 			is scalar (my @got = @{$res->{options}{filters}{parsed}}), scalar @parsed;
-			print Dumper \@got;
 			while (@parsed) {
 				my $got = shift @got;
 				my $expected = shift @parsed;
-				print Dumper $got;
 				cmp_deeply $got, superhashof $expected;
 			}
 		}
 	}
 }
 
-# include
 
-assert_filters "include should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a --include *.gz!],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)};
 
-assert_filters "two includes should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a --include *.gz --include *.txt!],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '+', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)};
+for (
+	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!],
+	[qw!purge-vault --config glacier.cfg --vault myvault --journal j!],
+	[qw!restore --config glacier.cfg --vault myvault --journal j --dir a --max-number-of-files 1!],
+	[qw!restore-completed --config glacier.cfg --vault myvault --journal j --dir a!],
+	[qw!check-local-hash --config glacier.cfg --journal j --dir a!],
+) {
+	# include
+	
+	assert_filters "include should work",
+		[@$_, '--include', '*.gz'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)};
+	
+	assert_filters "two includes should work",
+		[@$_, qw!--include *.gz --include *.txt!],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '+', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)};
+	
+	# exclude
+	
+	assert_filters "exclude should work",
+		[@$_, qw!--exclude *.gz!],
+		{ action => '-', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)};
+	
+	assert_filters "two excludes should work",
+		[@$_, qw!--exclude *.gz --exclude *.txt!],
+		{ action => '-', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
+		;
+	# filter
+	
+	assert_filters "filter should work",
+		[@$_, qw!--filter!, '+*.gz'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)};
+	
+	assert_filters "double filter should work",
+		[@$_, qw!--filter!, '+*.gz -*.txt'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
+		;
+	assert_filters "two filters should work",
+		[@$_, '--filter', '+*.gz', '--filter', '-*.txt'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)};
+	
+	assert_filters "filter + double filter should work",
+		[@$_, '--filter', '+*.gz', '--filter', '-*.txt +*.jpeg'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '+', pattern => '*.jpeg', notmatch => bool(0), match_subdirs => bool(0)};
+	
+	# include, exclude, filter
+	
+	assert_filters "filter and include should work",
+		[@$_, '--filter', '+*.gz', '--include', '*.txt'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '+', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)}
+		;
+	
+	assert_filters "filter and exclude should work",
+		[@$_, '--filter', '+*.gz', '--exclude', '*.txt'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)}
+		;
+	assert_filters "filter + double filter + include + exclude should work",
+		[@$_,
+		'--filter', '+*.gz', '--filter', '-*.txt +*.jpeg', '--include', 'dir/', '--exclude', 'dir2/'],
+		{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '+', pattern => '*.jpeg', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '+', pattern => 'dir/', notmatch => bool(0), match_subdirs => bool(1)},
+		{ action => '-', pattern => 'dir2/', notmatch => bool(0), match_subdirs => bool(1)};
+	
+	# exclamations
+	
+	assert_filters "exclude should work",
+		[@$_, qw{--exclude !*.gz}],
+		{ action => '-', pattern => '!*.gz', notmatch => bool(1), match_subdirs => bool(0)};
+	
+	assert_filters "filter + double filter + include + exclude should work",
+		[@$_, '--filter', '+!*.gz', '--filter', '-*.txt +!*.jpeg', '--include', 'dir/', '--exclude', '!dir2/'],
+		{ action => '+', pattern => '!*.gz', notmatch => bool(1), match_subdirs => bool(0)},
+		{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
+		{ action => '+', pattern => '!*.jpeg', notmatch => bool(1), match_subdirs => bool(0)},
+		{ action => '+', pattern => 'dir/', notmatch => bool(0), match_subdirs => bool(1)},
+		{ action => '-', pattern => '!dir2/', notmatch => bool(1), match_subdirs => bool(0)};
+	
+	# some edge cases
+	
+	assert_filters "filter and include should work",
+		[@$_, '--filter', '+'],
+		{ action => '+', pattern => '', notmatch => bool(0), match_subdirs => bool(1)};
+		;
+	
+}
 
-# exclude
+#### FAIL
 
-assert_filters "exclude should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a --exclude *.gz!],
-	{ action => '-', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)};
 
-assert_filters "two excludes should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a --exclude *.gz --exclude *.txt!],
-	{ action => '-', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
-	;
-# filter
+sub assert_fails($$%)
+{
+	my ($msg, $queryref, $novalidations, $error, %opts) = @_;
+	fake_config sub {
+		disable_validations qw/journal key secret dir/, @$novalidations => sub {
+			my $res = config_create_and_parse(@$queryref);
+			ok $res->{errors}, $msg;
+			ok !defined $res->{warnings}, $msg;
+			ok !defined $res->{command}, $msg;
+			is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
+		}
+	}
+}
 
-assert_filters "filter should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a --filter!, '+*.gz'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)};
-
-assert_filters "double filter should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a --filter!, '+*.gz -*.txt'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
-	;
-assert_filters "two filters should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', '+*.gz', '--filter', '-*.txt'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)};
-
-assert_filters "filter + double filter should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', '+*.gz', '--filter', '-*.txt +*.jpeg'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '+', pattern => '*.jpeg', notmatch => bool(0), match_subdirs => bool(0)};
-
-# include, exclude, filter
-
-assert_filters "filter and include should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', '+*.gz', '--include', '*.txt'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '+', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)}
-	;
-
-assert_filters "filter and exclude should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', '+*.gz', '--exclude', '*.txt'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)}
-	;
-assert_filters "filter + double filter + include + exclude should work",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!,
-	'--filter', '+*.gz', '--filter', '-*.txt +*.jpeg', '--include', 'dir/', '--exclude', 'dir2/'],
-	{ action => '+', pattern => '*.gz', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '-', pattern => '*.txt', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '+', pattern => '*.jpeg', notmatch => bool(0), match_subdirs => bool(0)},
-	{ action => '+', pattern => 'dir/', notmatch => bool(0), match_subdirs => bool(1)},
-	{ action => '-', pattern => 'dir2/', notmatch => bool(0), match_subdirs => bool(1)};
+assert_fails "filename, set-rel-filename should fail with dir",
+	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', ' +z  p +a'],
+	[],
+	'filter_error', a => 'p +a'; 
+	
+assert_fails "filename, set-rel-filename should fail with dir",
+	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', '+z z'],
+	[],
+	'filter_error', a => 'z'; 
+	
+assert_fails "filename, set-rel-filename should fail with dir",
+	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', ''],
+	[],
+	'filter_error', a => ''; 
+	
 
 1;

@@ -26,6 +26,7 @@ use utf8;
 use File::Spec;
 use Encode;
 use Carp;
+use List::Util qw/first/;
 use App::MtAws::Utils;
 use App::MtAws::ConfigEngine;
 use App::MtAws::Filter qw/parse_filters parse_include parse_exclude/;
@@ -35,18 +36,24 @@ sub filter_options
 	my $filter_error = message 'filter_error', "Error in parsing filter %s a%"; 
 	scope 'filters', do {
 		my @l = optional(qw/include exclude filter/);
-		custom('parsed', [map {
-			if ($_->{name} eq 'filter') {
-				my ($data, $error) = parse_filters($_->{value});
-				$data ? @$data : return error $filter_error, a => $error;
-			} elsif ($_->{name} eq 'include') {
-				parse_include($_->{value});
-			} elsif ($_->{name} eq 'exclude') {
-				parse_exclude($_->{value});
+		@l, do {
+			if (first { present } @l) {
+				custom('parsed', [map {
+					if ($_->{name} eq 'filter') {
+						my ($data, $error) = parse_filters($_->{value});
+						$data ? @$data : return error $filter_error, a => $error;
+					} elsif ($_->{name} eq 'include') {
+						parse_include($_->{value});
+					} elsif ($_->{name} eq 'exclude') {
+						parse_exclude($_->{value});
+					} else {
+						confess;
+					}
+				} lists @l]);
 			} else {
-				confess;
+				();
 			}
-		} lists @l]), @l;
+		}
 	}
 }
 
@@ -298,20 +305,34 @@ sub get_config
 				
 		
 		command 'purge-vault' => sub {
-			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecated('dir')  ))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/,
+				writable_journal(existing_journal('journal')),
+				deprecated('dir'), filter_options
+			))
 		};
 		
 		command 'restore' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/, writable_journal(existing_journal('journal'))))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/,
+				writable_journal(existing_journal('journal')),
+				filter_options
+			))
 		};
 		
 		command 'restore-completed' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal')))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal'),
+				filter_options
+			))
 		};
 		
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
-			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault') ))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault'),
+				filter_options
+			))
 		};
 		
 		command 'retrieve-inventory' => sub {
