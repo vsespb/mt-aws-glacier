@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 302;
+use Test::More tests => 350;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -50,6 +50,21 @@ sub assert_filters($$@)
 		}
 	}
 }
+
+sub assert_fails($$%)
+{
+	my ($msg, $queryref, $novalidations, $error, %opts) = @_;
+	fake_config sub {
+		disable_validations qw/journal key secret dir/, @$novalidations => sub {
+			my $res = config_create_and_parse(@$queryref);
+			ok $res->{errors}, $msg;
+			ok !defined $res->{warnings}, $msg;
+			ok !defined $res->{command}, $msg;
+			is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
+		}
+	}
+}
+
 
 
 
@@ -146,40 +161,26 @@ for (
 		[@$_, '--filter', '+'],
 		{ action => '+', pattern => '', notmatch => bool(0), match_subdirs => bool(1)};
 		;
+
+	#### FAIL
 	
+	
+	assert_fails "filename, set-rel-filename should fail with dir",
+		[@$_, '--filter', ' +z  p +a'],
+		[],
+		'filter_error', a => 'p +a'; 
+		
+	assert_fails "filename, set-rel-filename should fail with dir",
+		[@$_, '--filter', '+z z'],
+		[],
+		'filter_error', a => 'z'; 
+		
+	assert_fails "filename, set-rel-filename should fail with dir",
+		[@$_, '--filter', ''],
+		[],
+		'filter_error', a => ''; 
+		
+		
 }
-
-#### FAIL
-
-
-sub assert_fails($$%)
-{
-	my ($msg, $queryref, $novalidations, $error, %opts) = @_;
-	fake_config sub {
-		disable_validations qw/journal key secret dir/, @$novalidations => sub {
-			my $res = config_create_and_parse(@$queryref);
-			ok $res->{errors}, $msg;
-			ok !defined $res->{warnings}, $msg;
-			ok !defined $res->{command}, $msg;
-			is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
-		}
-	}
-}
-
-assert_fails "filename, set-rel-filename should fail with dir",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', ' +z  p +a'],
-	[],
-	'filter_error', a => 'p +a'; 
-	
-assert_fails "filename, set-rel-filename should fail with dir",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', '+z z'],
-	[],
-	'filter_error', a => 'z'; 
-	
-assert_fails "filename, set-rel-filename should fail with dir",
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!, '--filter', ''],
-	[],
-	'filter_error', a => ''; 
-	
 
 1;
