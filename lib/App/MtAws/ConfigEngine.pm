@@ -60,6 +60,7 @@ sub new
 	};
 	bless $self, $class;
 	local $context = $self;
+	message 'list_options_in_config', '"List" options (where order is important) like "%s option%" cannot appear in config currently', allow_redefine => 1;
 	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
 	message 'unknown_config_option', 'Unknown option in config: "%s option%"', allow_redefine=>1;
 	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
@@ -299,7 +300,9 @@ sub parse_options
 			for (keys %$cfg) {
 				my ($optref, $is_alias) = $self->get_option_ref($_);
 				if ($optref) {
-					unless (defined $optref->{value}) {
+					if ($optref->{list}) {
+						error('list_options_in_config', option => $_);
+					} elsif (!defined $optref->{value}) {
 						# fill from config
 						my $decoded = $optref->{binary} ? $cfg->{$_} : $self->decode_config_value($cfg->{$_});
 						last unless defined $decoded;
