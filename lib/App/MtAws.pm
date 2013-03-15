@@ -93,7 +93,6 @@ sub main
 	
 	my $res = App::MtAws::ConfigDefinition::get_config()->parse_options(@ARGV);
 	my ($action, $options) = ($res->{command}, $res->{options});
-	
 	if ($res->{warnings}) {
 		while (@{$res->{warnings}}) {
 			my ($warning, $warning_text) = (shift @{$res->{warnings}}, shift @{$res->{warning_texts}});
@@ -129,7 +128,7 @@ sub main
 			if ($options->{'dry-run'}) {
 				for (@{ $j->{newfiles_a} }) {
 					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-					print "Will upload $absfilename\n";
+					print "Will UPLOAD $absfilename\n";
 				}
 			} else {
 				$j->open_for_write();
@@ -155,7 +154,7 @@ sub main
 		
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal});
 		
-		with_forks !$options->{'dry-run'}, $options, sub {
+		with_forks 1, $options, sub {
 			
 			$j->read_journal(should_exist => 0);
 			
@@ -188,46 +187,59 @@ END
 			$j->close_for_write();
 		}
 	} elsif ($action eq 'purge-vault') {
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, filter => $options->{filters}{parsed});
 		
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 1);
-			$j->open_for_write();
 			
 			my $files = $j->{journal_h};
 			if (scalar keys %$files) {
-				my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListDeleteJob->new(archives => \@filelist ));
-				my $R = fork_engine->{parent_worker}->process_task($ft, $j);
-				die unless $R;
+				if ($options->{'dry-run'}) {
+						for (keys %$files) {
+							print "Will DELETE archive $files->{$_}{archive_id} (filename $_)\n"
+						}
+				} else {
+					$j->open_for_write();
+					my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListDeleteJob->new(archives => \@filelist ));
+					my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+					die unless $R;
+					$j->close_for_write();
+				}
 			} else {
 				print "Nothing to delete\n";
 			}
-			$j->close_for_write();
 		}
 	} elsif ($action eq 'restore') {
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 		confess unless $options->{'max-number-of-files'};
 				
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 1);
-			$j->open_for_write();
 			
 			my $files = $j->{journal_h};
 			# TODO: refactor
 			my @filelist =	grep { ! -f binaryfilename $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
 			@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
-			if (scalar @filelist) {
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListRetrievalJob->new(archives => \@filelist ));
-				my $R = fork_engine->{parent_worker}->process_task($ft, $j);
-				die unless $R;
+			
+			if (@filelist) {
+				if ($options->{'dry-run'}) {
+					for (@filelist) {
+						print "Will RETRIEVE archive $_->{archive_id} (filename $_->{relfilename})\n"
+					}
+				} else {
+					$j->open_for_write();
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListRetrievalJob->new(archives => \@filelist ));
+					my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+					die unless $R;
+					$j->close_for_write();
+				}
 			} else {
 				print "Nothing to restore\n";
 			}
-			$j->close_for_write();
 		}
 	} elsif ($action eq 'restore-completed') {
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 		
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 1);
@@ -235,54 +247,67 @@ END
 			my $files = $j->{journal_h};
 			# TODO: refactor
 			my %filelist =	map { $_->{archive_id} => $_ } grep { ! binaryfilename -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
-			if (scalar keys %filelist) {
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(archives => \%filelist ));
-				my $R = fork_engine->{parent_worker}->process_task($ft, $j);
-				die unless $R;
+			if (keys %filelist) {
+				if ($options->{'dry-run'}) {
+					for (values %filelist) {
+						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n"
+					}
+				} else {
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(archives => \%filelist ));
+					my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+					die unless $R;
+				}
 			} else {
 				print "Nothing to restore\n";
 			}
 		}
 	} elsif ($action eq 'check-local-hash') {
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 		$j->read_journal(should_exist => 1);
 		my $files = $j->{journal_h};
 		
 		my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error) = (0,0,0,0,0);
 		for my $f (keys %$files) {
 			my $file=$files->{$f};
-			my $th = App::MtAws::TreeHash->new();
 			my $absfilename = $j->absfilename($f);
-			if (-f binaryfilename $absfilename ) {
-				my $F = open_file($absfilename, mode => '<', binary => 1);
-				$th->eat_file($F); # TODO: don't calc tree hash if size differs!
-				close $F;
-				$th->calc_tree();
-				my $treehash = $th->get_final_hash();
-				if (defined($file->{mtime}) && (my $actual_mtime = stat(binaryfilename $absfilename)->mtime) != $file->{mtime}) {
-					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
-					++$error_mtime;
-				}
-				if (-s binaryfilename($absfilename) == $file->{size}) {
-					if ($treehash eq $files->{$f}->{treehash}) {
-						print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
-						++$no_error;
+			
+			if ($options->{'dry-run'}) {
+				print "Will check hash file $f\n"
+			} else {
+				my $th = App::MtAws::TreeHash->new();
+				if (-f binaryfilename $absfilename ) {
+					my $F = open_file($absfilename, mode => '<', binary => 1);
+					$th->eat_file($F); # TODO: don't calc tree hash if size differs!
+					close $F;
+					$th->calc_tree();
+					my $treehash = $th->get_final_hash();
+					if (defined($file->{mtime}) && (my $actual_mtime = stat(binaryfilename $absfilename)->mtime) != $file->{mtime}) {
+						print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
+						++$error_mtime;
+					}
+					if (-s binaryfilename($absfilename) == $file->{size}) {
+						if ($treehash eq $files->{$f}->{treehash}) {
+							print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
+							++$no_error;
+						} else {
+							print "TREEHASH MISSMATCH $f\n";
+							++$error_hash;
+						}
 					} else {
-						print "TREEHASH MISSMATCH $f\n";
-						++$error_hash;
+							print "SIZE MISSMATCH $f\n";
+							++$error_size;
 					}
 				} else {
-						print "SIZE MISSMATCH $f\n";
-						++$error_size;
+						print "MISSED $f\n";
+						++$error_missed;
 				}
-			} else {
-					print "MISSED $f\n";
-					++$error_missed;
 			}
 		}
-		print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
-		print "($error_mtime of them have File Modification Time altered)\n";
-		exit(1) if $error_hash || $error_size || $error_missed;
+		unless ($options->{'dry-run'}) {
+			print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+			print "($error_mtime of them have File Modification Time altered)\n";
+			exit(1) if $error_hash || $error_size || $error_missed;
+		}
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 				
