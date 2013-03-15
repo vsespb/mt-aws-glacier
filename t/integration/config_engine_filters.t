@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 350;
+use Test::More tests => 351;
 use Test::Deep;
 use lib qw{.. ../lib ../../lib};
 use Test::MockModule;
@@ -182,5 +182,12 @@ for (
 		
 		
 }
+
+fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', 'filter' => '+*.gz -', sub {
+	disable_validations qw/journal secret key filename dir/ => sub {
+		my $res = config_create_and_parse(qw!sync --config glacier.cfg --vault myvault --journal j --dir a!);
+		cmp_deeply $res->{errors}, [{'format' => 'list_options_in_config', 'option' => 'filter' }];
+	}
+};
 
 1;
