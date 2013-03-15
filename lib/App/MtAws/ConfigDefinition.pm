@@ -255,6 +255,7 @@ sub get_config
 		
 		my @filters = map { option($_, type => 's', list => 1) } qw/include exclude filter/;
 		
+		option 'dry-run', type=>'';
 		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
@@ -294,7 +295,7 @@ sub get_config
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal'),
 				optional(qw/max-number-of-files/),
-				filter_options
+				filter_options, optional('dry-run')
 			))
 		};
 		
@@ -308,7 +309,7 @@ sub get_config
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/,
 				writable_journal(existing_journal('journal')),
-				deprecated('dir'), filter_options
+				deprecated('dir'), filter_options, optional('dry-run')
 			))
 		};
 		
@@ -316,14 +317,14 @@ sub get_config
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/,
 				writable_journal(existing_journal('journal')),
-				filter_options
+				filter_options, optional('dry-run')
 			))
 		};
 		
 		command 'restore-completed' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal'),
-				filter_options
+				filter_options, optional('dry-run')
 			))
 		};
 		
@@ -331,7 +332,7 @@ sub get_config
 			# TODO: deprecated option to-vault
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault'),
-				filter_options
+				filter_options, optional('dry-run')
 			))
 		};
 		

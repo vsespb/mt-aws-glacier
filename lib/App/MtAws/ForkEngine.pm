@@ -25,8 +25,37 @@ use warnings;
 use utf8;
 use IO::Select;
 use IO::Pipe;
+use Carp;
 use App::MtAws::ChildWorker;
 use App::MtAws::ParentWorker;
+
+require Exporter;
+use base qw/Exporter/;
+
+our @EXPORT_OK = qw/with_forks fork_engine/;
+
+# some DSL
+
+our $FE = undef;
+
+sub fork_engine()
+{
+	$FE||confess;
+}
+
+sub with_forks($$&)
+{
+	my ($flag, $options, $cb) = @_;
+	local $FE = undef;
+	if ($flag) {
+		$FE = App::MtAws::ForkEngine->new(options => $options);
+		$FE->start_children();
+	}
+	$cb->();
+	$FE->terminate_children() if $flag;
+}
+
+# class
 
 sub new
 {
