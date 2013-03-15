@@ -140,13 +140,15 @@ sub process_line
 sub _add_file
 {
 	my ($self, $relfilename, $args) = @_;
-	$self->{journal_h}->{$relfilename} = $args;
+	$self->{journal_h}->{$relfilename} = $args if (!$self->{filter} || check_filenames( $self->{filter}, $relfilename));
 }
 
 sub _delete_file
 {
 	my ($self, $relfilename) = @_;
-	delete $self->{journal_h}->{$relfilename} if $self->{journal_h}->{$relfilename}; # TODO: exception or warning if $files->{$2}
+	delete $self->{journal_h}->{$relfilename}
+		if (!$self->{filter} || check_filenames( $self->{filter}, $relfilename)) && $self->{journal_h}->{$relfilename};
+		# TODO: exception or warning if $files->{$2}
 }
 
 sub _retrieve_job
@@ -240,7 +242,7 @@ sub _read_files
 			my $reldir = File::Spec->abs2rel($dir, $self->{root_dir});
 			if ($self->{filter} && $reldir ne '.') {
 				my ($match, $matchsubdirs) = check_dir $self->{filter}, $reldir."/";
-				if (!$match && !$matchsubdirs) {
+				if (!$match && $matchsubdirs) {
 					$File::Find::prune = 1;
 				} 
 			}

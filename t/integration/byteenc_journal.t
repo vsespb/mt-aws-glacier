@@ -35,7 +35,7 @@ use Encode;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
 if( $^O =~ /^(linux|freebsd|openbsd)$/i ) {
-      plan tests => 684;
+      plan tests => 1350;
 } else {
       plan skip_all => 'Test cannot be performed on character-oriented filesystem';
 }
@@ -64,12 +64,14 @@ my $testfiles1 = [
 { type => 'normalfile', filename => 'фexclude/b.gz', content => 'exclude3', journal => 'created', exclude=>0 },
 { type => 'normalfile', filename => 'фexclude/c.gz', content => 'exclude4', journal => 'created', exclude=>0 },
 { type => 'normalfile', filename => 'фexclude/0.gz', content => 'exclude5', journal => 'created', exclude=>1 },
+{ type => 'normalfile', filename => 'фexclude/0.txt', content => 'exclude5', exclude=>1 },
 
 
 
 { type => 'dir', filename => 'каталогA' },
 { type => 'normalfile', filename => 'каталогA/file1', content => 'dAf1a', journal => 'created' },
 { type => 'normalfile', filename => 'каталогA/file2', content => 'dAf2aa', skip=>1},
+{ type => 'normalfile', filename => 'каталогA/file22', content => 'dAf2aa2'},
 { type => 'normalfile', filename => 'каталогA/file3', content => 'тест1', skip=>1, journal=>'created_and_deleted'},
 { type => 'dir', filename => 'dirB' },
 { type => 'normalfile', filename => 'dirB/file1', content => 'dBf1aaa',skip=>1 , journal => 'created'},
@@ -81,8 +83,8 @@ my $testfiles1 = [
 ];
 
 for my $jv (qw/0 A/) {
-	for my $journal_encoding (qw/UTF-8/) {# KOI8-R CP1251 # TODO: disable test on Unicode Filesystems (MacOSX)
-		for my $filenames_encoding (qw/UTF-8/) {# KOI8-R CP1251
+	for my $journal_encoding (qw/UTF-8 KOI8-R CP1251/) {#  # TODO: disable test on Unicode Filesystems (MacOSX)
+		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {# 
 			my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			my $dataroot_e = encode($filenames_encoding, $dataroot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			
