@@ -496,6 +496,12 @@ cmp_deeply [check_dir $filter, 'somedir/'], [bool(0), bool(0)];
 ($filter, $error) = parse_filters('-!/data/ +');
 cmp_deeply [check_dir $filter, 'somedir/'], [bool(0), bool(0)];
 
+($filter, $error) = parse_filters('-/data/a/ +');
+cmp_deeply [check_dir $filter, 'data/'], [bool(1), bool(0)];
+
+($filter, $error) = parse_filters('-/data/a/ +');
+cmp_deeply [check_dir $filter, 'data/a/'], [bool(0), bool(1)];
+
 
 1;
 

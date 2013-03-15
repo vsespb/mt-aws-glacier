@@ -238,7 +238,7 @@ sub _read_files
 		if (-d) {
 			my $dir = character_filename($_);
 			my $reldir = File::Spec->abs2rel($dir, $self->{root_dir});
-			if ($self->{filter}) {
+			if ($self->{filter} && $reldir ne '.') {
 				my ($match, $matchsubdirs) = check_dir $self->{filter}, $reldir."/";
 				if (!$match && !$matchsubdirs) {
 					$File::Find::prune = 1;
@@ -246,9 +246,9 @@ sub _read_files
 			}
 		} else {
 			my $filename = character_filename(my $binaryfilename = $_);
-			if (!$self->{filter} || check_filenames $self->{filter}, $filename) {
+			my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
+			if (!$self->{filter} || check_filenames( $self->{filter}, $relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
-					my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 					
 					if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
 						my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});

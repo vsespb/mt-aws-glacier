@@ -28,6 +28,7 @@ use Test::More;
 use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Utils;
+use App::MtAws::Filter qw/parse_filters/;
 use File::Path;
 use JournalTest;
 use Encode;
@@ -50,9 +51,22 @@ my $journal_file = "$tmproot/journal";
 
 
 
+# -0.* -фexclude/a/ +*.gz -
+
 
 
 my $testfiles1 = [
+
+{ type => 'dir', filename => 'фexclude'  },
+{ type => 'dir', filename => 'фexclude/a' },
+{ type => 'normalfile', filename => 'фexclude/a/1.gz', content => 'exclude1', journal => 'created', exclude=>1 },
+{ type => 'normalfile', filename => 'фexclude/b', content => 'exclude2', journal => 'created', exclude=>0 },
+{ type => 'normalfile', filename => 'фexclude/b.gz', content => 'exclude3', journal => 'created', exclude=>0 },
+{ type => 'normalfile', filename => 'фexclude/c.gz', content => 'exclude4', journal => 'created', exclude=>0 },
+{ type => 'normalfile', filename => 'фexclude/0.gz', content => 'exclude5', journal => 'created', exclude=>1 },
+
+
+
 { type => 'dir', filename => 'каталогA' },
 { type => 'normalfile', filename => 'каталогA/file1', content => 'dAf1a', journal => 'created' },
 { type => 'normalfile', filename => 'каталогA/file2', content => 'dAf2aa', skip=>1},
@@ -67,8 +81,8 @@ my $testfiles1 = [
 ];
 
 for my $jv (qw/0 A/) {
-	for my $journal_encoding (qw/UTF-8 KOI8-R CP1251/) { # TODO: disable test on Unicode Filesystems (MacOSX)
-		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {
+	for my $journal_encoding (qw/UTF-8/) {# KOI8-R CP1251 # TODO: disable test on Unicode Filesystems (MacOSX)
+		for my $filenames_encoding (qw/UTF-8/) {# KOI8-R CP1251
 			my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			my $dataroot_e = encode($filenames_encoding, $dataroot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			
@@ -76,9 +90,16 @@ for my $jv (qw/0 A/) {
 			mkpath($dataroot_e);
 			
 			set_filename_encoding $filenames_encoding;
+			
+			my ($filter, undef) = parse_filters('-0.* -фexclude/a/ +');
+			
+			#use Data::Dumper;
+			#print Dumper $filter;
+			
+			
 			my $J = JournalTest->new(journal_encoding => $journal_encoding, filenames_encoding => $filenames_encoding,
 				create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot,
-				journal_file => $journal_file, testfiles => $testfiles1);
+				journal_file => $journal_file, testfiles => $testfiles1, filter => $filter);
 			$J->test_all();
 			
 			rmtree($tmproot_e) if ($tmproot_e) && (-d $tmproot_e);
