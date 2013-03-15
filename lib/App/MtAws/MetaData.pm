@@ -94,6 +94,8 @@ Some programming languages (like Ruby) have different model, when every string i
 3) This specification explains how to _encode_ data (because it's a specification). However it's easy to
 understant how to decode it back.
 
+4) Path separator in filename is '/'
+
 =cut
 
 my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
