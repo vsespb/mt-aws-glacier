@@ -61,6 +61,7 @@ sub new
 	bless $self, $class;
 	local $context = $self;
 	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
+	message 'unknown_config_option', 'Unknown option in config: "%s option%"', allow_redefine=>1;
 	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
 	message 'no_command', 'No command specified', allow_redefine=>1;
 	message 'deprecated_option', 'Option %option% is deprecated, use %option main% instead', allow_redefine=>1;
@@ -297,11 +298,15 @@ sub parse_options
 		if (defined $cfg) {
 			for (keys %$cfg) {
 				my $optref = $self->{options}->{$_};
-				unless (defined $optref->{value}) {
-					# fill from config
-					my $decoded = $optref->{binary} ? $cfg->{$_} : $self->decode_config_value($cfg->{$_});
-					last unless defined $decoded;
-					@{$optref}{qw/value source/} = ($decoded, 'config'); # TODO: support for array options??
+				if ($optref) {
+					unless (defined $optref->{value}) {
+						# fill from config
+						my $decoded = $optref->{binary} ? $cfg->{$_} : $self->decode_config_value($cfg->{$_});
+						last unless defined $decoded;
+						@{$optref}{qw/value source/} = ($decoded, 'config'); # TODO: support for array options??
+					}
+				} else {
+					error('unknown_config_option', option => $_);
 				}
 			}
 		}
