@@ -182,7 +182,7 @@ sub get_option_ref
 	if ($self->{options}->{$name}) {
 		return ($self->{options}->{$name}, 0);
 	} else {
-		return (($self->{options}->{ $self->{optaliasmap}->{$name} } || confess "unknown option $name"), 1);
+		return ($self->{options}->{ $self->{optaliasmap}->{$name} }, 1);
 	}
 }
 
@@ -201,7 +201,6 @@ sub parse_options
 		($_ => sub {
 			my ($name, $value) = @_;
 			my $sname = "$name";# can be object instead of name.. object interpolates to string well
-			my ($optref, undef) = $self->get_option_ref($sname);
 			push @results, { name => $sname, value => $value };
 		})
 	} map {
@@ -250,6 +249,7 @@ sub parse_options
 	unless ($self->{errors}) {
 		for (@results) { # sort needed here to define a/b order for already_specified_in_alias 
 			my ($optref, $is_alias) = $self->get_option_ref($_->{name});
+			$optref||confess;
 			warning('deprecated_option', option => $_->{name}, main => $self->{optaliasmap}->{$_->{name}})
 				if $is_alias && $self->{deprecated_options}->{$_->{name}};
 			
@@ -297,7 +297,7 @@ sub parse_options
 	unless ($self->{errors}) {
 		if (defined $cfg) {
 			for (keys %$cfg) {
-				my $optref = $self->{options}->{$_};
+				my ($optref, $is_alias) = $self->get_option_ref($_);
 				if ($optref) {
 					unless (defined $optref->{value}) {
 						# fill from config

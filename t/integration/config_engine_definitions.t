@@ -26,7 +26,7 @@ use warnings FATAL => 'all';
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 372;
+use Test::More tests => 378;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1305,6 +1305,34 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "config should work - right command";
 	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should work"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { 'from-dir' => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'dir', alias => 'from-dir';
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('dir', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "config should work - right command";
+	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with aliases"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { 'from-dir' => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'dir', deprecated => 'from-dir';
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('dir', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "config should work - right command";
+	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with depracations"); 
 }
 
 {
