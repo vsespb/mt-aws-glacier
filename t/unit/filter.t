@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 445;
+use Test::More tests => 452;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -276,10 +276,21 @@ check 'example',
 check 'z/example',
 	ismatch => [],
 	nomatch => ['tmp/pz/example/a'];
+
+# check empty pattern
 	
 check '',
 	ismatch => ['a', 'a/b', 'a/b/c'];
-		
+	
+my $a = 123;
+
+$a =~ /123/;
+check '',
+	ismatch => ['a', 'a/b', 'a/b/c'];
+
+$a =~ /4/;
+check '',
+	ismatch => ['a', 'a/b', 'a/b/c'];
 
 #
 # _patterns_to_regexp match_subdirs
@@ -437,6 +448,13 @@ cmp_deeply [check_filenames($filter,
 	qw{data/1 dir/1.gz data/2 data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt})],
 	[qw{data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}],
 	"exclamation mark should work";
+
+($filter, $error) = parse_filters('-0.* -фexclude/a/ +*.gz -');
+cmp_deeply [check_filenames($filter,
+	qw{fexclude/b фexclude/b.gz})],
+	[qw{фexclude/b.gz}],
+	"exclamation mark should work";
+
 
 #
 # check_dir

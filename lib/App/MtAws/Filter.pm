@@ -195,9 +195,9 @@ sub _pattern_to_regexp
 {
 	my ($pattern, $all, $subst) = @_;
 	my $notmatch = ($pattern =~ /^!/);
-	$pattern =~ s/^!// if $notmatch;
+	$pattern =~ s/^!// if $notmatch; # TODO: optimize
 	confess unless defined $pattern;
-	return match_subdirs => !$notmatch, re => qr//, notmatch => $notmatch unless length($pattern);
+	return match_subdirs => !$notmatch, re => qr/.*/, notmatch => $notmatch unless length($pattern);
 
 	my $re = quotemeta $pattern;
 	$re =~ s!$all!$subst->{$&}!ge;
