@@ -109,7 +109,6 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-
 # TODO: implement as object, allow merging
 
 our @EXPORT_OK = qw/parse_filters parse_include parse_exclude
@@ -150,8 +149,8 @@ sub check_dir
 sub parse_filters
 {
 	my ($res, $error) = _filters_to_pattern(@_);
-	return undef, $error if defined $error;
-	_patterns_to_regexp(@$res);
+	return (undef, $error) if defined $error;
+	@$res = _patterns_to_regexp(@$res);
 	return $res, undef;
 }
 
@@ -173,8 +172,8 @@ sub _filters_to_pattern
 		 { action => $1, pattern => $2 }
 	} map { # for each of filter arguments
 		my @parsed = /\G(\s*[+-]\s*\S*\s*)/g;
-		return undef, $_ unless @parsed; # regexp does not match
-		return undef, $' if length($') > 0; # not all of the string parsed
+		return (undef, $_) unless @parsed; # regexp does not match
+		return (undef, $') if length($') > 0; # not all of the string parsed
 		@parsed; # we can return multiple +/-PATTERNS for each filter argument 
 	} @_], undef;
 }
@@ -210,8 +209,7 @@ sub _patterns_to_regexp
 {
 	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*', '?' => '[^/]');
 	map {
-		%$_ = (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst));
-		$_;
+		{ (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst)) };
 	} @_;
 }
 
