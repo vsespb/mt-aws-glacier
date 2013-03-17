@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 454;
+use Test::More tests => 469;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -245,6 +245,21 @@ check '!**/.gitignore',
 	nomatch => ['.gitignore', 'a/.gitignore', 'b/c/.gitignore'],
 	ismatch => [];
 
+# two stars in the beginning or end of filename
+check 'foo/**/bar',
+	ismatch => ['foo/bar', 'foo/1/bar'],
+	nomatch => ['foobar'];
+	
+check '**/bar',
+	ismatch => ['bar', 'foo/bar', 'foo/1/bar'],
+	nomatch => ['xbar', 'bar/', 'foo/bar/', 'foo/1/bar/'];
+
+check 'bar/**',
+	ismatch => ['bar/1', 'bar/'],
+	nomatch => ['barx/', 'bary', 'bar'];
+# /	
+
+
 check '**/tmp',
 	ismatch => [],
 	nomatch => ['p/xtmp'];
@@ -276,6 +291,7 @@ check 'example',
 check 'z/example',
 	ismatch => [],
 	nomatch => ['tmp/pz/example/a'];
+
 
 # check empty pattern
 	
@@ -331,8 +347,8 @@ check 'z/ex[1|2]mple',
 
 # simply test with fixtures
 
-cmp_deeply [_substitutions('**' => '.*', '*' => '[^/]*')], ['(\\\\\\*\\\\\\*|\\\\\\*)',{'\\*' => '[^/]*','\\*\\*' => '.*'}], "substitutions work";
-cmp_deeply [_substitutions('*' => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "substitutions work";
+cmp_deeply [_substitutions("\Q**\E" => '.*', "\Q*\E" => '[^/]*')], ['(\\\\\\*\\\\\\*|\\\\\\*)',{'\\*' => '[^/]*','\\*\\*' => '.*'}], "substitutions work";
+cmp_deeply [_substitutions("\Q*\E" => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "substitutions work";
 
 #
 # parse_filters

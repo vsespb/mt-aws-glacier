@@ -181,12 +181,11 @@ sub _filters_to_pattern
 sub _substitutions
 {
 	my %subst = @_; # we treat args as hash
-	$subst{quotemeta($_)} = delete $subst{$_} for keys %subst; # replace keys with escaped versions
 
 	my (@all);
 	while (my ($k, undef) = splice @_, 0, 2) { push @all, $k }; # but now we treat args as array
 
-	my $all_re = '('.join('|', map { quotemeta quotemeta } @all ).')';
+	my $all_re = '('.join('|', map { quotemeta } @all ).')';
 	return $all_re, \%subst;
 }
 
@@ -207,7 +206,12 @@ sub _pattern_to_regexp
 
 sub _patterns_to_regexp
 {
-	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*', '?' => '[^/]');
+	my ($all, $subst) = _substitutions(
+		"\Q**\E" => '.*',
+		"\Q/**/\E" => '.*/',
+		"\Q*\E" => '[^/]*',
+		"\Q?\E" => '[^/]'
+	);
 	map {
 		{ (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst)) };
 	} @_;
