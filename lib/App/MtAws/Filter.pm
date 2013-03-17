@@ -68,11 +68,12 @@ Note that if directory is empty, it won't be synchronized to Amazon Glacier, as 
 without subdirectories). However if, in future versions we find a way to store empty directories in glacier, this behaviour could change.
 4) Wildcard '*' matches any path component, but it stops at slashes.
 5) Wildcard '**' matches anything, including slashes.
-6) Wildcard '?' matches any character except a slash (/).
-7) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
+6) When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories
+7) Wildcard '?' matches any character except a slash (/).
+8) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
 Otherwise it is matched only against the final component of the filename.
-8) if PATTERN is empty, it matches anything.
-9) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
+9) if PATTERN is empty, it matches anything.
+10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
 
 (IV)
 
@@ -206,9 +207,12 @@ sub _pattern_to_regexp
 
 sub _patterns_to_regexp
 {
-	my ($all, $subst) = _substitutions(
+	# of course order of regexps is important
+	# how regexps works:
+	# http://perldoc.perl.org/perlretut.html#Grouping-things-and-hierarchical-matching
+	my ($all, $subst) = _substitutions( 
 		"\Q**\E" => '.*',
-		"\Q/**/\E" => '.*/',
+		"\Q/**/\E" => '(/|/.*/)',
 		"\Q*\E" => '[^/]*',
 		"\Q?\E" => '[^/]'
 	);

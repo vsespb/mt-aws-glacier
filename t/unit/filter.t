@@ -247,16 +247,28 @@ check '!**/.gitignore',
 
 # two stars in the beginning or end of filename
 check 'foo/**/bar',
-	ismatch => ['foo/bar', 'foo/1/bar'],
-	nomatch => ['foobar'];
-	
+	ismatch => ['foo/bar', 'foo/1/bar', 'foo/1/2/bar'],
+	nomatch => ['foobar', 'foox/bar', 'foo/xbar'];
+
+check 'foo**/bar',
+	ismatch => ['foo/bar', 'foo/1/bar', 'foox/bar', 'foox/1/bar'],
+	nomatch => ['foobar', 'foo/xbar', 'foox/xbar'];
+
+check 'foo/**bar',
+	ismatch => ['foo/bar', 'foo/1/bar', 'foo/xbar', 'foo/1/xbar'],
+	nomatch => ['foobar', 'foox/bar', 'foox/xbar'];
+
 check '**/bar',
 	ismatch => ['bar', 'foo/bar', 'foo/1/bar'],
-	nomatch => ['xbar', 'bar/', 'foo/bar/', 'foo/1/bar/'];
+	nomatch => ['1/xbar', 'xbar', 'bar/', 'foo/bar/', 'foo/1/bar/'];
 
-check 'bar/**',
-	ismatch => ['bar/1', 'bar/'],
-	nomatch => ['barx/', 'bary', 'bar'];
+check '**bar',
+	ismatch => ['bar', 'foo/bar', 'foo/1/bar', '1/xbar', 'xbar'],
+	nomatch => ['bar/', 'foo/bar/', 'foo/1/bar/'];
+
+check 'bar**',
+	ismatch => ['bar/1', 'bar/', 'bar/1/2/3', 'barx/', 'barx/1', 'bary', 'bar'],
+	nomatch => ['zbar'];
 # /	
 
 
