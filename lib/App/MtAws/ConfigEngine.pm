@@ -20,7 +20,7 @@
 
 package App::MtAws::ConfigEngine;
 
-use Getopt::Long;
+use Getopt::Long 2.24 qw/:config no_ignore_case/ ;
 use Encode;
 use Carp;
 use List::Util qw/first/;
@@ -182,8 +182,10 @@ sub get_option_ref
 	my ($self, $name) = @_;
 	if ($self->{options}->{$name}) {
 		return ($self->{options}->{$name}, 0);
-	} else {
+	} elsif (defined($self->{optaliasmap}->{$name})) {
 		return ($self->{options}->{ $self->{optaliasmap}->{$name} }, 1);
+	} else {
+		return (undef, undef);
 	}
 }
 

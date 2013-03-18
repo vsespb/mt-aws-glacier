@@ -26,7 +26,7 @@ use warnings FATAL => 'all';
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 380;
+use Test::More tests => 382;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1076,6 +1076,17 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	cmp_deeply $res->{options}, {}, "should work without options";
 }
 
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'myoption';
+		command 'mycommand' => sub { optional('myoption')};
+	});
+	my $res = $c->parse_options('mycommand', '-MYoption', 123);
+	ok $res->{errors} && $res->{error_texts};
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error'}], "should not ignore options case"; 
+}
+
 # parse options - array options
 
 {
@@ -1357,7 +1368,6 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub { optional('include', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-config', 'c');
-	print Dumper $res;
 	cmp_deeply $res->{error_texts}, ['"List" options (where order is important) like "include" cannot appear in config currently'],
 		"should catch list options in config"; 
 	cmp_deeply $res->{errors}, [{ format => 'list_options_in_config', option => 'include' }], "should catch list options in config"; 
