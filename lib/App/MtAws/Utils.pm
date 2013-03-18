@@ -96,7 +96,7 @@ sub open_file($%)
 	}
 	
 	croak if -e $filename && (! -f $filename);
-	croak if $args{not_empty} && (! -s $filename);
+	croak "File should not be empty" if $args{not_empty} && (! -s $filename);
 	
 	open (my $f, $mode, $filename) || (!$args{should_exist} && return) || confess $filename;
 	confess unless -f $f; # check for race condition - it was a file when we last checked, but now it's a directory
