@@ -1,6 +1,10 @@
 	* Bug fixed - allow option aliases/deprecated options (like 'from-dir') appear in config file
+2013-03-18 v0.935beta
+	* Fixed - check-local-hash should not crash on 0-size files (even though normally there should not be any)
+
 2013-03-18 v0.934beta
 	* Better handling of IO errors in 'check-local-hash' command - print error, continue with other files, return exit code 1 in the end.
+
 2013-03-13 v0.933beta
 	* Fix crash in 'help' command, bug was introduced a day ago.
 	* New version numbering for beta versions - 0.9XY. Where 'X' is a month number of year 2013. 'Y' is number of release in this month.
