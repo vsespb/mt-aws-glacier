@@ -266,7 +266,7 @@ END
 		$j->read_journal(should_exist => 1);
 		my $files = $j->{journal_h};
 		
-		my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error) = (0,0,0,0,0);
+		my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error, $error_io) = (0,0,0,0,0,0);
 		for my $f (keys %$files) {
 			my $file=$files->{$f};
 			my $absfilename = $j->absfilename($f);
@@ -276,10 +276,17 @@ END
 			} else {
 				my $th = App::MtAws::TreeHash->new();
 				if (-f binaryfilename $absfilename ) {
-					my $F = open_file($absfilename, mode => '<', binary => 1);
-					$th->eat_file($F); # TODO: don't calc tree hash if size differs!
-					close $F;
-					$th->calc_tree();
+					unless (defined eval {
+						my $F = open_file($absfilename, mode => '<', binary => 1);
+						$th->eat_file($F); # TODO: don't calc tree hash if size differs!
+						close $F;
+						$th->calc_tree();
+						1;
+					}) {
+						print "ERROR reading file $f: $@\n";
+						++$error_io;
+						next;
+					}
 					my $treehash = $th->get_final_hash();
 					if (defined($file->{mtime}) && (my $actual_mtime = stat(binaryfilename $absfilename)->mtime) != $file->{mtime}) {
 						print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
@@ -304,9 +311,9 @@ END
 			}
 		}
 		unless ($options->{'dry-run'}) {
-			print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n";
+			print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n$error_io ERRORS\n";
 			print "($error_mtime of them have File Modification Time altered)\n";
-			exit(1) if $error_hash || $error_size || $error_missed;
+			exit(1) if $error_hash || $error_size || $error_missed || $error_io;
 		}
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
