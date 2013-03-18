@@ -74,13 +74,15 @@ without subdirectories). However if, in future versions we find a way to store e
 Otherwise it is matched only against the final component of the filename.
 9) if PATTERN is empty, it matches anything.
 10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
+11) '^' increase priority of pattern by one.
 
 (IV)
 
 How rules are processed:
 
-1) A filename is checked agains all rules in the list. Once filename match PATTERN, checking is stopped, and file is included or excluded depending of what
-kind of PATTERN matched.
+Rules are grouped by priority. Rule order preserved. For each priority (starting from higher down to lower)
+1) A filename is checked agains all rules in the list. Once filename match PATTERN with priority X, file is marked as included
+or excluded depending of what kind of PATTERN matched.  
 
 2) When traverse directory tree, unlike Rsync, if a directory (and all subdirectories) match exclude pattern, process is not stopped. So
 
