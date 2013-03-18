@@ -41,7 +41,7 @@ sub assert_filters($$@)
 			my $res = config_create_and_parse(@$queryref);
 			#print Dumper $res->{errors};
 			ok !($res->{errors}||$res->{warnings}), $msg;
-			is scalar (my @got = @{$res->{options}{filters}{parsed}}), scalar @parsed;
+			is scalar (my @got = @{$res->{options}{filters}{parsed}{filters}}), scalar @parsed;
 			while (@parsed) {
 				my $got = shift @got;
 				my $expected = shift @parsed;
@@ -165,17 +165,17 @@ for (
 	#### FAIL
 	
 	
-	assert_fails "filename, set-rel-filename should fail with dir",
+	assert_fails "should catch parse error",
 		[@$_, '--filter', ' +z  p +a'],
 		[],
 		'filter_error', a => 'p +a'; 
 		
-	assert_fails "filename, set-rel-filename should fail with dir",
+	assert_fails "should catch parse error",
 		[@$_, '--filter', '+z z'],
 		[],
 		'filter_error', a => 'z'; 
 		
-	assert_fails "filename, set-rel-filename should fail with dir",
+	assert_fails "should not allow empty filter",
 		[@$_, '--filter', ''],
 		[],
 		'filter_error', a => ''; 

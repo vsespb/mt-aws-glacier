@@ -112,33 +112,38 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-# TODO: implement as object, allow merging
 
-our @EXPORT_OK = qw/parse_filters parse_include parse_exclude
-	_filters_to_pattern	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir /;
+sub new
+{
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	
+	$self->_init_substitutions( 
+		"\Q**\E" => '.*',
+		"\Q/**/\E" => '(/|/.*/)',
+		"\Q*\E" => '[^/]*',
+		"\Q?\E" => '[^/]'
+	);
+	
+	return $self;
+}
 				
 sub check_filenames
 {
-	my $filters = shift;
+	my $self = shift;
 	map {
-		my $res = $_; # default action - include!
-		my $filename = "/$_";
-		for my $filter (@$filters) {
-			if ($filter->{notmatch} ? ($filename !~ $filter->{re}) : ($filename =~ $filter->{re}) ) {
-				$res = $filter->{action} eq '+' ? $_ : undef;
-				last;
-			}
-		}
-		defined $res ? $res : ();
+		my ($res, $subdir) = $self->check_dir($_);
+		$res ? $_ : ();
 	} @_;
 }
 
 sub check_dir
 {
-	my ($filters, $dir) = @_;
+	my ($self, $dir) = @_;
 	my $res = 1; # default action - include!
 	my $match_subdirs = undef;
-	for my $filter (@$filters) {
+	for my $filter (@{$self->{filters}}) {
 		$match_subdirs = 0 if ($filter->{action} eq '+'); # match_subdirs true only when we exclude this filename and we can to exclude all subdirs
 		if ($filter->{notmatch} ? ("/$dir" !~ $filter->{re}) : ("/$dir" =~ $filter->{re})) {
 			$res = !!($filter->{action} eq '+');
@@ -151,57 +156,65 @@ sub check_dir
 
 sub parse_filters
 {
-	my ($res, $error) = _filters_to_pattern(@_);
-	return (undef, $error) if defined $error;
-	@$res = _patterns_to_regexp(@$res);
-	return $res, undef;
+	my $self = shift;
+	my @patterns = $self->_filters_to_pattern(@_);
+	return unless @patterns;
+	my @res = $self->_patterns_to_regexp(@patterns);
+	push @{$self->{filters}}, @res;
 }
 
 sub parse_include
 {
-	_patterns_to_regexp({ pattern => shift(), action => '+'});
+	my $self = shift;
+	my @res = $self->_patterns_to_regexp({ pattern => shift(), action => '+'});
+	push @{$self->{filters}}, @res;
 }
 
 sub parse_exclude
 {
-	_patterns_to_regexp({ pattern => shift(), action => '-'});
+	my $self = shift;
+	my @res = $self->_patterns_to_regexp({ pattern => shift(), action => '-'});
+	push @{$self->{filters}}, @res;
 }
 
 sub _filters_to_pattern
 {
-	[map { # for each +/-PATTERN
+	my $self = shift;
+	map { # for each +/-PATTERN
 	 # this will return arrayref with two elements: first + or -, second: the PATTERN
 		 /^\s*([+-])\s*(\S*)\s*$/ or confess "[$_]";
 		 { action => $1, pattern => $2 }
 	} map { # for each of filter arguments
 		my @parsed = /\G(\s*[+-]\s*\S*\s*)/g;
-		return (undef, $_) unless @parsed; # regexp does not match
-		return (undef, $') if length($') > 0; # not all of the string parsed
+		$self->{error} = $_, return unless @parsed; # regexp does not match
+		$self->{error} = $', return if length($') > 0; # not all of the string parsed
 		@parsed; # we can return multiple +/-PATTERNS for each filter argument 
-	} @_], undef;
+	} @_;
 }
 
-sub _substitutions
+sub _init_substitutions
 {
+	my $self = shift;
+	
 	my %subst = @_; # we treat args as hash
 
 	my (@all);
 	while (my ($k, undef) = splice @_, 0, 2) { push @all, $k }; # but now we treat args as array
 
-	my $all_re = '('.join('|', map { quotemeta } @all ).')';
-	return $all_re, \%subst;
+	$self->{all_re} = '('.join('|', map { quotemeta } @all ).')';
+	$self->{subst} = \%subst;
 }
 
 sub _pattern_to_regexp
 {
-	my ($pattern, $all, $subst) = @_;
+	my ($self, $pattern) = @_;
 	my $notmatch = ($pattern =~ /^!/);
 	$pattern =~ s/^!// if $notmatch; # TODO: optimize
 	confess unless defined $pattern;
 	return match_subdirs => !$notmatch, re => qr/.*/, notmatch => $notmatch unless length($pattern);
 
 	my $re = quotemeta $pattern;
-	$re =~ s!$all!$subst->{$&}!ge;
+	$re =~ s!$self->{all_re}!$self->{subst}->{$&}!ge;
 	$re = ($pattern =~ m!(/.)!) ? "^/?$re" : "(^|/)$re";
 	$re .= '$' unless ($pattern =~ m!/$!);
 	return match_subdirs => $pattern =~ m!(^|/|\*\*)$! && !$notmatch, re => qr/$re/, notmatch => $notmatch;
@@ -209,17 +222,12 @@ sub _pattern_to_regexp
 
 sub _patterns_to_regexp
 {
+	my $self = shift;
 	# of course order of regexps is important
 	# how regexps works:
 	# http://perldoc.perl.org/perlretut.html#Grouping-things-and-hierarchical-matching
-	my ($all, $subst) = _substitutions( 
-		"\Q**\E" => '.*',
-		"\Q/**/\E" => '(/|/.*/)',
-		"\Q*\E" => '[^/]*',
-		"\Q?\E" => '[^/]'
-	);
 	map {
-		{ (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst)) };
+		{ (%$_, $self->_pattern_to_regexp($_->{pattern})) };
 	} @_;
 }
 

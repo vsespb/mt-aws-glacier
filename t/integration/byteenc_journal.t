@@ -28,7 +28,7 @@ use Test::More;
 use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Utils;
-use App::MtAws::Filter qw/parse_filters/;
+use App::MtAws::Filter;
 use File::Path;
 use JournalTest;
 use Encode;
@@ -92,8 +92,9 @@ for my $jv (qw/0 A/) {
 			mkpath($dataroot_e);
 			
 			set_filename_encoding $filenames_encoding;
-			
-			my ($filter, undef) = parse_filters('-0.* -фexclude/a/ +');
+
+			my $F = App::MtAws::Filter->new();			
+			$F->parse_filters('-0.* -фexclude/a/ +');
 			
 			#use Data::Dumper;
 			#print Dumper $filter;
@@ -101,7 +102,7 @@ for my $jv (qw/0 A/) {
 			
 			my $J = JournalTest->new(journal_encoding => $journal_encoding, filenames_encoding => $filenames_encoding,
 				create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot,
-				journal_file => $journal_file, testfiles => $testfiles1, filter => $filter);
+				journal_file => $journal_file, testfiles => $testfiles1, filter => $F);
 			$J->test_all();
 			
 			rmtree($tmproot_e) if ($tmproot_e) && (-d $tmproot_e);

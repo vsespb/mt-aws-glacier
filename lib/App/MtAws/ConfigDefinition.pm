@@ -29,30 +29,30 @@ use Carp;
 use List::Util qw/first/;
 use App::MtAws::Utils;
 use App::MtAws::ConfigEngine;
-use App::MtAws::Filter qw/parse_filters parse_include parse_exclude/;
+use App::MtAws::Filter;
 
 sub filter_options
 {
 	my $filter_error = message 'filter_error', "Error in parsing filter %s a%"; 
 	scope 'filters', do {
 		my @l = optional(qw/include exclude filter/);
-		@l, do {
-			if (first { present } @l) {
-				custom('parsed', [map {
-					if ($_->{name} eq 'filter') {
-						my ($data, $error) = parse_filters($_->{value});
-						$data ? @$data : return error $filter_error, a => $error;
-					} elsif ($_->{name} eq 'include') {
-						parse_include($_->{value});
-					} elsif ($_->{name} eq 'exclude') {
-						parse_exclude($_->{value});
-					} else {
-						confess;
-					}
-				} lists @l]);
-			} else {
-				();
+		if (first { present } @l) {
+			my $F = App::MtAws::Filter->new();
+			for (lists @l) {
+				if ($_->{name} eq 'filter') {
+					$F->parse_filters($_->{value});
+					return error $filter_error, a => $F->{error} if defined $F->{error};
+				} elsif ($_->{name} eq 'include') {
+					$F->parse_include($_->{value});
+				} elsif ($_->{name} eq 'exclude') {
+					$F->parse_exclude($_->{value});
+				} else {
+					confess;
+				}
 			}
+			@l, custom('parsed', $F);
+		} else {
+			@l;
 		}
 	}
 }
