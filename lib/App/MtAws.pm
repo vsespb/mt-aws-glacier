@@ -275,7 +275,13 @@ END
 				print "Will check hash file $f\n"
 			} else {
 				my $th = App::MtAws::TreeHash->new();
-				if (-f binaryfilename $absfilename ) {
+				my $binaryfilename = binaryfilename $absfilename;
+				if (-f $binaryfilename ) {
+					unless (-s $binaryfilename) {
+						print "ZERO SIZE $f\n";
+						++$error_size;
+						next;
+					}
 					unless (defined eval {
 						my $F = open_file($absfilename, mode => '<', binary => 1);
 						$th->eat_file($F); # TODO: don't calc tree hash if size differs!
@@ -288,11 +294,11 @@ END
 						next;
 					}
 					my $treehash = $th->get_final_hash();
-					if (defined($file->{mtime}) && (my $actual_mtime = stat(binaryfilename $absfilename)->mtime) != $file->{mtime}) {
+					if (defined($file->{mtime}) && (my $actual_mtime = stat($binaryfilename)->mtime) != $file->{mtime}) {
 						print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
 						++$error_mtime;
 					}
-					if (-s binaryfilename($absfilename) == $file->{size}) {
+					if (-s $binaryfilename == $file->{size}) {
 						if ($treehash eq $files->{$f}->{treehash}) {
 							print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
 							++$no_error;
