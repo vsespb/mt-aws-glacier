@@ -62,7 +62,7 @@ sub eat_file
 	while (1) {
 		my $r = read($fh, my $data, $self->{unit});
 		if (!defined($r)) {
-			die;
+			die $!;
 		} elsif ($r > 0) {
 			$self->_eat_data_one_mb(\$data);
 		} else {
