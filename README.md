@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.935 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.936 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -260,20 +260,23 @@ Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed 
 	
 		1. If RULES contain spaces or wildcards, you must quote it when running `mtglacier` from Shell (Example: `mtglacier ... --filter -tmp/` but `mtglacier --filter '-log/ -tmp/'`)
 
+
 		2. Although, PATTERN can contain spaces, you cannot use if, because RULES separated by a space(s).
 
+
 		3. PATTERN can be empty (Example: `--filter +data/ --filter -` - excludes everything except any directory with name `data`, last pattern is empty)
+
 
 		4. Unlike other options, `filter`, `include` and `exclude` cannot be used in config file (in order to avoid mess with order of rules)
 
 
 + **--include**
 
-	Adds an INCLUDE PATTERN to list of rules (_Example_: `--include /data/ --filter '+/photos/ -'` - include only photos and data directories)
+	Adds an INCLUDE PATTERN to list of rules (Example: `--include /data/ --filter '+/photos/ -'` - include only photos and data directories)
 
 + **--exclude**
 
-	Adds an EXCLUDE PATTERN to list of rules (_Example_: `--exclude /data/` - include everything except /data and subdirectories)
+	Adds an EXCLUDE PATTERN to list of rules (Example: `--exclude /data/` - include everything except /data and subdirectories)
 	
 	NOTES:
 

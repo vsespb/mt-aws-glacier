@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.935beta";
+our $VERSION = "0.936beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -394,6 +394,8 @@ Common options:
 	--max-number-of-files - max number of files to sync/restore
 	--protocol - Use http or https to connect to Glacier
 	--partsize - Glacier multipart upload part size
+	--filter --include --exclude - File filtering
+	--dry-run
 Commands:
 	sync
 	purge-vault
