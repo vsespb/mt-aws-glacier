@@ -34,13 +34,29 @@ use constant MAX_SIZE => 1024;
 
 =pod
 
-MT-AWS-GLACIER metadata format (x-amz-archive-description field).
+MT-AWS-GLACIER metadata format ('x-amz-archive-description' field).
 
-Version 'mt2'
+Function definitions:
+=====================
+base64url() input - byte sequence, output - byte sequence
+	Is Base64 URL algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
+	basically it's base64 but with '=' padding removed, characters '+', '/' replaced with '-', '_' resp. and no new lines.
 
-x-amz-archive-description = 'mt2' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
+json_utf8() - input - Hash, output - byte sequence
+	JSON string in UTF-8 representation. Can contain not-escaped UTF-8 characters. Will not contain linefeed. Hash objects are unordered.
+	
+latin1_to_utf8() - input - byte sequence, output - byte sequence
+	Treats input data as Latin1 (ISO 8859-1) encoded sequence and converts it to UTF-8 sequence
+
+isoO8601() - input - time, output - character string
+	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC filezone. No leap seconds supported.
+	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
+
+{'filename': FILENAME, 'mtime': iso8601(MTIME)}
+	Hash with two keys: 'filename' and 'mtime'. Corresponds to JSON 'Object'.
 
 Input data:
+=====================
 
 FILENAME (character string)
 	Is a relative filename (no leading slash). Filename is taken from file system and treated as a character sequence
@@ -50,23 +66,35 @@ MTIME (time)
 	Internal representation is epoch time, so it can be any valid epoch time (including negative values and zero). On some system it's
 	32bit signed, on others 64bit signed, for some filesystems it's 34 bit signed etc.
 
-Function definitions:
+Version 'mt2'
+=====================
 
-base64url() input - byte sequence, output - byte sequence
-	Is Base64 URL algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
-	basically it's base64 but with '=' padding removed, characters '+', '/' replaced with '-', '_' resp. and no new lines.
+x-amz-archive-description = 'mt2' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
 
-json_utf8() - input - Hash, output - byte sequence
-	JSON string in UTF-8 representation. Can contain not-escaped UTF-8 characters. Will not contain linefeed. Hash objects are unordered.
+Version 'mt1'
+=====================
 
-isoO8601() - input - time, output - character string
-	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC filezone. No leap seconds supported.
-	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
+x-amz-archive-description = 'mt1' <space> base64url(latin1_to_utf8(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)})))
 
-{'filename': FILENAME, 'mtime': iso8601(MTIME)}
-	Hash with two keys: 'filename' and 'mtime'. Correspond to JSON 'Object'.
+This format actually contains a bug - data is double encoded. However it does not affect data integrity. UTF-8 double encoded data can be
+perfectly decoded (see http://www.j3e.de/linux/convmv/man/) - that's why the bug was unnoticed during one month.
+This format was in use starting from version 0.80beta (2012-12-27) till 0.84beta (2013-01-28).
 
-Note, that according to this spec. Same (FILENAME,MTIME) values can produce different x-amz-archive-description, as JSON hash is unordered.
+NOTES:
+=====================
+
+1) This specification assumes that in our programming language we have two different types of Strings: Byte string (byte sequence) and Character strings.
+Byte string is sequence of octets. Character string is an internal representation of sequence of characters. Character strings cannot have encodings
+by definition - it's internal, encoding is known to language implementation.
+
+Some programming languages (like Ruby) have different model, when every string is a sequence of bytes with a known encoding (or no encoding at all). 
+
+2) According to this spec. Same (FILENAME,MTIME) values can produce different x-amz-archive-description, as JSON hash is unordered.
+
+3) This specification explains how to _encode_ data (because it's a specification). However it's easy to
+understant how to decode it back.
+
+4) Path separator in filename is '/'
 
 =cut
 

@@ -25,12 +25,11 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 353;
+use Test::More tests => 764;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
-use App::MtAws::Filter qw/parse_filters _filters_to_pattern
-	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir/;
+use App::MtAws::Filter;
 use Data::Dumper;
 
 
@@ -41,13 +40,17 @@ use Data::Dumper;
 sub assert_parse_filter_error($$)
 {
 	my ($data, $err) = @_;
-	cmp_deeply [_filters_to_pattern($data)], [undef, $err];
+	my $F = App::MtAws::Filter->new();
+	ok ! defined $F->_filters_to_pattern($data);
+	is $F->{error}, $err;
 }
 
 sub assert_parse_filter_ok(@$)
 {
 	my ($expected, @data) = (pop, @_);
-	cmp_deeply [_filters_to_pattern(@data)], [$expected, undef];
+	my $F = App::MtAws::Filter->new();
+	ok !$F->{error};
+	cmp_deeply [$F->_filters_to_pattern(@data)], $expected;
 }
 
 
@@ -64,30 +67,32 @@ for my $before (@spaces) {
 	}
 }
 
-for my $between (' ', '  ') {
-	for my $before (@onespace) {
-		for my $after (@onespace) {
-			for my $last (@onespace) {
-				my ($res, $err);
-
-				assert_parse_filter_ok "${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'}];
-				
-				assert_parse_filter_ok
-					"${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
-					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'},
-					{ action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
-
-				assert_parse_filter_ok
-					"${before}+${after}*.gz${last}${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}",
-					[{ action => '+', pattern => '*.gz'}, { action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}];
-				
-				assert_parse_filter_ok
-					"${between}${before}-${after}*.txt${last}",
-					"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
-					[{ action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
+for my $exclamation ('', '!') {
+	for my $between (' ', '  ') {
+		for my $before (@onespace) {
+			for my $after (@onespace) {
+				for my $last (@onespace) {
+					my ($res, $err);
+	
+					assert_parse_filter_ok "${before}+${after}${exclamation}*.gz${last}${between}${before}-${after}*.txt${last}",
+						[{ action => '+', pattern => "${exclamation}*.gz"}, { action => '-', pattern => '*.txt'}];
+					
+					assert_parse_filter_ok
+						"${before}+${after}${exclamation}*.gz${last}${between}${before}-${after}*.txt${last}",
+						"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
+						[{ action => '+', pattern => "${exclamation}*.gz"}, { action => '-', pattern => '*.txt'},
+						{ action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
+	
+					assert_parse_filter_ok
+						"${before}+${after}${exclamation}*.gz${last}${between}${before}-${after}*.txt${last}",
+						"${before}-${after}*.jpeg${last}${between}",
+						[{ action => '+', pattern => "${exclamation}*.gz"}, { action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}];
+					
+					assert_parse_filter_ok
+						"${between}${before}-${after}*.txt${last}",
+						"${before}-${after}*.jpeg${last}${between}${before}+${after}*.png${last}",
+						[{ action => '-', pattern => '*.txt'}, { action => '-', pattern => '*.jpeg'}, { action => '+', pattern => '*.png'}];
+				}
 			}
 		}
 	}
@@ -136,18 +141,21 @@ assert_parse_filter_error ' ', ' ';
 sub check
 {
 	my ($filter, %lists) = @_;
-	my ($re) = _patterns_to_regexp({pattern => $filter});
+	my $F = App::MtAws::Filter->new();
+	my ($re) = $F->_patterns_to_regexp({pattern => $filter});
 	for (@{$lists{ismatch}}) {
 		$_ = "/$_";
-		ok $_ =~ $re->{re}, "[$filter], [$re->{re}],$_";
+		ok $re->{notmatch} ? ($_ !~ $re->{re}) : ($_ =~ $re->{re}), "[$filter], [$re->{re}],$_";
 	}
 	for (@{$lists{nomatch}}) {
 		$_ = "/$_";
 		
 		#print Dumper $re;
-		ok $_ !~ $re->{re}, "[$filter], [$re->{re}], $_";
+		ok $re->{notmatch} ? ($_ =~ $re->{re}) : ($_ !~ $re->{re}), "[$filter], [$re->{re}], $_";
 	}
 }
+
+check 'file', ismatch => ['file', 'x/file', 'x/y/file'], nomatch => ['filex', 'xfile'];
 
 # wildcard, any dir
 check '*.gz', ismatch => ['1.gz', 'a/1.gz', 'b/c/d/22.gz', '.gz', 'a/.gz'];
@@ -164,7 +172,7 @@ check 'img*',
 
 check '??.gz',
 	ismatch => ['12.gz', 'a/34.gz', 'b/c/d/xy.gz'],
-	nomatch => ['1.gz', 'a/345.gz', 'b/c/d/p.gz'];
+	nomatch => ['123.gz', '1.gz', 'a/345.gz', 'b/c/d/p.gz'];
 
 check 'x?z.gz',
 	ismatch => ['xyz.gz', 'a/xpz.gz', 'b/c/d/xxz.gz'],
@@ -173,7 +181,6 @@ check 'x?z.gz',
 check 'a/?',
 	ismatch => ['a/1', 'a/2', 'a/3'],
 	nomatch => ['a/11', 'a1', 'a/123'];
-
 
 # file, any dir
 check '.gitignore',
@@ -206,6 +213,10 @@ check '.git/',
 	ismatch => [qw!.git/ .git/a x/.git/a x/.git/ x/.git/b/c x/y/.git/p x/y/.git/r/r!],
 	nomatch => [qw!.git x/.git x/y/.git!];
 
+check '!.git/',
+	nomatch => [qw!.git/ .git/a x/.git/a x/.git/ x/.git/b/c x/y/.git/p x/y/.git/r/r!],
+	ismatch => [qw!.git x/.git x/y/.git!];
+
 # wildcard, specific location
 check '/var/log/*.log',
 	ismatch => ['var/log/abc.log', 'var/log/def.log'],
@@ -236,6 +247,37 @@ check '**/.gitignore',
 	ismatch => ['.gitignore', 'a/.gitignore', 'b/c/.gitignore'],
 	nomatch => [];
 
+check '!**/.gitignore',
+	nomatch => ['.gitignore', 'a/.gitignore', 'b/c/.gitignore'],
+	ismatch => [];
+
+# two stars in the beginning or end of filename
+check 'foo/**/bar',
+	ismatch => ['foo/bar', 'foo/1/bar', 'foo/1/2/bar'],
+	nomatch => ['foobar', 'foox/bar', 'foo/xbar'];
+
+check 'foo**/bar',
+	ismatch => ['foo/bar', 'foo/1/bar', 'foox/bar', 'foox/1/bar'],
+	nomatch => ['foobar', 'foo/xbar', 'foox/xbar'];
+
+check 'foo/**bar',
+	ismatch => ['foo/bar', 'foo/1/bar', 'foo/xbar', 'foo/1/xbar'],
+	nomatch => ['foobar', 'foox/bar', 'foox/xbar'];
+
+check '**/bar',
+	ismatch => ['bar', 'foo/bar', 'foo/1/bar'],
+	nomatch => ['1/xbar', 'xbar', 'bar/', 'foo/bar/', 'foo/1/bar/'];
+
+check '**bar',
+	ismatch => ['bar', 'foo/bar', 'foo/1/bar', '1/xbar', 'xbar'],
+	nomatch => ['bar/', 'foo/bar/', 'foo/1/bar/'];
+
+check 'bar**',
+	ismatch => ['bar/1', 'bar/', 'bar/1/2/3', 'barx/', 'barx/1', 'bary', 'bar'],
+	nomatch => ['zbar'];
+# /	
+
+
 check '**/tmp',
 	ismatch => [],
 	nomatch => ['p/xtmp'];
@@ -256,6 +298,10 @@ check '/tmp**',
 	ismatch => ['tmpz', 'tmp/z', 'tmpz/z', 'tmp/z', ],
 	nomatch => ['ptmpz', 'x/tmpz', 'x/tmpz/z'];
 
+check '!/tmp**',
+	nomatch => ['tmpz', 'tmp/z', 'tmpz/z', 'tmp/z', ],
+	ismatch => ['ptmpz', 'x/tmpz', 'x/tmpz/z'];
+
 check 'example',
 	ismatch => [],
 	nomatch => ['tmp/example/a'];
@@ -263,10 +309,22 @@ check 'example',
 check 'z/example',
 	ismatch => [],
 	nomatch => ['tmp/pz/example/a'];
+
+
+# check empty pattern
 	
 check '',
 	ismatch => ['a', 'a/b', 'a/b/c'];
-		
+	
+my $a = 123;
+
+$a =~ /123/;
+check '',
+	ismatch => ['a', 'a/b', 'a/b/c'];
+
+$a =~ /4/;
+check '',
+	ismatch => ['a', 'a/b', 'a/b/c'];
 
 #
 # _patterns_to_regexp match_subdirs
@@ -274,12 +332,14 @@ check '',
 
 
 for ('', 'a/', '/a/', 'a/b/', '/a/b/', '**', '/**', '/a/**', 'a**', 'a/b/**', 'a/b**') {
-	my ($re) = _patterns_to_regexp({pattern => $_});
+	my $F = App::MtAws::Filter->new();
+	my ($re) = $F->_patterns_to_regexp({pattern => $_});
 	ok $re->{match_subdirs}, "match subdirs [$_]";
 }
 
 for (' ', 'a/ ', '/a/ ', 'a/b/ ', '/a/b/ ', '*', '/*', '/a/*', 'a*', 'a/b/* *', 'a/b** *', 'a/b**c') {
-	my ($re) = _patterns_to_regexp({pattern => $_});
+	my $F = App::MtAws::Filter->new();
+	my ($re) = $F->_patterns_to_regexp({pattern => $_});
 	ok !$re->{match_subdirs}, "does not match subdirs [$_]";
 }
 
@@ -307,8 +367,18 @@ check 'z/ex[1|2]mple',
 
 # simply test with fixtures
 
-cmp_deeply [_substitutions('**' => '.*', '*' => '[^/]*')], ['(\\\\\\*\\\\\\*|\\\\\\*)',{'\\*' => '[^/]*','\\*\\*' => '.*'}], "substitutions work";
-cmp_deeply [_substitutions('*' => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "substitutions work";
+{
+	my $F = {};
+	App::MtAws::Filter::_init_substitutions($F, "\Q**\E" => '.*', "\Q*\E" => '[^/]*');
+	is $F->{all_re}, '(\\\\\\*\\\\\\*|\\\\\\*)';
+	cmp_deeply $F->{subst}, {'\\*' => '[^/]*','\\*\\*' => '.*'}, "substitutions work";
+	
+	$F = {};
+	App::MtAws::Filter::_init_substitutions($F, "\Q*\E" => '[^/]*');
+	is $F->{all_re}, '(\\\\\\*)';
+	cmp_deeply $F->{subst}, {'\\*' => '[^/]*'}, "substitutions work";
+}
+
 
 #
 # parse_filters
@@ -316,102 +386,146 @@ cmp_deeply [_substitutions('*' => '[^/]*')], ['(\\\\\\*)',{'\\*' => '[^/]*'}], "
 
 # simply test with fixtures
 
-cmp_deeply [parse_filters('-abc -dir/ +*.gz', '-*.txt')],
- [
-          [
-            {
-              'pattern' => 'abc',
-              're' => qr/(^|\/)abc$/,
-              'action' => '-',
-              'match_subdirs' => ''
-            },
-            {
-              'pattern' => 'dir/',
-              're' => qr!(^|/)dir\/!,
-              'action' => '-',
-              'match_subdirs' => 1
-            },
-            {
-              'pattern' => '*.gz',
-              're' => qr/(^|\/)[^\/]*\.gz$/,
-              'action' => '+',
-              'match_subdirs' => ''
-            },
-            {
-              'pattern' => '*.txt',
-              're' => qr/(^|\/)[^\/]*\.txt$/,
-              'action' => '-',
-              'match_subdirs' => ''
-            }
-          ],
-          undef
- ];
+{
+	my $F = App::MtAws::Filter->new();
+	$F->parse_filters('-abc -dir/ +*.gz', '-!*.txt');
+	cmp_deeply $F->{filters},
+	          [
+	            {
+	              'pattern' => 'abc',
+	              're' => qr/(^|\/)abc$/,
+	              'action' => '-',
+	              'match_subdirs' => '',
+	              'notmatch' => '',
+	            },
+	            {
+	              'pattern' => 'dir/',
+	              're' => qr!(^|/)dir\/!,
+	              'action' => '-',
+	              'match_subdirs' => 1,
+	              'notmatch' => '',
+	            },
+	            {
+	              'pattern' => '*.gz',
+	              're' => qr/(^|\/)[^\/]*\.gz$/,
+	              'action' => '+',
+	              'match_subdirs' => '',
+	              'notmatch' => '',
+	            },
+	            {
+	              'pattern' => '!*.txt',
+	              're' => qr/(^|\/)[^\/]*\.txt$/,
+	              'action' => '-',
+	              'match_subdirs' => '',
+	              'notmatch' => '1',
+	            }
+	          ];
+}
+#
+# parse_include
+#
 
+{
+	my $F = App::MtAws::Filter->new();
+	$F->parse_include('*.gz');
+	cmp_deeply	$F->{filters},[{
+	          'pattern' => '*.gz',
+	          'notmatch' => bool(0),
+	          're' => qr/(^|\/)[^\/]*\.gz$/,
+	          'action' => '+',
+	          'match_subdirs' => bool(0)
+	        }];
+}
+
+{
+	my $F = App::MtAws::Filter->new();
+	$F->parse_include('!*.gz');
+	cmp_deeply $F->{filters}, [{
+          'pattern' => '!*.gz',
+          'notmatch' => bool(1),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '+',
+          'match_subdirs' => bool(0)
+    }];
+}
+
+{
+	my $F = App::MtAws::Filter->new();
+	$F->parse_exclude('*.gz');
+	cmp_deeply $F->{filters},[{
+          'pattern' => '*.gz',
+          'notmatch' => bool(0),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '-',
+          'match_subdirs' => bool(0)
+     }];
+}
+
+{
+	my $F = App::MtAws::Filter->new();
+	$F->parse_exclude('!*.gz');
+	cmp_deeply $F->{filters}, [{
+          'pattern' => '!*.gz',
+          'notmatch' => bool(1),
+          're' => qr/(^|\/)[^\/]*\.gz$/,
+          'action' => '-',
+          'match_subdirs' => bool(0)
+    }];
+}
 
 #
 # check_filenames
 #
 
-my ($filter, $error);
+sub test_check_filenames
+{
+	my ($filters, $list, $expected, $msg) = @_;
+	my $F = App::MtAws::Filter->new();
+	$F->parse_filters($filters);
+	ok ! defined $F->{error};
+	cmp_deeply [$F->check_filenames(@$list)], $expected, $msg;
+}
 
-($filter, $error) = parse_filters('+*.gz -/data/ +');
-cmp_deeply [check_filenames($filter,
-	qw{1.gz 1.txt data/1.txt data/z/1.txt data/2.gz f data/p/33.gz})],
-	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}],
-	"should work";
 
-($filter, $error) = parse_filters('-/data/ +*.gz -');
-cmp_deeply [check_filenames($filter,
-	qw{1.gz p/1.gz data/ data/1.gz data/a/1.gz})],
-	[qw{1.gz p/1.gz}],
-	"should work again";
-
-($filter, $error) = parse_filters('+*.gz -/data/');
-cmp_deeply [check_filenames($filter,
-	qw{1.gz 1.txt data/1.txt data/z/1.txt data/2.gz f data/p/33.gz})],
-	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}],
-	"default action - include";
-
-($filter, $error) = parse_filters('+*.gz +/data/ -');
-cmp_deeply [check_filenames($filter,
-	qw{x/y x/y/z.gz /data/1 /data/d/2 abc})],
-	[qw{x/y/z.gz /data/1 /data/d/2}],
-	"default action - exclude";
+test_check_filenames '+*.gz -/data/ +', [qw{1.gz 1.txt data/1.txt data/z/1.txt data/2.gz f data/p/33.gz}],
+	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}], "should work";
+test_check_filenames '-/data/ +*.gz -', [qw{1.gz p/1.gz data/ data/1.gz data/a/1.gz}], [qw{1.gz p/1.gz}], "should work again";
+test_check_filenames '+*.gz -/data/', [qw{1.gz 1.txt data/1.txt data/z/1.txt data/2.gz f data/p/33.gz}],
+	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}], "default action - include";
+test_check_filenames '+*.gz +/data/ -', [qw{x/y x/y/z.gz /data/1 /data/d/2 abc}],  [qw{x/y/z.gz /data/1 /data/d/2}], "default action - exclude";
+test_check_filenames '-!/data/ +*.gz +/data/backup/ -',
+	[qw{data/1 dir/1.gz data/2 data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}], 
+	[qw{data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}], "exclamation mark should work";
+test_check_filenames '-0.* -фexclude/a/ +*.gz -', [qw{fexclude/b фexclude/b.gz}], [qw{фexclude/b.gz}],  "exclamation mark should work";
 
 #
 # check_dir
 #
 
-($filter, $error) = parse_filters('+*.gz -/data/ +');
-cmp_deeply [check_dir $filter, 'data/'], ['', 0];
+sub test_check_dir
+{
+	my ($filters, $dir, $res, $subdirs) = @_;
+	my $F = App::MtAws::Filter->new();
+	$F->parse_filters($filters);
+	ok ! defined $F->{error};
+	cmp_deeply [$F->check_dir($dir)], [bool($res), bool($subdirs)]
+}
 
-($filter, $error) = parse_filters('-/data/ +*.gz +');
-cmp_deeply [check_dir $filter, 'data/'], ['', 1];
+test_check_dir '+*.gz -/data/ +', 'data/', 0, 0;
+test_check_dir '-/data/ +*.gz +', 'data/', 0, 1;
+test_check_dir '+*.gz -/data** +', 'datadir/', 0, 0;
+test_check_dir '-/data** +*.gz +', 'datadir/', 0, 1;
+test_check_dir '-*.gz -/data** +', 'datadir/', 0, 1;
+test_check_dir '-/data** -*.gz -/data** +', 'datadir/', 0, 1; 
+test_check_dir '+1.txt -*.gz -/data** +', 'datadir/', 0, 0;
+test_check_dir '-1.txt -*.gz +/data** +', 'datadir/', 1, 0;
+test_check_dir '+/data/ -', 'data/', 1, 0;
+test_check_dir '+!/data/ -', 'somedir/', 1, 0;
+test_check_dir '-!/data/ +', 'somedir/', 0, 0;
+test_check_dir '-!/data/ +', 'somedir/', 0, 0;
+test_check_dir '-/data/a/ +', 'data/', 1, 0;
+test_check_dir '-/data/a/ +', 'data/a/', 0, 1;
 
-($filter, $error) = parse_filters('+*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 0];
-
-($filter, $error) = parse_filters('-/data** +*.gz +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
-
-($filter, $error) = parse_filters('-*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
-
-($filter, $error) = parse_filters('-/data** -*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 1];
-
-($filter, $error) = parse_filters('+1.txt -*.gz -/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], ['', 0];
-
-($filter, $error) = parse_filters('-1.txt -*.gz +/data** +');
-cmp_deeply [check_dir $filter, 'datadir/'], [1, 0];
-
-($filter, $error) = parse_filters('+/data/ +');
-cmp_deeply [check_dir $filter, 'data/'], [1, 0];
 
 1;
 
-__END__
-check '??',
-	ismatch => [],
-	nomatch => [];

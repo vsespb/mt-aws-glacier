@@ -87,10 +87,10 @@ sub test_real_files
 	$self->create_files();
 	
 	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
-		journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter});
 	$j->read_all_files();
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' } @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{exclude} } @{$self->{testfiles}};
 	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
@@ -108,12 +108,11 @@ sub test_all_files
 	mkpath(encode($self->{filenames_encoding}, $self->{dataroot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	$self->create_journal();
 	$self->create_files('skip');
-	
 	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
-		journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter});
 	$j->read_all_files();
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} } @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} } @{$self->{testfiles}};
 	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
@@ -133,11 +132,11 @@ sub test_new_files
 	$self->create_journal();
 	$self->create_files('skip');
 	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
-		journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter});#
 	$j->read_journal(should_exist => 1);
 	$j->read_new_files();
-	
-	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
+
 	ok((scalar @checkfiles) == scalar @{$j->{newfiles_a}}, "number of planned and real files match");
 
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
@@ -156,11 +155,11 @@ sub test_existing_files
 	$self->create_journal();
 	$self->create_files('skip');
 	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
-		journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter});
 	$j->read_journal(should_exist => 1);
 	$j->read_existing_files();
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};
 	ok((scalar @checkfiles) == scalar @{$j->{existingfiles_a}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
@@ -179,7 +178,7 @@ sub create_files
 		$testfile->{fullname} = "$self->{dataroot}/$testfile->{filename}";
 		if ($testfile->{type} eq 'dir') {
 			mkpath(encode($self->{filenames_encoding}, $testfile->{fullname}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
-		} elsif (($testfile->{type} eq 'normalfile') && (
+		} elsif (($testfile->{type} eq 'normalfile')  && ( #&& !$testfile->{exclude}
 		     (!defined($mode)) ||
 		     ( ($mode eq 'skip') && !$testfile->{skip} )
 		     ))

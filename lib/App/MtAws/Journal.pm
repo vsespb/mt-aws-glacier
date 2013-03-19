@@ -31,6 +31,7 @@ use Encode;
 use Carp;
 use IO::Handle;
 use App::MtAws::Utils;
+use App::MtAws::Filter;
 
 sub new
 {
@@ -139,13 +140,15 @@ sub process_line
 sub _add_file
 {
 	my ($self, $relfilename, $args) = @_;
-	$self->{journal_h}->{$relfilename} = $args;
+	$self->{journal_h}->{$relfilename} = $args if (!$self->{filter} || $self->{filter}->check_filenames($relfilename));
 }
 
 sub _delete_file
 {
 	my ($self, $relfilename) = @_;
-	delete $self->{journal_h}->{$relfilename} if $self->{journal_h}->{$relfilename}; # TODO: exception or warning if $files->{$2}
+	delete $self->{journal_h}->{$relfilename}
+		if (!$self->{filter} || $self->{filter}->check_filenames($relfilename)) && $self->{journal_h}->{$relfilename};
+		# TODO: exception or warning if $files->{$2}
 }
 
 sub _retrieve_job
@@ -234,31 +237,47 @@ sub _read_files
 			print "Found $i local files\n";
 		}
 		
-		my $binaryfilename = $_;
-		my $filename;
-		unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
-			# TODO: how will this work with strict utf STDOUT mode?
-			# TODO: filename can't be printed + File::Find::dir should be encoded
-			print STDERR "=== ===\nERROR: file/dir with invalid characters\nDump of file name bytes:\n";
-			require Devel::Peek;
-			Devel::Peek::Dump($binaryfilename);
-			print STDERR "=== ===\n";
-			croak;
-		}
-
-		if ($self->_is_file_exists($binaryfilename)) {
+		if (-d) {
+			my $dir = character_filename($_);
+			my $reldir = File::Spec->abs2rel($dir, $self->{root_dir});
+			if ($self->{filter} && $reldir ne '.') {
+				my ($match, $matchsubdirs) = $self->{filter}->check_dir($reldir."/");
+				if (!$match && $matchsubdirs) {
+					$File::Find::prune = 1;
+				} 
+			}
+		} else {
+			my $filename = character_filename(my $binaryfilename = $_);
 			my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
-			
-			if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
-				my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
-				confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
-				
-				push @$filelist, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
+			if (!$self->{filter} || $self->{filter}->check_filenames($relfilename)) {
+				if ($self->_is_file_exists($binaryfilename)) {
+					
+					if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
+						my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
+						confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
+						
+						push @$filelist, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
+					}
+				}
 			}
 		}
 	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
 	
 	$filelist;
+}
+
+sub character_filename
+{
+	my ($binaryfilename) = @_;
+	my $filename;
+	unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
+		print STDERR "=== ===\nERROR: file/dir with invalid characters\nDump of file name bytes:\n";
+		require Devel::Peek;
+		Devel::Peek::Dump($binaryfilename);
+		print STDERR "=== ===\n";
+		croak;
+	}
+	$filename;
 }
 
 sub _is_file_exists

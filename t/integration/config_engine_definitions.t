@@ -26,7 +26,7 @@ use warnings FATAL => 'all';
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 365;
+use Test::More tests => 382;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
@@ -1076,6 +1076,17 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	cmp_deeply $res->{options}, {}, "should work without options";
 }
 
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		options 'myoption';
+		command 'mycommand' => sub { optional('myoption')};
+	});
+	my $res = $c->parse_options('mycommand', '-MYoption', 123);
+	ok $res->{errors} && $res->{error_texts};
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error'}], "should not ignore options case"; 
+}
+
 # parse options - array options
 
 {
@@ -1159,6 +1170,47 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 			{ name => 'include', value => 5 }, 
 	], "shared lists should work";
 }
+
+{
+	my $c  = create_engine();
+	$c->define(sub {
+		option('include', type => 's', list => 1),
+		option('exclude', list => 1),
+		option('filter', type => 's', list => 1);
+		options('o1', 'o2');
+		command 'mycommand' => sub {
+			optional qw/o1 o2/;
+			cmp_deeply [lists optional qw/include exclude filter/], [
+					{ name => 'include', value => 1 },
+					{ name => 'exclude', value => 2 },
+					{ name => 'filter', value => 3 },
+					{ name => 'filter', value => 4 },
+					{ name => 'include', value => 5 }, 
+				], 'lists() should work';
+			cmp_deeply [lists('include')], [
+					{ name => 'include', value => 1 },
+					{ name => 'include', value => 5 }, 
+				], 'lists() should work';
+		};
+	});
+	my $res = $c->parse_options('mycommand', qw/--include 1 --exclude 2 --o2 2 --filter 3 --filter 4 --include 5 --o1 1/);
+	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings} && $res->{warning_texts});
+	cmp_deeply $res->{options}, {
+		include => [qw/1 5/],
+		exclude => [qw/2/],
+		filter => [qw/3 4/],
+		o1 => 1,
+		o2 => 2,
+	}, "shared lists should work";
+	cmp_deeply $res->{option_list}, [
+			{ name => 'include', value => 1 },
+			{ name => 'exclude', value => 2 },
+			{ name => 'filter', value => 3 },
+			{ name => 'filter', value => 4 },
+			{ name => 'include', value => 5 }, 
+	], "option_list should contain only lists arguments";
+}
+
 
 # parse options - system messages
 
@@ -1264,6 +1316,61 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "config should work - right command";
 	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should work"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { 'from-dir' => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'dir', alias => 'from-dir';
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('dir', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "config should work - right command";
+	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with aliases"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { 'from-dir' => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'dir', deprecated => 'from-dir';
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('dir', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
+	is $res->{command}, 'mycommand', "config should work - right command";
+	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with depracations"); 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { fromconfig => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'myoption';
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('myoption', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
+	cmp_deeply $res->{error_texts}, ['Unknown option in config: "fromconfig"'], "should catch unknown option in config"; 
+	cmp_deeply $res->{errors}, [{ format => 'unknown_config_option', option => 'fromconfig' }], "should catch unknown option in config"; 
+}
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { { include => 42 } };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		option 'include', list => 1;
+		option 'config', binary=>1;
+		command 'mycommand' => sub { optional('include', 'config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config', 'c');
+	cmp_deeply $res->{error_texts}, ['"List" options (where order is important) like "include" cannot appear in config currently'],
+		"should catch list options in config"; 
+	cmp_deeply $res->{errors}, [{ format => 'list_options_in_config', option => 'include' }], "should catch list options in config"; 
 }
 
 

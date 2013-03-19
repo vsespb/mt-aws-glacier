@@ -28,7 +28,7 @@ filter, include, exclude options allow you to construct a list of RULES to selec
 (II)
 
 --filter
-Adds one or several INCLUDE or EXCLUDE PATTERNS to list of rules. 
+Adds one or several RULES to the list of rules. 
 One filter value can contain multiple rules, it has same effect as multiple filter values with one RULE each.
 
 --filter='RULE1 RULE2' --filter 'RULE3'
@@ -53,7 +53,6 @@ Adds an INCLUDE PATTERN to list of rules
 --exclude=PATTERN
 Adds an EXCLUDE PATTERN to list of rules
 
-Note: If RULES contain spaces or wildcards, you must quote it 
 Note: You can use spaces in PATTERNs here 
 
 (III)
@@ -68,17 +67,19 @@ Note that if directory is empty, it won't be synchronized to Amazon Glacier, as 
 without subdirectories). However if, in future versions we find a way to store empty directories in glacier, this behaviour could change.
 4) Wildcard '*' matches any path component, but it stops at slashes.
 5) Wildcard '**' matches anything, including slashes.
-6) Wildcard '?' matches any character except a slash (/).
-7) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
+6) When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories
+7) Wildcard '?' matches any character except a slash (/).
+8) if the pattern contains a / (not counting a trailing /) then it is matched against the full pathname, including any leading directories.
 Otherwise it is matched only against the final component of the filename.
-8) if PATTERN is empty, it matches anything.
- 
+9) if PATTERN is empty, it matches anything.
+10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
+
 (IV)
 
 How rules are processed:
 
-1) A filename is checked agains all rules in the list. Once filename match PATTERN, checking is stopped, and file is included or excluded depending of what
-kind of PATTERN matched.
+1) A filename is checked agains all rules in the list. Once filename match PATTERN, file is included or excluded depending of what kind of PATTERN matched.
+No other rules checked after first match.
 
 2) When traverse directory tree, unlike Rsync, if a directory (and all subdirectories) match exclude pattern, process is not stopped. So
 
@@ -87,12 +88,12 @@ kind of PATTERN matched.
 3) In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
 This only can happen when mtgalcier absolutely sure that it won't break (2) behaviour.
 It's guaraneed that traversal stop only in case when
-a) directory match EXCLUDE rule, ending with '/' or '**', or empty rule
+a) directory match EXCLUDE rule without '!' prefix, ending with '/' or '**', or empty rule
 "dir/"
 "/some/dir/"
 "prefix**
 "/some/dir/prefix**
-b) AND there is no INCLUDE rule before this exclude RULE
+b) AND there is no INCLUDE rules before this exclude RULE
 
 4) When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
  
@@ -108,33 +109,40 @@ use Carp;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT_OK = qw/parse_filters _filters_to_pattern
-	_patterns_to_regexp _substitutions parse_filters check_filenames check_dir/;
+
+sub new
+{
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	
+	$self->_init_substitutions( 
+		"\Q**\E" => '.*',
+		"\Q/**/\E" => '(/|/.*/)',
+		"\Q*\E" => '[^/]*',
+		"\Q?\E" => '[^/]'
+	);
+	
+	return $self;
+}
 				
 sub check_filenames
 {
-	my $filters = shift;
-	grep { defined } map {
-		my $res = $_; # default action - include!
-		my $filename = "/$_";
-		for my $filter (@$filters) {
-			if ($filename =~ $filter->{re}) {
-				$res = $filter->{action} eq '+' ? $_ : undef;
-				last;
-			}
-		}
-		$res;
+	my $self = shift;
+	map {
+		my ($res, $subdir) = $self->check_dir($_);
+		$res ? $_ : ();
 	} @_;
 }
 
 sub check_dir
 {
-	my ($filters, $dir) = @_;
+	my ($self, $dir) = @_;
 	my $res = 1; # default action - include!
 	my $match_subdirs = undef;
-	for my $filter (@$filters) {
+	for my $filter (@{$self->{filters}}) {
 		$match_subdirs = 0 if ($filter->{action} eq '+'); # match_subdirs true only when we exclude this filename and we can to exclude all subdirs
-		if ("/$dir" =~ $filter->{re}) {
+		if ($filter->{notmatch} ? ("/$dir" !~ $filter->{re}) : ("/$dir" =~ $filter->{re})) {
 			$res = !!($filter->{action} eq '+');
 			$match_subdirs = $filter->{match_subdirs} unless defined $match_subdirs;
 			last;
@@ -145,57 +153,78 @@ sub check_dir
 
 sub parse_filters
 {
-	my ($res, $error) = _filters_to_pattern(@_);
-	return undef, $error if defined $error;
-	_patterns_to_regexp(@$res);
-	return $res, undef;
+	my $self = shift;
+	my @patterns = $self->_filters_to_pattern(@_);
+	return unless @patterns;
+	my @res = $self->_patterns_to_regexp(@patterns);
+	push @{$self->{filters}}, @res;
+}
+
+sub parse_include
+{
+	my $self = shift;
+	my @res = $self->_patterns_to_regexp({ pattern => shift(), action => '+'});
+	push @{$self->{filters}}, @res;
+}
+
+sub parse_exclude
+{
+	my $self = shift;
+	my @res = $self->_patterns_to_regexp({ pattern => shift(), action => '-'});
+	push @{$self->{filters}}, @res;
 }
 
 sub _filters_to_pattern
 {
-	[map { # for each +/-PATTERN
+	my $self = shift;
+	map { # for each +/-PATTERN
 	 # this will return arrayref with two elements: first + or -, second: the PATTERN
 		 /^\s*([+-])\s*(\S*)\s*$/ or confess "[$_]";
 		 { action => $1, pattern => $2 }
 	} map { # for each of filter arguments
 		my @parsed = /\G(\s*[+-]\s*\S*\s*)/g;
-		return undef, $_ unless @parsed; # regexp does not match
-		return undef, $' if length($') > 0; # not all of the string parsed
+		$self->{error} = $_, return unless @parsed; # regexp does not match
+		$self->{error} = $', return if length($') > 0; # not all of the string parsed
 		@parsed; # we can return multiple +/-PATTERNS for each filter argument 
-	} @_], undef;
+	} @_;
 }
 
-sub _substitutions
+sub _init_substitutions
 {
+	my $self = shift;
+	
 	my %subst = @_; # we treat args as hash
-	$subst{quotemeta($_)} = delete $subst{$_} for keys %subst; # replace keys with escaped versions
 
 	my (@all);
 	while (my ($k, undef) = splice @_, 0, 2) { push @all, $k }; # but now we treat args as array
 
-	my $all_re = '('.join('|', map { quotemeta quotemeta } @all ).')';
-	return $all_re, \%subst;
+	$self->{all_re} = '('.join('|', map { quotemeta } @all ).')';
+	$self->{subst} = \%subst;
 }
 
 sub _pattern_to_regexp
 {
-	my ($filter, $all, $subst) = @_;
-	confess unless defined $filter;
-	return match_subdirs => 1, re => qr// unless length($filter);
+	my ($self, $pattern) = @_;
+	my $notmatch = ($pattern =~ /^!/);
+	$pattern =~ s/^!// if $notmatch; # TODO: optimize
+	confess unless defined $pattern;
+	return match_subdirs => !$notmatch, re => qr/.*/, notmatch => $notmatch unless length($pattern);
 
-	my $re = quotemeta $filter;
-	$re =~ s!$all!$subst->{$&}!ge;
-	$re = ($filter =~ m!(/.)!) ? "^/?$re" : "(^|/)$re";
-	$re .= '$' unless ($filter =~ m!/$!);
-	return match_subdirs => !!($filter =~ m!(^|/|\*\*)$!), re => qr/$re/;
+	my $re = quotemeta $pattern;
+	$re =~ s!$self->{all_re}!$self->{subst}->{$&}!ge;
+	$re = ($pattern =~ m!(/.)!) ? "^/?$re" : "(^|/)$re";
+	$re .= '$' unless ($pattern =~ m!/$!);
+	return match_subdirs => $pattern =~ m!(^|/|\*\*)$! && !$notmatch, re => qr/$re/, notmatch => $notmatch;
 }
 
 sub _patterns_to_regexp
 {
-	my ($all, $subst) = _substitutions('**' => '.*', '*' => '[^/]*', '?' => '[^/]');
+	my $self = shift;
+	# of course order of regexps is important
+	# how regexps works:
+	# http://perldoc.perl.org/perlretut.html#Grouping-things-and-hierarchical-matching
 	map {
-		%$_ = (%$_, _pattern_to_regexp($_->{pattern}, $all, $subst));
-		$_;
+		{ (%$_, $self->_pattern_to_regexp($_->{pattern})) };
 	} @_;
 }
 

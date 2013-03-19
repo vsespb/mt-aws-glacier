@@ -1,3 +1,8 @@
+2013-03-19 v0.936beta
+	* File selection implemented (see "File selection options" in README)
+	* --dry-run command implemented
+	* Bug fixed - it was impossible to use some options in config (like 'from-dir' 'to-vault'). Internally those were option aliases. 
+
 2013-03-18 v0.935beta
 	* Fixed - check-local-hash should not crash on 0-size files (even though normally there should not be any)
 

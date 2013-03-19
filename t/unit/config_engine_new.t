@@ -1011,9 +1011,23 @@ describe "present" => sub {
 		localize sub {
 			local $_ = 'abc';
 			option 'myoption';
+			option 'myoption2';
 			Context->{options}->{myoption}->{value} = 1;
-			App::MtAws::ConfigEngine->expects("assert_option")->once();
+			App::MtAws::ConfigEngine->expects("assert_option")->exactly(2);
 			ok present('myoption');
+			ok !present('myoption2');
+			ok $_ eq 'abc';
+		}
+	};
+	it "should check option when no args" => sub {
+		localize sub {
+			local $_ = 'abc';
+			option 'myoption';
+			option 'myoption2';
+			Context->{options}->{myoption}->{value} = 1;
+			App::MtAws::ConfigEngine->expects("assert_option")->exactly(2);
+			ok present for 'myoption';
+			ok !present for 'myoption2';
 			ok $_ eq 'abc';
 		}
 	};

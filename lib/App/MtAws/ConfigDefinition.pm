@@ -25,13 +25,36 @@ use warnings;
 use utf8;
 use File::Spec;
 use Encode;
+use Carp;
+use List::Util qw/first/;
 use App::MtAws::Utils;
-
 use App::MtAws::ConfigEngine;
+use App::MtAws::Filter;
 
 sub filter_options
 {
-	optional(qw/include exclude/);
+	my $filter_error = message 'filter_error', "Error in parsing filter %s a%"; 
+	scope 'filters', do {
+		my @l = optional(qw/include exclude filter/);
+		if (first { present } @l) {
+			my $F = App::MtAws::Filter->new();
+			for (lists @l) {
+				if ($_->{name} eq 'filter') {
+					$F->parse_filters($_->{value});
+					return error $filter_error, a => $F->{error} if defined $F->{error};
+				} elsif ($_->{name} eq 'include') {
+					$F->parse_include($_->{value});
+				} elsif ($_->{name} eq 'exclude') {
+					$F->parse_exclude($_->{value});
+				} else {
+					confess;
+				}
+			}
+			@l, custom('parsed', $F);
+		} else {
+			@l;
+		}
+	}
 }
 
 sub check_base_dir
@@ -229,6 +252,11 @@ sub get_config
 			validation $_, 'unknown_encoding', sub { find_encoding($_) };
 		}
 		
+		
+		my @filters = map { option($_, type => 's', list => 1) } qw/include exclude filter/;
+		
+		option 'dry-run', type=>'';
+		
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
 
@@ -264,7 +292,11 @@ sub get_config
 		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
 		
 		command 'sync' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal')), optional(qw/max-number-of-files/) )
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal'),
+				optional(qw/max-number-of-files/),
+				filter_options, optional('dry-run')
+			))
 		};
 		
 		command 'upload-file' => sub {
@@ -274,20 +306,34 @@ sub get_config
 				
 		
 		command 'purge-vault' => sub {
-			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/, writable_journal(existing_journal('journal')), deprecated('dir')  ))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/,
+				writable_journal(existing_journal('journal')),
+				deprecated('dir'), filter_options, optional('dry-run')
+			))
 		};
 		
 		command 'restore' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/, writable_journal(existing_journal('journal'))))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/,
+				writable_journal(existing_journal('journal')),
+				filter_options, optional('dry-run')
+			))
 		};
 		
 		command 'restore-completed' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal')))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal'),
+				filter_options, optional('dry-run')
+			))
 		};
 		
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
-			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault') ))
+			validate(mandatory(
+				optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault'),
+				filter_options, optional('dry-run')
+			))
 		};
 		
 		command 'retrieve-inventory' => sub {

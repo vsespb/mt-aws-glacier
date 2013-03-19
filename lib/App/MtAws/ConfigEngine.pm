@@ -20,7 +20,7 @@
 
 package App::MtAws::ConfigEngine;
 
-use Getopt::Long;
+use Getopt::Long 2.24 qw/:config no_ignore_case/ ;
 use Encode;
 use Carp;
 use List::Util qw/first/;
@@ -33,7 +33,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
 				mandatory optional seen deprecated validate scope
-				present valid value raw_option custom error warning/;
+				present valid value lists raw_option custom error warning/;
 				
 
 our $context; # it's a not a global. always localized in code
@@ -60,7 +60,9 @@ sub new
 	};
 	bless $self, $class;
 	local $context = $self;
+	message 'list_options_in_config', '"List" options (where order is important) like "%s option%" cannot appear in config currently', allow_redefine => 1;
 	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
+	message 'unknown_config_option', 'Unknown option in config: "%s option%"', allow_redefine=>1;
 	message 'unknown_command', 'Unknown command %command a%', allow_redefine=>1;
 	message 'no_command', 'No command specified', allow_redefine=>1;
 	message 'deprecated_option', 'Option %option% is deprecated, use %option main% instead', allow_redefine=>1;
@@ -180,8 +182,10 @@ sub get_option_ref
 	my ($self, $name) = @_;
 	if ($self->{options}->{$name}) {
 		return ($self->{options}->{$name}, 0);
+	} elsif (defined($self->{optaliasmap}->{$name})) {
+		return ($self->{options}->{ $self->{optaliasmap}->{$name} }, 1);
 	} else {
-		return (($self->{options}->{ $self->{optaliasmap}->{$name} } || confess "unknown option $name"), 1);
+		return (undef, undef);
 	}
 }
 
@@ -200,7 +204,6 @@ sub parse_options
 		($_ => sub {
 			my ($name, $value) = @_;
 			my $sname = "$name";# can be object instead of name.. object interpolates to string well
-			my ($optref, undef) = $self->get_option_ref($sname);
 			push @results, { name => $sname, value => $value };
 		})
 	} map {
@@ -249,6 +252,7 @@ sub parse_options
 	unless ($self->{errors}) {
 		for (@results) { # sort needed here to define a/b order for already_specified_in_alias 
 			my ($optref, $is_alias) = $self->get_option_ref($_->{name});
+			$optref||confess;
 			warning('deprecated_option', option => $_->{name}, main => $self->{optaliasmap}->{$_->{name}})
 				if $is_alias && $self->{deprecated_options}->{$_->{name}};
 			
@@ -296,12 +300,18 @@ sub parse_options
 	unless ($self->{errors}) {
 		if (defined $cfg) {
 			for (keys %$cfg) {
-				my $optref = $self->{options}->{$_};
-				unless (defined $optref->{value}) {
-					# fill from config
-					my $decoded = $optref->{binary} ? $cfg->{$_} : $self->decode_config_value($cfg->{$_});
-					last unless defined $decoded;
-					@{$optref}{qw/value source/} = ($decoded, 'config'); # TODO: support for array options??
+				my ($optref, $is_alias) = $self->get_option_ref($_);
+				if ($optref) {
+					if ($optref->{list}) {
+						error('list_options_in_config', option => $_);
+					} elsif (!defined $optref->{value}) {
+						# fill from config
+						my $decoded = $optref->{binary} ? $cfg->{$_} : $self->decode_config_value($cfg->{$_});
+						last unless defined $decoded;
+						@{$optref}{qw/value source/} = ($decoded, 'config'); # TODO: support for array options??
+					}
+				} else {
+					error('unknown_config_option', option => $_);
 				}
 			}
 		}
@@ -544,7 +554,7 @@ sub scope($@)
 
 sub present(@) # TODO: test that it works with arrays
 {
-	my ($name) = @_;
+	my $name = @_ ? shift : $_;
 	assert_option for $name;
 	return defined($context->{options}->{$name}->{value})
 };
@@ -564,6 +574,12 @@ sub value($)
 	confess "option not present" unless defined($context->{options}->{$name}->{value});
 	return $context->{options}->{$name}->{value};
 };
+
+sub lists(@)
+{
+	my @a = @_;
+	grep { my $o = $_; first { $_ eq $o->{name} } @a; } @{$context->{option_list}};
+}
 
 sub raw_option($)
 {
