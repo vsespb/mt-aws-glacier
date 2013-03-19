@@ -231,6 +231,99 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 2. You can use other optional options with this command (`concurrency`, `partsize`)
 
+## File selection options
+
+`filter`, `include`, `exclude` options allow you to construct a list of RULES to select only certain files for the operation.
+
++ **--filter**
+
+	Adds one or several RULES to the list of rules. One filter value can contain multiple rules, it has same effect as multiple filter values with one
+	RULE each.
+	
+	>`--filter='RULE1 RULE2' --filter 'RULE3'`
+
+	>is same as
+
+	>`--filter 'RULE1 RULE2 RULE3'`
+
+
+	RULES should be a sequence of PATTERNS, followed by '+' or '-' and separated by a spaces. There can be a space between '+'/'-' and PATTERN.
+
+	>`RULES: [+-]PATTERN [+-]PATTERN ...`
+
+
+	'+' means INCLUDE PATTERN, '-' means EXCLUDE PATTERN
+
+
+	NOTES:
+	
+	>1. If RULES contain spaces or wildcards, you must quote it when running `mtglacier` from Shell
+
+	>2. Although, PATTERN can contain spaces, you cannot use if, because RULES separated by a space(s).
+
+	>3. PATTERN can be empty
+
++ **--include**
+
+	Adds an INCLUDE PATTERN to list of rules
+
++ **--exclude**
+
+	Adds an EXCLUDE PATTERN to list of rules
+	
+	NOTES:
+
+	>1. You can use spaces in PATTERNS here
+
+
++ **How PATTERNS work**
+
+>1. If the pattern starts with a '/' then it is anchored to a particular spot in the hierarchy of files, otherwise it is matched against the final
+component of the filename.
+
+>2. If the pattern ends with a '/' then it will only match a directory and all files/subdirectories inside this directory. It won't match regular file.
+Note that if directory is empty, it won't be synchronized to Amazon Glacier, as it does not support directories
+
+>3. If pattern does not end with a '/', it won't match directory (directories are not supported by Amazon Glacier, so it makes no sense to match a directory
+without subdirectories). However if, in future versions, we find a way to store empty directories in Amazon Glacier, this behavior may change.
+
+>4. if the pattern contains a '/' (not counting a trailing '/') then it is matched against the full pathname, including any leading directories.
+Otherwise it is matched only against the final component of the filename.
+
+>5. Wildcard '*' matches any path component, but it stops at slashes.
+
+>6. Wildcard '**' matches anything, including slashes.
+
+>7. When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories.
+
+>8. Wildcard '?' matches any character except a slash ('/').
+
+>9. if PATTERN is empty, it matches anything.
+
+>10. If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
+
+
++ **How rules are processed**
+
+>1. A filename is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
+No other rules checked after first match.
+
+>2. When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
+
+>3. When traverse directory tree, (in contrast to behavior of some tools, like _Rsync_), if a directory (and all subdirectories) match exclude pattern,
+directory tree is not pruned, traversal go into the directory. So this will work fine (it will match /tmp/data/a/b/c):
+
+>>		--filter '+/tmp/data/a/b/c -/tmp/data -'
+
+>>In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
+This only can happen when `mtglacier` absolutely sure that it won't break behavior described above.
+It's guaranteed that traversal stop only in case when:
+
+>>a) A directory match EXCLUDE rule without '!' prefix, ending with '/' or '**', or empty rule
+
+>>b) AND there is no INCLUDE rules before this exclude RULE
+
+
 ## Additional command line options
 
 1. `concurrency` (with `sync`, `upload-file`, `restore`, `restore-completed` commands) - number of parallel upload streams to run. (default 4)
