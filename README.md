@@ -332,7 +332,7 @@ Otherwise it is matched only against the final component of the filename.
 
 + **How rules are processed**
 
-+ 1) A filename is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
++ 1) File's relative filename (relative to `--from-dir` root) is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
 No other rules checked after first match.
 
 		`--filter '+*.txt -file.txt'` File `file.txt` is INCLUDED, it matches 1st pattern, so 2nd pattern is ignored
