@@ -282,78 +282,78 @@ Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed 
 
 + **How PATTERNS work**
 
->+ 1)  If the pattern starts with a '/' then it is anchored to a particular spot in the hierarchy of files, otherwise it is matched against the final
++ 1)  If the pattern starts with a '/' then it is anchored to a particular spot in the hierarchy of files, otherwise it is matched against the final
 component of the filename.
 
->> _Example_: `/tmp/myfile` - matches only `/tmp/myfile`. But `tmp/myfile` - matches `/tmp/myfile` and `/home/john/tmp/myfile`
+> _Example_: `/tmp/myfile` - matches only `/tmp/myfile`. But `tmp/myfile` - matches `/tmp/myfile` and `/home/john/tmp/myfile`
 
->+ 2) If the pattern ends with a '/' then it will only match a directory and all files/subdirectories inside this directory. It won't match regular file.
++ 2) If the pattern ends with a '/' then it will only match a directory and all files/subdirectories inside this directory. It won't match regular file.
 Note that if directory is empty, it won't be synchronized to Amazon Glacier, as it does not support directories
 
->> _Example_: `log/` - matches only directory `log`, but not a file `log`
+> _Example_: `log/` - matches only directory `log`, but not a file `log`
 
->+ 3) If pattern does not end with a '/', it won't match directory (directories are not supported by Amazon Glacier, so it makes no sense to match a directory
++ 3) If pattern does not end with a '/', it won't match directory (directories are not supported by Amazon Glacier, so it makes no sense to match a directory
 without subdirectories). However if, in future versions, we find a way to store empty directories in Amazon Glacier, this behavior may change.
 
->> _Example_: `log` - matches only file `log`, but not a directory `log` nor files inside it
+> _Example_: `log` - matches only file `log`, but not a directory `log` nor files inside it
 
->+ 4) if the pattern contains a '/' (not counting a trailing '/') then it is matched against the full pathname, including any leading directories.
++ 4) if the pattern contains a '/' (not counting a trailing '/') then it is matched against the full pathname, including any leading directories.
 Otherwise it is matched only against the final component of the filename.
 
->> _Example_: `myfile` - matches `myfile` in any directory (i.e. matches both `/home/ivan/myfile` and `/data/tmp/myfile`), but it does not match
+> _Example_: `myfile` - matches `myfile` in any directory (i.e. matches both `/home/ivan/myfile` and `/data/tmp/myfile`), but it does not match
 `/tmp/myfile/myfile1`. While `tmp/myfile` matches `/data/tmp/myfile` and `/tmp/myfile/myfile1`
 
->+ 5) Wildcard '*' matches zero or more characters, but it stops at slashes.
++ 5) Wildcard '*' matches zero or more characters, but it stops at slashes.
 
->> _Example_: `/tmp*/file` matches `/tmp/file`, `/tmp1/file`, `/tmp2/file` but not `tmp1/x/file`
+> _Example_: `/tmp*/file` matches `/tmp/file`, `/tmp1/file`, `/tmp2/file` but not `tmp1/x/file`
 
->+ 6) Wildcard '**' matches anything, including slashes.
++ 6) Wildcard '**' matches anything, including slashes.
 
->> _Example_: `/tmp**/file` matches `/tmp/file`, `/tmp1/file`, `/tmp2/file`, `tmp1/x/file` and `tmp1/x/y/z/file`
+> _Example_: `/tmp**/file` matches `/tmp/file`, `/tmp1/file`, `/tmp2/file`, `tmp1/x/file` and `tmp1/x/y/z/file`
 
->+ 7) When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories.
++ 7) When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories.
 
->> _Example_: `/foo/**/bar` matches `foo/bar` and `foo/x/bar`. Also `**/file` matches `/file` and `x/file`
+> _Example_: `/foo/**/bar` matches `foo/bar` and `foo/x/bar`. Also `**/file` matches `/file` and `x/file`
 
->+ 8) Wildcard '?' matches any (exactly one) character except a slash ('/').
++ 8) Wildcard '?' matches any (exactly one) character except a slash ('/').
 
->> _Example_: `??.txt` matches `11.txt`, `xy.txt` but not `abc.txt`
+> _Example_: `??.txt` matches `11.txt`, `xy.txt` but not `abc.txt`
 
->+ 9) if PATTERN is empty, it matches anything.
++ 9) if PATTERN is empty, it matches anything.
 
->> _Example_: `mtglacier ... --filter '+data/ -'` - Last pattern is empty string (followed by '-')
+> _Example_: `mtglacier ... --filter '+data/ -'` - Last pattern is empty string (followed by '-')
 
->+ 10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
++ 10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
 
->> _Example_: `mtglacier ... --filter '-!/data/ +*.gz'` - include only `*.gz` files inside `data/` directory. 
+> _Example_: `mtglacier ... --filter '-!/data/ +*.gz'` - include only `*.gz` files inside `data/` directory. 
 
 + **How rules are processed**
 
->1. A filename is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
++ 1) A filename is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
 No other rules checked after first match.
 
->> _Example_: `--filter '+*.txt -file.txt'` File `file.txt` is INCLUDED, it matches 1st pattern, so 2nd pattern is ignored
+> _Example_: `--filter '+*.txt -file.txt'` File `file.txt` is INCLUDED, it matches 1st pattern, so 2nd pattern is ignored
 
->2. If no rules matched - file is included (default rule is INCLUDE rule).
++ 2) If no rules matched - file is included (default rule is INCLUDE rule).
 
->> _Example_: `--filter '+*.jpeg'` File `file.txt` is INCLUDED, as it does not match any rules
+> _Example_: `--filter '+*.jpeg'` File `file.txt` is INCLUDED, as it does not match any rules
 
->3. When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
++ 3) When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
 
->4. When traverse directory tree, (in contrast to behavior of some tools, like _Rsync_), if a directory (and all subdirectories) match exclude pattern,
++ 4) When traverse directory tree, (in contrast to behavior of some tools, like _Rsync_), if a directory (and all subdirectories) match exclude pattern,
 directory tree is not pruned, traversal go into the directory. So this will work fine (it will include `/tmp/data/a/b/c`, but exclude all other files in `/tmp/data`):
 
->>		--filter '+/tmp/data/a/b/c -/tmp/data +'
+>		--filter '+/tmp/data/a/b/c -/tmp/data +'
 
->>In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
+>In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
 This only can happen when `mtglacier` absolutely sure that it won't break behavior described above.
 Currently it's guaranteed that traversal stop only in case when:
 
->>a) A directory match EXCLUDE rule without '!' prefix, ending with '/' or '**', or empty rule
+>a) A directory match EXCLUDE rule without '!' prefix, ending with '/' or '**', or empty rule
 
->>b) AND there are no INCLUDE rules before this EXCLUDE RULE
+>b) AND there are no INCLUDE rules before this EXCLUDE RULE
 
->> _Example_: `--filter '-*.tmp -/media/ -/proc/ +*.jpeg'` - system '/proc' and huge '/media' directory is not traversed. 
+> _Example_: `--filter '-*.tmp -/media/ -/proc/ +*.jpeg'` - system '/proc' and huge '/media' directory is not traversed. 
 
 ## Additional command line options
 
