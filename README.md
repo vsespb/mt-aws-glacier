@@ -234,6 +234,7 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 ## File selection options
 
 `filter`, `include`, `exclude` options allow you to construct a list of RULES to select only certain files for the operation.
+Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed ` and `check-local-hash`
 
 + **--filter**
 
@@ -257,72 +258,102 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 	NOTES:
 	
-	>1. If RULES contain spaces or wildcards, you must quote it when running `mtglacier` from Shell
+	>1. If RULES contain spaces or wildcards, you must quote it when running `mtglacier` from Shell (_Example_: `mtglacier ... --filter -tmp/` but `mtglacier --filter '-log/ -tmp/'`)
 
 	>2. Although, PATTERN can contain spaces, you cannot use if, because RULES separated by a space(s).
 
-	>3. PATTERN can be empty
+	>3. PATTERN can be empty (_Example_: "`--filter +data/ --filter -`" - excludes everything except any directory with name `data`, last pattern is empty)
+
+	>4. Unlike other options, `filter`, `include` and `exclude` cannot be used in config file (in order to avoid mess with order of rules)
+
 
 + **--include**
 
-	Adds an INCLUDE PATTERN to list of rules
+	Adds an INCLUDE PATTERN to list of rules (_Example_: `--include /data/ --filter '+/photos/ -'` - include only photos and data directories)
 
 + **--exclude**
 
-	Adds an EXCLUDE PATTERN to list of rules
+	Adds an EXCLUDE PATTERN to list of rules (_Example_: `--exclude /data/` - include everything except /data and subdirectories)
 	
 	NOTES:
 
-	>1. You can use spaces in PATTERNS here
+	>1. You can use spaces in PATTERNS here (_Example_: `--exclude '/my documents/'` - include everything except "/my documents" and subdirectories)
 
 
 + **How PATTERNS work**
 
->1. If the pattern starts with a '/' then it is anchored to a particular spot in the hierarchy of files, otherwise it is matched against the final
+>+ 1)  If the pattern starts with a '/' then it is anchored to a particular spot in the hierarchy of files, otherwise it is matched against the final
 component of the filename.
 
->2. If the pattern ends with a '/' then it will only match a directory and all files/subdirectories inside this directory. It won't match regular file.
+>> _Example_: `/tmp/myfile` - matches only `/tmp/myfile`. But `tmp/myfile` - matches `/tmp/myfile` and `/home/john/tmp/myfile`
+
+>+ 2) If the pattern ends with a '/' then it will only match a directory and all files/subdirectories inside this directory. It won't match regular file.
 Note that if directory is empty, it won't be synchronized to Amazon Glacier, as it does not support directories
 
->3. If pattern does not end with a '/', it won't match directory (directories are not supported by Amazon Glacier, so it makes no sense to match a directory
+>> _Example_: `log/` - matches only directory `log`, but not a file `log`
+
+>+ 3) If pattern does not end with a '/', it won't match directory (directories are not supported by Amazon Glacier, so it makes no sense to match a directory
 without subdirectories). However if, in future versions, we find a way to store empty directories in Amazon Glacier, this behavior may change.
 
->4. if the pattern contains a '/' (not counting a trailing '/') then it is matched against the full pathname, including any leading directories.
+>> _Example_: `log` - matches only file `log`, but not a directory `log` nor files inside it
+
+>+ 4) if the pattern contains a '/' (not counting a trailing '/') then it is matched against the full pathname, including any leading directories.
 Otherwise it is matched only against the final component of the filename.
 
->5. Wildcard '*' matches any path component, but it stops at slashes.
+>> _Example_: `myfile` - matches `myfile` in any directory (i.e. matches both `/home/ivan/myfile` and `/data/tmp/myfile`), but it does not match
+`/tmp/myfile/myfile1`. While `tmp/myfile` matches `/data/tmp/myfile` and `/tmp/myfile/myfile1`
 
->6. Wildcard '**' matches anything, including slashes.
+>+ 5) Wildcard '*' matches zero or more characters, but it stops at slashes.
 
->7. When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories.
+>> _Example_: `/tmp*/file` matches `/tmp/file`, `/tmp1/file`, `/tmp2/file` but not `tmp1/x/file`
 
->8. Wildcard '?' matches any character except a slash ('/').
+>+ 6) Wildcard '**' matches anything, including slashes.
 
->9. if PATTERN is empty, it matches anything.
+>> _Example_: `/tmp**/file` matches `/tmp/file`, `/tmp1/file`, `/tmp2/file`, `tmp1/x/file` and `tmp1/x/y/z/file`
 
->10. If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
+>+ 7) When wildcard '**' meant to be a separated path component (i.e. surrounded with slashes/beginning of line/end of line), it matches 0 or more subdirectories.
 
+>> _Example_: `/foo/**/bar` matches `foo/bar` and `foo/x/bar`. Also `**/file` matches `/file` and `x/file`
+
+>+ 8) Wildcard '?' matches any (exactly one) character except a slash ('/').
+
+>> _Example_: `??.txt` matches `11.txt`, `xy.txt` but not `abc.txt`
+
+>+ 9) if PATTERN is empty, it matches anything.
+
+>> _Example_: `mtglacier ... --filter '+data/ -'` - Last pattern is empty string (followed by '-')
+
+>+ 10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
+
+>> _Example_: `mtglacier ... --filter '-!/data/ +*.gz'` - include only `*.gz` files inside `data/` directory. 
 
 + **How rules are processed**
 
 >1. A filename is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
 No other rules checked after first match.
 
->2. When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
+>> _Example_: `--filter '+*.txt -file.txt'` File `file.txt` is INCLUDED, it matches 1st pattern, so 2nd pattern is ignored
 
->3. When traverse directory tree, (in contrast to behavior of some tools, like _Rsync_), if a directory (and all subdirectories) match exclude pattern,
-directory tree is not pruned, traversal go into the directory. So this will work fine (it will match /tmp/data/a/b/c):
+>2. If no rules matched - file is included (default rule is INCLUDE rule).
 
->>		--filter '+/tmp/data/a/b/c -/tmp/data -'
+>> _Example_: `--filter '+*.jpeg'` File `file.txt` is INCLUDED, as it does not match any rules
+
+>3. When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
+
+>4. When traverse directory tree, (in contrast to behavior of some tools, like _Rsync_), if a directory (and all subdirectories) match exclude pattern,
+directory tree is not pruned, traversal go into the directory. So this will work fine (it will include `/tmp/data/a/b/c`, but exclude all other files in `/tmp/data`):
+
+>>		--filter '+/tmp/data/a/b/c -/tmp/data +'
 
 >>In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
 This only can happen when `mtglacier` absolutely sure that it won't break behavior described above.
-It's guaranteed that traversal stop only in case when:
+Currently it's guaranteed that traversal stop only in case when:
 
 >>a) A directory match EXCLUDE rule without '!' prefix, ending with '/' or '**', or empty rule
 
->>b) AND there is no INCLUDE rules before this exclude RULE
+>>b) AND there are no INCLUDE rules before this EXCLUDE RULE
 
+>> _Example_: `--filter '-*.tmp -/media/ -/proc/ +*.jpeg'` - system '/proc' and huge '/media' directory is not traversed. 
 
 ## Additional command line options
 
@@ -339,6 +370,10 @@ It's guaranteed that traversal stop only in case when:
 		--max-number-of-files=100
 
 4. `key/secret/region/vault/protocol` - you can override any option from config
+
+5. `dry-run` (with `sync`, `purge-vault`, `restore`, `restore-completed ` and even `check-local-hash` commands) - do not perform actual work, print what will happen instead. 
+
+		--dry-run
 
 ## Configuring Character Encodings
 
