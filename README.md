@@ -241,16 +241,16 @@ Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed 
 	Adds one or several RULES to the list of rules. One filter value can contain multiple rules, it has same effect as multiple filter values with one
 	RULE each.
 	
-		`--filter='RULE1 RULE2' --filter 'RULE3'`
+		--filter='RULE1 RULE2' --filter 'RULE3'
 
 	is same as
 
-		`--filter 'RULE1 RULE2 RULE3'`
+		--filter 'RULE1 RULE2 RULE3'
 
 
 	RULES should be a sequence of PATTERNS, followed by '+' or '-' and separated by a spaces. There can be a space between '+'/'-' and PATTERN.
 
-		`RULES: [+-]PATTERN [+-]PATTERN ...`
+		RULES: [+-]PATTERN [+-]PATTERN ...
 
 
 	'+' means INCLUDE PATTERN, '-' means EXCLUDE PATTERN
@@ -258,11 +258,11 @@ Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed 
 
 	NOTES:
 	
-		1. If RULES contain spaces or wildcards, you must quote it when running `mtglacier` from Shell (_Example_: `mtglacier ... --filter -tmp/` but `mtglacier --filter '-log/ -tmp/'`)
+		1. If RULES contain spaces or wildcards, you must quote it when running `mtglacier` from Shell (Example: `mtglacier ... --filter -tmp/` but `mtglacier --filter '-log/ -tmp/'`)
 
 		2. Although, PATTERN can contain spaces, you cannot use if, because RULES separated by a space(s).
 
-		3. PATTERN can be empty (_Example_: "`--filter +data/ --filter -`" - excludes everything except any directory with name `data`, last pattern is empty)
+		3. PATTERN can be empty (Example: `--filter +data/ --filter -` - excludes everything except any directory with name `data`, last pattern is empty)
 
 		4. Unlike other options, `filter`, `include` and `exclude` cannot be used in config file (in order to avoid mess with order of rules)
 
@@ -277,7 +277,7 @@ Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed 
 	
 	NOTES:
 
-		1. You can use spaces in PATTERNS here (_Example_: `--exclude '/my documents/'` - include everything except "/my documents" and subdirectories)
+		1. You can use spaces in PATTERNS here (Example: `--exclude '/my documents/'` - include everything except "/my documents" and subdirectories)
 
 
 + **How PATTERNS work**
