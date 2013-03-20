@@ -27,6 +27,7 @@ mt-aws-glacier is a client application for Glacier.
 * Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
+* File selection options for all commands (using flexible rules with wildcard support)
 * File name and modification times are stored as Glacier metadata ([metadata format for developers][mt-aws-glacier Amazon Glacier meta-data format specification])
 * Ability to re-create journal file from Amazon Glacier metadata
 * Full UTF-8 support (and full single-byte encoding support undef *BSD systems) 
@@ -328,7 +329,7 @@ Otherwise it is matched only against the final component of the filename.
 
 + 10) If PATTERN is started with '!' it only match when rest of pattern (i.e. without '!') does not match.
 
-		`mtglacier ... --filter '-!/data/ +*.gz'` - include only `*.gz` files inside `data/` directory. 
+		`mtglacier ... --filter '-!/data/ +*.gz' -` - include only `*.gz` files inside `data/` directory. 
 
 + **How rules are processed**
 
@@ -346,7 +347,7 @@ No other rules checked after first match.
 + 4) When traverse directory tree, (in contrast to behavior of some tools, like _Rsync_), if a directory (and all subdirectories) match exclude pattern,
 directory tree is not pruned, traversal go into the directory. So this will work fine (it will include `/tmp/data/a/b/c`, but exclude all other files in `/tmp/data`):
 
-		--filter '+/tmp/data/a/b/c -/tmp/data +'
+		--filter '+/tmp/data/a/b/c -/tmp/data/ +'
 
 + 5) In some cases, to reduce disk IO, directory traversal into excluded directory can be stopped.
 This only can happen when `mtglacier` absolutely sure that it won't break behavior (4) described above.
@@ -357,6 +358,8 @@ Currently it's guaranteed that traversal stop only in case when:
 + AND there are no INCLUDE rules before this EXCLUDE RULE
 
 		`--filter '-*.tmp -/media/ -/proc/ +*.jpeg'` - system '/proc' and huge '/media' directory is not traversed. 
+
++ 6) Non-ASCII characters in PATTERNS are supported.
 
 ## Additional command line options
 
