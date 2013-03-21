@@ -30,7 +30,7 @@ mt-aws-glacier is a client application for Glacier.
 * File selection options for all commands (using flexible rules with wildcard support)
 * File name and modification times are stored as Glacier metadata ([metadata format for developers][mt-aws-glacier Amazon Glacier meta-data format specification])
 * Ability to re-create journal file from Amazon Glacier metadata
-* Full UTF-8 support (and full single-byte encoding support undef *BSD systems) 
+* Full UTF-8 support (and full single-byte encoding support for *BSD systems) 
 * Upload from STDIN
 * User selectable HTTPS support. Currently defaults to plaintext HTTP
 
@@ -53,11 +53,12 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Important bugs/missed features
 
-* Zero length files are ignored
+* Zero length files are ignored (as Amazon Glacier does not support it)
 * Only multipart upload implemented, no plain upload
 * Mac OS X filesystem treated as case-sensitive
+* `sync` only uploads new files to Amazon Glacier (synchronization of modified/deleted files will be implemented soon)
 
-## Production Readiness
+## Production readiness
 
 * Not recommended to use in production until first "Release" version. Currently Beta.
 
