@@ -52,33 +52,6 @@ use App::MtAws::DeleteVaultJob;
 use App::MtAws::Utils;
 
 
-# TODO: can be replaced with perl pragmas
-$SIG{__DIE__} = sub {
-	if ($^S == 0) {
-		print STDERR "DIE outside EVAL block [$^S]\n";
-		for my $s (0..$#_) { dcs("Fatal Error: $^S $_[$s]"); };
-		exit(1); 
-	} else {
-		print STDERR "DIE inside EVAL block\n";;
-		for my $s (0..$#_) { dcs("Fatal Error: $^S $_[$s]"); };
-	}
-};
-
-# TODO: better use Carp
-sub dcs
-{
-  my ($p1, $p2) = @_;
-  # get call stack^
-  my $cs='';
-  for (my $i=1; $i<20; $i++) {
-    my ($package, $filename, $line, $subroutine,
-        $hasargs, $wantarray, $evaltext, $is_require) = caller($i);
-    last if ( ! defined($package) );
-    $cs = "\n$subroutine($filename:$line)" . $cs;
-  }
-  $cs = "Call stack: $cs\n";
-  print STDERR $cs.$p1;
-}
 
 sub main
 {
