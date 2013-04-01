@@ -74,7 +74,7 @@ Should NOT work under Windows.
 
 	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
 	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::UserAgent::https** via CPAN: `cpan -i LWP::UserAgent::https`
-	or `cpanp -i LWP::UserAgent::https` If `perl -MLWP -e 'print LWP->VERSION()'` prints 6.x version - everything is installed already.
+	or `cpanp -i LWP::UserAgent::https`
 
 
 * Install mt-aws-glacier

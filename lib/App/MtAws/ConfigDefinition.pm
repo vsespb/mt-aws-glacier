@@ -176,11 +176,15 @@ sub empty_journal
 sub check_https
 {
 	if (present('protocol') and value('protocol') eq 'https') {
-		error('IO::Socket::SSL or LWP::Protocol::https is not installed') unless LWP::UserAgent->is_protocol_supported("https");
-		error('LWP::UserAgent 6.x required to use HTTPS') unless LWP->VERSION() >= 6;
-		require LWP::Protocol::https;
-		error('LWP::Protocol::https 6.x required to use HTTPS') unless LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6;
+		if (LWP::UserAgent->is_protocol_supported("https")) {
+			error('LWP::UserAgent 6.x required to use HTTPS') unless LWP->VERSION() >= 6;
+			require LWP::Protocol::https;
+			error('LWP::Protocol::https 6.x required to use HTTPS') unless LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6;
+		} else {
+			error('IO::Socket::SSL or LWP::Protocol::https is not installed');
+		}
 	}
+	return;
 }
 
 sub check_max_size
@@ -288,26 +292,26 @@ sub get_config
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
 		
-		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
-		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts)),	};
+		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https),	};
+		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https),	};
 		
 		command 'sync' => sub {
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency partsize/, writable_journal('journal'),
+				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault concurrency partsize/, writable_journal('journal'),
 				optional(qw/max-number-of-files/),
 				filter_options, optional('dry-run')
 			))
 		};
 		
 		command 'upload-file' => sub {
-			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/, writable_journal('journal'),
+			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault concurrency/, writable_journal('journal'),
 				check_dir_or_relname, check_base_dir, mandatory('partsize'), check_max_size  ))
 		};
 				
 		
 		command 'purge-vault' => sub {
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, qw/vault concurrency/,
+				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault concurrency/,
 				writable_journal(existing_journal('journal')),
 				deprecated('dir'), filter_options, optional('dry-run')
 			))
@@ -315,7 +319,7 @@ sub get_config
 		
 		command 'restore' => sub {
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault max-number-of-files concurrency/,
+				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault max-number-of-files concurrency/,
 				writable_journal(existing_journal('journal')),
 				filter_options, optional('dry-run')
 			))
@@ -323,7 +327,7 @@ sub get_config
 		
 		command 'restore-completed' => sub {
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, qw/dir vault concurrency/, existing_journal('journal'),
+				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault concurrency/, existing_journal('journal'),
 				filter_options, optional('dry-run')
 			))
 		};
@@ -331,17 +335,17 @@ sub get_config
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, qw/dir/, existing_journal('journal'), deprecated('vault'),
+				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir/, existing_journal('journal'), deprecated('vault'),
 				filter_options, optional('dry-run')
 			))
 		};
 		
 		command 'retrieve-inventory' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, qw/vault/))
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault/))
 		};
 		
 		command 'download-inventory' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, 'vault', empty_journal('new-journal')))
+			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, check_https, 'vault', empty_journal('new-journal')))
 		};
 	});
 	return $c;
