@@ -28,6 +28,7 @@ use utf8;
 use App::MtAws::LineProtocol;
 use Carp;
 use POSIX;
+use App::MtAws::Utils;
 
 sub new
 {
@@ -73,13 +74,13 @@ sub wait_worker
 {
 	my ($self, $task_list, $ft, $journal) = @_;
 	my @ready;
-	do { @ready = $self->{disp_select}->can_read() } until @ready || $! != EINTR;
+	do { @ready = $self->{disp_select}->can_read(); } until @ready || $! != EINTR;
 	for my $fh (@ready) {
-		if (eof($fh)) {
-			$self->{disp_select}->remove($fh);
-			die "Unexpeced EOF in Pipe";
-			next; 
-		}
+		#if (eof($fh)) {
+		#	$self->{disp_select}->remove($fh);
+		#	die "Unexpeced EOF in Pipe";
+		#	next; 
+		#}
 		my ($pid, $taskid, $data) = get_response($fh);
 		push @{$self->{freeworkers}}, $pid;
 		die unless my $task = $task_list->{$taskid};
@@ -106,18 +107,20 @@ sub send_command
     my $data_e = encode_data($data);
     my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
 	my $line = "$taskid\t$action\t$attachmentsize\t$data_e\n";
-    #print ">$line\n";
-    print $fh $line;
-    print $fh $$attachmentref if $attachmentsize;
+    
+	syswritefull $fh, sprintf("%06d", length $line);
+	syswritefull $fh, $line;
+	syswritefull $fh, $$attachmentref if $attachmentsize;
 }
 
 
 sub get_response
 {
 	my ($fh) = @_;
-    my $line = <$fh>;
+	sysreadfull($fh, my $len, 6);
+	sysreadfull($fh, my $line, $len+0);
+	
     chomp $line;
-   # print "<$line\n";
     my ($pid, $taskid, $data_e) = split /\t/, $line;
     my $data = decode_data($data_e);
     return ($pid, $taskid, $data);

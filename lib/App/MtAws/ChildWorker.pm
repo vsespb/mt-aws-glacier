@@ -53,10 +53,11 @@ sub process
 	$disp_select->add($tochild);
 	do { while (my @ready = $disp_select->can_read()) {
 	    for my $fh (@ready) {
-			if (eof($fh)) {
-				$disp_select->remove($fh);
-				return;
-			}
+			#if (eof($fh)) {
+			#	$disp_select->remove($fh);
+			#	print "EOF\n";
+			#	return;
+			#}
 			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
 			my $result = undef;
 			
@@ -175,12 +176,13 @@ sub process
 sub get_command
 {
   my ($fh) = @_;
-  my $response = <$fh>;
+  sysreadfull($fh, my $len, 6);
+  sysreadfull($fh, my $response, $len+0);
   chomp $response;
   my ($taskid, $action, $attachmentsize, $data_e) = split(/\t/, $response);
   my $attachment = undef;
   if ($attachmentsize) {
-  	read $fh, $attachment, $attachmentsize;
+  	sysreadfull $fh, $attachment, $attachmentsize;
   }
   my $data = decode_data($data_e);
   return ($taskid, $action, $data, $attachment ? \$attachment : undef);
@@ -192,7 +194,8 @@ sub send_response
   my ($fh, $taskid, $data) = @_;
   my $data_e = encode_data($data);
   my $line = "$$\t$taskid\t$data_e\n";
-  print $fh $line;
+  syswritefull $fh, sprintf("%06d", length $line);
+  syswritefull $fh, $line;
 }
 
 
