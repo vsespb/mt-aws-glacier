@@ -30,6 +30,7 @@ use File::Basename;
 use File::Path;
 use Carp;
 use IO::Select;
+use POSIX;
 
 sub new
 {
@@ -50,7 +51,7 @@ sub process
 	my $fromchild = $self->{fromchild};
 	my $disp_select = IO::Select->new();
 	$disp_select->add($tochild);
-	while (my @ready = $disp_select->can_read()) {
+	do { while (my @ready = $disp_select->can_read()) {
 	    for my $fh (@ready) {
 			if (eof($fh)) {
 				$disp_select->remove($fh);
@@ -167,7 +168,7 @@ sub process
 			$result->{console_out}=$console_out;
 			send_response($fromchild, $taskid, $result);
 	    }
-	}
+	} } until $! != EINTR;
 }
 
 

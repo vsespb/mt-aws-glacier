@@ -27,6 +27,7 @@ use warnings;
 use utf8;
 use App::MtAws::LineProtocol;
 use Carp;
+use POSIX;
 
 sub new
 {
@@ -71,7 +72,8 @@ sub process_task
 sub wait_worker
 {
 	my ($self, $task_list, $ft, $journal) = @_;
-	my @ready = $self->{disp_select}->can_read();
+	my @ready;
+	do { @ready = $self->{disp_select}->can_read() } until @ready || $! != EINTR;
 	for my $fh (@ready) {
 		if (eof($fh)) {
 			$self->{disp_select}->remove($fh);
