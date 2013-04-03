@@ -176,13 +176,18 @@ sub process
 sub get_command
 {
   my ($fh) = @_;
-  sysreadfull($fh, my $len, 6);
-  sysreadfull($fh, my $response, $len+0);
+  my ($len, $response);
+  
+  sysreadfull($fh, $len, 6) &&
+  sysreadfull($fh, $response, $len+0) or
+  comm_error();
+  
   chomp $response;
   my ($taskid, $action, $attachmentsize, $data_e) = split(/\t/, $response);
   my $attachment = undef;
   if ($attachmentsize) {
-  	sysreadfull $fh, $attachment, $attachmentsize;
+  	sysreadfull $fh, $attachment, $attachmentsize or
+  	comm_error();
   }
   my $data = decode_data($data_e);
   return ($taskid, $action, $data, $attachment ? \$attachment : undef);
@@ -194,10 +199,16 @@ sub send_response
   my ($fh, $taskid, $data) = @_;
   my $data_e = encode_data($data);
   my $line = "$$\t$taskid\t$data_e\n";
-  syswritefull $fh, sprintf("%06d", length $line);
-  syswritefull $fh, $line;
+
+  syswritefull($fh, sprintf("%06d", length $line)) &&
+  syswritefull($fh, $line) or
+  comm_error();
 }
 
-
+sub comm_error
+{
+	# error message useless here
+	exit(1);
+}
 
 1;

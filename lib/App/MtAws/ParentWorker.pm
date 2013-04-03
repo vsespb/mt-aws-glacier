@@ -59,7 +59,7 @@ sub process_task
 				my $worker_pid = shift @{$self->{freeworkers}};
 				my $worker = $self->{children}->{$worker_pid};
 				$task_list->{$task->{id}} = $task;
-				send_command($worker->{tochild}, $task->{id}, $task->{action}, $task->{data}, $task->{attachment});
+				$self->send_command($worker->{tochild}, $task->{id}, $task->{action}, $task->{data}, $task->{attachment});
 			} else {
 				die;
 			}
@@ -81,7 +81,7 @@ sub wait_worker
 		#	die "Unexpeced EOF in Pipe";
 		#	next; 
 		#}
-		my ($pid, $taskid, $data) = get_response($fh);
+		my ($pid, $taskid, $data) = $self->get_response($fh);
 		push @{$self->{freeworkers}}, $pid;
 		die unless my $task = $task_list->{$taskid};
 		$task->{result} = $data;
@@ -103,22 +103,27 @@ sub wait_worker
 
 sub send_command
 {
-	my ($fh, $taskid, $action, $data, $attachmentref) = @_;
+	my ($self, $fh, $taskid, $action, $data, $attachmentref) = @_;
     my $data_e = encode_data($data);
     my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
 	my $line = "$taskid\t$action\t$attachmentsize\t$data_e\n";
     
-	syswritefull $fh, sprintf("%06d", length $line);
-	syswritefull $fh, $line;
-	syswritefull $fh, $$attachmentref if $attachmentsize;
+	syswritefull($fh, sprintf("%06d", length $line)) &&
+	syswritefull($fh, $line) &&
+	(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
+	$self->comm_error;
 }
 
 
 sub get_response
 {
-	my ($fh) = @_;
-	sysreadfull($fh, my $len, 6);
-	sysreadfull($fh, my $line, $len+0);
+	my ($self, $fh) = @_;
+	
+	my ($len, $line);
+	
+	sysreadfull($fh, $len, 6) &&
+	sysreadfull($fh, $line, $len+0) or
+	$self->comm_error;
 	
     chomp $line;
     my ($pid, $taskid, $data_e) = split /\t/, $line;
@@ -126,5 +131,13 @@ sub get_response
     return ($pid, $taskid, $data);
 }
 
+sub comm_error
+{
+	my ($self) = @_;
+	sleep 1; # let's wait for SIGCHLD in order to have same error message in same cases
+	kill (POSIX::SIGUSR2, keys %{$self->{children}});
+	print STDERR "EXIT eof/error when communicate with child process\n";
+	exit(1);
+}
 
 1;
