@@ -132,7 +132,6 @@ sub sysreadfull($$$)
 				$n += $i;
 			}
 		} elsif ($! == EINTR) {
-			print "EINTR\n";
 			redo;
 		} else {
 			return undef;
@@ -150,7 +149,6 @@ sub syswritefull($$)
 		if (defined($i)) {
 			$n += $i;
 		} elsif ($! == EINTR) {
-			print "EINTR\n";
 			redo;
 		} else {
 			return undef;
