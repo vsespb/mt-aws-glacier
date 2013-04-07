@@ -60,6 +60,7 @@ for (
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
+			'leaf-optimization' => '1',
 		}, "$_ result");
 		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
 	};
@@ -86,6 +87,7 @@ for (
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
+			'leaf-optimization' => '1',
 		}, "$_ result");
 	};
 }
@@ -111,6 +113,7 @@ for (
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
+			'leaf-optimization' => '1',
 		}, "$_ result");
 	}
 }
@@ -133,6 +136,7 @@ for (
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
+			'leaf-optimization' => '1',
 		}, "$_ result");
 	};
 }
@@ -160,6 +164,7 @@ for (
 			concurrency => 8,
 			partsize => 2,
 			journal => 'journal.log',
+			'leaf-optimization' => '1',
 		}, "$_ result");
 		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
 	}
@@ -214,6 +219,7 @@ for (
 			'max-number-of-files' => 42,
 			partsize => $default_partsize,
 			journal => 'journal.log',
+			'leaf-optimization' => '1',
 		}, "$_ result");
 		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
 	}
