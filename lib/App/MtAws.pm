@@ -396,7 +396,8 @@ Common options:
 	--protocol - Use http or https to connect to Glacier
 	--partsize - Glacier multipart upload part size
 	--filter --include --exclude - File filtering
-	--dry-run
+	--dry-run - Don't do anything
+	--leaf-optimization - Don't use directory hardlinks count when traverse.
 Commands:
 	sync
 	purge-vault
