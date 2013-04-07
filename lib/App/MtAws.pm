@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.936beta";
+our $VERSION = "0.941beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -119,7 +119,8 @@ sub main
 		
 		my $partsize = delete $options->{partsize};
 		
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir},
+			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'});
 		
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 0);
@@ -395,7 +396,8 @@ Common options:
 	--protocol - Use http or https to connect to Glacier
 	--partsize - Glacier multipart upload part size
 	--filter --include --exclude - File filtering
-	--dry-run
+	--dry-run - Don't do anything
+	--leaf-optimization - Don't use directory hardlinks count when traverse.
 Commands:
 	sync
 	purge-vault

@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.936 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.941 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -74,7 +74,7 @@ Should NOT work under Windows.
 
 	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
 	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::UserAgent::https** via CPAN: `cpan -i LWP::UserAgent::https`
-	or `cpanp -i LWP::UserAgent::https` If `perl -MLWP -e 'print LWP->VERSION()'` prints 6.x version - everything is installed already.
+	or `cpanp -i LWP::UserAgent::https`
 
 
 * Install mt-aws-glacier
@@ -100,6 +100,7 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 * For backup created with older versions (0.7x) of mt-aws-glacier, Journal file **required to restore backup**.
 
+* When work with CD-ROM/CIFS/other non-Unix/non-POSIX filesystems, you might need set `leaf-optimization` to `0`
 
 [Amazon Glacier faq]:http://aws.amazon.com/glacier/faqs/#How_will_I_be_charged_when_retrieving_large_amounts_of_data_from_Amazon_Glacier
 
@@ -363,6 +364,7 @@ Currently it's guaranteed that traversal stop only in case when:
 + 6) Non-ASCII characters in PATTERNS are supported.
 
 ## Additional command line options
+NOTE: Any command line option can be used in config file as well.
 
 1. `concurrency` (with `sync`, `upload-file`, `restore`, `restore-completed` commands) - number of parallel upload streams to run. (default 4)
 
@@ -381,6 +383,15 @@ Currently it's guaranteed that traversal stop only in case when:
 5. `dry-run` (with `sync`, `purge-vault`, `restore`, `restore-completed ` and even `check-local-hash` commands) - do not perform actual work, print what will happen instead. 
 
 		--dry-run
+
+6. `leaf-optimization` (only `sync` command). `0` - disable. `1` - enable (default).
+Similar to [find][find] (coreutils tools) `-noleaf` option and [File::Find][File::Find] `$dont_use_nlink` option.
+When disabled number of hardlinks to directory is ignored during file tree traversal. This slow down file search, but more
+compatible with (some) CIFS/CD-ROM filesystems.
+For more information see [find][find] and [File::Find][File::Find] manuals. 
+
+[find]:http://unixhelp.ed.ac.uk/CGI/man-cgi?find
+[File::Find]:http://search.cpan.org/perldoc?File%3A%3AFind
 
 ## Configuring Character Encodings
 
