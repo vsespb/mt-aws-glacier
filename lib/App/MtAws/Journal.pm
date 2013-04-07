@@ -227,6 +227,7 @@ sub _read_files
 	my $i = 0;
 	# TODO: find better workaround than "-s"
 	$File::Find::prune = 0;
+	$File::Find::dont_use_nlink = !$self->{leaf_optimization};
 	File::Find::find({ wanted => sub {
 		if ($max_number_of_files && (scalar @$filelist >= $max_number_of_files)) {
 			$File::Find::prune = 1;

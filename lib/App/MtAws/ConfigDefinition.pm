@@ -229,6 +229,7 @@ sub get_config
 		}
 		
 		option 'base-dir';
+		validation option('leaf-optimization', default => 1), message('%option a% should be either "1" or "0"'), sub { /^[01]$/ };
 		
 		for (option 'filename') {
 			validation $_, message('%option a% not a file'), stop => 1, sub { -f binaryfilename };
@@ -298,7 +299,7 @@ sub get_config
 		command 'sync' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault concurrency partsize/, writable_journal('journal'),
-				optional(qw/max-number-of-files/),
+				optional(qw/max-number-of-files leaf-optimization/),
 				filter_options, optional('dry-run')
 			))
 		};

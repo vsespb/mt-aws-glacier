@@ -119,7 +119,8 @@ sub main
 		
 		my $partsize = delete $options->{partsize};
 		
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir},
+			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'});
 		
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 0);
