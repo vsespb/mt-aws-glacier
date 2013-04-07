@@ -1,3 +1,8 @@
+2013-04-07 v0.941beta
+	* Regression fixed - A code which prints user friendly error message, in case HTTPS libraries are not installed, was not working.
+	* leaf-optimization option added (default is on).
+	Allows to disable file tree traversal leaf-optimization for (some? broken?) CIFS/CD-ROM filesystems
+
 2013-03-19 v0.936beta
 	* File selection implemented (see "File selection options" in README)
 	* --dry-run command implemented
