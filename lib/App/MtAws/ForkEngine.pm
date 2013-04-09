@@ -163,7 +163,7 @@ sub terminate_children
 {
 	my ($self) = @_;
 	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
-	kill (12, keys %{$self->{children}});
+	kill (POSIX::SIGUSR2, keys %{$self->{children}});
 	while(wait() != -1) { print STDERR "wait\n";};
 	print STDERR "OK DONE\n";
 	exit(0);
