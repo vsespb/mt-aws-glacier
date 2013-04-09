@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.941beta";
+our $VERSION = "0.942beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -397,9 +397,9 @@ Common options:
 	--partsize - Glacier multipart upload part size
 	--filter --include --exclude - File filtering
 	--dry-run - Don't do anything
-	--leaf-optimization - Don't use directory hardlinks count when traverse.
 Commands:
 	sync
+		--leaf-optimization - Don't use directory hardlinks count when traverse.
 	purge-vault
 	restore
 	restore-completed

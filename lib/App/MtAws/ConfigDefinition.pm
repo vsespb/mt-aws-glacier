@@ -30,6 +30,7 @@ use List::Util qw/first/;
 use App::MtAws::Utils;
 use App::MtAws::ConfigEngine;
 use App::MtAws::Filter;
+use LWP::UserAgent;
 
 sub filter_options
 {

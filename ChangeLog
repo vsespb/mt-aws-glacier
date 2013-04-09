@@ -1,3 +1,6 @@
+2013-04-09 v0.942beta
+	* Regression fixed - print user friendly error message in case Permission Denied errors.
+
 2013-04-07 v0.941beta
 	* Regression fixed - A code which prints user friendly error message, in case HTTPS libraries are not installed, was not working.
 	* leaf-optimization option added (default is on).

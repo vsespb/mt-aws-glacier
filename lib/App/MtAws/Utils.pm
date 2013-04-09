@@ -78,6 +78,10 @@ sub open_file($%)
 	my $filename = shift;
 	my (%args) = (use_filename_encoding => 1, should_exist => 1, @_);
 	
+	my %checkargs = %args;
+	defined $checkargs{$_} && delete $checkargs{$_} for qw/use_filename_encoding should_exist mode file_encoding not_empty binary/;
+	confess "Unknown argument(s) to open_file: ".join(';', keys %checkargs) if %checkargs;
+	
 	confess "unknown mode $args{mode}" unless $args{mode} =~ m!^(<|>>?)$!;
 	my $mode = $args{mode};
 	
