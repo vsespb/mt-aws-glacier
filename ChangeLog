@@ -1,3 +1,8 @@
+2013-04-27 v0.943beta
+	* Debug code added to troubleshoot issues #28,#33
+	If MTGLACIER_DEBUG_INVENTORY=1 is set, download-inventory command
+	will write two log files: _download_inventory_body.log and _download_inventory_headers.log with request/response headers and response body
+
 2013-04-09 v0.942beta
 	* Regression fixed - print user friendly error message in case Permission Denied errors.
 
