@@ -229,9 +229,27 @@ sub retrieval_download_to_memory
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
+	
+	if ($ENV{MTGLACIER_DEBUG_INVENTORY}) {
+		my $d_content = $resp->decoded_content;
+		my $content = $resp->content;
+		
+		open FF, ">_download_inventory_headers.log";
+		print FF $resp->request->dump;
+		print FF $resp->dump;
+		print FF "\n\nContent length:[".length($d_content)."]\n";
+		print FF "Content match decoded content:[".($d_content eq $content)."]\n";
+		close FF;
+
+		open FF, ">_download_inventory_body.log";
+		print FF $d_content;
+		close FF;
+	}
+	
 	return $resp ? $resp->decoded_content : undef;
 }
 
+# TODO: remove
 sub download_inventory
 {
 	my ($self, $jobid) = @_;
