@@ -16,6 +16,10 @@
   * Protect IO calls from possible EINTR to avoid possible Perl
   bug http://www.perlmonks.org/?node_id=1026468 http://www.perlmonks.org/?node_id=1026542
 
+  * Workaround a Perl "feature": When terminal-encoding set to single-byte encoding (i.e. under *BSD), whole thing
+  can hang (with 100% CPU) if random data (i.e. user files content, non UTF-8 filenames, binary hashes) printed to
+  STDERR (i.e. a stacktrace after error) https://rt.perl.org/rt3//Public/Bug/Display.html?id=117537
+
 ### 2013-04-27 v0.943 beta
 
   * Debug code added to troubleshoot issues #28,#33:
