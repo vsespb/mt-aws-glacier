@@ -23,7 +23,10 @@
   * Documentation: This ChangeLog reformatted for better readability
 
   * Documentation: Journal Concept section added https://github.com/vsespb/mt-aws-glacier#journal-concept
-  
+
+  * Documentation: --from-dir was changed to --dir and --to-vault changed to --vault (in code this change was several
+  versions ago. both options are valid now. --from-dir and --to-vault will be deprecated soon)
+
 ### 2013-04-27 v0.943 beta
 
   * Debug code added to troubleshoot issues #28,#33:

@@ -126,26 +126,26 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
-		./mtglacier sync --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --concurrency=3
+		./mtglacier sync --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log --concurrency=3
 
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
-		./mtglacier check-local-hash --config=glacier.cfg --from-dir /data/backup --to-vault=myvault -journal=journal.log
+		./mtglacier check-local-hash --config=glacier.cfg --dir /data/backup --vault=myvault -journal=journal.log
     
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
 
-		./mtglacier restore --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log --max-number-of-files=10
+		./mtglacier restore --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log --max-number-of-files=10
 
 10. Wait 4+ hours for Amazon Glacier to complete archive retrieval
 11. Download restored files back to backup location
 
-		./mtglacier restore-completed --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		./mtglacier restore-completed --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log
 
 12. Delete all your files from vault
 
-		./mtglacier purge-vault --config=glacier.cfg --from-dir /data/backup --to-vault=myvault --journal=journal.log
+		./mtglacier purge-vault --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log
 		
 13. Wait ~ 24-48 hours and you can try deleting your vault
 
@@ -456,7 +456,7 @@ Otherwise it is matched only against the final component of the filename.
 
 + **How rules are processed**
 
-+ 1) File's relative filename (relative to `--from-dir` root) is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
++ 1) File's relative filename (relative to `--dir` root) is checked against rules in the list. Once filename match PATTERN, file is included or excluded depending on the kind of PATTERN matched.
 No other rules checked after first match.
 
 		`--filter '+*.txt -file.txt'` File `file.txt` is INCLUDED, it matches 1st pattern, so 2nd pattern is ignored
