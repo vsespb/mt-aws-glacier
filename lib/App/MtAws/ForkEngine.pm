@@ -28,6 +28,7 @@ use IO::Pipe;
 use Carp;
 use App::MtAws::ChildWorker;
 use App::MtAws::ParentWorker;
+use POSIX;
 
 require Exporter;
 use base qw/Exporter/;
@@ -79,17 +80,27 @@ sub start_children
 	for my $n (1..$self->{options}->{concurrency}) {
 		my ($ischild, $child_fromchild, $child_tochild) = $self->create_child($disp_select);
 		if ($ischild) {
-			$SIG{INT} = $SIG{TERM} = sub { kill(12, $parent_pid); print STDERR "CHILD($$) SIGINT\n"; exit(1); };
-			$SIG{USR2} = sub { exit(0); };
 			# child code
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 			$C->process();
-			kill(2, $parent_pid);
+			kill(POSIX::SIGUSR1, $parent_pid);
 			exit(1);
 		}
 	}
-	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = sub { $SIG{CHLD}='IGNORE';kill (12, keys %{$self->{children}}) ; print STDERR "PARENT Exit\n"; exit(1); };
-	$SIG{USR2} = sub {  $SIG{CHLD}='IGNORE';print STDERR "PARENT SIGUSR2\n"; exit(1); };
+	
+	my $firt_time = 1;
+	for my $sig (qw/INT TERM CHLD USR1/) {
+		$SIG{$sig} = sub {
+			local ($!,$^E,$@);
+			if ($firt_time) {
+				$firt_time = 0;
+				kill (POSIX::SIGUSR2, keys %{$self->{children}});
+				print STDERR "EXIT on SIG$sig\n";
+				exit(1);
+			}
+		};
+	}
+	
 	return $self->{parent_worker} = App::MtAws::ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
 }
 
@@ -152,7 +163,7 @@ sub terminate_children
 {
 	my ($self) = @_;
 	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
-	kill (12, keys %{$self->{children}});
+	kill (POSIX::SIGUSR2, keys %{$self->{children}});
 	while(wait() != -1) { print STDERR "wait\n";};
 	print STDERR "OK DONE\n";
 	exit(0);

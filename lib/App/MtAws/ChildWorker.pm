@@ -30,6 +30,7 @@ use File::Basename;
 use File::Path;
 use Carp;
 use IO::Select;
+use POSIX;
 
 sub new
 {
@@ -50,12 +51,13 @@ sub process
 	my $fromchild = $self->{fromchild};
 	my $disp_select = IO::Select->new();
 	$disp_select->add($tochild);
-	while (my @ready = $disp_select->can_read()) {
+	do { while (my @ready = $disp_select->can_read()) {
 	    for my $fh (@ready) {
-			if (eof($fh)) {
-				$disp_select->remove($fh);
-				return;
-			}
+			#if (eof($fh)) {
+			#	$disp_select->remove($fh);
+			#	print "EOF\n";
+			#	return;
+			#}
 			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
 			my $result = undef;
 			
@@ -167,19 +169,25 @@ sub process
 			$result->{console_out}=$console_out;
 			send_response($fromchild, $taskid, $result);
 	    }
-	}
+	} } until $! != EINTR;
 }
 
 
 sub get_command
 {
   my ($fh) = @_;
-  my $response = <$fh>;
+  my ($len, $response);
+  
+  sysreadfull($fh, $len, 6) &&
+  sysreadfull($fh, $response, $len+0) or
+  comm_error();
+  
   chomp $response;
   my ($taskid, $action, $attachmentsize, $data_e) = split(/\t/, $response);
   my $attachment = undef;
   if ($attachmentsize) {
-  	read $fh, $attachment, $attachmentsize;
+  	sysreadfull $fh, $attachment, $attachmentsize or
+  	comm_error();
   }
   my $data = decode_data($data_e);
   return ($taskid, $action, $data, $attachment ? \$attachment : undef);
@@ -191,9 +199,16 @@ sub send_response
   my ($fh, $taskid, $data) = @_;
   my $data_e = encode_data($data);
   my $line = "$$\t$taskid\t$data_e\n";
-  print $fh $line;
+
+  syswritefull($fh, sprintf("%06d", length $line)) &&
+  syswritefull($fh, $line) or
+  comm_error();
 }
 
-
+sub comm_error
+{
+	# error message useless here
+	exit(1);
+}
 
 1;

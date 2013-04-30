@@ -27,6 +27,8 @@ use warnings;
 use utf8;
 use App::MtAws::LineProtocol;
 use Carp;
+use POSIX;
+use App::MtAws::Utils;
 
 sub new
 {
@@ -57,7 +59,7 @@ sub process_task
 				my $worker_pid = shift @{$self->{freeworkers}};
 				my $worker = $self->{children}->{$worker_pid};
 				$task_list->{$task->{id}} = $task;
-				send_command($worker->{tochild}, $task->{id}, $task->{action}, $task->{data}, $task->{attachment});
+				$self->send_command($worker->{tochild}, $task->{id}, $task->{action}, $task->{data}, $task->{attachment});
 			} else {
 				die;
 			}
@@ -71,14 +73,15 @@ sub process_task
 sub wait_worker
 {
 	my ($self, $task_list, $ft, $journal) = @_;
-	my @ready = $self->{disp_select}->can_read();
+	my @ready;
+	do { @ready = $self->{disp_select}->can_read(); } until @ready || $! != EINTR;
 	for my $fh (@ready) {
-		if (eof($fh)) {
-			$self->{disp_select}->remove($fh);
-			die "Unexpeced EOF in Pipe";
-			next; 
-		}
-		my ($pid, $taskid, $data) = get_response($fh);
+		#if (eof($fh)) {
+		#	$self->{disp_select}->remove($fh);
+		#	die "Unexpeced EOF in Pipe";
+		#	next; 
+		#}
+		my ($pid, $taskid, $data) = $self->get_response($fh);
 		push @{$self->{freeworkers}}, $pid;
 		die unless my $task = $task_list->{$taskid};
 		$task->{result} = $data;
@@ -100,26 +103,41 @@ sub wait_worker
 
 sub send_command
 {
-	my ($fh, $taskid, $action, $data, $attachmentref) = @_;
+	my ($self, $fh, $taskid, $action, $data, $attachmentref) = @_;
     my $data_e = encode_data($data);
     my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
 	my $line = "$taskid\t$action\t$attachmentsize\t$data_e\n";
-    #print ">$line\n";
-    print $fh $line;
-    print $fh $$attachmentref if $attachmentsize;
+    
+	syswritefull($fh, sprintf("%06d", length $line)) &&
+	syswritefull($fh, $line) &&
+	(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
+	$self->comm_error;
 }
 
 
 sub get_response
 {
-	my ($fh) = @_;
-    my $line = <$fh>;
+	my ($self, $fh) = @_;
+	
+	my ($len, $line);
+	
+	sysreadfull($fh, $len, 6) &&
+	sysreadfull($fh, $line, $len+0) or
+	$self->comm_error;
+	
     chomp $line;
-   # print "<$line\n";
     my ($pid, $taskid, $data_e) = split /\t/, $line;
     my $data = decode_data($data_e);
     return ($pid, $taskid, $data);
 }
 
+sub comm_error
+{
+	my ($self) = @_;
+	sleep 1; # let's wait for SIGCHLD in order to have same error message in same cases
+	kill (POSIX::SIGUSR2, keys %{$self->{children}});
+	print STDERR "EXIT eof/error when communicate with child process\n";
+	exit(1);
+}
 
 1;

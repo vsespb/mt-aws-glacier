@@ -27,13 +27,14 @@ use utf8;
 use File::Spec;
 use Carp;
 use Encode;
+use POSIX;
 
 require Exporter;
 use base qw/Exporter/;
 
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename open_file/;
+sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -120,6 +121,44 @@ sub file_size($%)
 	}
 	croak unless -f $filename;
 	return -s $filename;
+}
+
+sub sysreadfull($$$)
+{
+	my ($file, $len) = ($_[0], $_[2]);
+	my $n = 0;
+	while ($len - $n) {
+		my $i = sysread($file, $_[1], $len - $n, $n);
+		if (defined($i)) {
+			if ($i == 0) {
+				return 0;
+			} else {
+				$n += $i;
+			}
+		} elsif ($! == EINTR) {
+			redo;
+		} else {
+			return undef;
+		}
+	}
+	return $n;
+}
+
+sub syswritefull($$)
+{
+	my ($file, $len) = ($_[0], length($_[1]));
+	my $n = 0;
+	while ($len - $n) {
+		my $i = syswrite($file, $_[1], $len - $n, $n);
+		if (defined($i)) {
+			$n += $i;
+		} elsif ($! == EINTR) {
+			redo;
+		} else {
+			return undef;
+		}
+	}
+	return $n;
 }
 
 1;
