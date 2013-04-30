@@ -1,3 +1,21 @@
+### 2013-04-30 v0.944 beta
+
+  * Better signal/program termination handling.
+  Signal number has hardcoded, so on (some?) (non-linux?) systems that was a different signal, resulting in
+  core dump after successful program termination (signal with default action core dump)
+  Also previously, after termination mtglacier were sending much more signals to it child processes, than
+  required for communication, this could result in segfault it Perl (again, after successfull termination) 
+
+  * Reworked messages when mtglacier terminated (with Ctrl-C or exception)
+
+  * select() call was not protected from EINTR, this could case crash in rare circumstances (for example if ran
+  under "truss -f" on FreeBSD (strace -f analog)
+
+  * There was a mix of select()/eof() and buffered IO in Perl code, this could lead to bugs in the future.
+
+  * Protect IO calls from possible EINTR to avoid possible Perl
+  bug http://www.perlmonks.org/?node_id=1026468 http://www.perlmonks.org/?node_id=1026542
+
 ### 2013-04-27 v0.943 beta
 
   * Debug code added to troubleshoot issues #28,#33:
