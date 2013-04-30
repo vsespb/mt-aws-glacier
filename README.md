@@ -23,7 +23,7 @@ mt-aws-glacier is a client application for Glacier.
 * Glacier Multipart upload
 * Multithreaded upload
 * Multipart+Multithreaded upload
-* Multithreaded retrieval, deletion and download
+* Multithreaded archive retrieval, deletion and download
 * Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
@@ -33,11 +33,11 @@ mt-aws-glacier is a client application for Glacier.
 * Full UTF-8 support (and full single-byte encoding support for *BSD systems) 
 * Upload from STDIN
 * User selectable HTTPS support. Currently defaults to plaintext HTTP
+* Vault creation and deletion
 
 ## Coming-soon features
 
 * Multipart download (using HTTP Range header)
-* Use journal file as flock() mutex
 * Checking integrity of remote files
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
@@ -171,6 +171,127 @@ In case you lost your journal file, you can restore it from Amazon Glacier metad
 For files created by mt-aws-glacier version 0.8x and higher original filenames will be restored. For other files archive_id will be used as filename. See Amazon Glacier metadata format for mt-aws-glacier here: [Amazon Glacier metadata format used by mt-aws glacier][Amazon Glacier metadata format used by mt-aws glacier]
 
 [Amazon Glacier metadata format used by mt-aws glacier]:https://github.com/vsespb/mt-aws-glacier/blob/86031708866c7b444b6f8efa4900f42536c91c5a/MetaData.pm#L35
+
+## Journal concept
+
+#### What is Journal
+
+Journal is a file in local filesystem, which contains list of all files, uploaded to Amazon Glacier.
+Strictly saying, this file contains a list of operations (list of records), performed with Amazon Glacier vault. Main operations are:
+file creation and file deletion.
+
+Create operation records contains: *local filename* (relative to transfer root - `--dir`), file *size*, file last *modification time* (in 1 second resolution), file *TreeHash* (Amazon
+hashing algorithm, based on SHA256), file upload time, and Amazon Glacier *archive id*
+
+Delete operation records contains *local filename* and corresponding Amazon Glacier *archive id*
+
+Having such list of operation, we can, any time reconstruct list of files, that are currently stored in Amazon Glacier.
+
+As you see Journal records don't contain Amazon Glacier *region*, *vault*, file permissions, last access times and other filesystem metadata.
+
+Thus you should always use a separate Journal file for each Amazon Glacier *vault*. Also, file metadata (except filename and file *modification time*) will
+be lost, if you restore files from Amazon Glacier.
+
+#### Some Journal properties
+
+* It's a text file. You can parse it with `grep` `awk` `cut`, `tail` etc, to extract information in case you need perform some advanced stuff, that `mtglacier` can't do (NOTE: make sure you know what you're doing ).
+
+	To view only some files:
+
+		grep Majorca Photos.journal
+
+	To view only creation records:
+
+		grep CREATED Photos.journal | wc -l
+
+	To compare only important files of two journals
+
+		cut journal -f 4,5,6,7,8 |sort > journal.cut
+		cut new-journal -f 4,5,6,7,8 |sort > new-journal.cut
+		diff journal.cut new-journal.cut
+
+* Each text line in a file represent one record
+
+* It's an append-only file. File opened in append-only mode, and new records only added to the end. This guarantees that
+you can recover Journal file to previous state in case of bug in program/crash/some power/filesystem issues. You can even use `chattr +a` to set append-only protection to the Journal.
+
+* As Journal file is append-only, it's easy to perform incremental backups of it
+
+#### Why Journal is a file in local filesystem file, but not in online Cloud storage (like Amazon S3 or Amazon DynamoDB)?
+
+Journal is needed to restore backup, and we can expect that if you need to restore a backup, that means that you lost your filesystem, together with Journal.
+
+However Journal also needed to perform *new backups* (`sync` command), to determine which files are already in Glacier and which are not. And also to checking local file integrity (`check-local-hash` command).
+Actually, usually you perform new backups every day. And you restore backups (and loose your filesystem) very rare.
+
+So fast (local) journal is essential to perform new backups fast and cheap (important for users who backups thousands or millions of files).
+
+And if you lost your journal, you can restore it from Amazon Glacier (see `retrieve-inventory` command). Also it's recommended to backup your journal
+to another backup system (Amazon S3 ? Dropbox ?) with another tool, because retrieving inventory from Amazon Glacier is pretty slow.
+
+Also some users might want to backup *same* files from *multiple* different locations. They will need *synchronization* solution for journal files.
+
+Anyway I think problem of putting Journals into cloud can be automated and solved with 3 lines bash script..
+
+#### How to maintain a relation between my journal files and my vaults?
+
+1. You can name journal with same name as your vault. Example: Vault name is `Photos`. Journal file name is `Photos.journal`. Or `eu-west-1-Photos.journal`
+
+2. (Almost) Any command line option can be used in config file, so you can create `myphotos.cfg` with following content:
+
+		key=YOURKEY
+		secret=YOURSECRET
+		protocol=http
+		region=us-east-1
+		vault=Photos
+		journal=/home/me/.glacier/photos.journal
+
+#### Why Journal does not contain region/vault information?
+
+Keeping journal/vault in config does looks to me more like a Unix way. It can be a bit danger, but easier to maintain, because:
+
+1. Let's imaging I decided to put region/vault into Journal. There are two options:
+
+	a. Put it into beginning of the file, before journal creation.
+
+	b. Store same region/vault in each record of the file. It looks like a waste of disk space.
+
+	Option (a) looks better. So this way journal will contain something like
+
+		region=us-east-1
+		vault=Photos
+
+	in the beginning. But same can be achieved by putting same lines to the config file (see previous question)
+
+2. Also, putting vault/region to journal will make command line options `--vault` and `--region` useless
+for general commands and will require to add another command (something like `create-journal-file`)
+
+3. There is a possibility to use different *account id* in Amazon Glacier (i.e. different person's account). It's not supported yet in `mtglacier`,
+but when it will, I'll have to store *account id* together with *region*/*vault*. Also default *account id* is '-' (means 'my account'). If one wish to use same
+vault from a different Amazon Glacier account, he'll have to change '-' to real account id. So need to have ability to edit *account id*.
+And *region/vault* information does not have sense without account.
+
+4. Some users can have different permissions for different vaults, so they needs to maintain `key`/`secret`/`account_id` `region/vault` `journal` relation in same place
+(this only can be config file, because involves `secret`)
+
+5. Amazon might allow renaming of vaults or moving it across regions, in the future.
+
+6. Currently journal consists of independent records, so can be split to separate records using `grep`, or several
+journals can be merged using `cat` (but be careful if doing that)
+
+7. In the future, there can be other features and options added, such as compression/encryption, which might require to decide again where to put new attributes for it.
+
+8. Usually there is different policy for backing up config files and journal files (modifiable). So if you loose your journal file, you won't be sure which config corresponds to which *vault* (and journal file
+can be restored from a *vault*)
+
+9. It's better to keep relation between *vault* and transfer root (`--dir` option) in one place, such as config file.
+
+#### Why Journal (and metadata stored in Amazon Glacier) does not contain file's metadata (like permissions)?
+
+If you want to store permissions, put your files to archives before backup to Amazon Glacier. There are lot's of different possible things to store as file metadata information,
+most of them are not portable. Take a look on archives file formats - different formats allows to store different metadata.
+
+It's possible that in the future `mtglacier` will support some other metadata things.
 
 ## Other commands
 
