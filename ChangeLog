@@ -4,7 +4,7 @@
   Signal number has hardcoded, so on (some?) (non-linux?) systems that was a different signal, resulting in
   core dump after successful program termination (signal with default action core dump)
   Also previously, after termination mtglacier were sending much more signals to it child processes, than
-  required for communication, this could result in segfault it Perl (again, after successfull termination) 
+  required for communication, this could result in segfault it Perl (again, after successful termination) 
 
   * Reworked messages when mtglacier terminated (with Ctrl-C or exception)
 
@@ -20,6 +20,10 @@
   can hang (with 100% CPU) if random data (i.e. user files content, non UTF-8 filenames, binary hashes) printed to
   STDERR (i.e. a stacktrace after error) https://rt.perl.org/rt3//Public/Bug/Display.html?id=117537
 
+  * Documentation: This ChangeLog reformatted for better readability
+
+  * Documentation: Journal Concept section added https://github.com/vsespb/mt-aws-glacier#journal-concept
+  
 ### 2013-04-27 v0.943 beta
 
   * Debug code added to troubleshoot issues #28,#33:
@@ -46,7 +50,7 @@
   * --dry-run command implemented
   
   * Bug fixed - it was impossible to use some options in config (like 'from-dir' 'to-vault'). Internally
-  those were option aliases. 
+  those were option aliases.
 
 ### 2013-03-18 v0.935 beta
 
