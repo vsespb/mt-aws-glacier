@@ -192,7 +192,7 @@ As you see Journal records don't contain Amazon Glacier *region*, *vault*, file 
 Thus you should always use a separate Journal file for each Amazon Glacier *vault*. Also, file metadata (except filename and file *modification time*) will
 be lost, if you restore files from Amazon Glacier.
 
-#### Some Journal properties
+#### Some Journal features
 
 * It's a text file. You can parse it with `grep` `awk` `cut`, `tail` etc, to extract information in case you need perform some advanced stuff, that `mtglacier` can't do (NOTE: make sure you know what you're doing ).
 
