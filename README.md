@@ -204,7 +204,7 @@ be lost, if you restore files from Amazon Glacier.
 
 		grep CREATED Photos.journal | wc -l
 
-	To compare only important files of two journals
+	To compare only important fields of two journals
 
 		cut journal -f 4,5,6,7,8 |sort > journal.cut
 		cut new-journal -f 4,5,6,7,8 |sort > new-journal.cut
