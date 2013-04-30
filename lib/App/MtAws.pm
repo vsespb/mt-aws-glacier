@@ -50,6 +50,7 @@ use File::stat;
 use App::MtAws::CreateVaultJob;
 use App::MtAws::DeleteVaultJob;
 use App::MtAws::Utils;
+use PerlIO::encoding;
 
 
 # TODO: can be replaced with perl pragmas
@@ -107,8 +108,9 @@ sub main
 		exit 1;
 	}
 	if ($action ne 'help') {
-		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
+		$PerlIO::encoding::fallback = Encode::FB_QUIET;
 		binmode STDERR, ":encoding($options->{'terminal-encoding'})";
+		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
 	}
 	
 	
