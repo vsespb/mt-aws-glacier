@@ -34,7 +34,7 @@ use base qw/Exporter/;
 
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull/;
+sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -159,6 +159,15 @@ sub syswritefull($$)
 		}
 	}
 	return $n;
+}
+
+sub hex_dump_string
+{
+	my ($str) = @_;
+	$str = "(UTF-8) ".$str if utf8::is_utf8($str) && length($str) != bytes::length($str);
+	Encode::_utf8_off($str);
+	$str =~ s/([[:cntrl:]]|[[:^ascii:]])/sprintf("\\x%02X",ord($1))/eg;
+	$str;
 }
 
 1;
