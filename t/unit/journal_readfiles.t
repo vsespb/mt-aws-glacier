@@ -23,11 +23,13 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 26;
+use Test::More tests => 29;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::Journal;
+use App::MtAws::Utils;
 use Test::MockModule;
+use Encode;
 
 my $relfilename = 'def/abc';
 my $rootdir = 'root_dir';
@@ -175,6 +177,24 @@ my $data = {
 			
 		my $filelist = $J->_read_files('all', 0);
 		is_deeply($filelist, []);
+}
+
+# should catch broken UTF-8 in filename
+{
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my $brokenname = "\xD1\xD2";
+		ok ! defined eval { decode("UTF-8", $brokenname, Encode::FB_CROAK|Encode::LEAVE_SRC) }, "our UTF example should be broken";
+		my @filelist = ($brokenname);
+		
+		(my $mock_find = Test::MockModule->new('File::Find'))->
+			mock('find', sub {
+				my ($args) = @_;
+				$args->{wanted}->() for (@filelist);
+			});
+		
+		ok ! defined eval { $J->_read_files('all', 0); 1; };
+		ok extract_exception =~ /Invalid characters in filename/i;
 }
 
 # should not add file _can_read_filename_for_mode returns false

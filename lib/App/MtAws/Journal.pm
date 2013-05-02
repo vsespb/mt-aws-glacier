@@ -271,13 +271,8 @@ sub character_filename
 {
 	my ($binaryfilename) = @_;
 	my $filename;
-	unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) })) {
-		print STDERR "=== ===\nERROR: file/dir with invalid characters\nDump of file name bytes:\n";
-		require Devel::Peek;
-		Devel::Peek::Dump($binaryfilename);
-		print STDERR "=== ===\n";
-		croak;
-	}
+	die exception "Invalid characters in filename: ".hex_dump_string($binaryfilename)
+		unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) }));
 	$filename;
 }
 
