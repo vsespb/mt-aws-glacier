@@ -164,9 +164,16 @@ sub syswritefull($$)
 sub hex_dump_string
 {
 	my ($str) = @_;
-	$str = "(UTF-8) ".$str if utf8::is_utf8($str) && length($str) != bytes::length($str);
+	my $isutf = utf8::is_utf8($str) && length($str) != bytes::length($str);
 	Encode::_utf8_off($str);
+	$str =~ s/\\/\\\\/g;
+	$str =~ s/\r/\\r/g;
+	$str =~ s/\n/\\n/g;
+	$str =~ s/\t/\\t/g;
+	$str =~ s/\"/\\\"/g;
 	$str =~ s/([[:cntrl:]]|[[:^ascii:]])/sprintf("\\x%02X",ord($1))/eg;
+	$str = "\"$str\"";
+	$str = "(UTF-8) ".$str if $isutf;
 	$str;
 }
 

@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 14;
+use Test::More tests => 19;
 use Encode;
 use lib qw{../lib ../../lib};
 use App::MtAws::Utils;
@@ -35,24 +35,32 @@ my $utfprefix = "(UTF-8)";
 
 # control chars
 
-is hex_dump_string("hello"), "hello";
-is hex_dump_string("hello\n"), "hello\\x0A";
-is hex_dump_string("hello\r"), "hello\\x0D";
-is hex_dump_string("hello\r\n"), "hello\\x0D\\x0A";
-is hex_dump_string("hello\t"), "hello\\x09";
+is hex_dump_string("hello"), '"hello"';
+is hex_dump_string("hello\n"), '"hello\\n"';
+is hex_dump_string("hello\r"), '"hello\\r"';
+is hex_dump_string("hello\r\n"), '"hello\\r\\n"';
+is hex_dump_string("\nhello\n\n"), '"\\nhello\\n\\n"';
+is hex_dump_string("hello\t"), '"hello\t"';
 
-is hex_dump_string("\thello\t"), "\\x09hello\\x09", "regexp should replace multiple times";
 
-is hex_dump_string("тест"), "$utfprefix \\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82";
-is hex_dump_string("тест test"), "$utfprefix \\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82 test";
-is hex_dump_string("тест\ttest"), "$utfprefix \\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82\\x09test";
-is hex_dump_string(encode("UTF-8", "тест")), "\\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82";
+is hex_dump_string("\thello\t"), '"\\thello\t"', "regexp should replace multiple times";
+
+is hex_dump_string("тест"), "$utfprefix \"\\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82\"";
+is hex_dump_string("тест test"), "$utfprefix \"\\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82 test\"";
+is hex_dump_string("тест\ttest"), "$utfprefix \"\\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82\\ttest\"";
+is hex_dump_string(encode("UTF-8", "тест")), "\"\\xD1\\x82\\xD0\\xB5\\xD1\\x81\\xD1\\x82\"";
+
+is hex_dump_string("\x1e"), '"\\x1E"';
+
+is hex_dump_string("\\"), '"\\\\"';
+is hex_dump_string("\\A\\"), '"\\\\A\\\\"';
+is hex_dump_string("\\\\"), '"\\\\\\\\"';
 
 {
 	my $str = "test!";
 	Encode::_utf8_on $str;
 	ok utf8::is_utf8($str);
-	is hex_dump_string($str), $str;
+	is hex_dump_string($str), "\"$str\"";
 }
 
 {
@@ -61,8 +69,9 @@ is hex_dump_string(encode("UTF-8", "тест")), "\\xD1\\x82\\xD0\\xB5\\xD1\\x81
 	ok ! defined eval { decode("UTF-8", $binstr, Encode::FB_CROAK|Encode::LEAVE_SRC) }, "our UTF example should be broken";
 	my $str = $binstr;
 	Encode::_utf8_off($str);
-	is hex_dump_string($str), "\\xD1\\xD2";
+	is hex_dump_string($str), '"\\xD1\\xD2"';
 }
+
 
 1;
 
