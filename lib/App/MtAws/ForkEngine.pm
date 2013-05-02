@@ -28,6 +28,7 @@ use IO::Pipe;
 use Carp;
 use App::MtAws::ChildWorker;
 use App::MtAws::ParentWorker;
+use App::MtAws::Utils;
 use POSIX;
 
 require Exporter;
@@ -51,9 +52,16 @@ sub with_forks($$&)
 	if ($flag) {
 		$FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
+		if (defined eval {$cb->(); 1;}) {
+			$FE->terminate_children();
+		} else {
+			dump_error(q{parent});
+			$FE->terminate_children();
+			exit(1);
+		}
+	} else {
+		$cb->();
 	}
-	$cb->();
-	$FE->terminate_children() if $flag;
 }
 
 # class
@@ -82,18 +90,23 @@ sub start_children
 		if ($ischild) {
 			# child code
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
-			$C->process();
+
+			unless (defined eval {$C->process(); 1;}) {
+				dump_error(q{child});
+				exit(1);
+			}
+			
 			kill(POSIX::SIGUSR1, $parent_pid);
 			exit(1);
 		}
 	}
 	
-	my $firt_time = 1;
+	my $first_time = 1;
 	for my $sig (qw/INT TERM CHLD USR1/) {
 		$SIG{$sig} = sub {
 			local ($!,$^E,$@);
-			if ($firt_time) {
-				$firt_time = 0;
+			if ($first_time) {
+				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
 				print STDERR "EXIT on SIG$sig\n";
 				exit(1);
@@ -165,7 +178,5 @@ sub terminate_children
 	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
 	kill (POSIX::SIGUSR2, keys %{$self->{children}});
 	while(wait() != -1) { print STDERR "wait\n";};
-	print STDERR "OK DONE\n";
-	exit(0);
 }
 1;

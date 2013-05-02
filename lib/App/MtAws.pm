@@ -53,35 +53,17 @@ use App::MtAws::Utils;
 use PerlIO::encoding;
 
 
-# TODO: can be replaced with perl pragmas
-$SIG{__DIE__} = sub {
-	if ($^S == 0) {
-		print STDERR "DIE outside EVAL block [$^S]\n";
-		for my $s (0..$#_) { dcs("Fatal Error: $^S $_[$s]"); };
-		exit(1); 
-	} else {
-		print STDERR "DIE inside EVAL block\n";;
-		for my $s (0..$#_) { dcs("Fatal Error: $^S $_[$s]"); };
-	}
-};
-
-# TODO: better use Carp
-sub dcs
+sub main
 {
-  my ($p1, $p2) = @_;
-  # get call stack^
-  my $cs='';
-  for (my $i=1; $i<20; $i++) {
-    my ($package, $filename, $line, $subroutine,
-        $hasargs, $wantarray, $evaltext, $is_require) = caller($i);
-    last if ( ! defined($package) );
-    $cs = "\n$subroutine($filename:$line)" . $cs;
-  }
-  $cs = "Call stack: $cs\n";
-  print STDERR $cs.$p1;
+	unless (defined eval {process(); 1;}) {
+		dump_error(q{});
+		exit(1);
+	}
+	print "OK DONE\n";
+	exit(0);
 }
 
-sub main
+sub process
 {
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 	
@@ -104,15 +86,13 @@ sub main
 		for (@{$res->{error_texts}}) {
 			print STDERR "ERROR: ".$_."\n";
 		}
-		print STDERR "\n";
-		exit 1;
+		die exception 'Error in command line/config'
 	}
 	if ($action ne 'help') {
 		$PerlIO::encoding::fallback = Encode::FB_QUIET;
 		binmode STDERR, ":encoding($options->{'terminal-encoding'})";
 		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
 	}
-	
 	
 	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
 	
@@ -322,7 +302,7 @@ END
 		unless ($options->{'dry-run'}) {
 			print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n$error_io ERRORS\n";
 			print "($error_mtime of them have File Modification Time altered)\n";
-			exit(1) if $error_hash || $error_size || $error_missed || $error_io;
+			die exception('check-local-hash reported errors') if $error_hash || $error_size || $error_missed || $error_io;
 		}
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
