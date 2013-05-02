@@ -68,8 +68,8 @@ is hex_dump_string("\\\\"), '"\\\\\\\\"';
 	my $binstr = "\xD1\xD2";
 	ok ! defined eval { decode("UTF-8", $binstr, Encode::FB_CROAK|Encode::LEAVE_SRC) }, "our UTF example should be broken";
 	my $str = $binstr;
-	Encode::_utf8_off($str);
-	is hex_dump_string($str), '"\\xD1\\xD2"';
+	Encode::_utf8_on($str);
+	is hex_dump_string($str), "$utfprefix \"\\xD1\\xD2\"";
 }
 
 
