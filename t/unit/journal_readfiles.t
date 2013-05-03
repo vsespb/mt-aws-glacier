@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 29;
+use Test::More tests => 35;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::Journal;
@@ -165,7 +165,7 @@ my $data = {
 {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
-		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
+		my @filelist = qw{root_dir/file1 root_dir/file2 root_dir/file3 root_dir/file4 root_dir/file5 root_dir/file6 root_dir/file7};
 		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
 			mock('_is_file_exists', sub { return 0 });
 
@@ -197,11 +197,27 @@ my $data = {
 		ok extract_exception =~ /Invalid octets in filename, does not map to desired encoding UTF-8/i;
 }
 
+# should catch TAB,CR,LF in filename
+for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my @filelist = ($brokenname);
+		
+		(my $mock_find = Test::MockModule->new('File::Find'))->
+			mock('find', sub {
+				my ($args) = @_;
+				$args->{wanted}->() for (@filelist);
+			});
+		
+		ok ! defined eval { $J->_read_files('all', 0); 1; };
+		ok extract_exception =~ /Not allowed characters in filename/i;
+}
+
 # should not add file _can_read_filename_for_mode returns false
 {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
-		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
+		my @filelist = qw{root_dir/file1 root_dir/file2 root_dir/file3 root_dir/file4 root_dir/file5 root_dir/file6 root_dir/file7};
 		my $mock_journal = Test::MockModule->new('App::MtAws::Journal');
 		$mock_journal->mock('_is_file_exists', sub { return 1 });
 		$mock_journal->mock('_can_read_filename_for_mode', sub { return 0 });

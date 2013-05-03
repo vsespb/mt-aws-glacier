@@ -238,6 +238,9 @@ sub _read_files
 			print "Found $i local files\n";
 		}
 		
+		# note that this exception is probably thrown even if a directory below transfer root contains invalid chars
+		die exception "Not allowed characters in filename: ".hex_dump_string($_) if /[\r\n\t]/;
+				
 		if (-d) {
 			my $dir = character_filename($_);
 			my $reldir = File::Spec->abs2rel($dir, $self->{root_dir});
@@ -249,14 +252,13 @@ sub _read_files
 			}
 		} else {
 			my $filename = character_filename(my $binaryfilename = $_);
-			my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
-			if (!$self->{filter} || $self->{filter}->check_filenames($relfilename)) {
+			my $orig_relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
+			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
-					
-					if ($self->_can_read_filename_for_mode($relfilename, $mode)) {
-						my $relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
-						confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
-						
+					if ($self->_can_read_filename_for_mode($orig_relfilename, $mode)) {
+						my $relfilename;
+						confess "Invalid filename".hex_dump_string($orig_relfilename)
+							unless defined($relfilename = sanity_relative_filename($orig_relfilename));
 						push @$filelist, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
 					}
 				}
