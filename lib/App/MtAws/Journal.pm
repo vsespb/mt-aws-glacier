@@ -271,8 +271,9 @@ sub character_filename
 {
 	my ($binaryfilename) = @_;
 	my $filename;
-	die exception "Invalid characters in filename: ".hex_dump_string($binaryfilename)
-		unless (defined($filename = eval { decode(get_filename_encoding(), $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) }));
+	my $enc = get_filename_encoding();
+	die exception "Invalid octets in filename, does not map to desired encoding $enc: ".hex_dump_string($binaryfilename)
+		unless (defined($filename = eval { decode($enc, $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) }));
 	$filename;
 }
 

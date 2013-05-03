@@ -194,7 +194,7 @@ my $data = {
 			});
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
-		ok extract_exception =~ /Invalid characters in filename/i;
+		ok extract_exception =~ /Invalid octets in filename, does not map to desired encoding UTF-8/i;
 }
 
 # should not add file _can_read_filename_for_mode returns false
