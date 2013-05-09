@@ -107,11 +107,12 @@ sub wait_worker
 sub send_command
 {
 	my ($self, $fh, $taskid, $action, $data, $attachmentref) = @_;
-    my $data_e = encode_data($data);
-    my $attachmentsize = $attachmentref ? bytes::length($$attachmentref) : 0;
-	my $line = "$taskid\t$action\t$attachmentsize\t".$data_e."\n";
-    
-	syswritefull($fh, sprintf("%08d", bytes::length($line))) &&
+	my $data_e = encode_data($data);
+	confess "Attachment should be a binary string" if is_wide_string($attachmentref);
+	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
+	my $line = "$taskid\t$action\t$attachmentsize\t".$data_e."\n"; # encode_data returns binary data, so ok here
+	confess if is_wide_string($line);
+	syswritefull($fh, sprintf("%08d", length($line))) &&
 	syswritefull($fh, $line) &&
 	(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
 	$self->comm_error;
