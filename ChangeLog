@@ -1,3 +1,14 @@
+### 2013-05-09 v0.951 beta
+
+  * Bug fixed: In previous version (v0.944) a bug was introduced when downloading inventory (download_inventory_command).
+  If inventory size (JSON encoded) was more than 999999 bytes (~1Mb), download failed with a message:
+  "unexpected end of string while parsing JSON string, at character offset NNNNN (before "(end of string)")
+  at ... /lib/App/MtAws/LineProtocol.pm line 42. (notice LineProtocol.pm, other file will mean different issue)
+
+  * download_inventory command CPU and memory usage optimized
+
+  * Some internal changes related to internal IPC protocol
+
 ### 2013-04-30 v0.944 beta
 
   * Better signal/program termination handling.
