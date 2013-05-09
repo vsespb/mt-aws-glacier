@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.944beta";
+our $VERSION = "0.951beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -124,7 +124,7 @@ sub process
 				}
 				if (scalar @joblist) {
 					my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
-					my $R = fork_engine->{parent_worker}->process_task($lt, $j);
+					my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
 					die unless $R;
 				}
 				$j->close_for_write();
@@ -165,7 +165,7 @@ END
 					relfilename => $relfilename,
 					partsize => ONE_MB*$partsize));
 			
-			my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+			my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 			die unless $R;
 			$j->close_for_write();
 		}
@@ -185,7 +185,7 @@ END
 					$j->open_for_write();
 					my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListDeleteJob->new(archives => \@filelist ));
-					my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 					$j->close_for_write();
 				}
@@ -213,7 +213,7 @@ END
 				} else {
 					$j->open_for_write();
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListRetrievalJob->new(archives => \@filelist ));
-					my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 					$j->close_for_write();
 				}
@@ -237,7 +237,7 @@ END
 					}
 				} else {
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(archives => \%filelist ));
-					my $R = fork_engine->{parent_worker}->process_task($ft, $j);
+					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 				}
 			} else {
@@ -309,7 +309,7 @@ END
 				
 		with_forks 1, $options, sub {
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrieveInventoryJob->new());
-			my $R = fork_engine->{parent_worker}->process_task($ft, undef);
+			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'download-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
@@ -318,51 +318,54 @@ END
 		with_forks 1, $options, sub {
 			
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::InventoryFetchJob->new());
-			my $R = fork_engine->{parent_worker}->process_task($ft, undef);
+			my ($R, $attachmentref) = fork_engine->{parent_worker}->process_task($ft, undef);
 			# here we can have response from both JobList or Inventory output..
 			# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
 			# Inventory retriebal has key 'ArchiveList'
 			# TODO: implement it more clear way on level of Job/Tasks object
 			
 			croak if -s binaryfilename $options->{'new-journal'}; # TODO: fix race condition between this and opening file
-			$j->open_for_write();
-		
-			my $data = JSON::XS->new->allow_nonref->utf8->decode($R->{response});
-			my $now = time();
 			
-			for my $item (@{$data->{'ArchiveList'}}) {
+			if ($R && $attachmentref) {
+				$j->open_for_write();
+	
+				my $data = JSON::XS->new->allow_nonref->utf8->decode($$attachmentref);
+				my $now = time();
 				
-				my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
-				$relfilename = $item->{ArchiveId} unless defined $relfilename;
-				$mtime = $now unless defined $mtime;
-				
-				my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
-				#time archive_id size mtime treehash relfilename
-				$j->add_entry({
-					type => 'CREATED',
-					relfilename => $relfilename,
-					time => $creation_time,
-					archive_id => $item->{ArchiveId},
-					size => $item->{Size},
-					mtime => $mtime,
-					treehash => $item->{SHA256TreeHash},
-				});		
+				for my $item (@{$data->{'ArchiveList'}}) {
+					
+					my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
+					$relfilename = $item->{ArchiveId} unless defined $relfilename;
+					$mtime = $now unless defined $mtime;
+					
+					my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
+					#time archive_id size mtime treehash relfilename
+					$j->add_entry({
+						type => 'CREATED',
+						relfilename => $relfilename,
+						time => $creation_time,
+						archive_id => $item->{ArchiveId},
+						size => $item->{Size},
+						mtime => $mtime,
+						treehash => $item->{SHA256TreeHash},
+					});
+				}
+				$j->close_for_write();
 			}
-			$j->close_for_write();
 		}
 	} elsif ($action eq 'create-vault') {
 		$options->{concurrency} = 1;
 				
 		with_forks 1, $options, sub {
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::CreateVaultJob->new(name => $options->{'vault-name'}));
-			my $R = fork_engine->{parent_worker}->process_task($ft, undef);
+			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'delete-vault') {
 		$options->{concurrency} = 1;
 				
 		with_forks 1, $options, sub {
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::DeleteVaultJob->new(name => $options->{'vault-name'}));
-			my $R = fork_engine->{parent_worker}->process_task($ft, undef);
+			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {
 		print <<"END";

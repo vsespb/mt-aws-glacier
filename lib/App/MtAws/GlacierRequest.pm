@@ -245,8 +245,14 @@ sub retrieval_download_to_memory
 		print FF $d_content;
 		close FF;
 	}
-	
-	return $resp ? $resp->decoded_content : undef;
+
+	if ($resp) {
+		my $r = $resp->decoded_content; # decoded_content is NOT binary string because MIME type is not text/*
+		confess if is_wide_string($r);
+		return $r;
+	} else {
+		return undef;
+	}
 }
 
 # TODO: remove

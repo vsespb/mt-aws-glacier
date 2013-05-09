@@ -28,13 +28,16 @@ use File::Spec;
 use Carp;
 use Encode;
 use POSIX;
+use bytes;
+no bytes;
 
 require Exporter;
 use base qw/Exporter/;
 
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string exception dump_error extract_exception/;
+sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string exception dump_error
+extract_exception is_wide_string/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -123,6 +126,11 @@ sub file_size($%)
 	return -s $filename;
 }
 
+sub is_wide_string
+{
+	defined($_[0]) && utf8::is_utf8($_[0]) && (bytes::length($_[0]) != length($_[0]))
+}
+
 sub sysreadfull($$$)
 {
 	my ($file, $len) = ($_[0], $_[2]);
@@ -147,6 +155,7 @@ sub sysreadfull($$$)
 sub syswritefull($$)
 {
 	my ($file, $len) = ($_[0], length($_[1]));
+	confess if is_wide_string($_[1]);
 	my $n = 0;
 	while ($len - $n) {
 		my $i = syswrite($file, $_[1], $len - $n, $n);

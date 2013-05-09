@@ -31,6 +31,8 @@ use File::Path;
 use Carp;
 use IO::Select;
 use POSIX;
+use bytes;
+no bytes;
 
 sub new
 {
@@ -59,7 +61,7 @@ sub process
 			#	return;
 			#}
 			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
-			my $result = undef;
+			my ($result, $resultattachmentref) = undef;
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
@@ -118,7 +120,8 @@ sub process
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_to_memory($data->{job_id});
 				return undef unless $r;
-				$result = { response => $r };
+				$result = { response => !! $r };
+				$resultattachmentref = \$r;
 				$console_out = "Downloaded inventory in JSON format";
 			} elsif ($action eq 'retrieve_archive') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
@@ -167,7 +170,7 @@ sub process
 				die $action;
 			}
 			$result->{console_out}=$console_out;
-			send_response($fromchild, $taskid, $result);
+			send_response($fromchild, $taskid, $result, $resultattachmentref);
 	    }
 	} } until $! != EINTR;
 }
@@ -178,7 +181,7 @@ sub get_command
   my ($fh) = @_;
   my ($len, $response);
   
-  sysreadfull($fh, $len, 6) &&
+  sysreadfull($fh, $len, 8) &&
   sysreadfull($fh, $response, $len+0) or
   comm_error();
   
@@ -190,19 +193,22 @@ sub get_command
   	comm_error();
   }
   my $data = decode_data($data_e);
-  return ($taskid, $action, $data, $attachment ? \$attachment : undef);
+  return ($taskid, $action, $data, $attachment ? \$attachment : ());
 }
 
 
 sub send_response
 {
-  my ($fh, $taskid, $data) = @_;
-  my $data_e = encode_data($data);
-  my $line = "$$\t$taskid\t$data_e\n";
-
-  syswritefull($fh, sprintf("%06d", length $line)) &&
-  syswritefull($fh, $line) or
-  comm_error();
+	my ($fh, $taskid, $data, $attachmentref) = @_;
+	my $data_e = encode_data($data);
+	confess "Attachment should be a binary string" if is_wide_string($attachmentref);
+	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
+	my $line = "$$\t$taskid\t$attachmentsize\t".$data_e."\n"; # encode_data returns binary data, so ok here
+	confess if is_wide_string($line);
+	syswritefull($fh, sprintf("%08d", length($line))) &&
+	syswritefull($fh, $line) &&
+		(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
+	comm_error();
 }
 
 sub comm_error

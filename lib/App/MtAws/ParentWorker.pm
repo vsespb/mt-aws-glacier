@@ -29,6 +29,8 @@ use App::MtAws::LineProtocol;
 use Carp;
 use POSIX;
 use App::MtAws::Utils;
+use bytes;
+no bytes;
 
 sub new
 {
@@ -53,8 +55,8 @@ sub process_task
 				if (scalar keys %{$self->{children}} == scalar @{$self->{freeworkers}}) {
 					die;
 				}
-				my $r = $self->wait_worker($task_list, $ft, $journal);
-				return $r if $r;
+				my ($r, $att) = $self->wait_worker($task_list, $ft, $journal);
+				return ($r, $att) if $r;
 			} elsif ($result eq 'ok') {
 				my $worker_pid = shift @{$self->{freeworkers}};
 				my $worker = $self->{children}->{$worker_pid};
@@ -64,8 +66,8 @@ sub process_task
 				die;
 			}
 		} else {
-			my $r = $self->wait_worker($task_list, $ft, $journal);
-			return $r if $r;
+			my ($r, $att) = $self->wait_worker($task_list, $ft, $journal);
+			return ($r, $att) if $r;
 		}
 	}
 }
@@ -81,10 +83,11 @@ sub wait_worker
 		#	die "Unexpeced EOF in Pipe";
 		#	next; 
 		#}
-		my ($pid, $taskid, $data) = $self->get_response($fh);
+		my ($pid, $taskid, $data, $resultattachmentref) = $self->get_response($fh);
 		push @{$self->{freeworkers}}, $pid;
 		die unless my $task = $task_list->{$taskid};
 		$task->{result} = $data;
+		$task->{attachmentref} = $resultattachmentref;
 		print "PID $pid $task->{result}->{console_out}\n";
 		my ($result) = $ft->finish_task($task);
 		delete $task_list->{$taskid};
@@ -95,7 +98,7 @@ sub wait_worker
 		}
 		  
 		if ($result eq 'done') {
-			return $task->{result};
+			return ($task->{result}, $task->{attachmentref});
 		} 
 	}
 	return 0;
@@ -104,11 +107,12 @@ sub wait_worker
 sub send_command
 {
 	my ($self, $fh, $taskid, $action, $data, $attachmentref) = @_;
-    my $data_e = encode_data($data);
-    my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
-	my $line = "$taskid\t$action\t$attachmentsize\t$data_e\n";
-    
-	syswritefull($fh, sprintf("%06d", length $line)) &&
+	my $data_e = encode_data($data);
+	confess "Attachment should be a binary string" if is_wide_string($attachmentref);
+	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
+	my $line = "$taskid\t$action\t$attachmentsize\t".$data_e."\n"; # encode_data returns binary data, so ok here
+	confess if is_wide_string($line);
+	syswritefull($fh, sprintf("%08d", length($line))) &&
 	syswritefull($fh, $line) &&
 	(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
 	$self->comm_error;
@@ -121,14 +125,19 @@ sub get_response
 	
 	my ($len, $line);
 	
-	sysreadfull($fh, $len, 6) &&
+	sysreadfull($fh, $len, 8) &&
 	sysreadfull($fh, $line, $len+0) or
 	$self->comm_error;
 	
-    chomp $line;
-    my ($pid, $taskid, $data_e) = split /\t/, $line;
+	chomp $line;
+	my ($pid, $taskid, $attachmentsize, $data_e) = split /\t/, $line;
+	my $attachment = undef;
+	if ($attachmentsize) {
+		sysreadfull $fh, $attachment, $attachmentsize or
+		comm_error();
+	}
     my $data = decode_data($data_e);
-    return ($pid, $taskid, $data);
+    return ($pid, $taskid, $data, $attachment ? \$attachment : ());
 }
 
 sub comm_error

@@ -25,13 +25,17 @@ use warnings;
 use utf8;
 use lib qw{../lib ../../lib};
 use App::MtAws::LineProtocol;
-use Test::Simple tests => 3;
+use Test::More tests => 5;
+use bytes;
+no bytes;
 
 my $str = "Тест";
 
 ok (decode_data(encode_data($str)) eq $str);
 ok (utf8::is_utf8 decode_data(encode_data($str)) );
+ok (!utf8::is_utf8 encode_data($str) );
 ok (length(decode_data(encode_data($str))) == 4 );
+is (bytes::length(encode_data($str)), 26);
 
 
 1;
