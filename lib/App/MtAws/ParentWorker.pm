@@ -108,7 +108,7 @@ sub send_command
     my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
 	my $line = "$taskid\t$action\t$attachmentsize\t$data_e\n";
     
-	syswritefull($fh, sprintf("%06d", length $line)) &&
+	syswritefull($fh, sprintf("%08d", length $line)) &&
 	syswritefull($fh, $line) &&
 	(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
 	$self->comm_error;
@@ -121,7 +121,7 @@ sub get_response
 	
 	my ($len, $line);
 	
-	sysreadfull($fh, $len, 6) &&
+	sysreadfull($fh, $len, 8) &&
 	sysreadfull($fh, $line, $len+0) or
 	$self->comm_error;
 	

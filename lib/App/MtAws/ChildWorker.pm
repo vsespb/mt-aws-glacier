@@ -178,7 +178,7 @@ sub get_command
   my ($fh) = @_;
   my ($len, $response);
   
-  sysreadfull($fh, $len, 6) &&
+  sysreadfull($fh, $len, 8) &&
   sysreadfull($fh, $response, $len+0) or
   comm_error();
   
@@ -200,7 +200,7 @@ sub send_response
   my $data_e = encode_data($data);
   my $line = "$$\t$taskid\t$data_e\n";
 
-  syswritefull($fh, sprintf("%06d", length $line)) &&
+  syswritefull($fh, sprintf("%08d", length $line)) &&
   syswritefull($fh, $line) or
   comm_error();
 }
