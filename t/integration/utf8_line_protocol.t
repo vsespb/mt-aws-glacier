@@ -39,7 +39,8 @@ ok (!utf8::is_utf8 encode_data($str) );
 ok (length(decode_data(encode_data($str))) == 4 );
 is (bytes::length(encode_data($str)), 26);
 
-my $tmp_file = '/tmp/mt-glacier-t1';
+my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $tmp_file = "$mtroot/line_proto_test";
 our $file = undef;
 
 sub sending
@@ -214,4 +215,6 @@ sub receiving
 		ok $@ =~ /Attachment should be a binary string/i;
 	};
 }
+
+unlink $tmp_file;
 1;
