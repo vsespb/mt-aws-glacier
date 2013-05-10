@@ -23,30 +23,69 @@ package App::MtAws::LineProtocol;
 use strict;
 use warnings;
 use utf8;
+use Carp;
 
 use JSON::XS;
-
+use App::MtAws::Utils;
 
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT = qw/encode_data decode_data/;
-our @EXPORT_OK = qw/escape unescape/;
+our @EXPORT = qw/ get_data send_data/;
+our @EXPORT_OK = qw/escape unescape encode_data decode_data/;
 
 # yes, a module, so we can unit-test it (JSON and YAML have different serialization implementeation)
 my $json_coder = JSON::XS->new->utf8(1)->ascii(1)->allow_nonref;
 
 sub decode_data
 {
-  my ($yaml_e) = @_;
-  return $json_coder->decode($yaml_e);
+	my ($yaml_e) = @_;
+	return $json_coder->decode($yaml_e);
 }
 
 sub encode_data
 {
-  my ($data) = @_;
-  return $json_coder->encode($data);
+	my ($data) = @_;
+	return $json_coder->encode($data);
 }
+
+
+sub get_data
+{
+	my ($fh) = @_;
+	
+	my ($len, $line);
+
+	sysreadfull($fh, $len, 8) &&
+	sysreadfull($fh, $line, $len+0) or
+	return;
+	
+	chomp $line;
+	my ($pid, $action, $taskid, $attachmentsize, $data_e) = split /\t/, $line;
+	my $attachment = undef;
+	if ($attachmentsize) {
+		sysreadfull($fh, $attachment, $attachmentsize) or
+			return;
+	}
+	my $data = decode_data($data_e);
+	return ($pid, $action, $taskid, $data, $attachment ? \$attachment : ());
+}
+
+sub send_data
+{
+	my ($fh, $action, $taskid, $data, $attachmentref) = @_;
+	my $data_e = encode_data($data);
+	confess "Attachment should be a binary string" if $attachmentref && is_wide_string($$attachmentref);
+	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
+	my $line = "$$\t$action\t$taskid\t$attachmentsize\t".$data_e."\n"; # encode_data returns ASCII-7bit data, so ok here
+	confess if is_wide_string($line);
+	syswritefull($fh, sprintf("%08d", length($line))) &&
+	syswritefull($fh, $line) &&
+		(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
+		return;
+	return 1;
+}
+
 
 
 1;

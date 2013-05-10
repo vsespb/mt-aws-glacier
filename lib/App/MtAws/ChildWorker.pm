@@ -60,8 +60,9 @@ sub process
 			#	print "EOF\n";
 			#	return;
 			#}
-			my ($taskid, $action, $data, $attachmentref) = get_command($fh);
-			my ($result, $resultattachmentref) = undef;
+			my ($remote_pid, $action, $taskid, $data, $attachmentref) = get_data($fh);
+			$remote_pid or comm_error();
+			my ($result, $result_attachmentref) = (undef, undef);
 			
 			my $console_out = undef;
 			if ($action eq 'create_upload') {
@@ -121,7 +122,7 @@ sub process
 				my $r = $req->retrieval_download_to_memory($data->{job_id});
 				return undef unless $r;
 				$result = { response => !! $r };
-				$resultattachmentref = \$r;
+				$result_attachmentref = \$r;
 				$console_out = "Downloaded inventory in JSON format";
 			} elsif ($action eq 'retrieve_archive') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
@@ -170,45 +171,9 @@ sub process
 				die $action;
 			}
 			$result->{console_out}=$console_out;
-			send_response($fromchild, $taskid, $result, $resultattachmentref);
+			send_data($fromchild, 'response', $taskid, $result, $result_attachmentref) or comm_error();
 	    }
 	} } until $! != EINTR;
-}
-
-
-sub get_command
-{
-  my ($fh) = @_;
-  my ($len, $response);
-  
-  sysreadfull($fh, $len, 8) &&
-  sysreadfull($fh, $response, $len+0) or
-  comm_error();
-  
-  chomp $response;
-  my ($taskid, $action, $attachmentsize, $data_e) = split(/\t/, $response);
-  my $attachment = undef;
-  if ($attachmentsize) {
-  	sysreadfull $fh, $attachment, $attachmentsize or
-  	comm_error();
-  }
-  my $data = decode_data($data_e);
-  return ($taskid, $action, $data, $attachment ? \$attachment : ());
-}
-
-
-sub send_response
-{
-	my ($fh, $taskid, $data, $attachmentref) = @_;
-	my $data_e = encode_data($data);
-	confess "Attachment should be a binary string" if is_wide_string($attachmentref);
-	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
-	my $line = "$$\t$taskid\t$attachmentsize\t".$data_e."\n"; # encode_data returns binary data, so ok here
-	confess if is_wide_string($line);
-	syswritefull($fh, sprintf("%08d", length($line))) &&
-	syswritefull($fh, $line) &&
-		(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
-	comm_error();
 }
 
 sub comm_error

@@ -61,7 +61,8 @@ sub process_task
 				my $worker_pid = shift @{$self->{freeworkers}};
 				my $worker = $self->{children}->{$worker_pid};
 				$task_list->{$task->{id}} = $task;
-				$self->send_command($worker->{tochild}, $task->{id}, $task->{action}, $task->{data}, $task->{attachment});
+				send_data($worker->{tochild}, $task->{action}, $task->{id}, $task->{data}, $task->{attachment}) or
+					$self->comm_error;
 			} else {
 				die;
 			}
@@ -83,7 +84,8 @@ sub wait_worker
 		#	die "Unexpeced EOF in Pipe";
 		#	next; 
 		#}
-		my ($pid, $taskid, $data, $resultattachmentref) = $self->get_response($fh);
+		my ($pid, undef, $taskid, $data, $resultattachmentref) = get_data($fh);
+		$pid or $self->comm_error;
 		push @{$self->{freeworkers}}, $pid;
 		die unless my $task = $task_list->{$taskid};
 		$task->{result} = $data;
@@ -102,42 +104,6 @@ sub wait_worker
 		} 
 	}
 	return 0;
-}
-
-sub send_command
-{
-	my ($self, $fh, $taskid, $action, $data, $attachmentref) = @_;
-	my $data_e = encode_data($data);
-	confess "Attachment should be a binary string" if is_wide_string($attachmentref);
-	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
-	my $line = "$taskid\t$action\t$attachmentsize\t".$data_e."\n"; # encode_data returns binary data, so ok here
-	confess if is_wide_string($line);
-	syswritefull($fh, sprintf("%08d", length($line))) &&
-	syswritefull($fh, $line) &&
-	(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
-	$self->comm_error;
-}
-
-
-sub get_response
-{
-	my ($self, $fh) = @_;
-	
-	my ($len, $line);
-	
-	sysreadfull($fh, $len, 8) &&
-	sysreadfull($fh, $line, $len+0) or
-	$self->comm_error;
-	
-	chomp $line;
-	my ($pid, $taskid, $attachmentsize, $data_e) = split /\t/, $line;
-	my $attachment = undef;
-	if ($attachmentsize) {
-		sysreadfull $fh, $attachment, $attachmentsize or
-		comm_error();
-	}
-    my $data = decode_data($data_e);
-    return ($pid, $taskid, $data, $attachment ? \$attachment : ());
 }
 
 sub comm_error

@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use lib qw{../lib ../../lib};
-use App::MtAws::LineProtocol;
+use App::MtAws::LineProtocol qw/encode_data decode_data/;
 use Test::More tests => 5;
 use bytes;
 no bytes;
