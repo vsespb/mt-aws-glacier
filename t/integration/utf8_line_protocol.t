@@ -24,8 +24,10 @@ use strict;
 use warnings;
 use utf8;
 use lib qw{../lib ../../lib};
-use App::MtAws::LineProtocol qw/encode_data decode_data/;
-use Test::More tests => 5;
+use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
+use Test::More tests => 58;
+use Test::Deep;
+use Encode;
 use bytes;
 no bytes;
 
@@ -37,5 +39,179 @@ ok (!utf8::is_utf8 encode_data($str) );
 ok (length(decode_data(encode_data($str))) == 4 );
 is (bytes::length(encode_data($str)), 26);
 
+my $tmp_file = '/tmp/mt-glacier-t1';
+our $file = undef;
 
+sub sending
+{
+	local $file;
+	open $file, ">", $tmp_file;
+	shift->();
+	close $file;
+}
+
+sub receiving
+{
+	local $file;
+	open $file, "<", $tmp_file;
+	shift->();
+	close $file;
+}
+
+
+# should work
+{
+	my $src = { var => 'test' };
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		cmp_deeply($data, $src);
+	}
+}
+
+# should work with attachment
+{
+	my $src = { var => 'test' };
+	my $attachment = 'xyz' x 500;
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src, \$attachment);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data, $att) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		is $$att, $attachment;
+		cmp_deeply($data, $src);
+	}
+}
+
+# should work with attachment and utf-8 data, above Latin-1
+{
+	my $src = { var => 'тест' };
+	my $attachment = 'xyz' x 500;
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src, \$attachment);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data, $att) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		is $$att, $attachment;
+		cmp_deeply($data, $src);
+	}
+}
+
+# should work with attachment and utf-8 Latin-1 data
+{
+	my $c = 'Ñ';
+	ok ord $c <= 255;
+	my $src = { var => $c.$c.$c };
+	my $attachment = encode('UTF-8', 'тест') x 500;
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src, \$attachment);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data, $att) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		is $$att, $attachment;
+		cmp_deeply($data, $src);
+	}
+}
+
+
+# should work with attachment and utf-8, above Latin-1 data
+{
+	my $c = 'Ф';
+	ok ord $c > 255;
+	my $src = { var => $c.$c.$c };
+	my $attachment = encode('UTF-8', 'тест') x 500;
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src, \$attachment);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data, $att) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		is $$att, $attachment;
+		cmp_deeply($data, $src);
+	}
+}
+
+# when some ASCII data has UTF-8 bit set
+{
+	my ($A) = split(' ', 'testaction ФФФ');
+	ok utf8::is_utf8($A);
+	ok length($A) == bytes::length($A);
+	# should work with attachment and utf-8 Latin-1 data
+	{
+		my $c = 'Ñ';
+		ok ord $c <= 255;
+		my $src = { var => $c.$c.$c };
+		my $attachment = encode('UTF-8', 'тест') x 500;
+		sending sub {
+			ok send_data($file, $A, 'sometaskid', $src, \$attachment);
+		};
+		receiving sub {
+			my ($pid, $action, $taskid, $data, $att) = get_data($file);
+			is $pid, $$;
+			is $action, $A;
+			is $taskid, 'sometaskid';
+			is $$att, $attachment;
+			cmp_deeply($data, $src);
+		}
+	}
+	
+	
+	# should work with attachment and utf-8, above Latin-1 data
+	{
+		my $c = 'Ф';
+		ok ord $c > 255;
+		my $src = { var => $c.$c.$c };
+		my $attachment = encode('UTF-8', 'тест') x 500;
+		sending sub {
+			ok send_data($file, $A, 'sometaskid', $src, \$attachment);
+		};
+		receiving sub {
+			my ($pid, $action, $taskid, $data, $att) = get_data($file);
+			is $pid, $$;
+			is $action, $A;
+			is $taskid, 'sometaskid';
+			is $$att, $attachment;
+			cmp_deeply($data, $src);
+		}
+	}
+}
+# should raise excaption if attachment is UTF-8, above Latin-1 string
+{
+	my $src = { var => 'test' };
+	my $c = 'Ф';
+	ok ord $c > 255;
+	my $attachment = $c x 500;
+	sending sub {
+		ok ! defined eval { send_data($file, 'testaction', 'sometaskid', $src, \$attachment); 1 };
+		ok $@ =~ /Attachment should be a binary string/i;
+	};
+}
+
+# should raise excaption if attachment is UTF-8, Latin-1 string
+{
+	my $src = { var => 'test' };
+	my $c = 'Ñ';
+	ok ord $c <= 255;
+	my $attachment = $c x 500;
+	sending sub {
+		ok ! defined eval { send_data($file, 'testaction', 'sometaskid', $src, \$attachment); 1 };
+		ok $@ =~ /Attachment should be a binary string/i;
+	};
+}
 1;
