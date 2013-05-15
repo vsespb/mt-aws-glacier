@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 35;
+use Test::More tests => 44;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::Journal;
@@ -194,7 +194,10 @@ my $data = {
 			});
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
-		ok exception_message(get_exception) =~ /Invalid octets in filename, does not map to desired encoding UTF-8/i;
+		is get_exception->{code}, 'invalid_octets_filename';
+		is get_exception->{filename}, $brokenname;
+		is get_exception->{enc}, "UTF-8";
+		ok exception_message(get_exception) =~ /Invalid octets in filename, does not map to desired encoding/i;
 }
 
 # should catch TAB,CR,LF in filename
@@ -210,6 +213,8 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 			});
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
+		is get_exception->{filename}, $brokenname;
+		is get_exception->{code}, 'invalid_chars_filename';
 		ok exception_message(get_exception) =~ /Not allowed characters in filename/i;
 }
 
