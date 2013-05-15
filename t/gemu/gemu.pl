@@ -18,7 +18,7 @@ use Time::Local;
 my $proto = $ARGV[0]||die "Specify http|https";
 my $tmp_folder = $ARGV[1]||die "Specify temporary folder";
 my $children_count = 20;
-my $daemon = $proto eq 'http' ? HTTP::Daemon->new(LocalAddr => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1) : HTTP::Daemon::SSL->new(LocalAddr => '127.0.0.1',	LocalPort => 9901, ReuseAddr => 1);
+my $daemon = $proto eq 'http' ? HTTP::Daemon->new(LocalAddr => '',	LocalPort => 9901, ReuseAddr => 1) : HTTP::Daemon::SSL->new(LocalAddr => '',	LocalPort => 9901, ReuseAddr => 1);
 $daemon || die $daemon;
 my $json_coder = JSON::XS->new->utf8->allow_nonref;
 
@@ -493,7 +493,7 @@ sub delete_vault
 	mkpath($path);
 	$path .= "/$vault";
 	confess unless -d $path;
-	confess if glob("$path/archive/*");
+	confess "vault not empty" if glob("$path/archive/*");
 	rmtree($path);
 	return $path;
 }
