@@ -25,11 +25,12 @@ use warnings;
 use utf8;
 use lib qw{../lib ../../lib};
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
-use Test::More tests => 58;
+use Test::More tests => 60;
 use Test::Deep;
 use Encode;
 use bytes;
 no bytes;
+
 
 my $str = "Тест";
 
@@ -38,6 +39,11 @@ ok (utf8::is_utf8 decode_data(encode_data($str)) );
 ok (!utf8::is_utf8 encode_data($str) );
 ok (length(decode_data(encode_data($str))) == 4 );
 is (bytes::length(encode_data($str)), 26);
+
+my $str_binary = encode("UTF-8", $str);
+my $recorded = decode_data(encode_data($str_binary));
+ok ($recorded eq $str_binary);
+ok (utf8::is_utf8($recorded) && !utf8::is_utf8($str_binary));
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 my $tmp_file = "$mtroot/line_proto_test";

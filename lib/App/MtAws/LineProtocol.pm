@@ -35,12 +35,12 @@ our @EXPORT = qw/ get_data send_data/;
 our @EXPORT_OK = qw/escape unescape encode_data decode_data/;
 
 # yes, a module, so we can unit-test it (JSON and YAML have different serialization implementeation)
-my $json_coder = JSON::XS->new->utf8(1)->ascii(1)->allow_nonref;
+my $json_coder = JSON::XS->new->ascii(1)->allow_nonref;
 
 sub decode_data
 {
-	my ($yaml_e) = @_;
-	return $json_coder->decode($yaml_e);
+	my ($data_e) = @_;
+	return $json_coder->decode($data_e);
 }
 
 sub encode_data
@@ -61,7 +61,9 @@ sub get_data
 	return;
 	
 	chomp $line;
-	my ($pid, $action, $taskid, $attachmentsize, $data_e) = split /\t/, $line;
+	my ($pid, $action, $taskid, $datasize, $attachmentsize) = split /\t/, $line;
+	sysreadfull($fh, my $data_e, $datasize) or
+		return;
 	my $attachment = undef;
 	if ($attachmentsize) {
 		sysreadfull($fh, $attachment, $attachmentsize) or
@@ -75,12 +77,15 @@ sub send_data
 {
 	my ($fh, $action, $taskid, $data, $attachmentref) = @_;
 	my $data_e = encode_data($data);
+	confess if is_wide_string($data_e);
 	confess "Attachment should be a binary string" if $attachmentref && is_wide_string($$attachmentref);
 	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
-	my $line = "$$\t$action\t$taskid\t$attachmentsize\t".$data_e."\n"; # encode_data returns ASCII-7bit data, so ok here
+	my $datasize = length($data_e);
+	my $line = "$$\t$action\t$taskid\t$datasize\t$attachmentsize\n"; # encode_data returns ASCII-7bit data, so ok here
 	confess if is_wide_string($line);
 	syswritefull($fh, sprintf("%08d", length($line))) &&
 	syswritefull($fh, $line) &&
+	syswritefull($fh, $data_e) &&
 		(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
 		return;
 	return 1;
