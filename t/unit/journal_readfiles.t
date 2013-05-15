@@ -27,7 +27,7 @@ use Test::More tests => 35;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::Journal;
-use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 use Test::MockModule;
 use Encode;
 
@@ -194,7 +194,7 @@ my $data = {
 			});
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
-		ok extract_exception =~ /Invalid octets in filename, does not map to desired encoding UTF-8/i;
+		ok exception_message(get_exception) =~ /Invalid octets in filename, does not map to desired encoding UTF-8/i;
 }
 
 # should catch TAB,CR,LF in filename
@@ -210,7 +210,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 			});
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
-		ok extract_exception =~ /Not allowed characters in filename/i;
+		ok exception_message(get_exception) =~ /Not allowed characters in filename/i;
 }
 
 # should not add file _can_read_filename_for_mode returns false

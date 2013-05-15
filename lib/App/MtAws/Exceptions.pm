@@ -24,12 +24,14 @@ package App::MtAws::Exceptions;
 use strict;
 use warnings FATAL => 'all';
 use utf8;
+use Carp;
+use App::MtAws::Utils;
 
 require Exporter;
 use base qw/Exporter/;
 
 
-our @EXPORT = qw/exception get_exception is_exception/;
+our @EXPORT = qw/exception get_exception is_exception exception_message dump_error/;
 
 # Does not work with directory names
 
@@ -67,6 +69,47 @@ sub is_exception
 		(!defined($code) || ( defined(get_exception($e)->{code}) && get_exception($e)->{code} eq $code ));
 }
 
+
+sub exception_message
+{
+	my ($e) = @_;
+	my %data = %$e;
+	my $spec = delete $data{message};
+	my $rep = sub {
+		my ($match) = @_;
+		if (my ($format, $name) = $match =~ /^([\w]+)\s+([\w]+)$/) {
+			if (lc $format eq lc 'hexstring') {
+				defined(my $value = $data{$name})||confess;
+				hex_dump_string($value);
+			} elsif (lc $format eq lc 'string') {
+				defined(my $value = $data{$name})||confess;
+				qq{"$value"};
+			} else {
+				defined(my $value = $data{$name})||confess;
+				sprintf("%$format", $value);
+			}
+		} else {
+			defined(my $value = $data{$match})||confess $spec;
+			$value;
+		}
+	};
+	
+	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge if %data; # in new perl versions \w also means unicode chars..
+	$spec;
+}
+
+
+
+sub dump_error
+{
+	my ($where) = @_;
+	$where = " ($where)" if $where;
+	if (is_exception) {
+		print STDERR "FATAL ERROR$where: $@->{message}\n";
+	} else {
+		print STDERR "UNEXPECTED ERROR $where: $@\n";
+	}
+}
 1;
 
 __END__

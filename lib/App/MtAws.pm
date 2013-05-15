@@ -50,6 +50,7 @@ use File::stat;
 use App::MtAws::CreateVaultJob;
 use App::MtAws::DeleteVaultJob;
 use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 use PerlIO::encoding;
 
 

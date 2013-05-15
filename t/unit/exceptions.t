@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 34;
+use Test::More tests => 57;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -122,7 +122,7 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 		}
 		1;
 	}) {
-		is get_exception->{message}, 'NewMessage';
+		is get_exception->{message}, 'NewMessage'; # warning - must have test plan to test this way 
 	}
 }
 
@@ -137,7 +137,7 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 		}
 		1;
 	}) {
-		is get_exception->{message}, 'MyMessage';
+		is get_exception->{message}, 'MyMessage';# warning - must have test plan to test this way
 	}
 }
 
@@ -153,9 +153,51 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 		1;
 	}) {
 		ok !get_exception;
-		is $@, "SomeString\n";
+		is $@, "SomeString\n";# warning - must have test plan to test this way
 	}
 }
+
+# exception_message
+
+is exception_message(exception 'code' => 'My message'), "My message", "should work without format";
+is exception_message(exception 'code' => 'My message', filename => 'file1'), "My message", "should work without format, with params";
+is exception_message(exception 'code' => 'My message %filename%', filename => 'file1'), "My message file1", "should work with one param";
+is exception_message(exception 'code' => 'My message %filename% and %directory%', filename => 'file1', directory => 'dir1'),
+	"My message file1 and dir1", "should work with two params";
+
+is exception_message(exception 'code' => 'My message %s filename%', filename => 'file1'), "My message file1";
+is exception_message(exception 'code' => 'My message %s filename% and %dir%', filename => 'file1', dir => 'dir1'), "My message file1 and dir1";
+is exception_message(exception 'code' => 'My message %s filename% and %s dir%', filename => 'file1', dir => 'dir1'), "My message file1 and dir1";
+
+is exception_message(exception 'code' => 'My message %string filename%', filename => 'file1'), 'My message "file1"';
+is exception_message(exception 'code' => 'My message %string filename% and %string dir%', filename => 'file1', dir => 'dir1'),
+	'My message "file1" and "dir1"';
+
+is exception_message(exception 'code' => 'My message %04d x%', x => 42), 'My message 0042';
+is exception_message(exception 'code' => 'My message %04d a_42%', a_42 => 42), 'My message 0042';
+
+# confess tests
+
+ok ! defined eval { exception_message(exception 'code' => 'My message %04d a_42%', b_42 => 42); 1 };
+ok ! defined eval { exception_message(exception 'code' => 'My message %a_42%', b_42 => 42); 1 };
+ok ! defined eval { exception_message(exception 'code' => 'My message %string a_42%', b_42 => 42); 1 };
+ok exception_message(exception 'code' => 'My message %string a_42%', a_42 => 42, c_42=>33);
+
+
+# hexstring test
+
+is exception_message(exception 'code' => 'My message %hexstring x%', x => 42), 'My message "42"';
+is exception_message(exception 'code' => 'My message %hexstring x%', x => "тест"), 'My message (UTF-8) "\xD1\x82\xD0\xB5\xD1\x81\xD1\x82"';
+
+{
+	no warnings 'redefine';
+	local *App::MtAws::Exceptions::hex_dump_string = sub {
+		is shift, "тест";
+		"TESTTOKEN";
+	};
+	is exception_message(exception 'code' => 'My message %hexstring x%', x => "тест"), 'My message TESTTOKEN';
+}
+
 
 1;
 

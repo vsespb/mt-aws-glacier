@@ -36,8 +36,8 @@ use base qw/Exporter/;
 
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string exception dump_error
-extract_exception is_wide_string/;
+sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
+is_wide_string/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -186,32 +186,6 @@ sub hex_dump_string
 	$str;
 }
 
-sub exception
-{
-	my ($msg) = @_;
-	return { 'MTEXCEPTION' => 1, message => $msg };
-}
-
-sub is_exception
-{
-	ref $@ eq ref {} && $@->{MTEXCEPTION};
-}
-
-sub extract_exception
-{
-	is_exception() ? $@->{message} : undef;
-}
-
-sub dump_error
-{
-	my ($where) = @_;
-	$where = " ($where)" if $where;
-	if (is_exception) {
-		print STDERR "FATAL ERROR$where: $@->{message}\n";
-	} else {
-		print STDERR "UNEXPECTED ERROR $where: $@\n";
-	}
-}
 
 1;
 

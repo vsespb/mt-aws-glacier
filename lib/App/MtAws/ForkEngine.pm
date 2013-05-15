@@ -29,6 +29,7 @@ use Carp;
 use App::MtAws::ChildWorker;
 use App::MtAws::ParentWorker;
 use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 use POSIX;
 
 require Exporter;

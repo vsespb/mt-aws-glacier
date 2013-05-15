@@ -31,6 +31,7 @@ use Encode;
 use Carp;
 use IO::Handle;
 use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 use App::MtAws::Filter;
 
 sub new
