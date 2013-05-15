@@ -109,5 +109,53 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 	ok !is_exception('mycode', {});
 }
 
+# some integration testing
+
+{
+	unless (eval {
+		unless (eval { die exception('mycode' => 'MyMessage'); 1 }) {
+			if (is_exception 'mycode') {
+				die exception get_exception, 'NewMessage'
+			} else {
+				die $@;
+			}
+		}
+		1;
+	}) {
+		is get_exception->{message}, 'NewMessage';
+	}
+}
+
+{
+	unless (eval {
+		unless (eval { die exception('mycode' => 'MyMessage'); 1 }) {
+			if (is_exception 'notmycode') {
+				die exception get_exception, 'NewMessage'
+			} else {
+				die $@;
+			}
+		}
+		1;
+	}) {
+		is get_exception->{message}, 'MyMessage';
+	}
+}
+
+{
+	unless (eval {
+		unless (eval { die "SomeString\n"; 1 }) {
+			if (is_exception 'notmycode') {
+				die exception get_exception, 'NewMessage'
+			} else {
+				die $@;
+			}
+		}
+		1;
+	}) {
+		ok !get_exception;
+		is $@, "SomeString\n";
+	}
+}
+
 1;
 
