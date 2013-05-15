@@ -60,6 +60,7 @@ sub new
 	};
 	bless $self, $class;
 	local $context = $self;
+	# TODO: replace "%s option% with "%option%" - will this work?
 	message 'list_options_in_config', '"List" options (where order is important) like "%s option%" cannot appear in config currently', allow_redefine => 1;
 	message 'unexpected_option', 'Unexpected option %option option%', allow_redefine=>1;
 	message 'unknown_config_option', 'Unknown option in config: "%s option%"', allow_redefine=>1;
