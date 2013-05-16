@@ -28,6 +28,7 @@ use File::Spec;
 use Carp;
 use Encode;
 use POSIX;
+use App::MtAws::Exceptions;
 use bytes;
 no bytes;
 
@@ -78,13 +79,14 @@ sub binaryfilename(;$)
 # binary
 sub open_file($%)
 {
-	my $filename = shift;
+	my $original_filename = my $filename = shift;
 	my (%args) = (use_filename_encoding => 1, should_exist => 1, @_);
 	
 	my %checkargs = %args;
 	defined $checkargs{$_} && delete $checkargs{$_} for qw/use_filename_encoding should_exist mode file_encoding not_empty binary/;
 	confess "Unknown argument(s) to open_file: ".join(';', keys %checkargs) if %checkargs;
 	
+	confess 'Argument "mode" is required' unless defined($args{mode});
 	confess "unknown mode $args{mode}" unless $args{mode} =~ m!^(<|>>?)$!;
 	my $mode = $args{mode};
 	
@@ -106,7 +108,12 @@ sub open_file($%)
 	croak if -e $filename && (! -f $filename);
 	croak "File should not be empty" if $args{not_empty} && (! -s $filename);
 	
-	open (my $f, $mode, $filename) || (!$args{should_exist} && return) || confess $filename;
+	open (my $f, $mode, $filename) ||
+	(!$args{should_exist} && return) ||
+	die exception file_open_error => "Unable to open file %string filename% for reading, errno=%errno%",
+		filename => $original_filename, errno => $!;
+	
+	
 	confess unless -f $f; # check for race condition - it was a file when we last checked, but now it's a directory
 	confess if $args{not_empty} && (! -s $f);
 	
@@ -173,7 +180,7 @@ sub syswritefull($$)
 sub hex_dump_string
 {
 	my ($str) = @_;
-	my $isutf = utf8::is_utf8($str) && length($str) != bytes::length($str);
+	my $isutf = is_wide_string($str);
 	Encode::_utf8_off($str);
 	$str =~ s/\\/\\\\/g;
 	$str =~ s/\r/\\r/g;
