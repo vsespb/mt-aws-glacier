@@ -240,7 +240,7 @@ sub _read_files
 		}
 		
 		# note that this exception is probably thrown even if a directory below transfer root contains invalid chars
-		die exception(invalid_chars_filename => "Not allowed characters in filename: %hexstring filename%", filename => $_)
+		die exception(invalid_chars_filename => "Not allowed characters in filename: %filename%", filename => hex_dump_string($_))
 			if /[\r\n\t]/;
 				
 		if (-d) {
@@ -276,8 +276,8 @@ sub character_filename
 	my ($binaryfilename) = @_;
 	my $filename;
 	my $enc = get_filename_encoding();
-	die exception invalid_octets_filename => "Invalid octets in filename, does not map to desired encoding %string enc%: %hexstring filename%",
-		enc => $enc, filename => $binaryfilename,
+	die exception invalid_octets_filename => "Invalid octets in filename, does not map to desired encoding %string enc%: %filename%",
+		enc => $enc, filename => hex_dump_string($binaryfilename),
 		unless (defined($filename = eval { decode($enc, $binaryfilename, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) }));
 	$filename;
 }

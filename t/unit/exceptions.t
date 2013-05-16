@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 57;
+use Test::More tests => 53;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};
@@ -183,20 +183,6 @@ ok ! defined eval { exception_message(exception 'code' => 'My message %a_42%', b
 ok ! defined eval { exception_message(exception 'code' => 'My message %string a_42%', b_42 => 42); 1 };
 ok exception_message(exception 'code' => 'My message %string a_42%', a_42 => 42, c_42=>33);
 
-
-# hexstring test
-
-is exception_message(exception 'code' => 'My message %hexstring x%', x => 42), 'My message "42"';
-is exception_message(exception 'code' => 'My message %hexstring x%', x => "тест"), 'My message (UTF-8) "\xD1\x82\xD0\xB5\xD1\x81\xD1\x82"';
-
-{
-	no warnings 'redefine';
-	local *App::MtAws::Exceptions::hex_dump_string = sub {
-		is shift, "тест";
-		"TESTTOKEN";
-	};
-	is exception_message(exception 'code' => 'My message %hexstring x%', x => "тест"), 'My message TESTTOKEN';
-}
 
 
 1;

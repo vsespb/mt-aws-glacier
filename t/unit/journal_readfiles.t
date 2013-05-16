@@ -27,6 +27,7 @@ use Test::More tests => 44;
 use Test::Deep;
 use lib qw{../lib ../../lib};
 use App::MtAws::Journal;
+use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use Test::MockModule;
 use Encode;
@@ -195,7 +196,7 @@ my $data = {
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
 		is get_exception->{code}, 'invalid_octets_filename';
-		is get_exception->{filename}, $brokenname;
+		is get_exception->{filename}, hex_dump_string($brokenname);
 		is get_exception->{enc}, "UTF-8";
 		ok exception_message(get_exception) =~ /Invalid octets in filename, does not map to desired encoding/i;
 }
@@ -213,7 +214,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 			});
 		
 		ok ! defined eval { $J->_read_files('all', 0); 1; };
-		is get_exception->{filename}, $brokenname;
+		is get_exception->{filename}, hex_dump_string($brokenname);
 		is get_exception->{code}, 'invalid_chars_filename';
 		ok exception_message(get_exception) =~ /Not allowed characters in filename/i;
 }

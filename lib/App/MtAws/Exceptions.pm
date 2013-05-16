@@ -25,7 +25,6 @@ use strict;
 use warnings FATAL => 'all';
 use utf8;
 use Carp;
-use App::MtAws::Utils;
 
 require Exporter;
 use base qw/Exporter/;
@@ -78,10 +77,7 @@ sub exception_message
 	my $rep = sub {
 		my ($match) = @_;
 		if (my ($format, $name) = $match =~ /^([\w]+)\s+([\w]+)$/) {
-			if (lc $format eq lc 'hexstring') {
-				defined(my $value = $data{$name})||confess;
-				hex_dump_string($value);
-			} elsif (lc $format eq lc 'string') {
+			if (lc $format eq lc 'string') {
 				defined(my $value = $data{$name})||confess;
 				qq{"$value"};
 			} else {
