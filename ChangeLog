@@ -5,6 +5,8 @@
 
   * Some more internal changes related to internal IPC protocol
 
+  * Documentation: 'Limitations' section added.
+
 ### 2013-05-09 v0.951 beta
 
   * Bug fixed: In previous version (v0.944) a bug was introduced when downloading inventory (download_inventory_command).
