@@ -102,7 +102,7 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 * When work with CD-ROM/CIFS/other non-Unix/non-POSIX filesystems, you might need set `leaf-optimization` to `0`
 
-* See other [limitations](#Limitations)
+* See other [limitations](#limitations)
 
 [Amazon Glacier faq]:http://aws.amazon.com/glacier/faqs/#How_will_I_be_charged_when_retrieving_large_amounts_of_data_from_Amazon_Glacier
 
