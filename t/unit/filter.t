@@ -400,7 +400,7 @@ check 'z/ex[1|2]mple',
 	            },
 	            {
 	              'pattern' => 'dir/',
-	              're' => qr!(^|/)dir\/!,
+	              're' => qr!(^|/)dir\/!, # TODO: under perl5.8.9 some misslatch here
 	              'action' => '-',
 	              'match_subdirs' => 1,
 	              'notmatch' => '',
