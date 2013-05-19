@@ -26,6 +26,7 @@ use utf8;
 use Carp;
 use App::MtAws::Utils;
 use App::MtAws::TreeHash;
+use App::MtAws::Exceptions;
 use File::stat;
 
 sub run
