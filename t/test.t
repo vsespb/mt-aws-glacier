@@ -25,6 +25,19 @@ use strict;
 use warnings;
 use utf8;
 
+# build requirements
+require JSON::XS;
+require Test::Deep;
+require Test::MockModule;
+require LWP::UserAgent;
+require DateTime;
+require Test::Spec;
+require LWP::Protocol::https;
+use MIME::Base64 3.11;
+# for 5.8.x stock perl
+require Digest::SHA;
+# /build requirements
+
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',
     ($ARGV[0] && $ARGV[0] eq 'cover') ? (switches	=> '-MDevel::Cover') : (exec => ['perl']),
