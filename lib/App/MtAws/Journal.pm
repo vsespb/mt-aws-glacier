@@ -62,15 +62,20 @@ sub read_journal
 	my ($self, %args) = @_;
 	confess unless defined $args{should_exist};
 	confess unless length($self->{journal_file});
-	#####confess if -d $self->{journal_file};
-	# TODO: croak here and elsewhere when checking for open files
 	
-	if (my $F = open_file($self->{journal_file}, file_encoding => $self->{journal_encoding}, mode => '<', should_exist => $args{should_exist})) {
-		while (<$F>) {
-			chomp;
-			$self->process_line($_);
+	my $binary_filename = binaryfilename $self->{journal_file};
+	if ($args{should_exist} && !-e $binary_filename) {
+		confess;
+	} elsif (-e $binary_filename) {
+		open_file(my $F, $self->{journal_file}, file_encoding => $self->{journal_encoding}, mode => '<') or
+			die exception journal_open_error => "Unable to open journal file %string filename% for reading, errno=%errno%",
+				filename => $self->{journal_file}, errno => $!;
+		while (!eof($F)) {
+			defined( my $line = <$F> ) or confess;
+			chomp $line;
+			$self->process_line($line);
 		}
-		close $F;
+		close $F or confess;
 	}
 	return;
 }
@@ -78,22 +83,23 @@ sub read_journal
 sub open_for_write
 {
 	my ($self) = @_;
-	$self->{append_file} = open_file($self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding});
+	open_file($self->{append_file}, $self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding}) or
+		die exception journal_open_error => "Unable to open journal file %string filename% for writing, errno=%errno%",
+			filename => $self->{journal_file}, errno => $!;	
   	$self->{append_file}->autoflush();
 }
 
 sub close_for_write
 {
 	my ($self) = @_;
-	confess unless $self->{append_file};
-	close $self->{append_file};
+	$self->{append_file} or confess;
+	close $self->{append_file} or confess;
 }
 
 sub process_line
 {
 	my ($self, $line) = @_;
 		# Journal version 'A'
-	
 	if (my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) =
 		$line =~ /^A\t(\d{1,20})\tCREATED\t(\S+)\t(\d+)\t([+-]?\d{1,20})\t(\S+)\t(.*?)$/) {
 		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));

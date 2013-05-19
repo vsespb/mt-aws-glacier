@@ -23,12 +23,14 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 16;
+use Test::More tests => 28;
 use Test::Deep;
 use File::Path;
 use lib qw{../lib ../../lib};
 use App::MtAws::Journal;
+use App::MtAws::Exceptions;
 use Test::MockModule;
+use POSIX;
 use Carp;
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
@@ -36,6 +38,9 @@ mkpath $mtroot;
 my $rootdir = 'def';
 my $file = "$mtroot/journal_open_mode";
 my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
+
+
+chmod 0744, $file if -e $file;
 
 
 # checking when reading journal
@@ -53,7 +58,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 {
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
-	remove($file);
+	unlink($file);
 	eval {
 		$J->read_journal();
 	};
@@ -63,11 +68,29 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 {
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
-	remove($file);
+	unlink($file);
 	eval {
 		$J->read_journal(should_exist => 1);
 	};
 	ok $@ ne '', "should_exist should work when true and file missing";
+}
+
+{
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
+	
+	create($file, $fixture);
+	chmod 0000, $file;
+	ok ! defined eval {
+		$J->read_journal(should_exist => 1);
+		1;
+	};
+	chmod 0744, $file;
+	unlink($file);
+	ok is_exception('journal_open_error'), "should_exist should work when true and file missing";
+	is get_exception->{message}, "Unable to open journal file %string filename% for reading, errno=%errno%";
+	is get_exception->{errno}+0, EACCES;
+	ok length(get_exception->{errno}) > 4; # should be a string, not a number
+	is get_exception->{filename}, $file;
 }
 
 {
@@ -113,7 +136,7 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 {
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
-	remove($file);
+	unlink($file);
 	eval {
 		$J->read_journal(should_exist => 0);
 	};
@@ -133,15 +156,35 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 
 # checking when writing journal
 {
-	remove($file);
+	unlink($file);
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	$J->open_for_write();
+
 	$J->_write_line($fixture);
 	ok -s $file, "should write to file, even without closing file";
 }
 
 {
-	remove($file);
+	unlink($file);
+	create($file, $fixture);
+	chmod 0444, $file;
+	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
+	ok ! defined eval {
+		$J->open_for_write();
+		1;
+	};
+	chmod 0744, $file;
+	unlink($file);
+	
+	ok is_exception('journal_open_error'), "should_exist should work when true and file missing";
+	is get_exception->{message}, "Unable to open journal file %string filename% for writing, errno=%errno%";
+	is get_exception->{errno}+0, EACCES;
+	ok length(get_exception->{errno}) > 4; # should be a string, not a number
+	is get_exception->{filename}, $file;
+}
+
+{
+	unlink($file);
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	$J->open_for_write();
 	$J->_write_line($fixture);
@@ -161,14 +204,14 @@ my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";
 }
 
 {
-	remove($file);
+	unlink($file);
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	eval { $J->_write_line($fixture); };
 	ok($@ ne '', "write to closed file should die");
 }
 
 {
-	remove($file);
+	unlink($file);
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	eval { $J->close_for_write; };
 	ok($@ ne '', "close for write should die if file was not opened");
@@ -181,12 +224,6 @@ sub create
 	print F $content."\n" if defined $content;
 	close F;
 	
-}
-
-sub remove
-{
-	my ($file) = @_;
-	unlink $file || confess if -e $file;
 }
 
 1;

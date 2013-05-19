@@ -28,6 +28,7 @@ use App::MtAws::FileUploadJob;
 use File::stat;
 use Time::localtime;
 use Carp;
+use App::MtAws::Exceptions;
 use App::MtAws::Utils;
 
 sub new
@@ -57,10 +58,21 @@ sub get_task
 		} else {
 			my $binaryfilename = binaryfilename $self->{filename};
 			my $filesize = -s $binaryfilename;
+			
+			die exception file_is_zero => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
+				filename => $self->{filename}
+					unless $filesize;
+			
 			$self->{mtime} = stat($binaryfilename)->mtime; # TODO: how could we assure file not modified when uploading btw?
-			die "With current partsize=$self->{partsize} we will exceed 10000 parts limit for the file $self->{filename} (filesize $filesize)" if ($filesize / $self->{partsize} > 10000);
-		    $self->{fh} = open_file($self->{filename}, mode => '<', binary => 1, should_exist => 0) or
-		    	confess "ERROR: unable to open task file $self->{filename} for reading: $!";
+
+			die exception too_many_parts =>
+				"With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
+				partsize => $self->{partsize}, filename => $self->{filename}, size => $filesize
+					if ($filesize / $self->{partsize} > 10000);
+				
+			open_file($self->{fh}, $self->{filename}, mode => '<', binary => 1) or
+				die exception upload_file_open_error => "Unable to open task file %string filename% for reading, errno=%errno%",
+					filename => $self->{journal_file}, errno => $!;
 		}
 		return ("ok", App::MtAws::Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}

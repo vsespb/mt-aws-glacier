@@ -71,19 +71,37 @@ sub binaryfilename(;$)
 	encode(get_filename_encoding, @_ ? shift : $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);	
 }
 
-#
-# use_filename_encoding = 1
-# not_empty
-# mode
-# file_encoding
-# binary
-sub open_file($%)
+
+=pod
+
+open_file(my $f, $filename, %args)
+
+$args{mode} - mode to open, <, > or >>
+$args{use_filename_encoding} - (TRUE) - encode to binary string, (FALSE) - don't tocuh (already a binary string). Default TRUE
+$args{file_encoding} or $args{binary} - file content encoding or it's a binary file (mutual exclusive)
+$args{not_empty} - assert that file is not empty after open
+
+Assertions made (using "confess"):
+
+1) Bad arguments (programmer's error)
+2) File is not a plain file
+3) File is not a plain file, but after open (race conditions)
+4) File is empty and not_empty specified
+5) File is empty and not_empty specified, but after open (race conditions)
+
+NOTE: If you want exceptions for (2) and (4) - check it before open_file. And additional checks inside open_file will
+prevent race conditions
+
+=cut
+
+sub open_file($$%)
 {
-	my $original_filename = my $filename = shift;
-	my (%args) = (use_filename_encoding => 1, should_exist => 1, @_);
+	(undef, my $filename, my %args) = @_;
+	%args = (use_filename_encoding => 1, %args);
+	my $original_filename = $filename;
 	
 	my %checkargs = %args;
-	defined $checkargs{$_} && delete $checkargs{$_} for qw/use_filename_encoding should_exist mode file_encoding not_empty binary/;
+	defined $checkargs{$_} && delete $checkargs{$_} for qw/use_filename_encoding mode file_encoding not_empty binary/;
 	confess "Unknown argument(s) to open_file: ".join(';', keys %checkargs) if %checkargs;
 	
 	confess 'Argument "mode" is required' unless defined($args{mode});
@@ -105,14 +123,11 @@ sub open_file($%)
 		$filename = binaryfilename $filename;
 	}
 	
-	croak if -e $filename && (! -f $filename);
-	croak "File should not be empty" if $args{not_empty} && (! -s $filename);
+	confess "File is not a plain file" if -e $filename && (! -f $filename);
+	confess "File should not be empty" if $args{not_empty} && (! -s $filename);
 	
-	open (my $f, $mode, $filename) ||
-	(!$args{should_exist} && return) ||
-	die exception file_open_error => "Unable to open file %string filename% for reading, errno=%errno%",
-		filename => $original_filename, errno => $!;
-	
+	open ($_[0], $mode, $filename) or return;
+	my $f = $_[0];
 	
 	confess unless -f $f; # check for race condition - it was a file when we last checked, but now it's a directory
 	confess if $args{not_empty} && (! -s $f);
