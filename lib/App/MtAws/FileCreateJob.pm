@@ -72,7 +72,7 @@ sub get_task
 				
 			open_file($self->{fh}, $self->{filename}, mode => '<', binary => 1) or
 				die exception upload_file_open_error => "Unable to open task file %string filename% for reading, errno=%errno%",
-					filename => $self->{journal_file}, errno => $!;
+					filename => $self->{filename}, errno => $!;
 		}
 		return ("ok", App::MtAws::Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}
