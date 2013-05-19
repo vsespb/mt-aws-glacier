@@ -247,63 +247,8 @@ END
 		}
 	} elsif ($action eq 'check-local-hash') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
-		$j->read_journal(should_exist => 1);
-		my $files = $j->{journal_h};
-		
-		my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error, $error_io) = (0,0,0,0,0,0);
-		for my $f (keys %$files) {
-			my $file=$files->{$f};
-			my $absfilename = $j->absfilename($f);
-			
-			if ($options->{'dry-run'}) {
-				print "Will check hash file $f\n"
-			} else {
-				my $th = App::MtAws::TreeHash->new();
-				my $binaryfilename = binaryfilename $absfilename;
-				if (-f $binaryfilename ) {
-					unless (-s $binaryfilename) {
-						print "ZERO SIZE $f\n";
-						++$error_size;
-						next;
-					}
-					my $F;
-					unless (open_file($F, $absfilename, mode => '<', binary => 1)) {
-						print "CANNOT OPEN file $f: $!\n";
-						++$error_io;
-						next;
-					}
-					$th->eat_file($F); # TODO: don't calc tree hash if size differs!
-					close $F or confess;
-					$th->calc_tree();
-					1;
-					my $treehash = $th->get_final_hash();
-					if (defined($file->{mtime}) && (my $actual_mtime = stat($binaryfilename)->mtime) != $file->{mtime}) {
-						print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
-						++$error_mtime;
-					}
-					if (-s $binaryfilename == $file->{size}) {
-						if ($treehash eq $files->{$f}->{treehash}) {
-							print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
-							++$no_error;
-						} else {
-							print "TREEHASH MISSMATCH $f\n";
-							++$error_hash;
-						}
-					} else {
-							print "SIZE MISSMATCH $f\n";
-							++$error_size;
-					}
-				} else {
-						print "MISSED $f\n";
-						++$error_missed;
-				}
-			}
-		}
-		unless ($options->{'dry-run'}) {
-			print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n$error_io ERRORS\n";
-			print "($error_mtime of them have File Modification Time altered)\n";
-			die exception(check_local_hash_errors => 'check-local-hash reported errors') if $error_hash || $error_size || $error_missed || $error_io;
-		}
+		require App::MtAws::CheckLocalHashCommand;
+		App::MtAws::CheckLocalHashCommand::run($options, $j);
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 				
