@@ -1,3 +1,10 @@
+### 2013-05-19 v0.952 beta
+
+  * Some error handling rework. Errors for file opens (permissions problems), invalid characters in filenames, some misc
+  errors, are thrown with sane error message and helpful information
+
+  * Some more internal changes related to internal IPC protocol
+
 ### 2013-05-09 v0.951 beta
 
   * Bug fixed: In previous version (v0.944) a bug was introduced when downloading inventory (download_inventory_command).

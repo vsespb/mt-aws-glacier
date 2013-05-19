@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 53;
+use Test::More tests => 63;
 use Test::Deep;
 use Encode;
 use lib qw{../lib ../../lib};

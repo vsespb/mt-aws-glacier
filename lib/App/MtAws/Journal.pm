@@ -265,7 +265,7 @@ sub _read_files
 				if ($self->_is_file_exists($binaryfilename)) {
 					if ($self->_can_read_filename_for_mode($orig_relfilename, $mode)) {
 						my $relfilename;
-						confess "Invalid filename".hex_dump_string($orig_relfilename)
+						confess "Invalid filename: ".hex_dump_string($orig_relfilename)
 							unless defined($relfilename = sanity_relative_filename($orig_relfilename));
 						push @$filelist, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
 					}
