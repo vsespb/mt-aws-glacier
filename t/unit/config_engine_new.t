@@ -1218,8 +1218,8 @@ describe "errors_or_warnings_to_messages" => sub {
 	it "should work with params when format defined" => sub {
 		my $c = create_engine();
 		$c->{messages}->{a} = { format => 'xyz' };
-		App::MtAws::ConfigEngine->expects("error_to_message")->returns(sub{shift;{@_}})->once;
-		cmp_deeply [$c->errors_or_warnings_to_messages([{ format => 'a', x => 'y'}])], [format => 'a', x => 'y'];
+		App::MtAws::ConfigEngine->expects("error_to_message")->returns(sub{shift;{sort @_}})->once; # kinda hack, we sort hash as array
+		cmp_deeply [$c->errors_or_warnings_to_messages([{ format => 'a', x => 'y'}])], [sort (format => 'a', x => 'y')];
 	};
 	it "should work list" => sub {
 		my $c = create_engine();
