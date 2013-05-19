@@ -313,6 +313,10 @@ END
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {
+		
+		# we load here all dynamically loaded modules, to check that installation is correct.
+		require App::MtAws::CheckLocalHashCommand;
+		
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
 
