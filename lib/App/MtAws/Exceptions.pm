@@ -98,12 +98,14 @@ sub exception_message
 
 sub dump_error
 {
-	my ($where) = @_;
-	$where = " ($where)" if $where;
-	if (is_exception) {
-		print STDERR "FATAL ERROR$where: $@->{message}\n";
+	my ($where) = (@_, '');
+	$where = defined($where) && length($where) ? " ($where)" : '';
+	if (is_exception('cmd_error')) {
+		# no additional output
+	} elsif (is_exception) {
+		print STDERR "ERROR$where: $@->{message}\n";
 	} else {
-		print STDERR "UNEXPECTED ERROR $where: $@\n";
+		print STDERR "UNEXPECTED ERROR$where: $@\n";
 	}
 }
 1;

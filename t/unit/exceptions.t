@@ -184,6 +184,65 @@ ok ! defined eval { exception_message(exception 'code' => 'My message %string a_
 ok exception_message(exception 'code' => 'My message %string a_42%', a_42 => 42, c_42=>33);
 
 
+# dump_error
+
+
+sub test_error(&$$)
+{
+	my ($cb, $where, $e) = @_;
+	my $out;
+	{
+		local(*STDERR);
+		open STDERR, '>', \$out or die "Can't open STDERR: $!";
+		eval { die $e };
+		dump_error($where);
+	};
+	$cb->($out, $@);
+}
+
+
+test_error {
+	my ($out, $err) = @_;
+	cmp_deeply $err, superhashof { code => 'mycode',
+		message => "MyMessage"};
+	ok $out eq "ERROR: MyMessage\n";
+} '', exception mycode => 'MyMessage';
+
+test_error {
+	my ($out, $err) = @_;
+	cmp_deeply $err, superhashof { code => 'mycode',
+		message => "MyMessage"};
+	ok $out eq "ERROR (here): MyMessage\n";
+} 'here', exception mycode => 'MyMessage';
+
+test_error {
+	my ($out, $err) = @_;
+	cmp_deeply $err, superhashof { code => 'cmd_error',
+		message => "MyMessage"};
+	ok !defined($out) || length($out) == 0;
+} '', exception cmd_error => 'MyMessage';
+
+test_error {
+	my ($out, $err) = @_;
+	cmp_deeply $err, superhashof { code => 'cmd_error',
+		message => "MyMessage"};
+	ok !defined($out) || length($out) == 0;
+} 'here', exception cmd_error => 'MyMessage';
+
+test_error {
+	my ($out, $err) = @_;
+	ok $out =~ /^UNEXPECTED ERROR: somestring/;
+} '', 'somestring';
+
+test_error {
+	my ($out, $err) = @_;
+	ok $out =~ /^UNEXPECTED ERROR \(here\): somestring/;
+} 'here', 'somestring';
+
+
+	# TODO: check also that 'next' is called!
+
+
 
 1;
 
