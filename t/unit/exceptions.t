@@ -193,7 +193,7 @@ ok exception_message(exception 'code' => 'My message %string a_42%', a_42 => 42,
 sub test_error(&$$)
 {
 	my ($cb, $where, $e) = @_;
-	my $out;
+	my $out=''; # perl 5.8.x issue warning if undefined $out is used in open() below
 	{
 		local(*STDERR);
 		open STDERR, '>', \$out or die "Can't open STDERR: $!";
