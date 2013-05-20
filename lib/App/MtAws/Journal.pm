@@ -125,7 +125,7 @@ sub process_line
 	# Journal version '0'
 	
 	} elsif (($time, $archive_id, $size, $treehash, $relfilename) =
-		$line =~ /^([0-9]{1,20})\s+CREATED\s+(\S+)\s+([0-9]{1,20})\s+(\S+)\s+(.*?)$/) {
+		$line =~ /^([0-9]{1,20}) CREATED (\S+) ([0-9]{1,20}) (\S+) (.*?)$/) {
 		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		#die if $self->{journal_h}->{$relfilename};
 		$self->_add_file($relfilename, {

@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1630;
+use Test::More tests => 1795;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -89,6 +89,23 @@ for my $size (qw/z тест 1111111111111111111111111111111111111111111111111111
 	test_all_fails_for_create_07($data_sample, size => $size);
 }
 
+# delimiters
+
+
+for my $position (1..5) {
+	for my $delimiter ("\t", "\x{202F}", "\x0A", "0x0A") {
+		test_all_fails_for_create_07($data_sample, _delimiter => $delimiter, _delimiter_index => $position);
+		# TODO: test not only create!
+	}
+}
+
+
+for my $position (1..7) {
+	for my $delimiter (" ", "  ", "\x{202F}", "\x0A", "0x0A") {
+		test_all_fails_for_create_A($data_sample, _delimiter => $delimiter, _delimiter_index => $position);
+		# TODO: test not only create!
+	}
+}
 
 # relfilename formats
 
@@ -236,7 +253,16 @@ sub test_all_fails_for_create_A
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_file', sub {	$called = 1 });
 			
-			$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
+			my %D;
+			$D{$_} = "\t" for (1..7);
+			
+			if (defined $data->{_delimiter}) {
+				ok defined $data->{_delimiter_index};
+				$D{$data->{_delimiter_index}} = $data->{_delimiter};
+			}
+			
+			$J->process_line(join('', 'A', $D{1}, $data->{time}, $D{2}, 'CREATED', $D{3}, $data->{archive_id}, $D{4},
+				$data->{size}, $D{5}, $data->{mtime}, $D{6}, $data->{treehash}, $D{7}, $data->{relfilename}));
 			ok(! $called);
 			is_deeply($J->{used_versions}, {});
 	}
@@ -266,7 +292,16 @@ sub test_all_fails_for_create_07
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_file', sub {	$called = 1});
 			
-			$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $data->{relfilename}");
+			my %D;
+			$D{$_} = ' ' for (1..5);
+			
+			if (defined $data->{_delimiter}) {
+				ok defined $data->{_delimiter_index};
+				$D{$data->{_delimiter_index}} = $data->{_delimiter};
+			}
+			
+			$J->process_line(join('', $data->{time}, $D{1}, 'CREATED', $D{2}, $data->{archive_id}, $D{3}, $data->{size},
+				 $D{4}, $data->{treehash}, $D{5}, $data->{relfilename}));
 			ok(! $called);
 			is_deeply($J->{used_versions}, {});
 	}
