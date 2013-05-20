@@ -30,6 +30,8 @@ use Test::MockModule;
 use Data::Dumper;
 use TestUtils;
 
+warning_fatal();
+
 
 
 

@@ -31,6 +31,8 @@ use Carp;
 use Data::Dumper;
 use TestUtils;
 
+warning_fatal();
+
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 
 

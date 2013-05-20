@@ -30,6 +30,8 @@ use Test::MockModule;
 use Data::Dumper;
 use TestUtils;
 
+warning_fatal();
+
 #	print Dumper({errors => $errors, warnings => $warnings, result => $result});
 
 # v0.78 regressions test

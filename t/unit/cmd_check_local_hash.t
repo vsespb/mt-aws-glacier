@@ -25,10 +25,13 @@ use warnings;
 use utf8;
 use Test::More tests => 5;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use File::Path;
 use POSIX;
+use TestUtils;
+
+warning_fatal();
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 my $localroot = "$mtroot/cmd_check_local_hash";

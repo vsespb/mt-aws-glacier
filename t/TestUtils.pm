@@ -24,8 +24,15 @@ use App::MtAws::ConfigDefinition;
 use App::MtAws::ConfigEngine;
 require Exporter;
 use base qw/Exporter/;
-                                                                                                                                                                                                                                                                               
-our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations/;
+
+
+
+our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal/;
+
+sub warning_fatal
+{
+	$SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
+}
 
 sub fake_config(@)
 {

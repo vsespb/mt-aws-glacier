@@ -24,11 +24,14 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 4154;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use POSIX;
+use TestUtils;
+
+warning_fatal();
 
 my $meta_coder = JSON::XS->new->utf8;
 

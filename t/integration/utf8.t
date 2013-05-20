@@ -23,6 +23,10 @@
 use strict;
 use warnings;
 use Test::Simple tests => 3;
+use lib qw{.. ../lib ../../lib};
+use TestUtils;
+
+warning_fatal();
 
 use utf8;
 use bytes;

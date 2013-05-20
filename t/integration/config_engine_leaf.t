@@ -27,6 +27,8 @@ use Test::More tests => 21;
 use lib qw{.. ../lib ../../lib};
 use TestUtils;
 
+warning_fatal();
+
 
 
 for (

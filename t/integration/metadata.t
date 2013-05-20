@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use Test::More tests => 941;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::MetaData;
 
 use Test::MockModule;
@@ -36,6 +36,9 @@ use Data::Dumper;
 use POSIX;
 use DateTime; #TODO: rewrite using core Time::Piece https://github.com/azumakuniyuki/perl-benchmark-collection/blob/master/module/datetime-vs-time-piece.pl
 use Test::Spec;
+use TestUtils;
+
+warning_fatal();
 
 no warnings 'redefine';
 

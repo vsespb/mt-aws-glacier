@@ -25,12 +25,15 @@ use warnings;
 use utf8;
 use Test::More tests => 44;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use Test::MockModule;
 use Encode;
+use TestUtils;
+
+warning_fatal();
 
 my $relfilename = 'def/abc';
 my $rootdir = 'root_dir';

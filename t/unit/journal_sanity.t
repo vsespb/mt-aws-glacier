@@ -25,8 +25,11 @@ use warnings;
 use utf8;
 use Test::More tests => 83;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Utils;
+use TestUtils;
+
+warning_fatal();
 
 # Filenames only, no directory name
 

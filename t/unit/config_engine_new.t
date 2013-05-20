@@ -25,9 +25,12 @@ use warnings;
 use utf8;
 use Test::Spec;
 use Encode;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Data::Dumper;
+use TestUtils;
+
+warning_fatal();
 
 sub Context()
 {

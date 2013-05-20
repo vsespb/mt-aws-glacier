@@ -26,12 +26,15 @@ use utf8;
 use Test::More tests => 28;
 use Test::Deep;
 use File::Path;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Exceptions;
 use Test::MockModule;
 use POSIX;
 use Carp;
+use TestUtils;
+
+warning_fatal();
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 mkpath $mtroot;

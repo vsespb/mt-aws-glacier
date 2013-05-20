@@ -27,7 +27,7 @@ use Test::Simple tests => 1065;
 use lib qw{../lib ../../lib};
 use App::MtAws::TreeHash;
 
-
+$SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
 # Those are random pre-calculated tables, not a special test tables
 # so this way I only do regression a testings

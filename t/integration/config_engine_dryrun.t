@@ -28,6 +28,8 @@ use lib qw{.. ../lib ../../lib};
 use Data::Dumper;
 use TestUtils;
 
+warning_fatal();
+
 
 for (
 	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!],

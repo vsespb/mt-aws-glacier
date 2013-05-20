@@ -24,9 +24,12 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::GlacierRequest;
 use Data::Dumper;
+use TestUtils;
+
+warning_fatal();
 
 describe "new" => sub {
 	it "should work" => sub {

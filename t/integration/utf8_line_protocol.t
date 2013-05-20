@@ -23,13 +23,16 @@
 use strict;
 use warnings;
 use utf8;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
 use Test::More tests => 60;
 use Test::Deep;
 use Encode;
 use bytes;
 no bytes;
+use TestUtils;
+
+warning_fatal();
 
 
 my $str = "Тест";

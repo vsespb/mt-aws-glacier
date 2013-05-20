@@ -30,6 +30,8 @@ use Test::Deep;
 use Data::Dumper;
 use LWP::UserAgent;
 
+warning_fatal();
+
 
 ok (LWP::UserAgent->is_protocol_supported("https"));
 ok (LWP->VERSION() >= 6);

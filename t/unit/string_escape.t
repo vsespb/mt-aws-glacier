@@ -27,9 +27,12 @@ use warnings;
 use utf8;
 use Test::More tests => 19;
 use Encode;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Utils;
 use Encode;
+use TestUtils;
+
+warning_fatal();
 
 my $utfprefix = "(UTF-8)";
 

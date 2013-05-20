@@ -28,7 +28,7 @@ use lib qw{../lib ../../lib};
 use App::MtAws::TreeHash;
 use Data::Dumper;
 
-
+$SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
 {
 	my $s = "Hello, world! ".('x' x 100);

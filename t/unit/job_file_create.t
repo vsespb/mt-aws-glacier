@@ -25,11 +25,14 @@ use warnings;
 use utf8;
 use Test::More tests => 5;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::FileCreateJob;
 use File::Path;
 use Data::Dumper;
 use POSIX;
+use TestUtils;
+
+warning_fatal();
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 mkpath($mtroot);

@@ -28,9 +28,12 @@ use utf8;
 use Test::More tests => 764;
 use Test::Deep;
 use Encode;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Filter;
 use Data::Dumper;
+use TestUtils;
+
+warning_fatal();
 
 
 #

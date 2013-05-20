@@ -28,11 +28,13 @@ use open qw/:std :utf8/;
 use Encode;
 use Test::More tests => 382;
 use Test::Deep;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Carp;
 use Data::Dumper;
+use TestUtils;
 
+warning_fatal();
 no warnings 'redefine';
 
 # validation

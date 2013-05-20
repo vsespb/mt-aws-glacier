@@ -28,8 +28,11 @@ use utf8;
 use Test::More tests => 63;
 use Test::Deep;
 use Encode;
-use lib qw{../lib ../../lib};
+use lib qw{.. ../lib ../../lib};
 use App::MtAws::Exceptions;
+use TestUtils;
+
+warning_fatal();
 
 
 cmp_deeply exception('MyMessage'), { MTEXCEPTION => bool(1), message => 'MyMessage'};

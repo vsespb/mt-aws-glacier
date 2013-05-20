@@ -27,6 +27,9 @@ use Test::More tests => 7;
 use lib qw{.. ../lib ../../lib};
 use File::Path;
 use TestUtils;
+use TestUtils;
+
+warning_fatal();
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 mkpath($mtroot);
