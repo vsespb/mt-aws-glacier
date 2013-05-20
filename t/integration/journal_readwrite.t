@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 580;
+use Test::More tests => 870;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -58,25 +58,37 @@ test_all_ok($data_sample);
 
 # mtime formats
 
-for my $mtime (qw/1355566755 -1969112106 +1355566755 -1 0 +0 -0 1/) {
+for my $mtime (qw/1355566755 -1969112106 +1355566755 -1 0 +0 -0 1 12 123/) {
 	test_all_ok($data_sample, mtime => $mtime);
 }
 
-for my $mtime (qw/z тест 1111111111111111111111111111111111111111111111111111111111111 1+1/, '1,1', '1.1') {
+for my $mtime (qw/z тест 1111111111111111111111111111111111111111111111111111111111111 1+1/, '1,1', '1.1', "\x{7c0}") {
 	test_all_fails_for_create_A($data_sample, mtime => $mtime);
 }
 
 # time formats
-for my $time (qw/1355566755 0 1/) {
+for my $time (qw/1355566755 0 1 12 123/) {
 	test_all_ok($data_sample, time => $time);
 }
 
-for my $time (qw/z тест 1111111111111111111111111111111111111111111111111111111111111 1+1/, '1,1', '1.1') {
+for my $time (qw/z тест 1111111111111111111111111111111111111111111111111111111111111 1+1/, '1,1', '1.1', "\x{7c0}") {
 	test_all_fails_for_create_A($data_sample, time => $time);
 	test_all_fails_for_create_07($data_sample, time => $time);
 	test_all_fails_for_delete($data_sample, time => $time);
 	test_all_fails_for_retrieve($data_sample, time => $time);
 }
+
+# size formats
+
+for my $size (qw/1355566755 1 12 123/) {
+	test_all_ok($data_sample, size => $size);
+}
+
+for my $size (qw/z тест 1111111111111111111111111111111111111111111111111111111111111 1+1/, '1,1', '1.1', "\x{7c0}") {
+	test_all_fails_for_create_A($data_sample, size => $size);
+	test_all_fails_for_create_07($data_sample, size => $size);
+}
+
 
 # relfilename formats
 
@@ -226,6 +238,7 @@ sub test_all_fails_for_create_A
 			
 			$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
 			ok(! $called);
+			use Data::Dumper;print Dumper $J;
 			is_deeply($J->{used_versions}, {});
 	}
 	

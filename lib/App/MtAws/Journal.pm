@@ -101,7 +101,7 @@ sub process_line
 	my ($self, $line) = @_;
 		# Journal version 'A'
 	if (my ($time, $archive_id, $size, $mtime, $treehash, $relfilename) =
-		$line =~ /^A\t(\d{1,20})\tCREATED\t(\S+)\t(\d+)\t([+-]?\d{1,20})\t(\S+)\t(.*?)$/) {
+		$line =~ /^A\t([0-9]{1,20})\tCREATED\t(\S+)\t([0-9]{1,20})\t([+-]?[0-9]{1,20})\t(\S+)\t(.*?)$/) {
 		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		$self->_add_file($relfilename, {
 			time => $time,
@@ -111,17 +111,17 @@ sub process_line
 			treehash => $treehash,
 		});
 		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
-	} elsif ($line =~ /^A\t(\d{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
+	} elsif ($line =~ /^A\t([0-9]{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
 		$self->_delete_file($3);
 		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
-	} elsif ($line =~ /^A\t(\d{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
+	} elsif ($line =~ /^A\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
 		my ($time, $archive_id, $job_id) = ($1,$2,$3);
 		$self->_retrieve_job($time, $archive_id, $job_id);
 		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
 		
 	# Journal version '0'
 	
-	} elsif ($line =~ /^(\d{1,20})\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/) {
+	} elsif ($line =~ /^([0-9]{1,20})\s+CREATED\s+(\S+)\s+([0-9]{1,20})\s+(\S+)\s+(.*?)$/) {
 		my ($time, $archive_id, $size, $treehash, $relfilename) = ($1,$2,$3,$4,$5);
 		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
 		#die if $self->{journal_h}->{$relfilename};
@@ -132,10 +132,10 @@ sub process_line
 			treehash => $treehash,
 		});
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
-	} elsif ($line =~ /^\d{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
+	} elsif ($line =~ /^[0-9]{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
 		$self->_delete_file($2);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
-	} elsif ($line =~ /^(\d{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
+	} elsif ($line =~ /^([0-9]{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
 		my ($time, $archive_id) = ($1,$2);
 		$self->_retrieve_job($time, $archive_id);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
