@@ -93,7 +93,7 @@ for my $size (qw/z тест 1111111111111111111111111111111111111111111111111111
 
 
 for my $position (1..5) {
-	for my $delimiter ("\t", "\x{202F}", "\x0A", "0x0A") {
+	for my $delimiter ("\t", "\x{202F}", "\x0A", "0x0D") {
 		test_all_fails_for_create_07($data_sample, _delimiter => $delimiter, _delimiter_index => $position);
 		# TODO: test not only create!
 	}
@@ -101,7 +101,7 @@ for my $position (1..5) {
 
 
 for my $position (1..7) {
-	for my $delimiter (" ", "  ", "\x{202F}", "\x0A", "0x0A") {
+	for my $delimiter (" ", "  ", "\x{202F}", "\x0A", "0x0D") {
 		test_all_fails_for_create_A($data_sample, _delimiter => $delimiter, _delimiter_index => $position);
 		# TODO: test not only create!
 	}
