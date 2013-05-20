@@ -23,7 +23,8 @@
 use strict;
 use warnings;
 use Test::Simple tests => 3;
-use lib qw{.. ../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 
 warning_fatal();

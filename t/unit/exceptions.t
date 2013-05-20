@@ -28,7 +28,8 @@ use utf8;
 use Test::More tests => 63;
 use Test::Deep;
 use Encode;
-use lib qw{.. ../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Exceptions;
 use TestUtils;
 

@@ -24,7 +24,8 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 11;
-use lib qw{../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::TreeHash;
 use Data::Dumper;
 

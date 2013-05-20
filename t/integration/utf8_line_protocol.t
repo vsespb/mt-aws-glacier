@@ -23,7 +23,8 @@
 use strict;
 use warnings;
 use utf8;
-use lib qw{.. ../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
 use Test::More tests => 60;
 use Test::Deep;

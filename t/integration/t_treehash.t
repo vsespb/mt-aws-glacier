@@ -24,7 +24,8 @@
 use strict;
 use warnings;
 use Test::Simple tests => 1065;
-use lib qw{../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::TreeHash;
 
 $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};

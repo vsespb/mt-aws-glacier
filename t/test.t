@@ -24,6 +24,7 @@ use TAP::Harness;
 use strict;
 use warnings;
 use utf8;
+use FindBin;
 
 # build requirements
 require JSON::XS;
@@ -48,7 +49,10 @@ my $harness = TAP::Harness->new({
     jobs			=> 8,
 });
 
-my $first = 'integration/t_treehash.t';
-my @others = grep { $_ ne $first } glob('unit/*.t'), glob('integration/*.t');
+my $priotity = qr!integration/t_treehash\.t!;
+my @all = (glob("$FindBin::RealBin/unit/*.t"), glob("$FindBin::RealBin/integration/*.t"));
 
-$harness->runtests($first, @others);
+my @first = grep { $_ =~ $priotity } @all;
+my @others = grep { $_ !~ $priotity } @all;
+die unless scalar @first + scalar @others == scalar @all;
+$harness->runtests(@first, @others);

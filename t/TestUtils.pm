@@ -20,6 +20,9 @@
 
 package TestUtils;
 
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
+
 use App::MtAws::ConfigDefinition;
 use App::MtAws::ConfigEngine;
 require Exporter;
