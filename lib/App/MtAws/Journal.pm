@@ -70,10 +70,13 @@ sub read_journal
 		open_file(my $F, $self->{journal_file}, file_encoding => $self->{journal_encoding}, mode => '<') or
 			die exception journal_open_error => "Unable to open journal file %string filename% for reading, errno=%errno%",
 				filename => $self->{journal_file}, errno => $!;
+		my $lineno = 0;
 		while (!eof($F)) {
-			defined( my $line = <$F> ) or confess;
-			chomp $line;
-			$self->process_line($line);
+			defined( $_ = <$F> ) or confess;
+			++$lineno;
+			s/\r?\n$// or
+				die exception journal_format_error => "Invalid format of journal, line %lineno% not fully written", lineno => $lineno;
+			$self->process_line($_);
 		}
 		close $F or confess;
 	}
