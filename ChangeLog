@@ -1,3 +1,7 @@
+
+  * Exception (instead of unexpected error) thrown in case when filenames are too big (limit
+  is 700 ASCII or 350 2-bytes UTF-8). Limitation section updated for this case in README.
+
 ### 2013-05-19 v0.952 beta
 
   * Some error handling rework. Errors for file opens (permissions problems), invalid characters in filenames, some misc

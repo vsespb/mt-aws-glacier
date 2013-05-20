@@ -30,6 +30,7 @@ use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 use Carp;
 
 
@@ -76,7 +77,13 @@ sub create_multipart_upload
 	$self->{method} = 'POST';
 
 	$self->add_header('x-amz-part-size', $partsize);
-	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime))||confess; #TODO: gracefull error in case filename too big
+	
+	# currently meat_encode only returns undef if filename is too big
+	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime)) or
+		die exception 'file_name_too_big' =>
+		"Relative filename %string filename% is too big to store in Amazon Glacier metadata. ".
+		"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.",
+		filename => $relfilename;
 	$self->add_header('x-amz-archive-description', $self->{description});
 	
 	my $resp = $self->perform_lwp();

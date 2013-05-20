@@ -568,6 +568,8 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 
 * Filenames with CR (Carriage return, code 0x0D) LF (Line feed, code 0x0A) and TAB (0x09) are not supported (usually not a problem too).
 
+* Length of relative filenames. Currently limit is about 700 ASCII characters or 350 2-byte UTF-8 character (.. or 230 3-byte characters).
+
 (NOTE: if above requirements are not met, error will be thrown)
 
 ## Test/Play with it

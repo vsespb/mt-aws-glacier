@@ -27,6 +27,7 @@ use Test::Spec;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::GlacierRequest;
+use App::MtAws::Exceptions;
 use Data::Dumper;
 use TestUtils;
 
@@ -71,6 +72,19 @@ describe "new" => sub {
 	};
 };
 
+
+describe "create_multipart_upload" => sub {
+	it "should throw exception if filename too long" => sub {
+		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+		my $filename = 'x' x 2000;
+		ok ! defined eval { $g->create_multipart_upload(2, $filename, time()); 1 };
+		ok is_exception('file_name_too_big');
+		is get_exception->{filename}, $filename;
+		is exception_message(get_exception),
+			"Relative filename \"$filename\" is too big to store in Amazon Glacier metadata. ".
+			"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.";
+	};
+};
 
 sub header
 {
