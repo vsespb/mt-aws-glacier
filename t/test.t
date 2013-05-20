@@ -27,16 +27,16 @@ use utf8;
 use FindBin;
 
 # build requirements
-require JSON::XS;
-require Test::Deep;
-require Test::MockModule;
-require LWP::UserAgent;
-require DateTime;
-require Test::Spec;
-require LWP::Protocol::https;
+use JSON::XS ();
+use Test::Deep ();
+use Test::MockModule ();
+use LWP::UserAgent ();
+use DateTime ();
+use Test::Spec ();
+use LWP::Protocol::https ();
 use MIME::Base64 3.11;
 # for 5.8.x stock perl
-require Digest::SHA;
+use Digest::SHA ();
 # /build requirements
 
 my $harness = TAP::Harness->new({
