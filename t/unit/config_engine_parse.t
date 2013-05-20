@@ -153,6 +153,7 @@ sub assert_config_throw_error($$$)
 
 {
 	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
+		local $SIG{__WARN__} = 'DEFAULT';
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'--myvault x'
 		));

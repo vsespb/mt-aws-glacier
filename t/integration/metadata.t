@@ -39,6 +39,7 @@ use Test::Spec;
 use TestUtils;
 
 warning_fatal();
+use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
 no warnings 'redefine';
 
@@ -183,7 +184,7 @@ no warnings 'redefine';
 		['директория/файл',1352124178, 'mt2 eyJmaWxlbmFtZSI6ItC00LjRgNC10LrRgtC-0YDQuNGPL9GE0LDQudC7IiwibXRpbWUiOiIyMDEyMTEwNVQxNDAyNThaIn0'],
 	) {
 		my ($filename, $mtime) = App::MtAws::MetaData::meta_decode($_->[2]);
-		ok $_->[0] eq $filename, "check filename $_->[0] $filename";
+		ok $_->[0] eq $filename, "check filename";
 		ok $_->[1] eq $mtime, 'check mtime';
 	}
 }

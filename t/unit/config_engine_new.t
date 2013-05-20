@@ -742,7 +742,7 @@ describe "deprecated" => sub {
 			localize sub {
 				my @options = ('myoption', 'myoption2');
 				options @options;
-				App::MtAws::ConfigEngine->expects("seen")->exactly(2);
+				App::MtAws::ConfigEngine->expects("seen")->exactly(2)->returns(1);
 				deprecated @options;
 			}
 		};
@@ -794,7 +794,7 @@ describe "validate" => sub {
 	it "should check option" => sub {
 		localize sub {
 			option 'myoption';
-			App::MtAws::ConfigEngine->expects("seen")->once();
+			App::MtAws::ConfigEngine->expects("seen")->once()->returns(1);
 			validate('myoption2');
 		}
 	};
@@ -901,7 +901,7 @@ describe "validate" => sub {
 		it "should check option" => sub {
 			localize sub {
 				options qw/myoption myoption2/;
-				App::MtAws::ConfigEngine->expects("seen")->exactly(2);
+				App::MtAws::ConfigEngine->expects("seen")->exactly(2)->returns(1);
 				validate(qw/myoption2 myoption/);
 			}
 		};

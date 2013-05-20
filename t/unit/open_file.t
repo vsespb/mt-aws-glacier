@@ -32,9 +32,6 @@ use Data::Dumper;
 use File::Path;
 our $OpenStack = undef;
 our $BinmodeStack = undef;
-use TestUtils;
-
-warning_fatal();
 
 # before 'use xxx Utils'
 sub _open { CORE::open($_[0], $_[1], $_[2]) };
@@ -43,6 +40,9 @@ BEGIN { *CORE::GLOBAL::binmode = sub(*;$@) { push @$BinmodeStack, \@_; CORE::bin
 
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
+use TestUtils;
+
+warning_fatal();
 
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';

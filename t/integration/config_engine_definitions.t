@@ -335,7 +335,10 @@ no warnings 'redefine';
 		command 'mycommand' => sub { optional('myoption') };
 	});
 	my @my_args = ('mycommand', '-myoption', 'def');
-	my $res = $c->parse_options(@my_args);
+	my $res = do {
+		local $SIG{__WARN__} = 'DEFAULT';
+		$c->parse_options(@my_args);
+	};
 	
 	cmp_deeply $res->{error_texts}, ['Error parsing options'],
 		"should not work if option with same name supplied as normal option";
@@ -1084,7 +1087,10 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		options 'myoption';
 		command 'mycommand' => sub { optional('myoption')};
 	});
-	my $res = $c->parse_options('mycommand', '-MYoption', 123);
+	my $res = do {
+		local $SIG{__WARN__} = 'DEFAULT';
+		$c->parse_options('mycommand', '-MYoption', 123);
+	};
 	ok $res->{errors} && $res->{error_texts};
 	cmp_deeply $res->{errors}, [{ format => 'getopts_error'}], "should not ignore options case"; 
 }
@@ -1272,7 +1278,10 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	$c->define(sub {
 		command 'mycommand' => sub { };
 	});
-	my $res = $c->parse_options('mycommand', '--f--');
+	my $res = do {
+		local $SIG{__WARN__} = 'DEFAULT';
+		$c->parse_options('mycommand', '--f--');
+	};
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should catch error parsing options"; 
@@ -1285,7 +1294,10 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		option 'o1', type => 'i';
 		command 'mycommand' => sub { mandatory('o1') };
 	});
-	my $res = $c->parse_options('mycommand', '--o1=3.3');
+	my $res = do {
+		local $SIG{__WARN__} = 'DEFAULT';
+		$c->parse_options('mycommand', '--o1=3.3');
+	};
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should allow to define option types"; 
