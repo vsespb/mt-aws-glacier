@@ -1,5 +1,10 @@
 
-  * Exception (instead of unexpected error) thrown in case when filenames are too big (limit
+  * Error message added - refuse to work with journal files where last line does not end with LF (or CRLF). That could
+  mean journal is truncated/damaged.
+
+  * Possibility to work with Journal files, which use CRLF as line separator
+
+  * Error message (instead of unexpected error) added for case when filenames are too big (limit
   is 700 ASCII or 350 2-bytes UTF-8). Limitation section updated for this case in README.
 
 ### 2013-05-19 v0.952 beta
