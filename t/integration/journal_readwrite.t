@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1795;
+use Test::More tests => 1921;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -261,8 +261,8 @@ sub test_all_fails_for_create_A
 				$D{$data->{_delimiter_index}} = $data->{_delimiter};
 			}
 			
-			$J->process_line(join('', 'A', $D{1}, $data->{time}, $D{2}, 'CREATED', $D{3}, $data->{archive_id}, $D{4},
-				$data->{size}, $D{5}, $data->{mtime}, $D{6}, $data->{treehash}, $D{7}, $data->{relfilename}));
+			ok ! defined eval { $J->process_line(join('', 'A', $D{1}, $data->{time}, $D{2}, 'CREATED', $D{3}, $data->{archive_id}, $D{4},
+				$data->{size}, $D{5}, $data->{mtime}, $D{6}, $data->{treehash}, $D{7}, $data->{relfilename})); 1; };
 			ok(! $called);
 			is_deeply($J->{used_versions}, {});
 	}
@@ -300,8 +300,8 @@ sub test_all_fails_for_create_07
 				$D{$data->{_delimiter_index}} = $data->{_delimiter};
 			}
 			
-			$J->process_line(join('', $data->{time}, $D{1}, 'CREATED', $D{2}, $data->{archive_id}, $D{3}, $data->{size},
-				 $D{4}, $data->{treehash}, $D{5}, $data->{relfilename}));
+			ok ! defined eval { $J->process_line(join('', $data->{time}, $D{1}, 'CREATED', $D{2}, $data->{archive_id}, $D{3}, $data->{size},
+				 $D{4}, $data->{treehash}, $D{5}, $data->{relfilename})); 1; };
 			ok(! $called);
 			is_deeply($J->{used_versions}, {});
 	}
@@ -325,7 +325,7 @@ sub test_all_fails_for_delete
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_file', sub {	$called = 1});
 			
-			$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
+			ok ! defined eval { $J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}"); 1; };
 			ok (! $called);
 			is_deeply($J->{used_versions}, {});
 	}
@@ -344,7 +344,7 @@ sub test_all_fails_for_delete
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_file', sub {	$called = 1 });
 			
-			$J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}");
+			ok ! defined eval { $J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}"); 1; };
 			ok(! $called);
 			is_deeply($J->{used_versions}, {});
 	}
@@ -367,7 +367,7 @@ sub test_all_fails_for_retrieve
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub {	$called =1 });
 			
-			$J->process_line("A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
+			ok ! defined eval { $J->process_line("A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}"); 1 };
 	
 			ok (!$called);		
 			is_deeply($J->{used_versions}, {});
@@ -387,7 +387,7 @@ sub test_all_fails_for_retrieve
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub {	$called =1 });
 			
-			$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");
+			ok ! defined eval { $J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}"); 1; };
 			
 			ok (!$called);		
 			is_deeply($J->{used_versions}, {});

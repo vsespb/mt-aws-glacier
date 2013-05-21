@@ -145,7 +145,7 @@ sub process_line
 		$self->_retrieve_job($time, $archive_id);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} else {
-		#confess;
+		confess;
 	}
 }
 
