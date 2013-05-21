@@ -35,6 +35,8 @@ use TestUtils;
 
 warning_fatal();
 
+die "Cannot work under root" unless $>;
+
 my $mtroot = '/tmp/mt-aws-glacier-tests';
 mkpath($mtroot);
 my $file = "$mtroot/job_file_create";

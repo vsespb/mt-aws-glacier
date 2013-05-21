@@ -30,6 +30,8 @@ use File::Path;
 use TestUtils;
 use TestUtils;
 
+die "Cannot work under root" unless $>;
+
 warning_fatal();
 
 my $mtroot = '/tmp/mt-aws-glacier-tests';
