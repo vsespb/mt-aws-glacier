@@ -1,3 +1,7 @@
+### 2013-05-19 v0.953 beta
+
+  * Error messages added if detect journal from future version of mtglacier. Also other errors in parsing
+  line properly handled.
 
   * Error message added - refuse to work with journal files where last line does not end with LF (or CRLF). That could
   mean journal is truncated/damaged.
