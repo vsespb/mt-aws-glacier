@@ -46,7 +46,7 @@ sub new
 	$self->{journal_h} = {};
 	
 	$self->{used_versions} = {};
-	$self->{output_version} = 'A' unless defined($self->{output_version});
+	$self->{output_version} = 'B' unless defined($self->{output_version});
 	$self->{last_supported_version} = 'C';
 	$self->{first_unsupported_version} = chr(ord($self->{last_supported_version})+1);
 	
@@ -202,24 +202,25 @@ sub add_entry
 {
 	my ($self, $e) = @_;
 	
-	confess unless $self->{output_version} eq 'A';
+	confess unless $self->{output_version} eq 'B';
 	
 	# TODO: time should be ascending?
 
 	if ($e->{type} eq 'CREATED') {
 		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
-		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id size mtime treehash relfilename/);
+		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id size treehash relfilename/);
 		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
-		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$filename");
+		my $mtime = defined($e->{mtime}) ? $e->{mtime} : 'NONE';
+		$self->_write_line("B\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$mtime\t$e->{treehash}\t$filename");
 	} elsif ($e->{type} eq 'DELETED') {
 		#  DELETED $data->{archive_id} $data->{relfilename}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id relfilename/);
 		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
-		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$filename");
+		$self->_write_line("B\t$e->{time}\tDELETED\t$e->{archive_id}\t$filename");
 	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
 		#  RETRIEVE_JOB $data->{archive_id}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id job_id/);
-		$self->_write_line("A\t$e->{time}\tRETRIEVE_JOB\t$e->{archive_id}\t$e->{job_id}");
+		$self->_write_line("B\t$e->{time}\tRETRIEVE_JOB\t$e->{archive_id}\t$e->{job_id}");
 	} else {
 		confess "Unexpected else";
 	}

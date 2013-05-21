@@ -57,7 +57,7 @@ my $data = 	{
 
 {
 	unlink $journal;
-	my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=> $journal, root_dir => $rootdir);
+	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
 	$J->open_for_write();
 	$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => $data->{mtime}, archive_id => $data->{archive_id},
 		size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });

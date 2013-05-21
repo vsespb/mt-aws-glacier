@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -48,12 +48,12 @@ my $data = {
 };
 
 #
-# Test parsing line of Journal version 'A'
+# Test parsing line of Journal version 'B'
 #
 
 # CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 {
-		my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 		my ($line);
 		
@@ -62,12 +62,26 @@ my $data = {
 		$mock->mock('_time', sub {	$data->{time} });
 		
 		$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => $data->{mtime}, archive_id => $data->{archive_id}, size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
-		ok($line eq "A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
+		ok($line eq "B\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
+}
+
+# mtime=NONE
+{
+		my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
+
+		my ($line);
+		
+		my $mock = Test::MockModule->new('App::MtAws::Journal');
+		$mock->mock('_write_line', sub {	(undef, $line) = @_;	});
+		$mock->mock('_time', sub {	$data->{time} });
+		
+		$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => undef, archive_id => $data->{archive_id}, size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
+		ok($line eq "B\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\tNONE\t$data->{treehash}\t$data->{relfilename}");
 }
 
 # DELETED
 {
-		my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 		my ($line);
 		
@@ -76,12 +90,12 @@ my $data = {
 		$mock->mock('_time', sub {	$data->{time} });
 		
 		$J->add_entry({ type=> 'DELETED', time => $data->{time}, archive_id => $data->{archive_id}, relfilename => $data->{relfilename} });
-		ok($line eq "A\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
+		ok($line eq "B\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
 }
 
 # RETRIEVE_JOB
 {
-		my $J = App::MtAws::Journal->new(output_version => 'A', journal_file=>'x', root_dir => $rootdir);
+		my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 		my ($line);
 		
@@ -90,7 +104,7 @@ my $data = {
 		$mock->mock('_time', sub {	$data->{time} });
 		
 		$J->add_entry({ type=> 'RETRIEVE_JOB', time => $data->{time}, archive_id => $data->{archive_id}, job_id => $data->{jobid}});
-		ok($line eq "A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{jobid}");
+		ok($line eq "B\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{jobid}");
 }
 
 1;
