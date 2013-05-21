@@ -23,11 +23,13 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1921;
+use Test::More tests => 1977;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
+use App::MtAws::Exceptions;
+use App::MtAws::Utils;
 use Test::MockModule;
 use TestUtils;
 
@@ -104,6 +106,50 @@ for my $position (1..7) {
 	for my $delimiter (" ", "  ", "\x{202F}", "\x0A", "0x0D") {
 		test_all_fails_for_create_A($data_sample, _delimiter => $delimiter, _delimiter_index => $position);
 		# TODO: test not only create!
+	}
+}
+
+# line formats
+
+{
+	
+	my $last_supported_version = 'A';
+	
+	# versions A-Z
+	my $data =$data_sample;
+	for my $v (chr(ord($last_supported_version)+1)..'Z') {
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $line = "$v\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}";
+		ok ! defined eval { $J->process_line($line, 11); 1; };
+		my $err = $@;
+		cmp_deeply $err, superhashof exception journal_format_error_future => "Invalid format of journal, line %lineno% is from future version of mtglacier",
+			lineno => 11;
+	}
+	for my $v ('A'..$last_supported_version) {
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $line = "$v\tbroken";
+		ok ! defined eval { $J->process_line($line, 11); 1; };
+		my $err = $@;
+		cmp_deeply $err, superhashof exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
+			lineno => 11, line => hex_dump_string($line);
+	}
+	# version '0'
+	{
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $line = "123456 fff";
+		ok ! defined eval { $J->process_line($line, 11); 1; };
+		my $err = $@;
+		cmp_deeply $err, superhashof exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
+			lineno => 11, line => hex_dump_string($line);
+	}
+	# version unknown
+	{
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+		my $line = "broken\tline";
+		ok ! defined eval { $J->process_line($line, 11); 1; };
+		my $err = $@;
+		cmp_deeply $err, superhashof exception journal_format_error_unknown => "Invalid format of journal, line %lineno% is in unknown format: %line%",
+			lineno => 11, line => hex_dump_string($line);
 	}
 }
 

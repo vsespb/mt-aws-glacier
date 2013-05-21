@@ -47,6 +47,8 @@ sub new
 	
 	$self->{used_versions} = {};
 	$self->{output_version} = 'A' unless defined($self->{output_version});
+	$self->{last_supported_version} = 'A';
+	$self->{first_unsupported_version} = chr(ord('A')+1);
 	
 	return $self;
 }
@@ -76,7 +78,7 @@ sub read_journal
 			++$lineno;
 			s/\r?\n$// or
 				die exception journal_format_error => "Invalid format of journal, line %lineno% not fully written", lineno => $lineno;
-			$self->process_line($_);
+			$self->process_line($_, $lineno);
 		}
 		close $F or confess;
 	}
@@ -101,7 +103,7 @@ sub close_for_write
 
 sub process_line
 {
-	my ($self, $line) = @_;
+	my ($self, $line, $lineno) = @_;
 	my ($time, $archive_id, $size, $mtime, $treehash, $relfilename);
 	# TODO: replace \S and \s, make tests for this
 	
@@ -144,8 +146,15 @@ sub process_line
 	} elsif (($time, $archive_id) = $line =~ /^([0-9]{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
 		$self->_retrieve_job($time, $archive_id);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
+	} elsif ( ($line =~ /^([0-9]{1,20}) /) || ($line =~ /^[A-$self->{last_supported_version}]\t/) ) {
+		die exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
+			lineno => $lineno, line => hex_dump_string($line);
+	} elsif ( ($line =~ /^[$self->{first_unsupported_version}-Z]\t/) ) {
+		die exception journal_format_error_future => "Invalid format of journal, line %lineno% is from future version of mtglacier",
+			lineno => $lineno;
 	} else {
-		confess;
+		die exception journal_format_error_unknown => "Invalid format of journal, line %lineno% is in unknown format: %line%",
+			lineno => $lineno, line => hex_dump_string($line);
 	}
 }
 
