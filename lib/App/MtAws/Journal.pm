@@ -47,8 +47,8 @@ sub new
 	
 	$self->{used_versions} = {};
 	$self->{output_version} = 'A' unless defined($self->{output_version});
-	$self->{last_supported_version} = 'A';
-	$self->{first_unsupported_version} = chr(ord('A')+1);
+	$self->{last_supported_version} = 'C';
+	$self->{first_unsupported_version} = chr(ord($self->{last_supported_version})+1);
 	
 	return $self;
 }
@@ -104,13 +104,30 @@ sub close_for_write
 sub process_line
 {
 	my ($self, $line, $lineno) = @_;
-	my ($time, $archive_id, $size, $mtime, $treehash, $relfilename);
+	my ($ver, $time, $archive_id, $size, $mtime, $treehash, $relfilename, $job_id);
 	# TODO: replace \S and \s, make tests for this
 	
-		# Journal version 'A'
-	if (($time, $archive_id, $size, $mtime, $treehash, $relfilename) =
-		$line =~ /^A\t([0-9]{1,20})\tCREATED\t(\S+)\t([0-9]{1,20})\t([+-]?[0-9]{1,20})\t(\S+)\t(.*?)$/) {
+	# Journal version 'A', 'B', 'C'
+	# 'B' and 'C' two way compatible
+	# 'A' is not compatible, but share some common code
+	if (($ver, $time, $archive_id, $size, $mtime, $treehash, $relfilename) =
+		$line =~ /^([ABC])\t([0-9]{1,20})\tCREATED\t(\S+)\t([0-9]{1,20})\t([+-]?[0-9]{1,20}|NONE)\t(\S+)\t(.*?)$/) {
 		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
+		
+		# here goes difference between 'A' and 'B','C'
+		if ($ver eq 'A') {
+			confess if $mtime eq 'NONE'; # this is not supported by format 'A'
+			
+			# version 'A' produce records with mtime set even when there is no mtime in Amazon metadata
+			# (this is possible when archive uploaded by 3rd party program, or mtglacier <= v0.7)
+			# we detect this as $archive_id eq $relfilename - this is practical impossible
+			# unless such record was created by download-inventory command
+			$mtime = undef if ($archive_id eq $relfilename);
+		} else {
+			$mtime = undef if $mtime eq 'NONE';
+		}
+		
+		
 		$self->_add_file($relfilename, {
 			time => $time,
 			archive_id => $archive_id,
@@ -118,14 +135,13 @@ sub process_line
 			mtime => $mtime,
 			treehash => $treehash,
 		});
-		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
-	} elsif ($line =~ /^A\t([0-9]{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
-		$self->_delete_file($3); # TODO avoid stuff like $1 $2 $3 etc
-		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
-	} elsif ($line =~ /^A\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
-		my ($time, $archive_id, $job_id) = ($1,$2,$3);
+		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
+	} elsif (($ver, $time, $archive_id, $relfilename) = $line =~ /^([ABC])\t([0-9]{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
+		$self->_delete_file($relfilename); # TODO avoid stuff like $1 $2 $3 etc
+		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
+	} elsif (($ver, $time, $archive_id, $job_id) = $line =~ /^([ABC])\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
 		$self->_retrieve_job($time, $archive_id, $job_id);
-		$self->{used_versions}->{A} = 1 unless $self->{used_versions}->{A};
+		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 		
 	# Journal version '0'
 	
@@ -135,6 +151,7 @@ sub process_line
 		#die if $self->{journal_h}->{$relfilename};
 		$self->_add_file($relfilename, {
 			time => $time,
+			mtime => undef,
 			archive_id => $archive_id,
 			size => $size,
 			treehash => $treehash,
