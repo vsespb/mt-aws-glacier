@@ -259,45 +259,8 @@ END
 	} elsif ($action eq 'download-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{'new-journal'});
-				
-		with_forks 1, $options, sub {
-			
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::InventoryFetchJob->new());
-			my ($R, $attachmentref) = fork_engine->{parent_worker}->process_task($ft, undef);
-			# here we can have response from both JobList or Inventory output..
-			# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
-			# Inventory retriebal has key 'ArchiveList'
-			# TODO: implement it more clear way on level of Job/Tasks object
-			
-			croak if -s binaryfilename $options->{'new-journal'}; # TODO: fix race condition between this and opening file
-			
-			if ($R && $attachmentref) {
-				$j->open_for_write();
-	
-				my $data = JSON::XS->new->allow_nonref->utf8->decode($$attachmentref);
-				my $now = time();
-				
-				for my $item (@{$data->{'ArchiveList'}}) {
-					
-					my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
-					$relfilename = $item->{ArchiveId} unless defined $relfilename;
-					$mtime = $now unless defined $mtime;
-					
-					my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
-					#time archive_id size mtime treehash relfilename
-					$j->add_entry({
-						type => 'CREATED',
-						relfilename => $relfilename,
-						time => $creation_time,
-						archive_id => $item->{ArchiveId},
-						size => $item->{Size},
-						mtime => $mtime,
-						treehash => $item->{SHA256TreeHash},
-					});
-				}
-				$j->close_for_write();
-			}
-		}
+		require App::MtAws::DownloadInventoryCommand;
+		App::MtAws::DownloadInventoryCommand::run($options, $j);
 	} elsif ($action eq 'create-vault') {
 		$options->{concurrency} = 1;
 				
@@ -316,6 +279,7 @@ END
 		
 		# we load here all dynamically loaded modules, to check that installation is correct.
 		require App::MtAws::CheckLocalHashCommand;
+		require App::MtAws::DownloadInventoryCommand;
 		
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
