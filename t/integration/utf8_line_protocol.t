@@ -26,7 +26,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
-use Test::More tests => 60;
+use Test::More tests => 152;
 use Test::Deep;
 use Encode;
 use bytes;
@@ -53,6 +53,78 @@ my $mtroot = '/tmp/mt-aws-glacier-tests';
 my $tmp_file = "$mtroot/line_proto_test";
 our $file = undef;
 
+# serialization tests
+
+my $samples = [
+	{ a => 'b' },
+	{},
+	undef,
+	{ z => undef },
+	{ a => '0' },
+	{ '0' => '0' },
+	['0'],
+	{ a => '1' },
+	{ '1' => '1' },
+	['1'],
+	{ a => 1.1 },
+	{ 1.2 => 1.3 },
+	[1.5],
+
+			# is not compat with YAML        	
+	{ a => 0 },
+	{ 0 => 0 },
+	[0],
+	{ a => 1 },
+	{ 1 => 1 },
+	[1],
+
+	[],
+	[undef],
+	[undef, undef],
+	
+	{ 
+		'somekey1' => { 'keyA' => 'data1', 'keyB' => 'data2', 'keyC' => '99999' },
+		'somekey2' => { 'XkeyA' => '2734234', 'XkeyB' => "data2", 'XkeyC' => '76324' },
+	},
+	{ 
+	'somekey1' => { 'keyA' => [ 'data1', 'data2', '837'], 'keyB' => 'data2', 'keyC' => {'99999'=>undef}, 'z' => {undef => undef} },
+	'somekey2' => { 'XkeyA' => '2734234', 'XkeyB' => { '123' => "data1", "g1" => "x5", "c4" => "x4"}, 'XkeyC' => [undef] },
+},
+[ { a=> 123, b=> 456 }, { c => 789 }, { e => 909}]
+];
+
+my $escape_samples = [
+"a\nb",
+"ab\n",
+"ab\n",
+"\nab\n",
+"\n\n",
+"\n",
+"\\",
+"\\\\",
+"\\n",
+"\\\n",
+"\\\\n",
+"\r",
+"\\r",
+"\\\r",
+"\\\r\\",
+"\r\\",
+"a\r\\c",
+"\r\t",
+"\\\\\\\\",
+"\n\r\@\~",
+"x" x 8192,
+];
+
+for my $src (@$samples, map { { x => $_} } @$escape_samples) {
+	my $enc = encode_data($src);
+	my $dst = decode_data($enc);
+	cmp_deeply $dst, $src;
+	ok $enc =~ qr/\A[^\n\r]+\z/s;
+}
+
+
 sub sending
 {
 	local $file;
@@ -68,7 +140,6 @@ sub receiving
 	shift->();
 	close $file;
 }
-
 
 # should work
 {
