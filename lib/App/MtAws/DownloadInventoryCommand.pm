@@ -47,28 +47,31 @@ sub run
 		
 		if ($R && $attachmentref) {
 			$j->open_for_write();
-
-			my $data = JSON::XS->new->allow_nonref->utf8->decode($$attachmentref);
-			
-			for my $item (@{$data->{'ArchiveList'}}) {
-				
-				my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
-				$relfilename = $item->{ArchiveId} unless defined $relfilename;
-				
-				my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
-				#time archive_id size mtime treehash relfilename
-				$j->add_entry({
-					type => 'CREATED',
-					relfilename => $relfilename,
-					time => $creation_time,
-					archive_id => $item->{ArchiveId},
-					size => $item->{Size},
-					mtime => $mtime,
-					treehash => $item->{SHA256TreeHash},
-				});
-			}
+			parse_and_write_journal($j, $attachmentref);
 			$j->close_for_write();
 		}
+	}
+}
+
+sub parse_and_write_journal
+{
+	my ($j, $attachmentref) = @_;
+	my $data = JSON::XS->new->allow_nonref->utf8->decode($$attachmentref);
+	for my $item (@{$data->{'ArchiveList'}}) {
+		my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
+		$relfilename = $item->{ArchiveId} unless defined $relfilename;
+		
+		my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
+		#time archive_id size mtime treehash relfilename
+		$j->add_entry({
+			type => 'CREATED',
+			relfilename => $relfilename,
+			time => $creation_time,
+			archive_id => $item->{ArchiveId},
+			size => $item->{Size},
+			mtime => $mtime,
+			treehash => $item->{SHA256TreeHash},
+		});
 	}
 }
 
