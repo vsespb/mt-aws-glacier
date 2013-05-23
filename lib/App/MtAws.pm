@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.953beta";
+our $VERSION = "0.954beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -66,6 +66,7 @@ sub main
 
 sub process
 {
+	$|=1;
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 	
 	my ($P) = @_;
