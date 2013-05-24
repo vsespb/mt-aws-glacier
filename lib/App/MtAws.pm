@@ -47,6 +47,7 @@ use App::MtAws::ConfigDefinition;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use Carp;
 use File::stat;
+use IO::Handle;
 use App::MtAws::CreateVaultJob;
 use App::MtAws::DeleteVaultJob;
 use App::MtAws::Utils;
@@ -67,6 +68,7 @@ sub main
 sub process
 {
 	$|=1;
+	STDERR->autoflush(1); 
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
 	
 	my ($P) = @_;
