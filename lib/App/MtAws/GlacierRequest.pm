@@ -43,7 +43,7 @@ sub new
 	bless $self, $class;
 	
 	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol/);
-	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault/); # TODO: validate vault later
+	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault token/); # TODO: validate vault later
 	
 	
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
@@ -55,6 +55,7 @@ sub new
    
 	$self->add_header('Host', $self->{host});
 	$self->add_header('x-amz-glacier-version', '2012-06-01') if $self->{service} eq 'glacier';
+	$self->add_header('x-amz-security-token', $self->{token}) if defined $self->{token};
 	
 	return $self;                                                                                                                                                                                                                                                                     
 }                      
