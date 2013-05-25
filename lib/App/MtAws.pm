@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.955beta";
+our $VERSION = "0.956beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -198,33 +198,11 @@ END
 			}
 		}
 	} elsif ($action eq 'restore') {
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed}, use_active_retrievals => 1);
 		confess unless $options->{'max-number-of-files'};
 				
-		with_forks !$options->{'dry-run'}, $options, sub {
-			$j->read_journal(should_exist => 1);
-			
-			my $files = $j->{journal_h};
-			# TODO: refactor
-			my @filelist =	grep { ! -f binaryfilename $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
-			@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
-			
-			if (@filelist) {
-				if ($options->{'dry-run'}) {
-					for (@filelist) {
-						print "Will RETRIEVE archive $_->{archive_id} (filename $_->{relfilename})\n"
-					}
-				} else {
-					$j->open_for_write();
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListRetrievalJob->new(archives => \@filelist ));
-					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
-					die unless $R;
-					$j->close_for_write();
-				}
-			} else {
-				print "Nothing to restore\n";
-			}
-		}
+		require App::MtAws::RetrieveCommand;
+		App::MtAws::RetrieveCommand::run($options, $j);
 	} elsif ($action eq 'restore-completed') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 		

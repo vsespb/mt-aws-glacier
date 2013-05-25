@@ -64,6 +64,8 @@ sub read_journal
 	my ($self, %args) = @_;
 	confess unless defined $args{should_exist};
 	confess unless length($self->{journal_file});
+	$self->{last_read_time} = time();
+	$self->{active_retrievals} = {} if $self->{use_active_retrievals};
 	
 	my $binary_filename = binaryfilename $self->{journal_file};
 	if ($args{should_exist} && !-e $binary_filename) {
@@ -191,7 +193,13 @@ sub _delete_file
 
 sub _retrieve_job
 {
-	my ($time, $archive_id, $job_id) = @_;
+	my ($self, $time, $archive_id, $job_id) = @_;
+	if ($self->{use_active_retrievals} && $self->{last_read_time} - $time < 24*60*60) { # data is available for appx. 24+4 hours. but we assume 24 hours
+		my $r = $self->{active_retrievals};
+		if (!$r->{$archive_id} || $r->{$archive_id}->{time} < $time ) {
+			$self->{active_retrievals}->{$archive_id} = { time => $time, job_id => $job_id };
+		}
+	}
 }
 
 #

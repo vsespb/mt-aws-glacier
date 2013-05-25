@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.955 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.956 beta (See [ChangeLog][mt-aws glacier changelog])
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 

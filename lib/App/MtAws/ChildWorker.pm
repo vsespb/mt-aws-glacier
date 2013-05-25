@@ -75,14 +75,14 @@ sub process
 			} elsif ($action eq "upload_part") {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->upload_part($data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
-				return undef unless $r;
+				confess "upload_part failed" unless $r;
 				$result = { uploaded => $data->{start} } ;
 				$console_out = "Uploaded part for $data->{relfilename} at offset [$data->{start}]";
 			} elsif ($action eq 'finish_upload') {
 				# TODO: move vault to task, not to options!
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $archive_id = $req->finish_multipart_upload($data->{upload_id}, $data->{filesize}, $data->{final_hash});
-				return undef unless $archive_id;
+				confess "finish_upload failed" unless $archive_id;
 				$result = {
 					final_hash => $data->{final_hash},
 					archive_id => $archive_id,
@@ -100,7 +100,7 @@ sub process
 			} elsif ($action eq 'delete_archive') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->delete_archive($data->{archive_id});
-				return undef unless $r;
+				confess "delete_archive failed" unless $r;
 				$result = {
 					journal_entry => {
 						type=> 'DELETED',
@@ -114,20 +114,20 @@ sub process
 				mkpath(binaryfilename dirname($data->{filename}));
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
-				return undef unless $r;
+				confess "retrieval_download_job failed" unless $r;
 				$result = { response => $r };
 				$console_out = "Download Archive $data->{filename}";
 			} elsif ($action eq 'inventory_download_job') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_to_memory($data->{job_id});
-				return undef unless $r;
+				confess "inventory_download_job failed" unless $r;
 				$result = { response => !! $r };
 				$result_attachmentref = \$r;
 				$console_out = "Downloaded inventory in JSON format";
 			} elsif ($action eq 'retrieve_archive') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieve_archive( $data->{archive_id});
-				return undef unless $r;
+				return "retrieve_archive failed" unless $r;
 				$result = {
 					journal_entry => {
 						type=> 'RETRIEVE_JOB',

@@ -1,4 +1,11 @@
-### 2013-05-19 v0.955 beta
+### 2013-05-26 v0.956 beta
+
+  * Fixed - 'Restore' command now skips retrieval of files, which were retrieved by mtglacier in last 24h (retrievals
+  tracked in Journal using system clock). Also existing files skipped. Previous behavior was: skip only existing files. 
+
+  * Some more error handling in HTTP processing
+
+### 2013-05-26 v0.955 beta
 
   * Fixed - timeout error from underlying HTTP Library was not detected
 
