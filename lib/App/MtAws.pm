@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.955beta";
+our $VERSION = "0.956beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -297,6 +297,7 @@ END
 		
 		# we load here all dynamically loaded modules, to check that installation is correct.
 		require App::MtAws::CheckLocalHashCommand;
+		require App::MtAws::RetrieveCommand;
 		
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
