@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.954beta";
+our $VERSION = "0.955beta";
 
 use constant ONE_MB => 1024*1024;
 

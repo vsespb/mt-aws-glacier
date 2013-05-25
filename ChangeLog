@@ -1,3 +1,7 @@
+### 2013-05-19 v0.955 beta
+
+  * Fixed - timeout error from underlying HTTP Library was not detected
+
 ### 2013-05-19 v0.954 beta
 
   * Fixed bug - when child worker terminated with a signal, it's possible that STDOUT buffers won't be flushed, and
