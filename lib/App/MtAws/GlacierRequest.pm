@@ -421,17 +421,10 @@ sub perform_lwp
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
-			if ($i <= 5) {
-				sleep 1;
-			} elsif ($i <= 10) {
-				sleep 5;
-			} elsif ($i <= 20) {
-				sleep 15;
-			} elsif ($i <= 50) {
-				sleep 60
-			} else {
-				sleep 180;
-			}
+			throttle($i);
+		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read timeout/i) {
+			print "PID $$ HTTP Timeout. Will retry ($dt seconds spent for request)\n";
+			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			return $resp;
 		} else {
@@ -443,6 +436,22 @@ sub perform_lwp
 		}
 	}
 	return undef;
+}
+
+sub throttle
+{
+	my ($i) = @_;
+	if ($i <= 5) {
+		sleep 1;
+	} elsif ($i <= 10) {
+		sleep 5;
+	} elsif ($i <= 20) {
+		sleep 15;
+	} elsif ($i <= 50) {
+		sleep 60
+	} else {
+		sleep 180;
+	}
 }
 
 
