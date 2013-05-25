@@ -25,6 +25,7 @@ use warnings;
 use utf8;
 use IO::Select;
 use IO::Pipe;
+use IO::Handle;
 use Carp;
 use App::MtAws::ChildWorker;
 use App::MtAws::ParentWorker;
@@ -133,7 +134,8 @@ sub create_child
   my $parent_pid = $$;
   
   if($pid = fork()) { # Parent
-   
+   $|=1;
+   STDERR->autoflush(1);
    $fromchild->reader();
    $fromchild->autoflush(1);
    $fromchild->blocking(1);
@@ -150,7 +152,8 @@ sub create_child
    print "PID $pid Started worker\n";
    return (0, undef, undef);
   } elsif (defined ($pid)) { # Child
-
+   $|=1;
+   STDERR->autoflush(1);
    $fromchild->writer();
    $fromchild->autoflush(1);
    $fromchild->blocking(1);

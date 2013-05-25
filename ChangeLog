@@ -1,3 +1,8 @@
+### 2013-05-19 v0.954 beta
+
+  * Fixed bug - when child worker terminated with a signal, it's possible that STDOUT buffers won't be flushed, and
+  as some error messages were printed to STDOUT they was truncated in this case.
+
 ### 2013-05-19 v0.953 beta
 
   * Error messages added if detect journal from future version of mtglacier. Also other errors in parsing

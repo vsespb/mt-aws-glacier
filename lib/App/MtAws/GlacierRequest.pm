@@ -435,10 +435,10 @@ sub perform_lwp
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			return $resp;
 		} else {
-			print "Error:\n";
-			print $req->dump;
-			print $resp->dump;
-			print "\n";
+			print STDERR "Error:\n";
+			print STDERR $req->dump;
+			print STDERR $resp->dump;
+			print STDERR "\n";
 			return undef;
 		}
 	}
