@@ -198,7 +198,7 @@ END
 			}
 		}
 	} elsif ($action eq 'restore') {
-		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
+		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed}, use_active_retrievals => 1);
 		confess unless $options->{'max-number-of-files'};
 				
 		require App::MtAws::RetrieveCommand;

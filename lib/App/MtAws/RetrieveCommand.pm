@@ -30,14 +30,11 @@ use App::MtAws::Utils;
 sub run
 {
 	my ($options, $j) = @_;
-		
+	confess unless $j->{use_active_retrievals};
 	with_forks !$options->{'dry-run'}, $options, sub {
 		$j->read_journal(should_exist => 1);
 		
-		my $files = $j->{journal_h};
-		# TODO: refactor
-		my @filelist =	grep { ! -f binaryfilename $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
-		@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
+		my @filelist = get_file_list($options, $j);
 		
 		if (@filelist) {
 			if ($options->{'dry-run'}) {
@@ -55,6 +52,18 @@ sub run
 			print "Nothing to restore\n";
 		}
 	}
+}
+
+sub get_file_list
+{
+	my ($options, $j) = @_;
+	my $files = $j->{journal_h};
+	# TODO: refactor
+	my @filelist =
+		grep { !$j->{active_retrievals}{$_->{archive_id}} && ! -f binaryfilename $_->{filename} }
+		map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } }
+		keys %{$files};
+	@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
 }
 
 1;
