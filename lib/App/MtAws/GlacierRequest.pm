@@ -43,7 +43,7 @@ sub new
 	bless $self, $class;
 	
 	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol/);
-	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault/); # TODO: validate vault later
+	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault token/); # TODO: validate vault later
 	
 	
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
@@ -55,6 +55,7 @@ sub new
    
 	$self->add_header('Host', $self->{host});
 	$self->add_header('x-amz-glacier-version', '2012-06-01') if $self->{service} eq 'glacier';
+	$self->add_header('x-amz-security-token', $self->{token}) if defined $self->{token};
 	
 	return $self;                                                                                                                                                                                                                                                                     
 }                      
@@ -421,17 +422,10 @@ sub perform_lwp
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
-			if ($i <= 5) {
-				sleep 1;
-			} elsif ($i <= 10) {
-				sleep 5;
-			} elsif ($i <= 20) {
-				sleep 15;
-			} elsif ($i <= 50) {
-				sleep 60
-			} else {
-				sleep 180;
-			}
+			throttle($i);
+		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read timeout/i) {
+			print "PID $$ HTTP Timeout. Will retry ($dt seconds spent for request)\n";
+			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			return $resp;
 		} else {
@@ -443,6 +437,22 @@ sub perform_lwp
 		}
 	}
 	return undef;
+}
+
+sub throttle
+{
+	my ($i) = @_;
+	if ($i <= 5) {
+		sleep 1;
+	} elsif ($i <= 10) {
+		sleep 5;
+	} elsif ($i <= 20) {
+		sleep 15;
+	} elsif ($i <= 50) {
+		sleep 60
+	} else {
+		sleep 180;
+	}
 }
 
 
