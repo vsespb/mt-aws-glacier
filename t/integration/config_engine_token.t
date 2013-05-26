@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 36;
+use Test::More tests => 54;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -48,6 +48,10 @@ for (
 			my $res = config_create_and_parse(@$_, qq!--token!, $token);
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{token}, $token, "token matches";
+			
+			$res = config_create_and_parse(@$_);
+			ok !($res->{errors}||$res->{warnings}), "no errors";
+			ok !defined($res->{options}{token}), "token is optional";
 			
 			$token = ('x' x 10);
 			$res = config_create_and_parse(@$_, qq!--token!, $token);
