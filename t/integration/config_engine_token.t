@@ -43,7 +43,7 @@ for (
 ) {
 	fake_config sub {
 		disable_validations qw/journal secret key filename dir/ => sub {
-			my $token = ('x' x 420);
+			my $token = ('x' x 330);
 			my $res = config_create_and_parse(@$_, qq!--token!, $token);
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{token}, $token, "token matches";

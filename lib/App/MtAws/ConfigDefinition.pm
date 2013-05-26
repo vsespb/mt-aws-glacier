@@ -272,7 +272,7 @@ sub get_config
 			validation(option('region'), $invalid_format, sub { /^[A-Za-z0-9\-]{3,20}$/ }),
 			validation(option('protocol', default => 'http'), message('protocol must be "https" or "http"'), sub { /^https?$/ }),
 		);
-		validation(option('token'), $invalid_format, sub { /^[\x21-\x7e]{420}$/ });
+		validation(option('token'), $invalid_format, sub { /^[\x21-\x7e]{20,1024}$/ });
 		
 		for (option('concurrency', type => 'i', default => 4)) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
