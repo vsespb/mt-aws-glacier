@@ -314,9 +314,8 @@ sub child_worker
 			print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
 			open (IN, "<$archive_path")||confess;
 			binmode IN;
-			sysread(IN, my $buf, -s $archive_path);
+			read(IN, my $buf, -s $archive_path);
 			close IN;
-	
 			my $resp = HTTP::Response->new(200, "Fine");
 			$resp->content($buf);
 			return $resp;
