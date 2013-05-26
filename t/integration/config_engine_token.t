@@ -23,7 +23,8 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 18;
+use Test::More tests => 36;
+use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -47,6 +48,14 @@ for (
 			my $res = config_create_and_parse(@$_, qq!--token!, $token);
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{token}, $token, "token matches";
+			
+			$token = ('x' x 10);
+			$res = config_create_and_parse(@$_, qq!--token!, $token);
+			cmp_deeply $res->{errors}, [{a => 'token', format => 'invalid_format', value => $token}], "should catch too small token";
+
+			$token = ('x' x 1500);
+			$res = config_create_and_parse(@$_, qq!--token!, $token);
+			cmp_deeply $res->{errors}, [{a => 'token', format => 'invalid_format', value => $token}], "should catch too large token";
 		}
 	}
 }
