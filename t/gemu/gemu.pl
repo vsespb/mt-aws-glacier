@@ -312,12 +312,10 @@ sub child_worker
 			my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
 	
 			print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
-			open (IN, "<$archive_path")||confess;
-			binmode IN;
-			read(IN, my $buf, -s $archive_path);
-			close IN;
+			open (my $in, "<", $archive_path)||confess;
+			binmode $in;
 			my $resp = HTTP::Response->new(200, "Fine");
-			$resp->content($buf);
+			$resp->content(output_cb($in));
 			return $resp;
 		} elsif ($job->{type} eq 'inventory-retrieval'){
 			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
@@ -355,6 +353,22 @@ sub child_worker
 		confess;
 	}
 	confess;
+}
+
+sub output_cb
+{
+	my ($file) = @_;
+	my $chunk_size = 4096;
+	my $total = 0;
+	sub {
+		my $res = read($file, my $buf, $chunk_size);
+		$total += $res;
+		#if ($total > 2_000_000_000) {
+		#	sleep 190;
+		#}
+		die unless defined $res;
+		return $res == 0 ? undef : $buf;
+	}
 }
 
 
