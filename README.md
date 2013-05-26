@@ -34,6 +34,7 @@ mt-aws-glacier is a client application for Glacier.
 * Upload from STDIN
 * User selectable HTTPS support. Currently defaults to plaintext HTTP
 * Vault creation and deletion
+* STS/IAM security tokens support
 
 ## Coming-soon features
 
@@ -517,6 +518,9 @@ When disabled number of hardlinks to directory is ignored during file tree trave
 compatible with (some) CIFS/CD-ROM filesystems.
 For more information see [find][find] and [File::Find][File::Find] manuals. 
 
+7. `token` (all commands which connect Amazon Glacier API) - a STS/IAM security token, described in [Amazon STS/IAM Using Temporary Security Credentials to Access AWS]
+
+[Amazon STS/IAM Using Temporary Security Credentials to Access AWS]:http://docs.aws.amazon.com/STS/latest/UsingSTS/UsingTokens.html
 [find]:http://unixhelp.ed.ac.uk/CGI/man-cgi?find
 [File::Find]:http://search.cpan.org/perldoc?File%3A%3AFind
 
