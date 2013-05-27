@@ -185,7 +185,7 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 Journal is a file in local filesystem, which contains list of all files, uploaded to Amazon Glacier.
 Strictly saying, this file contains a list of operations (list of records), performed with Amazon Glacier vault. Main operations are:
-file creation and file deletion.
+file creation, file deletion and file retrieval.
 
 Create operation records contains: *local filename* (relative to transfer root - `--dir`), file *size*, file last *modification time* (in 1 second resolution), file *TreeHash* (Amazon
 hashing algorithm, based on SHA256), file upload time, and Amazon Glacier *archive id*
@@ -300,7 +300,18 @@ most of them are not portable. Take a look on archives file formats - different 
 
 It's possible that in the future `mtglacier` will support some other metadata things.
 
-## Other commands
+## Specification for some commands
+
+### `restore`
+
+Initiate Amazon Glacier RETRIEVE oparation for files listed in Journal, which don't *exist* on local filesystem and for
+which RETRIEVE was not initiated during last 24 hours (that information obtained from *Journal* too - each retrieval logged
+into journal together with timestamp)
+
+### `restore-completed`
+
+Donwloads files, listed in Journal, which don't *exist* on local filesystem. Currenly download without resumption feature
+is used.
 
 ### `upload-file`
 
