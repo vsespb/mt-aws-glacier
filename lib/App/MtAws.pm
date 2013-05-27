@@ -277,6 +277,7 @@ Common options:
 	--partsize - Glacier multipart upload part size
 	--filter --include --exclude - File filtering
 	--dry-run - Don't do anything
+	--token - to be used with STS/IAM
 Commands:
 	sync
 		--leaf-optimization - Don't use directory hardlinks count when traverse.
