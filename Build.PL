@@ -11,7 +11,15 @@ my $build = Module::Build->new(
 	recursive_test_files=>1,
 	dist_abstract=>'mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier',
 	license     =>'GPL_3',
+	scripts => ['mtglacier'],
+	meta_merge => {
+		resources => {
+			repository => 'https://github.com/vsespb/mt-aws-glacier',
+			bugtracker => 'https://github.com/vsespb/mt-aws-glacier/issues'
+		},
+	},
 	requires => {
+		'perl' => '5.8.8',
 		'Digest::SHA' => 0,
 		'LWP::UserAgent' => 6,
 		'LWP::Protocol::https' => 0,
