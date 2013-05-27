@@ -52,7 +52,7 @@ my $harness = TAP::Harness->new({
 });
 
 my $priotity = qr!integration/t_treehash\.t!;
-my @all = (glob("$FindBin::RealBin/unit/*.t"), glob("$FindBin::RealBin/integration/*.t"));
+my @all = (glob("$FindBin::RealBin/t/unit/*.t"), glob("$FindBin::RealBin/t/integration/*.t"));
 
 die "We have ".scalar @all." tests, instead of $testplan" unless @all == $testplan;
 

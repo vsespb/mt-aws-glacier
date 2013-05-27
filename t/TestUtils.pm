@@ -22,6 +22,8 @@ package TestUtils;
 
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
+use strict;
+use warnings;
 
 use App::MtAws::ConfigDefinition;
 use App::MtAws::ConfigEngine;
@@ -29,7 +31,7 @@ require Exporter;
 use base qw/Exporter/;
 use Carp;
 
-
+our %disable_validations;
 our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal/;
 
 sub warning_fatal
@@ -47,7 +49,7 @@ sub fake_config(@)
 
 sub no_disable_validations
 {
-	local %disable_validations = undef;
+	local %disable_validations = ();
 	shift->();
 }
 
