@@ -97,7 +97,7 @@ describe "perform_lwp" => sub {
 			is $resp->code, $code;
 		}
 	};
-	it "should throttle" => sub {
+	describe "throttle" => sub {
 		my $retries = 3;
 		it "should throttle 408/500" => sub {
 			for my $code (qw/408 500/) {
@@ -118,7 +118,6 @@ describe "perform_lwp" => sub {
 			}
 		};
 		it "should throttle X-Died and read timeout" => sub {
-			
 			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
 			($g->{method}, $g->{url}) = ('GET', 'test');
 			my @throttle_args;
