@@ -137,6 +137,20 @@ describe "perform_lwp" => sub {
 			my @matches = $out =~ /PID $$ HTTP Timeout. Will retry \(\d+ seconds spent for request\)/g;
 			is scalar @matches, $retries;
 		};
+		it "should catch other codes as unknown errors" => sub {
+			for my $code (300..309, 400..407, 409) {
+				my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+				($g->{method}, $g->{url}) = ('GET', 'test');
+				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
+				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->once;
+				my $out = '';
+				assert_raises_exception sub {
+					capture_stderr $out, sub {
+						$g->perform_lwp();
+					}
+				}, exception 'http_unexpected_reply' => "Unexpected reply from remote server";
+			}
+		};
 	};
 };
 

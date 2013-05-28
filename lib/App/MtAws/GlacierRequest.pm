@@ -454,7 +454,7 @@ sub perform_lwp
 			print STDERR $req->dump;
 			print STDERR $resp->dump;
 			print STDERR "\n";
-			return undef;
+			die exception 'http_unexpected_reply' => 'Unexpected reply from remote server';
 		}
 	}
 	die exception 'too_many_tries' => "Request was not successful after "._max_retries." retries";
