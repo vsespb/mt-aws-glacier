@@ -32,7 +32,7 @@ use App::MtAws;
 use Data::Dumper;
 use TestUtils;
 
-#warning_fatal();
+warning_fatal();
 
 describe "new" => sub {
 	it "should work" => sub {
