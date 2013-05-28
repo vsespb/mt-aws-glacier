@@ -77,7 +77,7 @@ sub finish_task
 		if ($scalar->{Marker}) {
 			return ("ok replace", App::MtAws::RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
 		} elsif (scalar @{$self->{downloads}}) {
-			return ("ok replace", App::MtAws::RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
+			return ("ok replace", App::MtAws::RetrievalDownloadJob->new(file_downloads => $self->{file_downloads}, archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
 		} else {
 			return ("done");
 		}

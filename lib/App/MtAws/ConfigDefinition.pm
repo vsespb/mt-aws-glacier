@@ -134,7 +134,7 @@ sub check_dir_or_relname
 
 sub download_options
 {
-	mandatory('dir'), check_base_dir, optional('chunksize');
+	mandatory('dir'), check_base_dir, scope('file_downloads', optional 'segment-size');
 }
 
 sub check_wait

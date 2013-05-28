@@ -211,14 +211,22 @@ END
 			
 			my $files = $j->{journal_h};
 			# TODO: refactor
-			my %filelist =	map { $_->{archive_id} => $_ } grep { ! binaryfilename -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
+			my %filelist =	map { $_->{archive_id} => $_ }
+				grep { ! binaryfilename -f $_->{filename} }
+				map {
+					{
+						archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, size => $files->{$_}{size},
+						relfilename =>$_, filename=> $j->absfilename($_)
+					}
+				}
+				keys %{$files};
 			if (keys %filelist) {
 				if ($options->{'dry-run'}) {
 					for (values %filelist) {
 						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n"
 					}
 				} else {
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(archives => \%filelist ));
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 				}
