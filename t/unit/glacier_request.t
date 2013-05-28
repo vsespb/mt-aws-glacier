@@ -104,13 +104,15 @@ describe "perform_lwp" => sub {
 				my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
 				($g->{method}, $g->{url}) = ('GET', 'test');
 				my @throttle_args;
-				App::MtAws::GlacierRequest->expects('_max_retries')->returns($retries);
+				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 				App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->exactly($retries);
 				my $out='';
-				my $resp = capture_stdout $out, sub {
-					 $g->perform_lwp();
-				};
+				my $resp = capture_stdout($out, sub {
+					assert_raises_exception sub {
+						$g->perform_lwp();
+					}, exception 'too_many_tries' => "Request was not successful after $retries retries";
+				});
 				ok ! defined $resp;
 				cmp_deeply [@throttle_args], [(1..$retries)];
 				my @matches = $out =~ /PID $$ HTTP $code This might be normal. Will retry \(\d+ seconds spent for request\)/g;
@@ -121,12 +123,14 @@ describe "perform_lwp" => sub {
 			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
 			($g->{method}, $g->{url}) = ('GET', 'test');
 			my @throttle_args;
-			App::MtAws::GlacierRequest->expects('_max_retries')->returns($retries);
+			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK', [ 'X-Died' => 'Read Timeout at']))->exactly($retries);
 			my $out='';
 			my $resp = capture_stdout $out, sub {
-				 $g->perform_lwp();
+				assert_raises_exception sub {
+					$g->perform_lwp();
+				}, exception 'too_many_tries' => "Request was not successful after $retries retries";
 			};
 			ok ! defined $resp;
 			cmp_deeply [@throttle_args], [(1..$retries)];

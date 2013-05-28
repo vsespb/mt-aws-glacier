@@ -100,12 +100,14 @@ sub capture_stderr($&)
 	$_[1]->();
 }
 
+# TODO: call only as assert_raises_exception sub {}, $e - don't omit sub! 
 sub assert_raises_exception(&@)
 {
 	my ($cb, $exception) = @_;
 	ok !defined eval { $cb->(); 1 };
 	my $err = $@;
 	cmp_deeply $err, superhashof($exception);
+	return ;
 }
 
 1;

@@ -457,7 +457,7 @@ sub perform_lwp
 			return undef;
 		}
 	}
-	return undef;
+	die exception 'too_many_tries' => "Request was not successful after "._max_retries." retries";
 }
 
 
