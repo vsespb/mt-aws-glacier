@@ -28,10 +28,11 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::GlacierRequest;
 use App::MtAws::Exceptions;
+use App::MtAws;
 use Data::Dumper;
 use TestUtils;
 
-warning_fatal();
+#warning_fatal();
 
 describe "new" => sub {
 	it "should work" => sub {
@@ -83,6 +84,50 @@ describe "create_multipart_upload" => sub {
 		is exception_message(get_exception),
 			"Relative filename \"$filename\" is too big to store in Amazon Glacier metadata. ".
 			"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.";
+	};
+};
+
+describe "perform_lwp" => sub {
+	it "should work" => sub {
+		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+		($g->{method}, $g->{url}) = ('GET', 'test');
+		LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK'));
+		my $resp = $g->perform_lwp();
+		is $resp->status_line, '200 OK';
+	};
+	it "should throttle 408/500" => sub {
+		my $retries = 100;
+		for my $code (qw/408 500/) {
+			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+			($g->{method}, $g->{url}) = ('GET', 'test');
+			my @throttle_args;
+			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
+			LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->exactly($retries);
+			my $out='';
+			my $resp = capture_stdout $out, sub {
+				 $g->perform_lwp();
+			};
+			ok ! defined $resp;
+			cmp_deeply [@throttle_args], [(1..$retries)];
+			my @matches = $out =~ /PID $$ HTTP $code This might be normal. Will retry \(\d+ seconds spent for request\)/g;
+			is scalar @matches, 100;
+		}
+	};
+	it "should throttle X-Died and read timeout" => sub {
+		my $retries = 100;
+		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+		($g->{method}, $g->{url}) = ('GET', 'test');
+		my @throttle_args;
+		App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
+		LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK', [ 'X-Died' => 'Read Timeout at']))->exactly($retries);
+		my $out='';
+		my $resp = capture_stdout $out, sub {
+			 $g->perform_lwp();
+		};
+		ok ! defined $resp;
+		cmp_deeply [@throttle_args], [(1..$retries)];
+		my @matches = $out =~ /PID $$ HTTP Timeout. Will retry \(\d+ seconds spent for request\)/g;
+		is scalar @matches, 100;
 	};
 };
 
