@@ -120,35 +120,34 @@ for my $position (1..7) {
 	for my $v (chr(ord($last_supported_version)+1)..'Z') {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my $line = "$v\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}";
-		ok ! defined eval { $J->process_line($line, 11); 1; };
-		my $err = $@;
-		cmp_deeply $err, superhashof exception journal_format_error_future => "Invalid format of journal, line %lineno% is from future version of mtglacier",
-			lineno => 11;
+		assert_raises_exception {
+			$J->process_line($line, 11);
+		}, exception journal_format_error_future => "Invalid format of journal, line %lineno% is from future version of mtglacier", lineno => 11 ;
 	}
 	for my $v ('A'..$last_supported_version) {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my $line = "$v\tbroken";
-		ok ! defined eval { $J->process_line($line, 11); 1; };
-		my $err = $@;
-		cmp_deeply $err, superhashof exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
+		assert_raises_exception {
+			$J->process_line($line, 11);
+		}, exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
 			lineno => 11, line => hex_dump_string($line);
 	}
 	# version '0'
 	{
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my $line = "123456 fff";
-		ok ! defined eval { $J->process_line($line, 11); 1; };
-		my $err = $@;
-		cmp_deeply $err, superhashof exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
+		assert_raises_exception {
+			$J->process_line($line, 11);
+		}, exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",
 			lineno => 11, line => hex_dump_string($line);
 	}
 	# version unknown
 	{
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my $line = "broken\tline";
-		ok ! defined eval { $J->process_line($line, 11); 1; };
-		my $err = $@;
-		cmp_deeply $err, superhashof exception journal_format_error_unknown => "Invalid format of journal, line %lineno% is in unknown format: %line%",
+		assert_raises_exception {
+			$J->process_line($line, 11);
+		}, exception journal_format_error_unknown => "Invalid format of journal, line %lineno% is in unknown format: %line%",
 			lineno => 11, line => hex_dump_string($line);
 	}
 }
