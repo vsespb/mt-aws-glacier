@@ -50,7 +50,7 @@ my $harness = TAP::Harness->new({
 });
 
 my $priotity = qr!integration/t_treehash\.t!;
-my @all = (glob("$FindBin::RealBin/unit/*.t"), glob("$FindBin::RealBin/integration/*.t"));
+my @all = (glob("$FindBin::RealBin/t/unit/*.t"), glob("$FindBin::RealBin/t/integration/*.t"));
 
 my @first = grep { $_ =~ $priotity } @all;
 my @others = grep { $_ !~ $priotity } @all;

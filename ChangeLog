@@ -2,6 +2,11 @@
 
   * STS/IAM security tokens support added
 
+  * Documentation: typo fixed - setup instructions was incorrect - need to install LWP::Protocol::https instead of
+  LWP::Useragent::https (LWP::Protocol::https is a typo, and does not exists)
+
+  * Documentation: described behavior of restore and restore-completed commands
+
 ### 2013-05-26 v0.956 beta
 
   * Fixed - 'Restore' command now skips retrieval of files, which were retrieved by mtglacier in last 24h (retrievals

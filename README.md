@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.957 beta (See [ChangeLog][mt-aws glacier changelog])
+* Version 0.957 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -74,8 +74,8 @@ Should NOT work under Windows.
 	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS** or MacPort **p5-json-XS**)
 
 	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
-	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::UserAgent::https** via CPAN: `cpan -i LWP::UserAgent::https`
-	or `cpanp -i LWP::UserAgent::https`
+	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::Protocol::https** via CPAN: `cpan -i LWP::Protocol::https`
+	or `cpanp -i LWP::Protocol::https`
 
 
 * Install mt-aws-glacier
@@ -185,7 +185,7 @@ For files created by mt-aws-glacier version 0.8x and higher original filenames w
 
 Journal is a file in local filesystem, which contains list of all files, uploaded to Amazon Glacier.
 Strictly saying, this file contains a list of operations (list of records), performed with Amazon Glacier vault. Main operations are:
-file creation and file deletion.
+file creation, file deletion and file retrieval.
 
 Create operation records contains: *local filename* (relative to transfer root - `--dir`), file *size*, file last *modification time* (in 1 second resolution), file *TreeHash* (Amazon
 hashing algorithm, based on SHA256), file upload time, and Amazon Glacier *archive id*
@@ -300,7 +300,18 @@ most of them are not portable. Take a look on archives file formats - different 
 
 It's possible that in the future `mtglacier` will support some other metadata things.
 
-## Other commands
+## Specification for some commands
+
+### `restore`
+
+Initiate Amazon Glacier RETRIEVE oparation for files listed in Journal, which don't *exist* on local filesystem and for
+which RETRIEVE was not initiated during last 24 hours (that information obtained from *Journal* too - each retrieval logged
+into journal together with timestamp)
+
+### `restore-completed`
+
+Donwloads files, listed in Journal, which don't *exist* on local filesystem. Currenly download without resumption feature
+is used.
 
 ### `upload-file`
 
