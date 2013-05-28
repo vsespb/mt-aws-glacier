@@ -39,8 +39,6 @@ LICENSE
 MANIFEST
 mtglacier
 mtglacier.pl
-MYMETA.json
-MYMETA.yml
 README.md
 t/gemu/gemu.pl
 t/integration/byteenc_journal.t

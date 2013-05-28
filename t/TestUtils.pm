@@ -32,7 +32,7 @@ use base qw/Exporter/;
 use Carp;
 
 our %disable_validations;
-our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal/;
+our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal capture_stdout capture_stderr/;
 
 sub warning_fatal
 {
@@ -81,6 +81,20 @@ sub config_create_and_parse(@)
 	my $res = $c->parse_options(@_);
 	$res->{_config} = $c;
 	wantarray ? ($res->{error_texts}, $res->{warning_texts}, $res->{command}, $res->{options}) : $res;
+}
+
+sub capture_stdout($&)
+{
+	local(*STDOUT);
+	open STDOUT, '>', \$_[0] or die "Can't open STDOUT: $!";
+	$_[1]->();
+}
+
+sub capture_stderr($&)
+{
+	local(*STDERR);
+	open STDERR, '>', \$_[0] or die "Can't open STDERR: $!";
+	$_[1]->();
 }
 
 1;
