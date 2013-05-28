@@ -88,12 +88,14 @@ describe "create_multipart_upload" => sub {
 };
 
 describe "perform_lwp" => sub {
-	it "should work" => sub {
-		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
-		($g->{method}, $g->{url}) = ('GET', 'test');
-		LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK'));
-		my $resp = $g->perform_lwp();
-		is $resp->status_line, '200 OK';
+	it "should work with 2xx codes" => sub {
+		for my $code (200..209) {
+			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+			($g->{method}, $g->{url}) = ('GET', 'test');
+			LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code, 'OK'));
+			my $resp = $g->perform_lwp();
+			is $resp->code, $code;
+		}
 	};
 	it "should throttle" => sub {
 		my $retries = 3;
