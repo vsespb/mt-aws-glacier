@@ -371,11 +371,32 @@ sub _sign
 }
 
 
+sub throttle
+{
+	my ($i) = @_;
+	if ($i <= 5) {
+		sleep 1;
+	} elsif ($i <= 10) {
+		sleep 5;
+	} elsif ($i <= 20) {
+		sleep 15;
+	} elsif ($i <= 50) {
+		sleep 60
+	} else {
+		sleep 180;
+	}
+}
+
+sub _max_retries
+{
+	100
+}
+
 sub perform_lwp
 {
 	my ($self) = @_;
 	
-	for my $i (1..100) {
+	for my $i (1.._max_retries) {
 		$self->_sign();
 
 		my $ua = LWP::UserAgent->new(timeout => 120);
@@ -439,21 +460,6 @@ sub perform_lwp
 	return undef;
 }
 
-sub throttle
-{
-	my ($i) = @_;
-	if ($i <= 5) {
-		sleep 1;
-	} elsif ($i <= 10) {
-		sleep 5;
-	} elsif ($i <= 20) {
-		sleep 15;
-	} elsif ($i <= 50) {
-		sleep 60
-	} else {
-		sleep 180;
-	}
-}
 
 
 sub get_signature_key
