@@ -85,11 +85,8 @@ my $data = 	{
 		filter => $options->{filters}{parsed});
 	require App::MtAws::CheckLocalHashCommand;
 	
-	my $out;
-	ok ! defined do {
-		local(*STDOUT);
-		open STDOUT, '>', \$out or die "Can't open STDOUT: $!";
-		
+	my $out='';
+	ok ! defined capture_stdout $out, sub {
 		eval {
 			App::MtAws::CheckLocalHashCommand::run($options, $j);
 			1;
