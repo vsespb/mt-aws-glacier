@@ -104,7 +104,7 @@ sub start_children
 	}
 	
 	my $first_time = 1;
-	for my $sig (qw/INT TERM CHLD USR1/) {
+	for my $sig (qw/INT TERM CHLD USR1 HUP/) {
 		$SIG{$sig} = sub {
 			local ($!,$^E,$@);
 			if ($first_time) {
