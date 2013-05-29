@@ -32,7 +32,7 @@ use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use Fcntl qw/O_CREAT O_RDWR/;
-use File::Temp;
+use File::Temp ();
 use File::Basename;
 use File::Path;
 use Carp;

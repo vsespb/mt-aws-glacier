@@ -49,7 +49,7 @@ sub assert_parse_filter_error($$)
 	is $F->{error}, $err;
 }
 
-sub assert_parse_filter_ok(@$)
+sub assert_parse_filter_ok(@)
 {
 	my ($expected, @data) = (pop, @_);
 	my $F = App::MtAws::Filter->new();

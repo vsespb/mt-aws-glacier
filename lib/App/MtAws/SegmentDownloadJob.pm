@@ -29,7 +29,7 @@ use File::Path;
 use File::Basename;
 use App::MtAws::Utils;
 use Carp;
-use File::Temp;
+use File::Temp ();
 
 sub new
 {
