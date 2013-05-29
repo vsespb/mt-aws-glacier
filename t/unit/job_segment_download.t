@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 132;
+use Test::More tests => 377;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -34,7 +34,7 @@ use constant ONE_MB => 1024*1024;
 use Carp;
 use Data::Dumper;
 
-#warning_fatal();
+warning_fatal();
 
 
 my $data = 	{
@@ -55,7 +55,7 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 			archive_id => $data->{archive_id},
 			mtime => $data->{mtime},
 			size => $size,
-			filefilename => $data->{relfilename},
+			relfilename => $data->{relfilename},
 			filename => $data->{relfilename},
 		},
 		file_downloads => {
@@ -64,13 +64,24 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 	);
 	
 	my $next_position = 0;
+	my $is_last = 0;
 	while() {
 		my ($code, $t) = $job->get_task();
 		if ($code eq 'ok') {
+			cmp_deeply $t->{data}, superhashof({
+					archive_id => $data->{archive_id}, relfilename => $data->{relfilename},
+					filename => $data->{relfilename}, mtime => $data->{mtime}, jobid => $data->{jobid},
+					position => $next_position
+			});
+			is $t->{id}, $next_position;
+			is $t->{action}, "segment_download_job";
 			is $t->{data}{position}, $next_position;
 			ok $t->{data}{position} <= $size - 1;
+			ok !$is_last;
+			$is_last = 1 if $t->{data}{upload_size} != $segment_size;
 			$next_position = $t->{data}{position} + $t->{data}{upload_size};
 		} elsif ($code eq 'wait') {
+			ok $is_last || $size % $segment_size == 0;
 			is $next_position, $size; 
 			last;
 		} else {
