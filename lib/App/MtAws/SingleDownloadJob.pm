@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
+use App::MtAws::Utils;
 use File::stat;
 use Carp;
 
@@ -60,7 +61,7 @@ sub finish_task
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
 		my $mtime = $task->{data}{mtime};
-		utime $mtime, $mtime, $task->{data}{filename} if defined $mtime; # TODO: is that good that one process writes file and another one change it's mtime?
+		utime $mtime, $mtime, binaryfilename($task->{data}{filename}) or confess if defined $mtime;
 		return ("done");
 	} else {
 		confess;
