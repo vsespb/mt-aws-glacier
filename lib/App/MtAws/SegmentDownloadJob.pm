@@ -62,7 +62,7 @@ sub get_task
 				my $dirname = dirname($archive->{filename});
 				my $binary_dirname = binaryfilename $dirname;
 				mkpath($binary_dirname);
-				my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname , UNLINK => 1);
+				my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
 				close $tmp;
 				$self->{tmp_obj} = $tmp;
 				$self->{tempfile} = characterfilename $tmp->filename;
