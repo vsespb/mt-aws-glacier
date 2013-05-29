@@ -25,8 +25,11 @@ use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
 use File::stat;
+use File::Path;
+use File::Basename;
+use App::MtAws::Utils;
 use Carp;
-
+use File::Temp;
 
 sub new
 {
@@ -37,6 +40,7 @@ sub new
     $self->{pending}={};
     $self->{all_raised} = 0;
     $self->{position} = 0;
+    $self->{tempfile} = undef;
     return $self;
 }
 
@@ -53,10 +57,20 @@ sub get_task
 			my $segment_size = $self->{file_downloads}{'segment-size'}*1048576 or confess;
 			$download_size = $segment_size if $download_size > $segment_size;
 			my $archive = $self->{archive};
+			
+			if (!defined($self->{tempfile})) {
+				my $dirname = dirname($archive->{filename});
+				my $binary_dirname = binaryfilename $dirname;
+				mkpath($binary_dirname);
+				my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname , UNLINK => 1);
+				close $tmp;
+				$self->{tmp_obj} = $tmp;
+				$self->{tempfile} = characterfilename $tmp->filename;
+			}
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},
 				filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid},
-				position => $self->{position}, download_size => $download_size
+				position => $self->{position}, download_size => $download_size, tempfile => $self->{tempfile}
 			});
 			$self->{position} += $download_size;
 			$self->{uploadparts} ||= {};
@@ -95,8 +109,12 @@ sub finish_task
 sub do_finish
 {
 	my ($self) = @_;
+	confess unless defined($self->{tempfile});
 	my $mtime = $self->{archive}{mtime};
-	utime $mtime, $mtime, $self->{archive}{filename} or confess if defined $mtime; # TODO: is that good that one process writes file and another one change it's mtime?
+	$self->{tmp_obj}->unlink_on_destroy(0);
+	undef $self->{tmp_obj};
+	rename binaryfilename($self->{tempfile}), binaryfilename($self->{archive}{filename}) or confess "cannot rename file $self->{tempfile} $self->{archive}{filename}";
+	utime $mtime, $mtime, binaryfilename($self->{archive}{filename}) or confess if defined $mtime; # TODO: is that good that one process writes file and another one change it's mtime?
 	return ("done");
 }
 

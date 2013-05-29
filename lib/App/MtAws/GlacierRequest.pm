@@ -229,7 +229,7 @@ sub retrieval_download_job
 
 sub segment_download_job
 {
-	my ($self, $jobid, $filename, $position, $size) = @_;
+	my ($self, $jobid, $tempfile, $filename, $position, $size) = @_;
 
 	$jobid||confess;
 	defined($position) or confess "no position";
@@ -239,8 +239,7 @@ sub segment_download_job
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
 	
-	sysopen(my $F, binaryfilename($filename), O_WRONLY|O_CREAT) or confess "cant open file $!";
-	binmode $F;
+	open_file(my $F, $tempfile, mode => '+<', binary => 1) or confess "cant open file $tempfile $!";
 	seek $F, $position, SEEK_SET or confess "cannot seek() $!";
 	$self->{content_cb} = sub {
 		print $F $_[0] or confess "cant write to file $filename, $!";

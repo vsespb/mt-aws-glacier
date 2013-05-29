@@ -38,7 +38,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string/;
+is_wide_string characterfilename/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -71,6 +71,10 @@ sub binaryfilename(;$)
 	encode(get_filename_encoding, @_ ? shift : $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);	
 }
 
+sub characterfilename(;$)
+{
+	decode(get_filename_encoding, @_ ? shift : $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);	
+}
 
 =pod
 
