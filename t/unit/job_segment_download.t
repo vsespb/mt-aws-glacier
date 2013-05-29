@@ -147,12 +147,12 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 	local *App::MtAws::SegmentDownloadJob::do_finish = sub { $finished = 1; return $original->(@_); };
 	while() {
 		my ($code, $t) = $job->get_task();
-		if ($finished) {
-			is $code, 'done', "finish task should work when tasks finished one-by-one";
-			last;
-		}
 		if ($code eq 'ok') {
-			$job->finish_task($t);
+			my ($c) = $job->finish_task($t);
+			if ($finished) {
+				is $c, 'done', "finish task should work when tasks finished one-by-one";
+				last;
+			}
 		} else {
 			confess;
 		}
