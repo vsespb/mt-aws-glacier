@@ -14,6 +14,7 @@ use lib qw{.. ../..};
 use App::MtAws::TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
 use Time::Local;
+use Fcntl;
 
 my $proto = $ARGV[0]||die "Specify http|https";
 my $tmp_folder = $ARGV[1]||die "Specify temporary folder";
@@ -310,13 +311,28 @@ sub child_worker
 			my $archive_id = $job->{archive_id}||confess;
 			my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak; # TODO: what if archive already deleted?
 			my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
-	
-			print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
-			open (my $in, "<", $archive_path)||confess;
-			binmode $in;
-			my $resp = HTTP::Response->new(200, "Fine");
-			$resp->content(output_cb($in));
-			return $resp;
+			if ($data->{headers}->{range}) {
+				my ($start, $end) = $data->{headers}->{range} =~ /bytes=(\d+)\-(\d+)/;
+				confess unless defined($start) && defined($end);
+				confess if $end < $start;
+				my $len = $end - $start + 1;
+				open (my $in, "<", $archive_path)||confess;
+				binmode $in;
+				print STDERR "POS $start,$end,$len\n";
+				seek $in, $start, SEEK_SET;
+				my $r = read($in, my $buf, $len);
+				$r == $len or confess "$r != $len";
+				my $resp = HTTP::Response->new(206, "Fine");
+				$resp->content($buf);
+				return $resp;
+			} else {
+				print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
+				open (my $in, "<", $archive_path)||confess;
+				binmode $in;
+				my $resp = HTTP::Response->new(200, "Fine");
+				$resp->content(output_cb($in));
+				return $resp;
+			}
 		} elsif ($job->{type} eq 'inventory-retrieval'){
 			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
 			defined($output)||croak;
@@ -363,6 +379,7 @@ sub output_cb
 	sub {
 		my $res = read($file, my $buf, $chunk_size);
 		$total += $res;
+		#sleep 1;
 		#if ($total > 2_000_000_000) {
 		#	sleep 190;
 		#}
