@@ -31,7 +31,7 @@ use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
-use Fcntl;
+use Fcntl qw/O_CREAT O_RDWR/;
 use Carp;
 
 
@@ -238,12 +238,9 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	unless (-f $filename) {
-		open my $f, "+>>", $filename or confess "cannot create file";
-		close $f or confess "cannot close file";
-	}
 	
-	open_file(my $F, $filename, mode => '+<', binary => 1) or confess "cant open file $!";
+	sysopen(my $F, binaryfilename($filename), O_WRONLY|O_CREAT) or confess "cant open file $!";
+	binmode $F;
 	seek $F, $position, SEEK_SET or confess "cannot seek() $!";
 	$self->{content_cb} = sub {
 		print $F $_[0] or confess "cant write to file $filename, $!";
