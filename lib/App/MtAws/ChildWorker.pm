@@ -116,7 +116,14 @@ sub process
 				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
 				confess "retrieval_download_job failed" unless $r;
 				$result = { response => $r };
-				$console_out = "Download Archive $data->{filename}";
+				$console_out = "Downloaded archive $data->{filename}";
+			} elsif ($action eq 'segment_download_job') {
+				mkpath(binaryfilename dirname($data->{filename}));
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
+				my $r = $req->segment_download_job($data->{jobid}, $data->{filename}, $data->{postition}, $data->{download_size});
+				confess "segment_download_job failed" unless $r;
+				$result = { response => $r };
+				$console_out = "Downloaded part of archive $data->{filename} at offset $data->{postition}, size $data->{download_size}";
 			} elsif ($action eq 'inventory_download_job') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_to_memory($data->{job_id});

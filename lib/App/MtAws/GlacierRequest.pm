@@ -31,6 +31,7 @@ use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
+use Fcntl;
 use Carp;
 
 
@@ -226,6 +227,30 @@ sub retrieval_download_job
 	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
 }
 
+sub segment_download_job
+{
+	my ($self, $jobid, $filename, $position, $size) = @_;
+
+	$jobid||confess;
+	defined($position) or confess "no position";
+	$size or confess "no size";
+	defined($filename)||confess;
+   
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
+	
+	open_file(my $F, $filename, mode => '>', binary => 1) or confess "cant open file $!";
+	seek $F, $position, SEEK_SET or confess "cannot seek() $!";
+	$self->{content_cb} = sub {
+		print $F $_[3] or confess "cant write to file $filename, $!";
+	};
+	$self->{method} = 'GET';
+	my $end_position = $position + $size;
+	$self->add_header('Range', "bytes=$position-$end_position");
+
+	my $resp = $self->perform_lwp();
+	$resp && $resp->code == 206 or confess;
+	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
+}
 
 sub retrieval_download_to_memory
 {
@@ -436,6 +461,8 @@ sub perform_lwp
 		my $t0 = time();
 		if ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
+		} elsif ($self->{content_cb}) {
+			$resp = $ua->request($req, $self->{content_cb});
 		} else {
 			$resp = $ua->request($req);
 		}
