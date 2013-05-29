@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use App::MtAws::ProxyTask;
+use Carp;
 
 sub new
 {
@@ -57,6 +58,8 @@ sub get_task
 			my ($status, $task) = $job->{job}->get_task();
 			if ($status eq 'wait') {
 				last unless ($maxcnt--);
+			} elsif ($status eq 'done') {
+				confess;
 			} else {
 				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
 				$self->{pending}->{$newtask->{id}} = $newtask;

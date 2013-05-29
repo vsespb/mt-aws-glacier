@@ -47,8 +47,6 @@ sub get_task
 	if ($self->{all_raised}) {
 		return ("wait");
 	} else {
-		use Data::Dumper;
-		#die Dumper  $self->{file_downloads};
 		my $end_position = $self->{archive}{size} - 1;
 		if ($self->{position} <= $end_position) {
 			my $download_size = $end_position - $self->{position} + 1;
@@ -63,6 +61,8 @@ sub get_task
 			$self->{position} += $download_size;
 			$self->{uploadparts} ||= {};
 			$self->{uploadparts}->{$task->{id}} = 1;
+			confess unless $task;
+			$self->{all_raised} = 1 if $self->{position} == $end_position + 1;
 			return ("ok", $task);
 		} elsif ($self->{position} == $end_position + 1) {
 			confess "Unexpected: zero-size archive" unless ($self->{position});
