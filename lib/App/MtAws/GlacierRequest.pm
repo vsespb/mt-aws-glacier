@@ -32,6 +32,9 @@ use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use Fcntl qw/O_CREAT O_RDWR/;
+use File::Temp;
+use File::Basename;
+use File::Path;
 use Carp;
 
 
@@ -220,11 +223,26 @@ sub retrieval_download_job
 	defined($filename)||confess;
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	$self->{content_file} = binaryfilename $filename; # TODO: use temp filename for transactional behaviour
+	
+	# TODO: move to ChildWorker?
+	my $dirname = dirname($filename);
+	my $binary_dirname = binaryfilename $dirname;
+	mkpath($binary_dirname);
+	my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
+	close $tmp;
+	my $binary_tempfile = $tmp->filename;
+
+	$self->{content_file} = $binary_tempfile; # TODO: use temp filename for transactional behaviour
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
-	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
+
+	# TODO: move to ChildWorker?
+	$tmp->unlink_on_destroy(0);
+	undef $tmp;
+	rename $binary_tempfile, binaryfilename($filename) or confess "cannot rename file";
+	
+	return $resp ? 1 : undef;
 }
 
 sub segment_download_job
