@@ -250,6 +250,7 @@ sub segment_download_job
 	$self->add_header('Range', "bytes=$position-$end_position");
 
 	my $resp = $self->perform_lwp();
+	close $F or confess;
 	$resp && $resp->code == 206 or confess;
 	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
 }
