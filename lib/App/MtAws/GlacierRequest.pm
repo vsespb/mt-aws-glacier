@@ -238,13 +238,18 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	open_file(my $F, $filename, mode => '>', binary => 1) or confess "cant open file $!";
+	unless (-f $filename) {
+		open my $f, "+>>", $filename or confess "cannot create file";
+		close $f or confess "cannot close file";
+	}
+	
+	open_file(my $F, $filename, mode => '+<', binary => 1) or confess "cant open file $!";
 	seek $F, $position, SEEK_SET or confess "cannot seek() $!";
 	$self->{content_cb} = sub {
-		print $F $_[3] or confess "cant write to file $filename, $!";
+		print $F $_[0] or confess "cant write to file $filename, $!";
 	};
 	$self->{method} = 'GET';
-	my $end_position = $position + $size;
+	my $end_position = $position + $size - 1;
 	$self->add_header('Range', "bytes=$position-$end_position");
 
 	my $resp = $self->perform_lwp();

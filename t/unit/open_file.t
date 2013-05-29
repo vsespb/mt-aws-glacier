@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 44;
+use Test::More tests => 50;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -88,6 +88,21 @@ new_stack {
 new_stack {
 	ok open_file(my $f, $tmp_file, mode => '>>', binary => 1);
 	is '>>', last_call->[1]
+};
+
+new_stack {
+	ok open_file(my $f, $tmp_file, mode => '>>', binary => 1);
+	is '>>', last_call->[1]
+};
+
+new_stack {
+	ok open_file(my $f, $tmp_file, mode => '+>>', binary => 1);
+	is '+>>', last_call->[1]
+};
+
+new_stack {
+	ok open_file(my $f, $tmp_file, mode => '+<', binary => 1);
+	is '+<', last_call->[1]
 };
 
 new_stack {

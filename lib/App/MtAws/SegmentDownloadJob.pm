@@ -52,7 +52,8 @@ sub get_task
 		my $end_position = $self->{archive}{size} - 1;
 		if ($self->{position} <= $end_position) {
 			my $download_size = $end_position - $self->{position} + 1;
-			$download_size = $self->{file_downloads}{'segment-size'} if $download_size > $self->{file_downloads}{'segment-size'};
+			my $segment_size = $self->{file_downloads}{'segment-size'}*1048576 or confess;
+			$download_size = $segment_size if $download_size > $segment_size;
 			my $archive = $self->{archive};
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},

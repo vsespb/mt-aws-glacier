@@ -132,9 +132,14 @@ sub check_dir_or_relname
 	}
 }
 
+sub http_download_options
+{
+	scope('file_downloads', optional('segment-size'))
+}
+
 sub download_options
 {
-	mandatory('dir'), check_base_dir, scope('file_downloads', optional 'segment-size');
+	mandatory('dir'), check_base_dir, http_download_options();
 }
 
 sub check_wait
@@ -289,6 +294,7 @@ sub get_config
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
 			validation $_, message('Part size must be power of two'), sub { ($_ != 0) && (($_ & ($_ - 1)) == 0) };
 		}
+		option 'segment-size';
 		
 		
 		validation positional('vault-name'), message('Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'), sub {
@@ -331,7 +337,7 @@ sub get_config
 		command 'restore-completed' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault concurrency/, existing_journal('journal'),
-				filter_options, optional('dry-run')
+				filter_options, optional('dry-run'), http_download_options
 			))
 		};
 		

@@ -105,7 +105,7 @@ sub open_file($$%)
 	confess "Unknown argument(s) to open_file: ".join(';', keys %checkargs) if %checkargs;
 	
 	confess 'Argument "mode" is required' unless defined($args{mode});
-	confess "unknown mode $args{mode}" unless $args{mode} =~ m!^(<|>>?)$!;
+	confess "unknown mode $args{mode}" unless $args{mode} =~ m!^\+?(<|>>?)$!;
 	my $mode = $args{mode};
 	
 	confess "not_empty can be used in read mode only"
