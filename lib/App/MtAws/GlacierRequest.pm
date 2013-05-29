@@ -250,7 +250,7 @@ sub segment_download_job
 
 	my $resp = $self->perform_lwp();
 	close $F or confess;
-	$resp && $resp->code == 206 or confess;
+	$resp && $resp->code == 206 && $resp->header('x-amz-sha256-tree-hash') or confess;
 	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
 }
 
