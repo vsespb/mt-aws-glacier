@@ -1,3 +1,17 @@
+
+  * Fixed: it there was more than 100 retries for a request (due to timeout/etc), program now terminates with error.
+
+  * Fixed: for systems with non-UTF-8 filesystems, file modification time was not adjusted after files downloaded
+  with restore-completed command
+
+  * Fixed: SIGHUP added to list of signal for graceful handling (i.e terminate fast when you close terminal)
+
+  * Enhancement: segment-size option added for restore-completed command for multi-segment downloads
+
+  * Fixed: Now all downloads performed to temp files. Temp file renamed to real files only when download succeed.
+
+  * Documentation: restore-completed documentation updated
+
 ### 2013-05-26 v0.957 beta
 
   * STS/IAM security tokens support added

@@ -328,6 +328,7 @@ Commands:
 	purge-vault
 	restore
 	restore-completed
+		--segment-size - Size for multi-segment download, in megabytes
 	check-local-hash
 	retrieve-inventory
 	download-inventory

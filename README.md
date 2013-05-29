@@ -310,8 +310,23 @@ into journal together with timestamp)
 
 ### `restore-completed`
 
-Donwloads files, listed in Journal, which don't *exist* on local filesystem. Currenly download without resumption feature
-is used.
+Donwloads files, listed in Journal, which don't *exist* on local filesystem, and which were previously
+RETRIEVED (using `restore` command) and now available for download (i.e. in a ~4hours after retrieve).
+Unlike `restore` command, list of retrieved files is requested from Amazon Glacier servers at runtime using API, not from
+journal.
+
+Data downloaded to unique temporary files (created in same directory as destination file). Temp files renamed to real files
+only when download successfully finished. In case program terminated with error or after Ctrl-C, temp files with unfinished
+downloads removed.
+
+If `segment-size` specified, and file size in megabytes is larger than `segment-size`, download performed in
+multiple segments, i.e. using HTTP `Range:` header (each of size `segment-size` MiB, except last, which can be smaller).
+Segments are downloaded in parallel (and different segments from different files can be downloaded at same time).
+
+Currenly if download breaks due to network problem, no resumption is performed, download of file or of current segment
+started from beginning.
+
+TreeHash is not checked. You can check it after download using `check-local-hash` command.
 
 ### `upload-file`
 
@@ -513,13 +528,18 @@ NOTE: Any command line option can be used in config file as well.
 
 		--partsize=16
 
-3. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
+3. `segment-size` (with `restore-completed` command) - size of download segment, in MiB  (default: none)
+
+	If `segment-size` specified, and file size in megabytes is larger than `segment-size`, download performed in
+	multiple segments (each of size `segment-size` MiB, except last, which can be smaller).
+
+4. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
 		--max-number-of-files=100
 
-4. `key/secret/region/vault/protocol` - you can override any option from config
+5. `key/secret/region/vault/protocol` - you can override any option from config
 
-5. `dry-run` (with `sync`, `purge-vault`, `restore`, `restore-completed ` and even `check-local-hash` commands) - do not perform actual work, print what will happen instead. 
+6. `dry-run` (with `sync`, `purge-vault`, `restore`, `restore-completed ` and even `check-local-hash` commands) - do not perform actual work, print what will happen instead. 
 
 		--dry-run
 
