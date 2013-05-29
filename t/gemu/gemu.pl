@@ -323,6 +323,7 @@ sub child_worker
 				my $r = read($in, my $buf, $len);
 				$r == $len or confess "$r != $len";
 				my $resp = HTTP::Response->new(206, "Fine");
+				$resp->header('x-amz-sha256-tree-hash', "DUMMY");
 				$resp->content($buf);
 				return $resp;
 			} else {
