@@ -51,15 +51,15 @@ sub get_task
 		#die Dumper  $self->{file_downloads};
 		my $end_position = $self->{archive}{size} - 1;
 		if ($self->{position} <= $end_position) {
-			my $upload_size = $end_position - $self->{position} + 1;
-			$upload_size = $self->{file_downloads}{'segment-size'} if $upload_size > $self->{file_downloads}{'segment-size'};
+			my $download_size = $end_position - $self->{position} + 1;
+			$download_size = $self->{file_downloads}{'segment-size'} if $download_size > $self->{file_downloads}{'segment-size'};
 			my $archive = $self->{archive};
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},
 				filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid},
-				position => $self->{position}, upload_size => $upload_size
+				position => $self->{position}, download_size => $download_size
 			});
-			$self->{position} += $upload_size;
+			$self->{position} += $download_size;
 			$self->{uploadparts} ||= {};
 			$self->{uploadparts}->{$task->{id}} = 1;
 			return ("ok", $task);

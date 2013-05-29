@@ -78,8 +78,8 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 			is $t->{data}{position}, $next_position;
 			ok $t->{data}{position} <= $size - 1;
 			ok !$is_last;
-			$is_last = 1 if $t->{data}{upload_size} != $segment_size;
-			$next_position = $t->{data}{position} + $t->{data}{upload_size};
+			$is_last = 1 if $t->{data}{download_size} != $segment_size;
+			$next_position = $t->{data}{position} + $t->{data}{download_size};
 		} elsif ($code eq 'wait') {
 			ok $is_last || $size % $segment_size == 0;
 			is $next_position, $size; 
