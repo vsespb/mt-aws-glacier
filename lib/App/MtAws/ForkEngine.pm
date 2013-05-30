@@ -91,6 +91,9 @@ sub start_children
 		my ($ischild, $child_fromchild, $child_tochild) = $self->create_child($disp_select);
 		if ($ischild) {
 			# child code
+			for my $sig (qw/INT TERM USR2 HUP/) {
+				$SIG{$sig} = sub { exit(1); }; # we need exit, it will call all destructors which will destroy tempfiles
+			}
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 
 			unless (defined eval {$C->process(); 1;}) {
