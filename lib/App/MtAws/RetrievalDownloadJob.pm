@@ -51,7 +51,9 @@ sub get_task
 		if (scalar @{$self->{archives}}) {
 			my $archive = shift @{$self->{archives}};
 			my $task = App::MtAws::Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
-				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid}
+				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},
+				filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid},
+				size => $archive->{size}
 			});
 			$self->{pending}->{$archive->{jobid}}=1;
 			$self->{all_raised} = 1 unless scalar @{$self->{archives}};

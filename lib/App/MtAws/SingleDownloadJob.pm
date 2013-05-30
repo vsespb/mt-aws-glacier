@@ -50,7 +50,7 @@ sub get_task
 		my $archive = $self->{archive};
 		return ("ok",  App::MtAws::Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
 			archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename},
-			mtime => $archive->{mtime}, jobid => $archive->{jobid}
+			mtime => $archive->{mtime}, jobid => $archive->{jobid}, size => $archive->{size}
 		}));
 	}
 }

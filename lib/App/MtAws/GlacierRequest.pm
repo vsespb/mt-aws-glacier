@@ -31,6 +31,7 @@ use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
+use App::MtAws::HttpSegmentWriter;
 use Fcntl qw/O_CREAT O_RDWR LOCK_EX LOCK_UN/;
 use File::Temp ();
 use File::Basename;
@@ -217,11 +218,12 @@ sub retrieval_fetch_job
 # TODO: rename
 sub retrieval_download_job
 {
-	my ($self, $jobid, $filename) = @_;
+	my ($self, $jobid, $filename, $size) = @_;
 
 	$jobid||confess;
 	defined($filename)||confess;
-   
+	$size or confess "no size";
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
 	# TODO: move to ChildWorker?
@@ -229,10 +231,11 @@ sub retrieval_download_job
 	my $binary_dirname = binaryfilename $dirname;
 	mkpath($binary_dirname);
 	my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
-	close $tmp;
 	my $binary_tempfile = $tmp->filename;
+	my $character_tempfile = characterfilename($binary_tempfile);
+	close $tmp;
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size);
 
-	$self->{content_file} = $binary_tempfile; # TODO: use temp filename for transactional behaviour
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
@@ -256,43 +259,17 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	
-	my $totalsize = undef;
-	my ($F, $T);
-	$self->{content_cb_init} = sub {
-		print "REINIT!\n" if defined($totalsize);
-		$totalsize=0;
-		open_file($F, $tempfile, mode => '+<', binary => 1) or confess "cant open file $tempfile $!";
-		$F->autoflush(1);
-		seek $F, $position, SEEK_SET or confess "cannot seek() $!";
-		
-		open $T, ">", "${filename}_part_${position}_${size}" or confess;
-		binmode $T;
-	};
-	$self->{content_cb} = sub {
-		confess unless length($_[0]);
-		$totalsize += length($_[0]);
-		flock $F, LOCK_EX or confess;
-		print $F $_[0] or confess "cant write to file $filename, $!";
-		print $T $_[0] or confess;
-		flock $F, LOCK_UN or confess;
-	};
+	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position, size => $size, filename => $filename);
+
 	$self->{method} = 'GET';
 	my $end_position = $position + $size - 1;
 	$self->add_header('Range', "bytes=$position-$end_position");
 
 	my $resp = $self->perform_lwp();
-	close $F or confess;
-	close $T or confess;
 	$resp && $resp->code == 206 && $resp->header('x-amz-sha256-tree-hash') or confess;
 	
 	my ($start, $end, $len) = $resp->header('Content-Range') =~ m!bytes\s+(\d+)\-(\d+)\/(\d+)!;
-	if ($totalsize != $size) {
-		print STDERR "Error:\n";
-		print STDERR $resp->dump;
-		print STDERR "\n";
-		confess "too few bytes $totalsize != $size ";
-	}
+
 	confess unless defined($start) && defined($end) && $len;
 	confess unless $end >= $start;
 	confess unless $position == $start;
@@ -508,11 +485,13 @@ sub perform_lwp
 		my $resp = undef;
 
 		my $t0 = time();
-		if ($self->{content_file}) {
+		if ($self->{content_file} && $self->{writer}) {
+			confess "content_file and writer at same time";
+		} elsif ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
-		} elsif ($self->{content_cb}) {
-			$self->{content_cb_init}->();
-			$resp = $ua->request($req, $self->{content_cb});
+		} elsif ($self->{writer}) {
+			$self->{writer}->reinit();
+			$resp = $ua->request($req, sub { $self->{writer}->add_data($_[0]) });
 		} else {
 			$resp = $ua->request($req);
 		}
@@ -531,7 +510,19 @@ sub perform_lwp
 			print STDERR "\n";
 			die exception 'http_unexpected_reply' => 'Unexpected reply from remote server';
 		} elsif ($resp->code =~ /^2\d\d$/) {
-			return $resp;
+			if ($self->{writer}) {
+				my ($c, $reason) = $self->{writer}->finish();
+				if ($c eq 'retry') {
+					print "PID $$ HTTP $reason. Will retry ($dt seconds spent for request)\n";
+					throttle($i);
+				} elsif ($c ne 'ok') {
+					confess;
+				} else {
+					return $resp;
+				}
+			} else {
+				return $resp;
+			}
 		} else {
 			print STDERR "Error:\n";
 			print STDERR $req->dump;

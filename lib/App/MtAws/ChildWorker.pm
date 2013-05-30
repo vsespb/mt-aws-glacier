@@ -112,7 +112,7 @@ sub process
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
-				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
+				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename}, $data->{size});
 				confess "retrieval_download_job failed" unless $r;
 				$result = { response => $r };
 				$console_out = "Downloaded archive $data->{filename}";
