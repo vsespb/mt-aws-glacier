@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 63;
+use Test::More tests => 65;
 use Test::Deep;
 use Encode;
 use FindBin;
