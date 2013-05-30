@@ -114,6 +114,7 @@ sub do_finish
 	$self->{tmp_obj}->unlink_on_destroy(0);
 	undef $self->{tmp_obj};
 	rename binaryfilename($self->{tempfile}), binaryfilename($self->{archive}{filename}) or confess "cannot rename file $self->{tempfile} $self->{archive}{filename}";
+	chmod((0666 & ~umask), binaryfilename($self->{archive}{filename})) or confess;
 	utime $mtime, $mtime, binaryfilename($self->{archive}{filename}) or confess if defined $mtime; # TODO: is that good that one process writes file and another one change it's mtime?
 	return ("done");
 }

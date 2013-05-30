@@ -244,6 +244,7 @@ sub retrieval_download_job
 	$tmp->unlink_on_destroy(0);
 	undef $tmp;
 	rename $binary_tempfile, binaryfilename($filename) or confess "cannot rename file";
+	chmod((0666 & ~umask), binaryfilename($filename)) or confess;
 	
 	return $resp ? 1 : undef;
 }
