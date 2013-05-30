@@ -287,7 +287,12 @@ sub segment_download_job
 	$resp && $resp->code == 206 && $resp->header('x-amz-sha256-tree-hash') or confess;
 	
 	my ($start, $end, $len) = $resp->header('Content-Range') =~ m!bytes\s+(\d+)\-(\d+)\/(\d+)!;
-	confess "too few bytes $totalsize != $size " if $totalsize != $size;
+	if ($totalsize != $size) {
+		print STDERR "Error:\n";
+		print STDERR $resp->dump;
+		print STDERR "\n";
+		confess "too few bytes $totalsize != $size ";
+	}
 	confess unless defined($start) && defined($end) && $len;
 	confess unless $end >= $start;
 	confess unless $position == $start;
