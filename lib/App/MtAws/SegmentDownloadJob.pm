@@ -65,6 +65,7 @@ sub get_task
 				my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
 				close $tmp;
 				$self->{tmp_obj} = $tmp;
+				truncate $tmp->filename, $archive->{size} or confess;
 				$self->{tempfile} = characterfilename $tmp->filename;
 			}
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {

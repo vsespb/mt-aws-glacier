@@ -31,7 +31,7 @@ use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
-use Fcntl qw/O_CREAT O_RDWR/;
+use Fcntl qw/O_CREAT O_RDWR LOCK_EX LOCK_UN/;
 use File::Temp ();
 use File::Basename;
 use File::Path;
@@ -258,9 +258,19 @@ sub segment_download_job
 	
 	
 	open_file(my $F, $tempfile, mode => '+<', binary => 1) or confess "cant open file $tempfile $!";
+	$F->autoflush(1);
 	seek $F, $position, SEEK_SET or confess "cannot seek() $!";
+	
+	open my $T, ">", "${filename}_part_${position}_${size}" or confess;
+	binmode $T;
+	my $totalsize = 0;
 	$self->{content_cb} = sub {
+		confess unless length($_[0]);
+		$totalsize += length($_[0]);
+		flock $F, LOCK_EX or confess;
 		print $F $_[0] or confess "cant write to file $filename, $!";
+		print $T $_[0] or confess;
+		flock $F, LOCK_UN or confess;
 	};
 	$self->{method} = 'GET';
 	my $end_position = $position + $size - 1;
@@ -268,7 +278,16 @@ sub segment_download_job
 
 	my $resp = $self->perform_lwp();
 	close $F or confess;
+	close $T or confess;
 	$resp && $resp->code == 206 && $resp->header('x-amz-sha256-tree-hash') or confess;
+	
+	my ($start, $end, $len) = $resp->header('Content-Range') =~ m!bytes\s+(\d+)\-(\d+)\/(\d+)!;
+	confess "too few bytes $totalsize != $size " if $totalsize != $size;
+	confess unless defined($start) && defined($end) && $len;
+	confess unless $end >= $start;
+	confess unless $position == $start;
+	confess unless $end_position == $end;
+	
 	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
 }
 
@@ -494,6 +513,12 @@ sub perform_lwp
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read timeout/i) {
 			print "PID $$ HTTP Timeout. Will retry ($dt seconds spent for request)\n";
 			throttle($i);
+		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
+			print STDERR "Error:\n";
+			print STDERR $req->dump;
+			print STDERR $resp->dump;
+			print STDERR "\n";
+			die exception 'http_unexpected_reply' => 'Unexpected reply from remote server';
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			return $resp;
 		} else {
