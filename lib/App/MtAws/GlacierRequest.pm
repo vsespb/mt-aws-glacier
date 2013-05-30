@@ -257,13 +257,18 @@ sub segment_download_job
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
 	
-	open_file(my $F, $tempfile, mode => '+<', binary => 1) or confess "cant open file $tempfile $!";
-	$F->autoflush(1);
-	seek $F, $position, SEEK_SET or confess "cannot seek() $!";
-	
-	open my $T, ">", "${filename}_part_${position}_${size}" or confess;
-	binmode $T;
-	my $totalsize = 0;
+	my $totalsize = undef;
+	my ($F, $T);
+	$self->{content_cb_init} = sub {
+		print "REINIT!\n" if defined($totalsize);
+		$totalsize=0;
+		open_file($F, $tempfile, mode => '+<', binary => 1) or confess "cant open file $tempfile $!";
+		$F->autoflush(1);
+		seek $F, $position, SEEK_SET or confess "cannot seek() $!";
+		
+		open $T, ">", "${filename}_part_${position}_${size}" or confess;
+		binmode $T;
+	};
 	$self->{content_cb} = sub {
 		confess unless length($_[0]);
 		$totalsize += length($_[0]);
@@ -501,6 +506,7 @@ sub perform_lwp
 		if ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
 		} elsif ($self->{content_cb}) {
+			$self->{content_cb_init}->();
 			$resp = $ua->request($req, $self->{content_cb});
 		} else {
 			$resp = $ua->request($req);
