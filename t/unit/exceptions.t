@@ -213,6 +213,13 @@ test_error {
 test_error {
 	my ($out, $err) = @_;
 	cmp_deeply $err, superhashof { code => 'mycode',
+		message => "MyMessage %errno%"};
+	ok $out eq "ERROR: MyMessage 123\n";
+} '', exception mycode => 'MyMessage %errno%', errno => 123;
+
+test_error {
+	my ($out, $err) = @_;
+	cmp_deeply $err, superhashof { code => 'mycode',
 		message => "MyMessage"};
 	ok $out eq "ERROR (here): MyMessage\n";
 } 'here', exception mycode => 'MyMessage';

@@ -51,27 +51,21 @@ sub reinit
 {
 	my ($self) = @_;
 	$self->{totalsize}=0;
-	$self->{total_commited_length} = $self->{pending_length} = $self->{total_length} = $self->{incr_position} = 0;
-	$self->{buffers} = [];
+	$self->{total_commited_length} = $self->{pending_length} = $self->{total_length} = 0;
+	$self->{buffer} = '';
 }
 
 sub add_data
 {
 	my $self = $_[0];
-	return unless length($_[1]);
+	return unless defined($_[1]);
 	my $len = length($_[1]);
-	if (scalar @{$self->{buffers}} && length(${$self->{buffers}->[-1]}) <= $self->{append_threshold}) {
-		${$self->{buffers}->[-1]} .= $_[1];
-	} else {
-		push @{$self->{buffers}}, \$_[1];
-	}
+	$self->{buffer} .= $_[1];
 	$self->{pending_length} += $len;
 	$self->{total_length} += $len;
-	
 	if ($self->{pending_length} > $self->{write_threshold}) {
 		$self->_flush();
 	}
-	
 	1;
 }
 
@@ -83,16 +77,14 @@ sub _flush
 sub _flush_buffers
 {
 	my ($self, @files) = @_;
-	for (@{$self->{buffers}}) {
-		for my $fh (@files) {
-			print $fh $$_ or confess "cant write to file $!";
-		}
-		my $len = length($$_);
-		$self->{total_commited_length} += $len;
-		$self->{incr_position} += $len;
+	for my $fh (@files) {
+		print $fh $self->{buffer} or confess "cant write to file $!";
 	}
-	$self->{buffers} = [];
+	my $len = length($self->{buffer});
+	$self->{total_commited_length} += $len;
+	$self->{buffer} = '';
 	$self->{pending_length} = 0;
+	$len;
 }
 
 sub finish
@@ -137,6 +129,7 @@ sub reinit
 	my ($self) = @_;
 	open $self->{T}, ">", "$self->{filename}_part_$self->{position}_$self->{size}" or confess;
 	binmode $self->{T};
+	$self->{incr_position} = 0;
 	$self->SUPER::reinit();
 }
 
@@ -151,7 +144,7 @@ sub _flush
 		$fh->autoflush(1);
 		seek $fh, $self->{position}+$self->{incr_position}, SEEK_SET or confess "cannot seek() $!";
 		my $T = $self->{T};
-		$self->_flush_buffers($fh, $T);
+		$self->{incr_position} += $self->_flush_buffers($fh, $T);
 		flock $fh, LOCK_UN or confess;
 		close $fh or confess;
 	}

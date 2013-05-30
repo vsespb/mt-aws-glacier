@@ -12,6 +12,8 @@
 
   * Documentation: restore-completed documentation updated
 
+  * Fixed: Exceptions error message placeholder were not resolved when error printed
+
 ### 2013-05-26 v0.957 beta
 
   * STS/IAM security tokens support added

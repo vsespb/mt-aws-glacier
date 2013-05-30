@@ -103,7 +103,7 @@ sub dump_error
 	if (is_exception('cmd_error')) {
 		# no additional output
 	} elsif (is_exception) {
-		print STDERR "ERROR$where: $@->{message}\n";
+		print STDERR "ERROR$where: ".exception_message($@)."\n";
 	} else {
 		print STDERR "UNEXPECTED ERROR$where: $@\n";
 	}
