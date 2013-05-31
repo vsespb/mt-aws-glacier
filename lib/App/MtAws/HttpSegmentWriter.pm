@@ -194,6 +194,7 @@ sub initialize
 {
 	my ($self) = @_;
     defined($self->{tempfile}) or confess;
+    defined($self->{treehash}) or confess;
 }
 
 sub reinit
@@ -204,6 +205,8 @@ sub reinit
 	binmode $self->{fh};
 	$self->SUPER::reinit();
 }
+
+sub treehash { shift->{treehash} }
 
 sub _flush
 {

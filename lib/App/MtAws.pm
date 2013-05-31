@@ -216,7 +216,7 @@ END
 				map {
 					{
 						archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, size => $files->{$_}{size},
-						relfilename =>$_, filename=> $j->absfilename($_)
+						treehash => $files->{$_}{treehash}, relfilename =>$_, filename=> $j->absfilename($_)
 					}
 				}
 				keys %{$files};

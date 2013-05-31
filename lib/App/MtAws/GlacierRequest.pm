@@ -219,8 +219,9 @@ sub retrieval_fetch_job
 # TODO: rename
 sub retrieval_download_job
 {
-	my ($self, $jobid, $filename, $size) = @_;
-
+	my ($self, $jobid, $filename, $size, $journal_treehash) = @_;
+	
+	$journal_treehash||confess;
 	$jobid||confess;
 	defined($filename)||confess;
 	$size or confess "no size";
@@ -235,11 +236,30 @@ sub retrieval_download_job
 	my $binary_tempfile = $tmp->filename;
 	my $character_tempfile = characterfilename($binary_tempfile);
 	close $tmp;
-	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size);
+	my $treehash = App::MtAws::TreeHash->new();
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size, treehash => $treehash);
 
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
+	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
+
+	$treehash->calc_tree();
+	my $th = $treehash->get_final_hash();
+	
+	$reported_th eq $th or
+		die exception 'treehash_mismatch_full' =>
+		'TreeHash for received file %string filename% (full file) does not match. '.
+		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
+		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $filename;
+		# TODO: better report relative filename
+
+	$reported_th eq $journal_treehash or
+		die exception 'treehash_mismatch_journal' =>
+		'TreeHash for received file %string filename% (full file) does not match TreeHash in journal. '.
+		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
+		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $filename;
+		# TODO: better report relative filename
 
 	# TODO: move to ChildWorker?
 	$tmp->unlink_on_destroy(0);
@@ -270,12 +290,12 @@ sub segment_download_job
 	$self->add_header('Range', "bytes=$position-$end_position");
 
 	my $resp = $self->perform_lwp();
-	$resp && $resp->code == 206 && $resp->header('x-amz-sha256-tree-hash') or confess;
+	$resp && $resp->code == 206 or confess;
 	
+	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
 	$treehash->calc_tree();
 	my $th = $treehash->get_final_hash();
 	
-	my $reported_th = $resp->header('x-amz-sha256-tree-hash');
 	$reported_th eq $th or
 		die exception 'treehash_mismatch_segment' =>
 		'TreeHash for received segment of file %string filename% (position %position%, size %size%) does not match. '.
