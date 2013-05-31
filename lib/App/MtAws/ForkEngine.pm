@@ -91,16 +91,20 @@ sub start_children
 		my ($ischild, $child_fromchild, $child_tochild) = $self->create_child($disp_select);
 		if ($ischild) {
 			# child code
-			for my $sig (qw/INT TERM USR2 HUP/) {
-				$SIG{$sig} = sub { exit(1); }; # we need exit, it will call all destructors which will destroy tempfiles
+			my $first_time = 1;
+			my @signals = qw/INT TERM USR2 HUP/;
+			for my $sig (@signals) {
+				$SIG{$sig} = sub {
+					if ($first_time) {
+						$first_time = 0;
+						exit(1); # we need exit, it will call all destructors which will destroy tempfiles
+					}
+				}; 
 			}
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 
-			unless (defined eval {$C->process(); 1;}) {
-				dump_error(q{child});
-				exit(1);
-			}
-			
+			dump_error(q{child}) unless (defined eval {$C->process(); 1;});
+			$SIG{$_} = 'IGNORE' for (@signals);
 			kill(POSIX::SIGUSR1, $parent_pid);
 			exit(1);
 		}
