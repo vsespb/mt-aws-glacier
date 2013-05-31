@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 792;
+use Test::More tests => 1417;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::TreeHash;
@@ -38,10 +38,13 @@ sub test_eat_data_any_size
 	my $unit = shift;
 	my $th = App::MtAws::TreeHash->new(unit => $unit);
 	my $s = '';
+	my $original = join(',', @_);
 	for (@_) {
 		$s .= $_;
 		$th->eat_data_any_size($_);
 	}
+	my $after_work = join(',', @_);
+	is $after_work, $original, 'ensure source data is not modified';
 	$th->calc_tree();
 	# TODO: can mock eat_data_one_mb and collect and compare data instead of calculating treehash..
 	my $th2 = App::MtAws::TreeHash->new(unit => $unit);
