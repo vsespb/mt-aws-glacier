@@ -81,7 +81,7 @@ sub finish_task
 			downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
 		} elsif (scalar @{$self->{downloads}}) {
 			 #TODO allow parallel downloads while fetching job list
-			if (defined($self->{file_downloads}{'segment-size'})) {
+			if ($self->{file_downloads}{'segment-size'}) {
 				return ("ok replace", App::MtAws::JobListProxy->new(jobs => [map {
 					confess unless $_->{size};
 					$_->{size} > $self->{file_downloads}{'segment-size'}*1048576 ?
