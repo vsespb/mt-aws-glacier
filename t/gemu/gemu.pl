@@ -310,6 +310,7 @@ sub child_worker
 		if ($job->{type} eq 'archive-retrieval') {
 			my $archive_id = $job->{archive_id}||confess;
 			my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak; # TODO: what if archive already deleted?
+			$archive->{treehash} or confess;
 			my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
 			if ($data->{headers}->{range}) {
 				my ($start, $end) = $data->{headers}->{range} =~ /bytes=(\d+)\-(\d+)/;
@@ -337,32 +338,12 @@ sub child_worker
 				return $resp;
 			} else {
 				print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
-				
-				my $len = -s $archive_path;
-				if ($len > 32*1024*1024) { # disk/memory performance optimization
-					open (my $in, "<", $archive_path)||confess;
-					binmode $in;
-					my $treehash = App::MtAws::TreeHash->new();
-					$treehash->eat_file($in);
-					my $th = $treehash->calc_tree();
-					seek $in, 0, SEEK_SET;
-					my $resp = HTTP::Response->new(200, "Fine");
-					$resp->header('x-amz-sha256-tree-hash', $th);
-					$resp->content(output_cb($in));
-					return $resp;
-				} else {
-					open (my $in, "<", $archive_path)||confess;
-					binmode $in;
-					read($in, my $buf, $len) == $len or confess;
-					close $in;
-					my $treehash = App::MtAws::TreeHash->new();
-					$treehash->eat_data($buf);
-					my $th = $treehash->calc_tree();
-					my $resp = HTTP::Response->new(200, "Fine");
-					$resp->header('x-amz-sha256-tree-hash', $th);
-					$resp->content($buf);
-					return $resp;
-				}
+				open (my $in, "<", $archive_path)||confess;
+				binmode $in;
+				my $resp = HTTP::Response->new(200, "Fine");
+				$resp->header('x-amz-sha256-tree-hash', $archive->{treehash});
+				$resp->content(output_cb($in));
+				return $resp;
 			}
 		} elsif ($job->{type} eq 'inventory-retrieval'){
 			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
