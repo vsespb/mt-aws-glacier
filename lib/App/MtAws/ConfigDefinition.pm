@@ -291,11 +291,13 @@ sub get_config
 		}
 		
 		for (option('partsize', type => 'i', default => 16)) {
-			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ }; # TODO: type=i
+			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('Part size must be power of two'), sub { ($_ != 0) && (($_ & ($_ - 1)) == 0) };
 		}
-		option 'segment-size';
-		
+		for (option('segment-size', type => 'i')) {
+			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
+			validation $_, message('%option a% must be zero or power of two'), sub { (($_ & ($_ - 1)) == 0) }; # TODO: proper format
+		}
 		
 		validation positional('vault-name'), message('Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'), sub {
 			/^[A-Za-z0-9\.\-_]{1,255}$/
