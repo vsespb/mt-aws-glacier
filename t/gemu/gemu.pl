@@ -312,7 +312,7 @@ sub child_worker
 			my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||croak; # TODO: what if archive already deleted?
 			$archive->{treehash} or confess;
 			my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
-			if ($data->{headers}->{range}) {
+			if ($data->{headers}->{range}) { # SEGMENT DOWNLOAD
 				my ($start, $end) = $data->{headers}->{range} =~ /bytes=(\d+)\-(\d+)/;
 				my $total = -s $archive_path;
 				confess unless defined($start) && defined($end);
@@ -327,7 +327,7 @@ sub child_worker
 				close $in;
 				
 				my $treehash = App::MtAws::TreeHash->new();
-				$treehash->eat_data($data->{bodyref});
+				$treehash->eat_data($buf);
 				$treehash->calc_tree();
 				my $th = $treehash->get_final_hash();
 				
