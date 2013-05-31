@@ -538,6 +538,9 @@ sub perform_lwp
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read timeout/i) {
 			print "PID $$ HTTP Timeout. Will retry ($dt seconds spent for request)\n";
 			throttle($i);
+		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^EOF\s/) {
+			print "PID $$ HTTP Unexpected end of data. Will retry ($dt seconds spent for request)\n";
+			throttle($i);
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
 			print STDERR "Error:\n";
 			print STDERR $req->dump;
