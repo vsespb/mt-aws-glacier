@@ -104,8 +104,6 @@ sub start_children
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 
 			dump_error(q{child}) unless (defined eval {$C->process(); 1;});
-			$SIG{$_} = 'IGNORE' for (@signals);
-			kill(POSIX::SIGUSR1, $parent_pid);
 			exit(1);
 		}
 	}
@@ -117,6 +115,7 @@ sub start_children
 			if ($first_time) {
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
+				while((my $w = wait()) != -1){};
 				print STDERR "EXIT on SIG$sig\n";
 				exit(1);
 			}
