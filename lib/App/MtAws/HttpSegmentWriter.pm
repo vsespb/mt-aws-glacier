@@ -74,13 +74,21 @@ sub _flush
 	confess "not implemented";
 }
 
+sub treehash
+{
+	undef;
+}
+
 sub _flush_buffers
 {
 	my ($self, @files) = @_;
+	my $len = length($self->{buffer});
 	for my $fh (@files) {
 		print $fh $self->{buffer} or confess "cant write to file $!";
 	}
-	my $len = length($self->{buffer});
+	if (my $th = $self->treehash) {
+		$th->eat_data_any_size($self->{buffer});
+	}
 	$self->{total_commited_length} += $len;
 	$self->{buffer} = '';
 	$self->{pending_length} = 0;
@@ -111,7 +119,7 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->SUPER::initialize(%args);
+    $self->SUPER::initialize();
     $self->initialize();
     return $self;
 }
@@ -122,6 +130,7 @@ sub initialize
     defined($self->{filename}) or confess;
     defined($self->{tempfile}) or confess;
     defined($self->{position}) or confess;
+    defined($self->{treehash}) or confess;
 }
 
 sub reinit
@@ -133,6 +142,7 @@ sub reinit
 	$self->SUPER::reinit();
 }
 
+sub treehash { shift->{treehash} }
 
 sub _flush
 {
@@ -175,7 +185,7 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->SUPER::initialize(%args);
+    $self->SUPER::initialize();
     $self->initialize();
     return $self;
 }

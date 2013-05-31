@@ -30,6 +30,7 @@ use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
+use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
 use Fcntl qw/O_CREAT O_RDWR LOCK_EX LOCK_UN/;
@@ -260,7 +261,9 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position, size => $size, filename => $filename);
+	my $treehash = App::MtAws::TreeHash->new();
+	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position,
+		size => $size, filename => $filename, treehash => $treehash);
 
 	$self->{method} = 'GET';
 	my $end_position = $position + $size - 1;
@@ -268,6 +271,17 @@ sub segment_download_job
 
 	my $resp = $self->perform_lwp();
 	$resp && $resp->code == 206 && $resp->header('x-amz-sha256-tree-hash') or confess;
+	
+	$treehash->calc_tree();
+	my $th = $treehash->get_final_hash();
+	
+	my $reported_th = $resp->header('x-amz-sha256-tree-hash');
+	$reported_th eq $th or
+		die exception 'treehash_mismatch_segment' =>
+		'TreeHash for received segment of file %string filename% (position %position%, size %size%) does not match. '.
+		'TreeHash reported by server %reported%, Calculated TreeHash %calculated%',
+		calculated => $th, reported => $reported_th, filename => $filename, position => $position, size => $size;
+		# TODO: better report relative filename
 	
 	my ($start, $end, $len) = $resp->header('Content-Range') =~ m!bytes\s+(\d+)\-(\d+)\/(\d+)!;
 
