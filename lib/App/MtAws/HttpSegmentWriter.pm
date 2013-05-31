@@ -136,8 +136,6 @@ sub initialize
 sub reinit
 {
 	my ($self) = @_;
-	open $self->{T}, ">", "$self->{filename}_part_$self->{position}_$self->{size}" or confess;
-	binmode $self->{T};
 	$self->{incr_position} = 0;
 	$self->SUPER::reinit();
 }
@@ -153,8 +151,7 @@ sub _flush
 		$fh->flush();
 		$fh->autoflush(1);
 		seek $fh, $self->{position}+$self->{incr_position}, SEEK_SET or confess "cannot seek() $!";
-		my $T = $self->{T};
-		$self->{incr_position} += $self->_flush_buffers($fh, $T);
+		$self->{incr_position} += $self->_flush_buffers($fh);
 		flock $fh, LOCK_UN or confess;
 		close $fh or confess;
 	}
@@ -164,7 +161,6 @@ sub finish
 {
 	my ($self) = @_;
 	my @r = $self->SUPER::finish();
-	close $self->{T} or confess;
 	return @r;
 }
 
