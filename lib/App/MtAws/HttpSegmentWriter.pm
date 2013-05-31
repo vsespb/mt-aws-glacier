@@ -114,6 +114,15 @@ use Carp;
 use base qw/App::MtAws::HttpWriter/;
 
 
+# when file not found/etc error happen, it can mean Temp file deleted by another process, so we
+# don't need to throw error, most likelly signal will arrive in a few milliseconds
+sub delayed_confess(@)
+{
+	sleep 2;
+	confess @_;
+}
+
+
 sub new
 {
     my ($class, %args) = @_;
@@ -146,14 +155,14 @@ sub _flush
 {
 	my ($self) = @_;
 	if ($self->{pending_length}) {
-		open_file(my $fh, $self->{tempfile}, mode => '+<', binary => 1) or confess "cant open file $self->{tempfile} $!";
-		flock $fh, LOCK_EX or confess;
+		open_file(my $fh, $self->{tempfile}, mode => '+<', binary => 1) or delayed_confess "cant open file $self->{tempfile} $!";
+		flock $fh, LOCK_EX or delayed_confess;
 		$fh->flush();
 		$fh->autoflush(1);
-		seek $fh, $self->{position}+$self->{incr_position}, SEEK_SET or confess "cannot seek() $!";
+		seek $fh, $self->{position}+$self->{incr_position}, SEEK_SET or delayed_confess "cannot seek() $!";
 		$self->{incr_position} += $self->_flush_buffers($fh);
-		flock $fh, LOCK_UN or confess;
-		close $fh or confess;
+		flock $fh, LOCK_UN or delayed_confess;
+		close $fh or delayed_confess;
 	}
 }
 
