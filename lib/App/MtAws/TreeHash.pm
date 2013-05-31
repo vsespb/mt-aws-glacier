@@ -90,6 +90,31 @@ sub eat_data
 	}
 }
 
+sub eat_data_any_size
+{
+	my $self = $_[0];
+	my $dataref = (ref($_[1]) eq '') ? \$_[1] : $_[1];
+	my $mb = $self->{unit};
+	my $n = length($$dataref);
+	if (defined $self->{buffer}) {
+		$self->{buffer} .= $$dataref;
+	} else {
+		$self->{buffer} = $$dataref;
+	}
+	if (length($self->{buffer}) == $mb) {
+		$self->_eat_data_one_mb($self->{buffer});
+		$self->{buffer} = '';
+	} elsif (length($self->{buffer}) > $mb) {
+		my $i = -0;
+		while ($i + $mb <=  length($self->{buffer})) { # TODO this loop for performance optimization, and optimization is not tested
+			my $part = substr($self->{buffer}, $i, $mb);
+			$self->_eat_data_one_mb($part);
+			$i += $mb;
+		}
+		$self->{buffer} = substr($self->{buffer}, $i);
+	}
+}
+
 sub eat_another_treehash
 {
 	my ($self, $th) = @_;
@@ -127,6 +152,7 @@ sub _eat_data_one_mb
 sub calc_tree
 {
 	my ($self)  = @_;
+	$self->_eat_data_one_mb($self->{buffer}) if defined($self->{buffer}) && length($self->{buffer});
 	my $prev_level = 0;
 	while (scalar @{ $self->{tree}->[$prev_level] } > 1) {
 		my $curr_level = $prev_level+1;
