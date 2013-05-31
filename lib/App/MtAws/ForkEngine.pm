@@ -103,7 +103,7 @@ sub start_children
 			}
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 
-			dump_error(q{child}) unless (defined eval {$C->process(); 1;});
+			dump_error("child $$") unless (defined eval {$C->process(); 1;});
 			exit(1);
 		}
 	}
