@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Carp;
+use App::MtAws::TreeHash;
 
 
 sub new
@@ -139,13 +140,13 @@ sub initialize
     defined($self->{filename}) or confess;
     defined($self->{tempfile}) or confess;
     defined($self->{position}) or confess;
-    defined($self->{treehash}) or confess;
 }
 
 sub reinit
 {
 	my ($self) = @_;
 	$self->{incr_position} = 0;
+	$self->{treehash} = App::MtAws::TreeHash->new();
 	$self->SUPER::reinit();
 }
 
@@ -199,7 +200,6 @@ sub initialize
 {
 	my ($self) = @_;
     defined($self->{tempfile}) or confess;
-    defined($self->{treehash}) or confess;
 }
 
 sub reinit
@@ -208,6 +208,7 @@ sub reinit
 	undef $self->{fh};
 	open_file($self->{fh}, $self->{tempfile}, mode => '+<', binary => 1) or confess "cant open file $self->{tempfile} $!";
 	binmode $self->{fh};
+	$self->{treehash} = App::MtAws::TreeHash->new();
 	$self->SUPER::reinit();
 }
 

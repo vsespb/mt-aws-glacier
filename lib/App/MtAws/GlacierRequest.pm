@@ -26,11 +26,9 @@ use utf8;
 use POSIX;
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
-use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
 use Fcntl qw/O_CREAT O_RDWR LOCK_EX LOCK_UN/;
@@ -236,16 +234,15 @@ sub retrieval_download_job
 	my $binary_tempfile = $tmp->filename;
 	my $character_tempfile = characterfilename($binary_tempfile);
 	close $tmp;
-	my $treehash = App::MtAws::TreeHash->new();
-	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size, treehash => $treehash);
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size);
 
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
 	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
 
-	$treehash->calc_tree();
-	my $th = $treehash->get_final_hash();
+	$self->{writer}->treehash->calc_tree();
+	my $th = $self->{writer}->treehash->get_final_hash();
 	
 	$reported_th eq $th or
 		die exception 'treehash_mismatch_full' =>
@@ -281,9 +278,8 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	my $treehash = App::MtAws::TreeHash->new();
 	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position,
-		size => $size, filename => $filename, treehash => $treehash);
+		size => $size, filename => $filename);
 
 	$self->{method} = 'GET';
 	my $end_position = $position + $size - 1;
@@ -293,8 +289,8 @@ sub segment_download_job
 	$resp && $resp->code == 206 or confess;
 	
 	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
-	$treehash->calc_tree();
-	my $th = $treehash->get_final_hash();
+	$self->{writer}->treehash->calc_tree();
+	my $th = $self->{writer}->treehash->get_final_hash();
 	
 	$reported_th eq $th or
 		die exception 'treehash_mismatch_segment' =>
