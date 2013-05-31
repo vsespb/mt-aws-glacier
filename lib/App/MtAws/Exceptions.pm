@@ -77,16 +77,18 @@ sub exception_message
 	my $rep = sub {
 		my ($match) = @_;
 		if (my ($format, $name) = $match =~ /^([\w]+)\s+([\w]+)$/) {
-			if (lc $format eq lc 'string') {
-				defined(my $value = $data{$name})||confess;
-				qq{"$value"};
+			my $value = $data{$name};
+			if (defined($value)) {
+				if (lc $format eq lc 'string') {
+					qq{"$value"};
+				} else {
+					sprintf("%$format", $value);
+				}
 			} else {
-				defined(my $value = $data{$name})||confess;
-				sprintf("%$format", $value);
+				':NULL:'
 			}
 		} else {
-			defined(my $value = $data{$match})||confess $spec;
-			$value;
+			defined($data{$match}) ? $data{$match} : ':NULL:';
 		}
 	};
 	

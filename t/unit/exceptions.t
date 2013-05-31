@@ -182,9 +182,9 @@ is exception_message(exception 'code' => 'My message %04d a_42%', a_42 => 42), '
 
 # confess tests
 
-ok ! defined eval { exception_message(exception 'code' => 'My message %04d a_42%', b_42 => 42); 1 };
-ok ! defined eval { exception_message(exception 'code' => 'My message %a_42%', b_42 => 42); 1 };
-ok ! defined eval { exception_message(exception 'code' => 'My message %string a_42%', b_42 => 42); 1 };
+is 'My message :NULL:', exception_message(exception 'code' => 'My message %04d a_42%', b_42 => 42);
+is 'My message :NULL:', exception_message(exception 'code' => 'My message %a_42%', b_42 => 42);
+is 'My message :NULL:', exception_message(exception 'code' => 'My message %string a_42%', b_42 => 42);
 ok exception_message(exception 'code' => 'My message %string a_42%', a_42 => 42, c_42=>33);
 
 
