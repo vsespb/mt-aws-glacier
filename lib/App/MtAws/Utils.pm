@@ -22,7 +22,7 @@ package App::MtAws::Utils;
 
 
 use strict;
-use warnings FATAL => 'all';
+#use warnings FATAL => 'all';
 use utf8;
 use File::Spec;
 use Carp;
