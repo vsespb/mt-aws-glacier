@@ -27,12 +27,15 @@ use warnings;
 
 use App::MtAws::ConfigDefinition;
 use App::MtAws::ConfigEngine;
+use Test::More;
+use Test::Deep;
 require Exporter;
 use base qw/Exporter/;
 use Carp;
 
 our %disable_validations;
-our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal capture_stdout capture_stderr/;
+our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal
+capture_stdout capture_stderr assert_raises_exception/;
 
 sub warning_fatal
 {
@@ -95,6 +98,16 @@ sub capture_stderr($&)
 	local(*STDERR);
 	open STDERR, '>', \$_[0] or die "Can't open STDERR: $!";
 	$_[1]->();
+}
+
+# TODO: call only as assert_raises_exception sub {}, $e - don't omit sub! 
+sub assert_raises_exception(&@)
+{
+	my ($cb, $exception) = @_;
+	ok !defined eval { $cb->(); 1 };
+	my $err = $@;
+	cmp_deeply $err, superhashof($exception);
+	return ;
 }
 
 1;

@@ -1,3 +1,26 @@
+### 2013-06-01 v0.961 beta
+
+  * Enhancement: segment-size option added for restore-completed command for multi-segment downloads
+
+  * Documentation: restore-completed documentation updated
+
+  * Enhancement: Now all downloads performed to temp files. Temp file renamed to real files only when download succeed.
+
+  * Fixed: If server closes connection, after sending headers (when downloading files), this was not detected and no
+  error was thrown (it's not reported by underlying HTTP library for case non-chunked-transfer)
+
+  * Fixed: some other errors from underlying HTTP library detected
+
+  * Fixed: it there was more than 100 retries for a request (due to timeout/etc), program now terminates with error,
+  instead of reporting success.
+
+  * Fixed: for systems with non-UTF-8 filesystems, file modification time sometime was not adjusted after files
+  downloaded with restore-completed command
+
+  * Fixed: SIGHUP added to list of signal for graceful handling (i.e terminate fast when you close terminal)
+
+  * Fixed: Exceptions error message placeholder were not resolved when error printed
+
 ### 2013-05-26 v0.957 beta
 
   * STS/IAM security tokens support added

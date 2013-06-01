@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = "0.957beta";
+our $VERSION = "0.961beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -211,14 +211,22 @@ END
 			
 			my $files = $j->{journal_h};
 			# TODO: refactor
-			my %filelist =	map { $_->{archive_id} => $_ } grep { ! binaryfilename -f $_->{filename} } map { {archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, relfilename =>$_, filename=> $j->absfilename($_) } } keys %{$files};
+			my %filelist =	map { $_->{archive_id} => $_ }
+				grep { ! binaryfilename -f $_->{filename} }
+				map {
+					{
+						archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, size => $files->{$_}{size},
+						treehash => $files->{$_}{treehash}, relfilename =>$_, filename=> $j->absfilename($_)
+					}
+				}
+				keys %{$files};
 			if (keys %filelist) {
 				if ($options->{'dry-run'}) {
 					for (values %filelist) {
 						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n"
 					}
 				} else {
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(archives => \%filelist ));
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 				}
@@ -284,6 +292,7 @@ Commands:
 	purge-vault
 	restore
 	restore-completed
+		--segment-size - Size for multi-segment download, in megabytes
 	check-local-hash
 	retrieve-inventory
 	download-inventory

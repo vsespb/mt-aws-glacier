@@ -26,11 +26,15 @@ use utf8;
 use POSIX;
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use App::MtAws::TreeHash;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
+use App::MtAws::HttpSegmentWriter;
+use Fcntl qw/O_CREAT O_RDWR LOCK_EX LOCK_UN/;
+use File::Temp ();
+use File::Basename;
+use File::Path;
 use Carp;
 
 
@@ -213,19 +217,97 @@ sub retrieval_fetch_job
 # TODO: rename
 sub retrieval_download_job
 {
-	my ($self, $jobid, $filename) = @_;
-
+	my ($self, $jobid, $filename, $size, $journal_treehash) = @_;
+	
+	$journal_treehash||confess;
 	$jobid||confess;
 	defined($filename)||confess;
-   
+	$size or confess "no size";
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	$self->{content_file} = binaryfilename $filename; # TODO: use temp filename for transactional behaviour
+	
+	# TODO: move to ChildWorker?
+	my $dirname = dirname($filename);
+	my $binary_dirname = binaryfilename $dirname;
+	mkpath($binary_dirname);
+	my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
+	my $binary_tempfile = $tmp->filename;
+	my $character_tempfile = characterfilename($binary_tempfile);
+	close $tmp;
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size);
+
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
-	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
+	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
+
+	$self->{writer}->treehash->calc_tree();
+	my $th = $self->{writer}->treehash->get_final_hash();
+	
+	$reported_th eq $th or
+		die exception 'treehash_mismatch_full' =>
+		'TreeHash for received file %string filename% (full file) does not match. '.
+		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
+		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $filename;
+		# TODO: better report relative filename
+
+	$reported_th eq $journal_treehash or
+		die exception 'treehash_mismatch_journal' =>
+		'TreeHash for received file %string filename% (full file) does not match TreeHash in journal. '.
+		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
+		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $filename;
+		# TODO: better report relative filename
+
+	# TODO: move to ChildWorker?
+	$tmp->unlink_on_destroy(0);
+	undef $tmp;
+	rename $binary_tempfile, binaryfilename($filename) or confess "cannot rename file";
+	chmod((0666 & ~umask), binaryfilename($filename)) or confess;
+	
+	return $resp ? 1 : undef;
 }
 
+sub segment_download_job
+{
+	my ($self, $jobid, $tempfile, $filename, $position, $size) = @_;
+
+	$jobid||confess;
+	defined($position) or confess "no position";
+	$size or confess "no size";
+	defined($filename)||confess;
+   
+	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
+	
+	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position,
+		size => $size, filename => $filename);
+
+	$self->{method} = 'GET';
+	my $end_position = $position + $size - 1;
+	$self->add_header('Range', "bytes=$position-$end_position");
+
+	my $resp = $self->perform_lwp();
+	$resp && $resp->code == 206 or confess;
+	
+	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
+	$self->{writer}->treehash->calc_tree();
+	my $th = $self->{writer}->treehash->get_final_hash();
+	
+	$reported_th eq $th or
+		die exception 'treehash_mismatch_segment' =>
+		'TreeHash for received segment of file %string filename% (position %position%, size %size%) does not match. '.
+		'TreeHash reported by server %reported%, Calculated TreeHash %calculated%',
+		calculated => $th, reported => $reported_th, filename => $filename, position => $position, size => $size;
+		# TODO: better report relative filename
+	
+	my ($start, $end, $len) = $resp->header('Content-Range') =~ m!bytes\s+(\d+)\-(\d+)\/(\d+)!;
+
+	confess unless defined($start) && defined($end) && $len;
+	confess unless $end >= $start;
+	confess unless $position == $start;
+	confess unless $end_position == $end;
+	
+	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
+}
 
 sub retrieval_download_to_memory
 {
@@ -434,8 +516,13 @@ sub perform_lwp
 		my $resp = undef;
 
 		my $t0 = time();
-		if ($self->{content_file}) {
+		if ($self->{content_file} && $self->{writer}) {
+			confess "content_file and writer at same time";
+		} elsif ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
+		} elsif ($self->{writer}) {
+			$self->{writer}->reinit();
+			$resp = $ua->request($req, sub { $self->{writer}->add_data($_[0]) });
 		} else {
 			$resp = $ua->request($req);
 		}
@@ -444,20 +531,32 @@ sub perform_lwp
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
 			throttle($i);
-		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read timeout/i) {
-			print "PID $$ HTTP Timeout. Will retry ($dt seconds spent for request)\n";
+		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
+			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
 			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {
-			return $resp;
+			if ($self->{writer}) {
+				my ($c, $reason) = $self->{writer}->finish();
+				if ($c eq 'retry') {
+					print "PID $$ HTTP $reason. Will retry ($dt seconds spent for request)\n";
+					throttle($i);
+				} elsif ($c ne 'ok') {
+					confess;
+				} else {
+					return $resp;
+				}
+			} else {
+				return $resp;
+			}
 		} else {
 			print STDERR "Error:\n";
 			print STDERR $req->dump;
 			print STDERR $resp->dump;
 			print STDERR "\n";
-			return undef;
+			die exception 'http_unexpected_reply' => 'Unexpected reply from remote server';
 		}
 	}
-	return undef;
+	die exception 'too_many_tries' => "Request was not successful after "._max_retries." retries";
 }
 
 

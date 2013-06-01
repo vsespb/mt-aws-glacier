@@ -88,27 +88,31 @@ describe "create_multipart_upload" => sub {
 };
 
 describe "perform_lwp" => sub {
-	it "should work" => sub {
-		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
-		($g->{method}, $g->{url}) = ('GET', 'test');
-		LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK'));
-		my $resp = $g->perform_lwp();
-		is $resp->status_line, '200 OK';
+	it "should work with 2xx codes" => sub {
+		for my $code (200..209) {
+			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+			($g->{method}, $g->{url}) = ('GET', 'test');
+			LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code, 'OK'));
+			my $resp = $g->perform_lwp();
+			is $resp->code, $code;
+		}
 	};
-	it "should throttle" => sub {
+	describe "throttle" => sub {
 		my $retries = 3;
 		it "should throttle 408/500" => sub {
 			for my $code (qw/408 500/) {
 				my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
 				($g->{method}, $g->{url}) = ('GET', 'test');
 				my @throttle_args;
-				App::MtAws::GlacierRequest->expects('_max_retries')->returns($retries);
+				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 				App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->exactly($retries);
 				my $out='';
-				my $resp = capture_stdout $out, sub {
-					 $g->perform_lwp();
-				};
+				my $resp = capture_stdout($out, sub {
+					assert_raises_exception sub {
+						$g->perform_lwp();
+					}, exception 'too_many_tries' => "Request was not successful after $retries retries";
+				});
 				ok ! defined $resp;
 				cmp_deeply [@throttle_args], [(1..$retries)];
 				my @matches = $out =~ /PID $$ HTTP $code This might be normal. Will retry \(\d+ seconds spent for request\)/g;
@@ -116,21 +120,36 @@ describe "perform_lwp" => sub {
 			}
 		};
 		it "should throttle X-Died and read timeout" => sub {
-			
 			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
 			($g->{method}, $g->{url}) = ('GET', 'test');
 			my @throttle_args;
-			App::MtAws::GlacierRequest->expects('_max_retries')->returns($retries);
+			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK', [ 'X-Died' => 'Read Timeout at']))->exactly($retries);
 			my $out='';
 			my $resp = capture_stdout $out, sub {
-				 $g->perform_lwp();
+				assert_raises_exception sub {
+					$g->perform_lwp();
+				}, exception 'too_many_tries' => "Request was not successful after $retries retries";
 			};
 			ok ! defined $resp;
 			cmp_deeply [@throttle_args], [(1..$retries)];
-			my @matches = $out =~ /PID $$ HTTP Timeout. Will retry \(\d+ seconds spent for request\)/g;
+			my @matches = $out =~ /PID $$ HTTP connection problem. Will retry \(\d+ seconds spent for request\)/g;
 			is scalar @matches, $retries;
+		};
+		it "should catch other codes as unknown errors" => sub {
+			for my $code (300..309, 400..407, 409) {
+				my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+				($g->{method}, $g->{url}) = ('GET', 'test');
+				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
+				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->once;
+				my $out = '';
+				assert_raises_exception sub {
+					capture_stderr $out, sub {
+						$g->perform_lwp();
+					}
+				}, exception 'http_unexpected_reply' => "Unexpected reply from remote server";
+			}
 		};
 	};
 };

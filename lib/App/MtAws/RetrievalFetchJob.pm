@@ -25,8 +25,10 @@ use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
 use App::MtAws::FileUploadJob;
+use App::MtAws::SingleDownloadJob;
+use App::MtAws::SegmentDownloadJob;
 use App::MtAws::RetrievalDownloadJob;
-
+use Carp;
 use JSON::XS;
 
 
@@ -75,9 +77,20 @@ sub finish_task
 		}
 		
 		if ($scalar->{Marker}) {
-			return ("ok replace", App::MtAws::RetrievalFetchJob->new(archives => $self->{archives}, downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
+			return ("ok replace", App::MtAws::RetrievalFetchJob->new(archives => $self->{archives}, file_downloads => $self->{file_downloads},
+			downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
 		} elsif (scalar @{$self->{downloads}}) {
-			return ("ok replace", App::MtAws::RetrievalDownloadJob->new(archives=>$self->{downloads})); #TODO allow parallel downloads while fetching job list
+			 #TODO allow parallel downloads while fetching job list
+			if ($self->{file_downloads}{'segment-size'}) {
+				return ("ok replace", App::MtAws::JobListProxy->new(jobs => [map {
+					confess unless $_->{size};
+					$_->{size} > $self->{file_downloads}{'segment-size'}*1048576 ?
+						App::MtAws::SegmentDownloadJob->new(file_downloads => $self->{file_downloads}, archive=>$_) :
+						App::MtAws::SingleDownloadJob->new(file_downloads => $self->{file_downloads}, archive=>$_)
+				} @{$self->{downloads}}]));
+			} else {
+				return ("ok replace", App::MtAws::RetrievalDownloadJob->new(file_downloads => $self->{file_downloads}, archives=>$self->{downloads}));
+			}
 		} else {
 			return ("done");
 		}

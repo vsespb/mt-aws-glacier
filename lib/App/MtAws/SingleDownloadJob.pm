@@ -18,15 +18,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::RetrievalDownloadJob;
+package App::MtAws::SingleDownloadJob;
 
 use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use Carp;
 use App::MtAws::Utils;
 use File::stat;
+use Carp;
 
 
 sub new
@@ -34,10 +34,8 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    $self->{archives}||die;
-    $self->{pending}={};
-    $self->{all_raised} = 0;
-    $self->{position} = 0;
+    $self->{archive}||confess;
+    $self->{raised} = 0;
     return $self;
 }
 
@@ -45,22 +43,15 @@ sub new
 sub get_task
 {
 	my ($self) = @_;
-	if ($self->{all_raised}) {
+	if ($self->{raised}) {
 		return ("wait");
 	} else {
-		if (scalar @{$self->{archives}}) {
-			my $archive = shift @{$self->{archives}};
-			my $task = App::MtAws::Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
-				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},
-				filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid},
-				size => $archive->{size}, treehash => $archive->{treehash}
-			});
-			$self->{pending}->{$archive->{jobid}}=1;
-			$self->{all_raised} = 1 unless scalar @{$self->{archives}};
-			return ("ok", $task);
-		} else {
-			die;
-		}
+		$self->{raised} = 1;
+		my $archive = $self->{archive};
+		return ("ok",  App::MtAws::Task->new(id => $archive->{jobid}, action=>"retrieval_download_job", data => {
+			archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename}, filename => $archive->{filename},
+			mtime => $archive->{mtime}, jobid => $archive->{jobid}, size => $archive->{size}, treehash => $archive->{treehash}
+		}));
 	}
 }
 
@@ -68,14 +59,12 @@ sub get_task
 sub finish_task
 {
 	my ($self, $task) = @_;
-	my $mtime = $task->{data}{mtime};
-	utime $mtime, $mtime, binaryfilename($task->{data}{filename}) or confess if defined $mtime;
-	
-	delete $self->{pending}->{$task->{id}};
-	if ($self->{all_raised} && scalar keys %{$self->{pending}} == 0) {
+	if ($self->{raised}) {
+		my $mtime = $task->{data}{mtime};
+		utime $mtime, $mtime, binaryfilename($task->{data}{filename}) or confess if defined $mtime;
 		return ("done");
 	} else {
-		return ("ok");
+		confess;
 	}
 }
 	

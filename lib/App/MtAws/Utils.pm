@@ -22,7 +22,7 @@ package App::MtAws::Utils;
 
 
 use strict;
-use warnings FATAL => 'all';
+#use warnings FATAL => 'all';
 use utf8;
 use File::Spec;
 use Carp;
@@ -38,7 +38,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string/;
+is_wide_string characterfilename/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -71,6 +71,10 @@ sub binaryfilename(;$)
 	encode(get_filename_encoding, @_ ? shift : $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);	
 }
 
+sub characterfilename(;$)
+{
+	decode(get_filename_encoding, @_ ? shift : $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);	
+}
 
 =pod
 
@@ -105,7 +109,7 @@ sub open_file($$%)
 	confess "Unknown argument(s) to open_file: ".join(';', keys %checkargs) if %checkargs;
 	
 	confess 'Argument "mode" is required' unless defined($args{mode});
-	confess "unknown mode $args{mode}" unless $args{mode} =~ m!^(<|>>?)$!;
+	confess "unknown mode $args{mode}" unless $args{mode} =~ m!^\+?(<|>>?)$!;
 	my $mode = $args{mode};
 	
 	confess "not_empty can be used in read mode only"

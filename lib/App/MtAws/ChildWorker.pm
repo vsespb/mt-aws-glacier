@@ -111,12 +111,17 @@ sub process
 				};
 				$console_out = "Deleted $data->{relfilename} archive_id [$data->{archive_id}]";
 			} elsif ($action eq 'retrieval_download_job') {
-				mkpath(binaryfilename dirname($data->{filename}));
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
-				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename});
+				my $r = $req->retrieval_download_job($data->{jobid}, $data->{filename}, $data->{size}, $data->{treehash});
 				confess "retrieval_download_job failed" unless $r;
 				$result = { response => $r };
-				$console_out = "Download Archive $data->{filename}";
+				$console_out = "Downloaded archive $data->{filename}";
+			} elsif ($action eq 'segment_download_job') {
+				my $req = App::MtAws::GlacierRequest->new($self->{options});
+				my $r = $req->segment_download_job($data->{jobid}, $data->{tempfile}, $data->{filename}, $data->{position}, $data->{download_size});
+				confess "segment_download_job failed" unless $r;
+				$result = { response => $r };
+				$console_out = "Downloaded part of archive $data->{filename} at offset $data->{position}, size $data->{download_size}";
 			} elsif ($action eq 'inventory_download_job') {
 				my $req = App::MtAws::GlacierRequest->new($self->{options});
 				my $r = $req->retrieval_download_to_memory($data->{job_id});

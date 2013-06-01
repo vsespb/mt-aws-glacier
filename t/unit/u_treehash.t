@@ -23,13 +23,60 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 11;
+use Test::More tests => 1417;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::TreeHash;
 use Data::Dumper;
 
 $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
+
+# eat_data_any_size
+
+sub test_eat_data_any_size
+{
+	my $unit = shift;
+	my $th = App::MtAws::TreeHash->new(unit => $unit);
+	my $s = '';
+	my $original = join(',', @_);
+	for (@_) {
+		$s .= $_;
+		$th->eat_data_any_size($_);
+	}
+	my $after_work = join(',', @_);
+	is $after_work, $original, 'ensure source data is not modified';
+	$th->calc_tree();
+	# TODO: can mock eat_data_one_mb and collect and compare data instead of calculating treehash..
+	my $th2 = App::MtAws::TreeHash->new(unit => $unit);
+	$th2->eat_data($s);
+	$th2->calc_tree();
+	ok ( $th->get_final_hash() eq $th2->get_final_hash(), 'eat_data_any_size should work for '.join(',', @_) );
+}
+
+{
+	my $chunksize = 3;
+	my $maxstrsize = $chunksize + 1 + 1;
+	my $bigstring = 'ABCDEFGHIJKLMNOPQRST';
+	is length($bigstring),  $maxstrsize*4;
+	for my $a1 (1..$maxstrsize) {
+		my $s1 = substr('12345', 0, $a1); # TODO: test, that each string should consists of unique characters only
+		is length($s1), $a1;
+		for my $a2 (1..$maxstrsize) {
+			my $s2 = substr('67890', 0, $a2);
+			is length($s2), $a2;
+			for my $a3 (1..$maxstrsize) {
+				my $s3 = substr('abcde', 0, $a3);
+				is length($s3), $a3;
+				test_eat_data_any_size $chunksize, $s1, $s2, $s3;
+				test_eat_data_any_size $chunksize, $bigstring, $s1, $s2, $s3;
+				test_eat_data_any_size $chunksize, $s1, $bigstring, $s2, $s3;
+				test_eat_data_any_size $chunksize, $s1, $s2, $bigstring, $s3;
+				test_eat_data_any_size $chunksize, $s1, $s2, $s3, $bigstring;
+			}
+		}
+	}
+}
+
 
 {
 	my $s = "Hello, world! ".('x' x 100);
@@ -96,7 +143,7 @@ $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 	$th_complex->eat_data(join('', @data));
 	$th_complex->calc_tree();
 
-	ok($th_complex->get_final_hash() eq $simplehash, "eat_another_treehash should work");
+	ok($th_complex->get_final_hash() eq $simplehash, "eat_data should work");
 }
 
 

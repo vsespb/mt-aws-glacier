@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.957 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 0.961 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -310,8 +310,32 @@ into journal together with timestamp)
 
 ### `restore-completed`
 
-Donwloads files, listed in Journal, which don't *exist* on local filesystem. Currenly download without resumption feature
-is used.
+Donwloads files, listed in Journal, which don't *exist* on local filesystem, and which were previously
+RETRIEVED (using `restore` command) and now available for download (i.e. in a ~4hours after retrieve).
+Unlike `restore` command, list of retrieved files is requested from Amazon Glacier servers at runtime using API, not from
+journal.
+
+Data downloaded to unique temporary files (created in same directory as destination file). Temp files renamed to real files
+only when download successfully finished. In case program terminated with error or after Ctrl-C, temp files with unfinished
+downloads removed.
+
+If `segment-size` specified (greater than 0) and particular file size in megabytes is larger than `segment-size`,
+download for this file performed in multiple segments, i.e. using HTTP `Range:` header (each of size `segment-size` MiB, except last,
+which can be smaller). Segments are downloaded in parallel (and different segments from different files can
+be downloaded at same time).
+
+Only values that are power of two supported for `segment-size` now. 
+
+Currenly if download breaks due to network problem, no resumption is performed, download of file or of current segment
+started from beginning.
+
+In case multi-segment downloads, TreeHash reported by Amazon Glacier for each segment is compared with actual TreeHash, calculated for segment at runtime.
+In case of mismatch error is thrown and process stopped. Final TreeHash for whole file not checked yet.
+
+In case full-file downloads, TreeHash reported by Amazon Glacier for whole file is compared with one calculated runtime and with one found in Journal file,
+in case of mismatch, error is thrown and process stopped. 
+
+Unlike `partsize` option, `segment-size` does not allocate buffers in memory of the size specified, so you can use large `segment-size`.
 
 ### `upload-file`
 
@@ -513,13 +537,22 @@ NOTE: Any command line option can be used in config file as well.
 
 		--partsize=16
 
-3. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
+3. `segment-size` (with `restore-completed` command) - size of download segment, in MiB  (default: none)
+
+	If `segment-size` specified (greater than zero), and file size in megabytes is larger than `segment-size`, download performed in
+	multiple segments.
+
+	If omited or zero, multi-segment download is disabled (i.e this is default)
+
+	`segment-size` should be power of two.
+
+4. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
 		--max-number-of-files=100
 
-4. `key/secret/region/vault/protocol` - you can override any option from config
+5. `key/secret/region/vault/protocol` - you can override any option from config
 
-5. `dry-run` (with `sync`, `purge-vault`, `restore`, `restore-completed ` and even `check-local-hash` commands) - do not perform actual work, print what will happen instead. 
+6. `dry-run` (with `sync`, `purge-vault`, `restore`, `restore-completed ` and even `check-local-hash` commands) - do not perform actual work, print what will happen instead. 
 
 		--dry-run
 

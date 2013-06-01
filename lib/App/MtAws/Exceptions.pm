@@ -22,7 +22,7 @@ package App::MtAws::Exceptions;
 
 
 use strict;
-use warnings FATAL => 'all';
+#use warnings FATAL => 'all';
 use utf8;
 use Carp;
 
@@ -77,16 +77,18 @@ sub exception_message
 	my $rep = sub {
 		my ($match) = @_;
 		if (my ($format, $name) = $match =~ /^([\w]+)\s+([\w]+)$/) {
-			if (lc $format eq lc 'string') {
-				defined(my $value = $data{$name})||confess;
-				qq{"$value"};
+			my $value = $data{$name};
+			if (defined($value)) {
+				if (lc $format eq lc 'string') {
+					qq{"$value"};
+				} else {
+					sprintf("%$format", $value);
+				}
 			} else {
-				defined(my $value = $data{$name})||confess;
-				sprintf("%$format", $value);
+				':NULL:'
 			}
 		} else {
-			defined(my $value = $data{$match})||confess $spec;
-			$value;
+			defined($data{$match}) ? $data{$match} : ':NULL:';
 		}
 	};
 	
@@ -103,7 +105,7 @@ sub dump_error
 	if (is_exception('cmd_error')) {
 		# no additional output
 	} elsif (is_exception) {
-		print STDERR "ERROR$where: $@->{message}\n";
+		print STDERR "ERROR$where: ".exception_message($@)."\n";
 	} else {
 		print STDERR "UNEXPECTED ERROR$where: $@\n";
 	}
