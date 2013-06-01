@@ -20,10 +20,12 @@ mt-aws-glacier is a client application for Glacier.
 ## Features
 
 * Does not use any existing Amazon Glacier library, so can be flexible in implementing advanced features
-* Glacier Multipart upload
-* Multithreaded upload
-* Multipart+Multithreaded upload
+* Amazon Glacier Multipart upload
+* Multi-segment download (using HTTP Range header)
+* Multithreaded upload/download
+* Multipart+Multithreaded download/upload
 * Multithreaded archive retrieval, deletion and download
+* TreeHash validation while downloading
 * Tracking of all uploaded files with a local journal file (opened for write in append mode only)
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
@@ -31,14 +33,13 @@ mt-aws-glacier is a client application for Glacier.
 * File name and modification times are stored as Glacier metadata ([metadata format for developers][mt-aws-glacier Amazon Glacier meta-data format specification])
 * Ability to re-create journal file from Amazon Glacier metadata
 * Full UTF-8 support (and full single-byte encoding support for *BSD systems) 
-* Upload from STDIN
+* Multipart/multithreaded upload from STDIN
 * User selectable HTTPS support. Currently defaults to plaintext HTTP
 * Vault creation and deletion
 * STS/IAM security tokens support
 
 ## Coming-soon features
 
-* Multipart download (using HTTP Range header)
 * Checking integrity of remote files
 * Some integration with external world, ability to read SNS topics
 * Simplified distribution for Debian/RedHat
