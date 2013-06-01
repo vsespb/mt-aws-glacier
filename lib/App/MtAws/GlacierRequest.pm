@@ -531,21 +531,9 @@ sub perform_lwp
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
 			throttle($i);
-		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read timeout/i) {
-			print "PID $$ HTTP Timeout. Will retry ($dt seconds spent for request)\n";
-			throttle($i);
-		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^EOF\s/) {
-			print "PID $$ HTTP Unexpected end of data. Will retry ($dt seconds spent for request)\n";
-			throttle($i);
-		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died')) && $resp->header('X-Died') =~ /^read failed\:/) {
-			print "PID $$ HTTP Read failed. Will retry ($dt seconds spent for request)\n";
-			throttle($i);
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
-			print STDERR "Error:\n";
-			print STDERR $req->dump;
-			print STDERR $resp->dump;
-			print STDERR "\n";
-			die exception 'http_unexpected_reply' => 'Unexpected reply from remote server';
+			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
+			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			if ($self->{writer}) {
 				my ($c, $reason) = $self->{writer}->finish();

@@ -134,7 +134,7 @@ describe "perform_lwp" => sub {
 			};
 			ok ! defined $resp;
 			cmp_deeply [@throttle_args], [(1..$retries)];
-			my @matches = $out =~ /PID $$ HTTP Timeout. Will retry \(\d+ seconds spent for request\)/g;
+			my @matches = $out =~ /PID $$ HTTP connection problem. Will retry \(\d+ seconds spent for request\)/g;
 			is scalar @matches, $retries;
 		};
 		it "should catch other codes as unknown errors" => sub {
