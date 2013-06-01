@@ -143,7 +143,7 @@ sub test_eat_data_any_size
 	$th_complex->eat_data(join('', @data));
 	$th_complex->calc_tree();
 
-	ok($th_complex->get_final_hash() eq $simplehash, "eat_another_treehash should work");
+	ok($th_complex->get_final_hash() eq $simplehash, "eat_data should work");
 }
 
 
