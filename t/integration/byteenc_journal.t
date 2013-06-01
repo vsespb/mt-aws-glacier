@@ -38,7 +38,7 @@ use TestUtils;
 
 warning_fatal();
 
-if( $^O =~ /^(linux|freebsd|openbsd)$/i ) {
+if( $^O =~ /^(linux|.*bsd)$/i ) {
       plan tests => 1350;
 } else {
       plan skip_all => 'Test cannot be performed on character-oriented filesystem';
