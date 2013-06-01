@@ -40,7 +40,8 @@ use App::MtAws::DownloadInventoryCommand;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $localroot = "$mtroot/download_inventory";
 my $journal = "$localroot/journal";
 my $rootdir = "$localroot/root";
