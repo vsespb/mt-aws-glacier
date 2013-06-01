@@ -32,7 +32,7 @@ use File::Path;
 use Data::Dumper;
 use POSIX;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 warning_fatal();
 

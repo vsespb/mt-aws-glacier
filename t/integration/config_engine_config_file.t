@@ -28,7 +28,7 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use File::Path;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 warning_fatal();
 

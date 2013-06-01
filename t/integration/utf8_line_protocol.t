@@ -32,7 +32,7 @@ use Encode;
 use bytes;
 no bytes;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 warning_fatal();
 

@@ -31,7 +31,7 @@ use App::MtAws::Journal;
 use File::Path;
 use POSIX;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 warning_fatal();
 

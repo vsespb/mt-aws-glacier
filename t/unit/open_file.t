@@ -31,7 +31,7 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Data::Dumper;
 use File::Path;
-use File::Temp;
+use File::Temp ();
 
 our $OpenStack = undef;
 our $BinmodeStack = undef;

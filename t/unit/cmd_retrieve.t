@@ -30,7 +30,7 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
 use File::Path;
 use POSIX;
-use File::Temp;
+use File::Temp ();
 use TestUtils;
 
 warning_fatal();
