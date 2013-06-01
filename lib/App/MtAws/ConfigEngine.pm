@@ -27,7 +27,7 @@ use List::Util qw/first/;
 use strict;
 use warnings;
 use utf8;
-			use Data::Dumper;
+
 require Exporter;
 use base qw/Exporter/;
 
