@@ -4,6 +4,9 @@
 
   * Enhancement: Now all downloads performed to temp files. Temp file renamed to real files only when download succeed.
 
+  * Fixed: If server closes connection, after sending headers (when downloading files), this was not detected and no
+  error was thrown (it's not reported by underlying HTTP library for case non-chunked-transfer)
+
   * Fixed: it there was more than 100 retries for a request (due to timeout/etc), program now terminates with error,
   instead of reporting success.
 
