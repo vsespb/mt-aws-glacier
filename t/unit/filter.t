@@ -404,7 +404,10 @@ check 'z/ex[1|2]mple',
 	            },
 	            {
 	              'pattern' => 'dir/',
-	              're' => qr!(^|/)dir\/!, # TODO: under perl5.8.9 some misslatch here
+
+	              # Test::Deep problem here https://rt.cpan.org/Ticket/Display.html?id=85785
+	              're' => $] > 5.01 ? qr!(^|/)dir\/! : ignore(),
+	              
 	              'action' => '-',
 	              'match_subdirs' => 1,
 	              'notmatch' => '',
