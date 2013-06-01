@@ -32,11 +32,12 @@ use File::Path;
 use Data::Dumper;
 use POSIX;
 use TestUtils;
+use File::Temp;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
-mkpath($mtroot);
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $file = "$mtroot/job_file_create";
 
 chmod 0744, $file;

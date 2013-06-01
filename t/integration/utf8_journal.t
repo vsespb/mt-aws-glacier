@@ -31,13 +31,15 @@ use File::Path;
 use JournalTest;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 use TestUtils;
+use File::Temp;
 
 warning_fatal();
 
 binmode Test::Simple->builder->output, ":utf8";
 binmode Test::Simple->builder->failure_output, ":utf8";
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $tmproot = "$mtroot/журнал-utf";
 my $dataroot = "$tmproot/dataL1/данныеL2";
 my $journal_file = "$tmproot/journal";
