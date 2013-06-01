@@ -319,14 +319,23 @@ Data downloaded to unique temporary files (created in same directory as destinat
 only when download successfully finished. In case program terminated with error or after Ctrl-C, temp files with unfinished
 downloads removed.
 
-If `segment-size` specified, and file size in megabytes is larger than `segment-size`, download performed in
-multiple segments, i.e. using HTTP `Range:` header (each of size `segment-size` MiB, except last, which can be smaller).
-Segments are downloaded in parallel (and different segments from different files can be downloaded at same time).
+If `segment-size` specified (greater than 0) and particular file size in megabytes is larger than `segment-size`,
+download for this file performed in multiple segments, i.e. using HTTP `Range:` header (each of size `segment-size` MiB, except last,
+which can be smaller). Segments are downloaded in parallel (and different segments from different files can
+be downloaded at same time).
+
+Only values that are power of two supported for `segment-size` now. 
 
 Currenly if download breaks due to network problem, no resumption is performed, download of file or of current segment
 started from beginning.
 
-TreeHash is not checked. You can check it after download using `check-local-hash` command.
+In case multi-segment downloads, TreeHash reported by Amazon Glacier for each segment is compared with actual TreeHash, calculated for segment at runtime.
+In case of mismatch error is thrown and process stopped. Final TreeHash for whole file not checked yet.
+
+In case full-file downloads, TreeHash reported by Amazon Glacier for whole file is compared with one calculated runtime and with one found in Journal file,
+in case of mismatch, error is thrown and process stopped. 
+
+Unlike `partsize` option, `segment-size` does not allocate buffers in memory of the size specified, so you can use large `segment-size`.
 
 ### `upload-file`
 
@@ -530,8 +539,12 @@ NOTE: Any command line option can be used in config file as well.
 
 3. `segment-size` (with `restore-completed` command) - size of download segment, in MiB  (default: none)
 
-	If `segment-size` specified, and file size in megabytes is larger than `segment-size`, download performed in
-	multiple segments (each of size `segment-size` MiB, except last, which can be smaller).
+	If `segment-size` specified (greater than zero), and file size in megabytes is larger than `segment-size`, download performed in
+	multiple segments.
+
+	If omited or zero, multi-segment download is disabled (i.e this is default)
+
+	`segment-size` should be power of two.
 
 4. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
