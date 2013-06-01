@@ -30,10 +30,12 @@ use App::MtAws::ConfigEngine;
 use File::Path;
 use Encode;
 use TestUtils;
+use File::Temp;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 mkpath($mtroot);
 my $file = "$mtroot/read-config-test.txt";
 rmtree($file);

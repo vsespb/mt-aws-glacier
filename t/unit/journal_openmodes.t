@@ -34,13 +34,14 @@ use Test::MockModule;
 use POSIX;
 use Carp;
 use TestUtils;
+use File::Temp;
 
 die "Cannot work under root" unless $>;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
-mkpath $mtroot;
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $rootdir = 'def';
 my $file = "$mtroot/journal_open_mode";
 my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";

@@ -20,11 +20,24 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=head1 NAME
+
+mt-aws-glacier - Perl Multithreaded Multipart sync to Amazon Glacier 
+
+=head1 SYNOPSIS
+
+More info in README.md or L<https://github.com/vsespb/mt-aws-glacier> or L<http://mt-aws.com/>
+
+=cut
+
+
 package App::MtAws;
 
 use strict;
 use warnings;
 use utf8;
+use 5.008008; # minumum perl version is 5.8.8
 
 our $VERSION = "0.961beta";
 

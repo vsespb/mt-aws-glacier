@@ -30,12 +30,14 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
 use File::Path;
 use POSIX;
+use File::Temp;
 use TestUtils;
 
 warning_fatal();
 
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $localroot = "$mtroot/cmd_retrieve";
 my $journal = "$localroot/journal";
 my $rootdir = "$localroot/root";

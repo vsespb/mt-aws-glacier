@@ -31,12 +31,14 @@ use App::MtAws::Journal;
 use File::Path;
 use POSIX;
 use TestUtils;
+use File::Temp;
 
 die "Cannot work under root" unless $>;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $localroot = "$mtroot/cmd_check_local_hash";
 my $journal = "$localroot/journal";
 my $rootdir = "$localroot/root";

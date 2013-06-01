@@ -28,14 +28,14 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use File::Path;
 use TestUtils;
-use TestUtils;
+use File::Temp;
 
 die "Cannot work under root" unless $>;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
-mkpath($mtroot);
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $file = "$mtroot/config_engine_v08_test.txt";
 
 rmtree($file);

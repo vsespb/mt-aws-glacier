@@ -31,11 +31,12 @@ use Test::MockModule;
 use Carp;
 use Data::Dumper;
 use TestUtils;
+use File::Temp;
 
 warning_fatal();
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
-
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 
 
 #

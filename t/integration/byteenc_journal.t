@@ -33,12 +33,13 @@ use App::MtAws::Filter;
 use File::Path;
 use JournalTest;
 use Encode;
+use File::Temp;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 use TestUtils;
 
 warning_fatal();
 
-if( $^O =~ /^(linux|freebsd|openbsd)$/i ) {
+if( $^O =~ /^(linux|.*bsd|solaris)$/i ) {
       plan tests => 1350;
 } else {
       plan skip_all => 'Test cannot be performed on character-oriented filesystem';
@@ -48,7 +49,8 @@ if( $^O =~ /^(linux|freebsd|openbsd)$/i ) {
 binmode Test::More->builder->output, ":utf8";
 binmode Test::More->builder->failure_output, ":utf8";
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $TEMP = File::Temp->newdir();
+my $mtroot = $TEMP->dirname();
 my $tmproot = "$mtroot/журнал-byteenc";
 my $dataroot = "$tmproot/dataL1/данныеL2";
 my $journal_file = "$tmproot/journal";
