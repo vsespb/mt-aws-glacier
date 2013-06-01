@@ -25,6 +25,7 @@ package App::MtAws;
 use strict;
 use warnings;
 use utf8;
+use 5.008008; # minumum perl version is 5.8.8
 
 our $VERSION = "0.961beta";
 

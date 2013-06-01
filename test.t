@@ -20,6 +20,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use 5.008008; # minumum perl version is 5.8.8
 use TAP::Harness;
 use strict;
 use warnings;

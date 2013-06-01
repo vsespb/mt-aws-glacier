@@ -25,7 +25,7 @@ my $build = Module::Build->new(
 		},
 	},
 	requires => {
-		'perl' => '5.8.8',
+		'perl' => 5.008008,
 		'Digest::SHA' => 0,
 		'LWP::UserAgent' => 6,
 		'LWP::Protocol::https' => 0,

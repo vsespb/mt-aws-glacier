@@ -66,7 +66,7 @@ mt-aws-glacier is a client application for Glacier.
 ## Installation/System requirements
 
 Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS X.
-Should NOT work under Windows. 
+Should NOT work under Windows. Minimum Perl version required is 5.8.8 (pretty old, AFAIK there are no supported distributions with older Perls) 
 
 * Install the following CPAN modules:
 
