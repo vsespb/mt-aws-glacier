@@ -33,6 +33,9 @@ my $build = Module::Build->new(
 		'LWP::UserAgent' => 6,
 		'LWP::Protocol::https' => 0, # actually can be listed as optional
 		'JSON::XS' => 0,
+		'HTTP::Request::Common' => 0, # required by LWP::UserAgent, but I use i directly also
+
+
 		# core modules for Perl > 5.8.x
 		'Digest::SHA' => 0,
 		
@@ -48,7 +51,6 @@ my $build = Module::Build->new(
 		'File::Spec' => 0,
 		'File::stat' => 0,
 		'Getopt::Long' => 0,
-		'HTTP::Request::Common' => 0,
 		'IO::Handle' => 0,
 		'IO::Pipe' => 0,
 		'IO::Select' => 0,
