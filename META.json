@@ -1,7 +1,7 @@
 {
    "abstract" : "mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier",
    "author" : [
-      "Victor Efimov"
+      "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
    "generated_by" : "Module::Build version 0.4005, CPAN::Meta::Converter version 2.120921",
@@ -14,8 +14,8 @@
    },
    "name" : "App-MtAws",
    "no_index" : {
-      "directory" : [
-         "lib/App/MtAws"
+      "namespace" : [
+         "App::MtAws"
       ]
    },
    "prereqs" : {
