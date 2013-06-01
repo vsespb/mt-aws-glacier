@@ -30,7 +30,7 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::MetaData;
 
 use Test::MockModule;
-use MIME::Base64 3.11 qw/encode_base64url encode_base64/;
+use MIME::Base64 qw/encode_base64/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
@@ -59,7 +59,7 @@ no warnings 'redefine';
 		qq!тест=test!,
 	) {
 		my $result = App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_utf8($_));
-		ok ($result eq encode_base64url(encode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)), 'match base64 encode');
+		ok ($result eq _encode_base64url(encode("UTF-8", $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)), 'match base64 encode');
 		ok ($result !~ /[\r\n]/m, 'does not contain linefeed');
 		ok ($result !~ /[\+\/\=]/m, 'does not contain + and /');
 		my $redecoded = App::MtAws::MetaData::_decode_utf8(App::MtAws::MetaData::_decode_b64($result));
@@ -229,19 +229,19 @@ no warnings 'redefine';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 zzz'), 'should return undef if utf is broken';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 !!!!'), 'should return undef if base64 is broken';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 z+z'), 'should return undef if base64 is broken';
-	ok defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
-	ok defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('ff')), 'should return undef if json is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '.encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
+	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
+	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('ff')), 'should return undef if json is broken';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
 	
-	ok defined App::MtAws::MetaData::meta_decode('mt2   '.encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
-	ok defined App::MtAws::MetaData::meta_decode("mt2\t\t".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
-	ok defined App::MtAws::MetaData::meta_decode(" \tmt2\t\t ".encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
+	ok defined App::MtAws::MetaData::meta_decode('mt2   '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
+	ok defined App::MtAws::MetaData::meta_decode("mt2\t\t"._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
+	ok defined App::MtAws::MetaData::meta_decode(" \tmt2\t\t "._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
 	
 	eval { App::MtAws::MetaData::meta_decode('zzz') };
 	ok $@ eq '', 'should not override eval code';
@@ -324,6 +324,14 @@ no warnings 'redefine';
 sub to_iso8601
 {
 	strftime("%Y%m%dT%H%M%SZ", gmtime(shift));
+}
+
+
+sub _encode_base64url { # copied from MIME::Base64
+	my $e = encode_base64(shift, "");
+	$e =~ s/=+\z//;
+	$e =~ tr[+/][-_];
+	return $e;
 }
 
 1;

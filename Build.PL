@@ -37,7 +37,7 @@ my $build = Module::Build->new(
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => 0,
-		'MIME::Base64' => '3.11',
+		'MIME::Base64' => 0,
 	}
 );
 
