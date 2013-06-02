@@ -106,9 +106,10 @@ sub close_for_write
 sub process_line
 {
 	my ($self, $line, $lineno) = @_;
+	try_drop_utf8_flag $line;
 	my ($time, $archive_id, $size, $mtime, $treehash, $relfilename);
 	# TODO: replace \S and \s, make tests for this
-	
+
 		# Journal version 'A'
 	if (($time, $archive_id, $size, $mtime, $treehash, $relfilename) =
 		$line =~ /^A\t([0-9]{1,20})\tCREATED\t(\S+)\t([0-9]{1,20})\t([+-]?[0-9]{1,20})\t(\S+)\t(.*?)$/) {

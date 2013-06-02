@@ -38,7 +38,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string characterfilename/;
+is_wide_string characterfilename try_drop_utf8_flag/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -159,6 +159,12 @@ sub file_size($%)
 sub is_wide_string
 {
 	defined($_[0]) && utf8::is_utf8($_[0]) && (bytes::length($_[0]) != length($_[0]))
+}
+
+# if we have ASCII-only data, let's drop UTF-8 flag in order to optimize some regexp stuff
+sub try_drop_utf8_flag
+{
+	Encode::_utf8_off($_[0]) if utf8::is_utf8($_[0]) && (bytes::length($_[0]) == length($_[0]));
 }
 
 sub sysreadfull($$$)
