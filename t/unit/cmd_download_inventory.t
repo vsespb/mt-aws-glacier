@@ -36,7 +36,7 @@ use Time::Local;
 use Carp;
 use App::MtAws::MetaData;
 use App::MtAws::DownloadInventoryCommand;
-
+use File::Temp ();
 
 warning_fatal();
 
