@@ -453,25 +453,23 @@ sub _sign
 }
 
 
+sub _max_retries { 100 }
+sub _sleep($) { sleep shift }
+
 sub throttle
 {
 	my ($i) = @_;
 	if ($i <= 5) {
-		sleep 1;
+		_sleep 1;
 	} elsif ($i <= 10) {
-		sleep 5;
+		_sleep 5;
 	} elsif ($i <= 20) {
-		sleep 15;
+		_sleep 15;
 	} elsif ($i <= 50) {
-		sleep 60
+		_sleep 60
 	} else {
-		sleep 180;
+		_sleep 180;
 	}
-}
-
-sub _max_retries
-{
-	100
 }
 
 sub perform_lwp
