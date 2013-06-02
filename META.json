@@ -27,6 +27,7 @@
             "Test::Deep" : "0",
             "Test::MockModule" : "0",
             "Test::Spec" : "0",
+            "Time::HiRes" : "0",
             "open" : "0"
          }
       },
@@ -73,7 +74,7 @@
    "provides" : {
       "App::MtAws" : {
          "file" : "lib/App/MtAws.pm",
-         "version" : "0.961_2"
+         "version" : "0.961_3"
       },
       "App::MtAws::CheckLocalHashCommand" : {
          "file" : "lib/App/MtAws/CheckLocalHashCommand.pm",
@@ -237,5 +238,5 @@
          "url" : "https://github.com/vsespb/mt-aws-glacier"
       }
    },
-   "version" : "0.961_2"
+   "version" : "0.961_3"
 }
