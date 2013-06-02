@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 83;
+use Test::More tests => 166;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -126,6 +126,102 @@ ok ( App::MtAws::Utils::sanity_relative_filename('\\\\..\\a') eq '\\\\..\\a', "s
 ok ( App::MtAws::Utils::sanity_relative_filename('\\\\.') eq '\\\\.', "should allow backslash");
 ok ( App::MtAws::Utils::sanity_relative_filename('\\\\a') eq '\\\\a', "should allow backslash");
 ok ( App::MtAws::Utils::sanity_relative_filename('\\\\.\\a') eq '\\\\.\\a', "should allow backslash");
+
+
+# is_relative_filename
+
+for (qw!a a/b a/b/c!, qq! a/ b /c!, qq!a / c!, qq!0!, qq! 0!) {
+	ok ( App::MtAws::Utils::is_relative_filename($_), "should work with normal filenames $_");
+}
+
+for (qw!тест тест/тест тест/test тест/test/тест ф!) {
+	ok ( App::MtAws::Utils::is_relative_filename($_), "should work with normal UTF-8 filenames");
+}
+
+ok ( !App::MtAws::Utils::is_relative_filename(), "should disallow undef");
+ok ( !App::MtAws::Utils::is_relative_filename('/'), "should disallow empty path");
+ok ( !App::MtAws::Utils::is_relative_filename(''), "should disallow empty path");
+ok ( !App::MtAws::Utils::is_relative_filename('//'), "should disallow empty path");
+ok ( !App::MtAws::Utils::is_relative_filename('.'), "should disallow empty path");
+ok ( !App::MtAws::Utils::is_relative_filename('/.'), "should disallow empty path");
+ok ( !App::MtAws::Utils::is_relative_filename('./'), "should disallow empty path");
+
+
+ok ( !App::MtAws::Utils::is_relative_filename('a/./b/./'), "should disallow more dots");
+ok ( !App::MtAws::Utils::is_relative_filename('0/./b/./'), "should disallow more dots");
+ok ( !App::MtAws::Utils::is_relative_filename('ф/./b/./'), "should disallow more dots");
+ok ( !App::MtAws::Utils::is_relative_filename('a/./ф/./'), "should disallow more dots");
+ok ( !App::MtAws::Utils::is_relative_filename('a/./b/.') , "should disallow more dots");
+
+ok ( !App::MtAws::Utils::is_relative_filename('/a'), "should disallow leading slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/0'), "should disallow leading slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/ф'), "should disallow leading slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/a/a'), "should disallow leading slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/ф/ф'), "should disallow leading slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/abc/d'), "should disallow forward slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/abc/ф'), "should disallow forward slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/a '), "should disallow leading slash");
+ok ( !App::MtAws::Utils::is_relative_filename('/ '), "should disallow leading slash");
+
+ok ( !App::MtAws::Utils::is_relative_filename('../etc/password'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::sanity_relative_filename('/../etc/password'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::sanity_relative_filename('/../../etc/password'), "should not allow two dots in path");
+
+ok ( !App::MtAws::Utils::sanity_relative_filename('..'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::sanity_relative_filename('../'), "should not allow two dots in path");
+
+ok ( !App::MtAws::Utils::sanity_relative_filename('../'), "should not allow two dots in path");
+
+ok ( App::MtAws::Utils::is_relative_filename('ф..b'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('a..ф'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('a..b'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('a..'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('ф..'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('..a'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('..ф'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' ..a'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' ..ф'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' ..a '), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' ..ф '), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' ..0 '), "should allow two dots in name");
+
+ok ( App::MtAws::Utils::is_relative_filename('. '), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' .'), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename('.. '), "should allow two dots in name");
+ok ( App::MtAws::Utils::is_relative_filename(' ..'), "should allow two dots in name");
+
+ok ( !App::MtAws::Utils::is_relative_filename("a\nb"), "should not allow line");
+ok ( !App::MtAws::Utils::is_relative_filename("a\n"), "should not allow line");
+ok ( !App::MtAws::Utils::is_relative_filename("ф\nb"), "should not allow line");
+ok ( !App::MtAws::Utils::is_relative_filename("a\rb"), "should not carriage return");
+ok ( !App::MtAws::Utils::is_relative_filename("a\tb"), "should not allow tab");
+
+
+ok ( !App::MtAws::Utils::is_relative_filename('//'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//..'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//../a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//../../a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//.././a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//../ф'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//.'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//ф'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//./a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//./ф'), "should deny two slashes");
+
+ok ( !App::MtAws::Utils::is_relative_filename('//'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//..'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//../a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//.'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//a'), "should deny two slashes");
+ok ( !App::MtAws::Utils::is_relative_filename('//./a'), "should deny two slashes");
+
+ok ( App::MtAws::Utils::is_relative_filename('\\\\'), "should allow backslash");
+ok ( App::MtAws::Utils::is_relative_filename('\\\\..'), "should allow backslash");
+ok ( App::MtAws::Utils::is_relative_filename('\\\\..\\a'), "should allow backslash");
+ok ( App::MtAws::Utils::is_relative_filename('\\\\.'), "should allow backslash");
+ok ( App::MtAws::Utils::is_relative_filename('\\\\a'), "should allow backslash");
+ok ( App::MtAws::Utils::is_relative_filename('\\\\.\\a'), "should allow backslash");
 
 1;
 
