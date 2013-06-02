@@ -48,6 +48,17 @@ describe "new" => sub {
 		cmp_set headers('x-amz-glacier-version' => '2012-06-01', 'Host' => $g->{host}), $g->{headers};
 	};
 
+	it "should work with token" => sub {
+		for my $token (qw/mytokenJHGYJUHhT 0/) {
+			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret',
+				protocol=>'http', vault=>'vault', token => $token});
+			ok $g->{token} eq $token;
+			cmp_set
+				$g->{headers},
+				headers('x-amz-glacier-version' => '2012-06-01', 'Host' => $g->{host}, 'x-amz-security-token' => $token);
+		}
+	};
+	
 	it "should die without region" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'}) };
 	};
