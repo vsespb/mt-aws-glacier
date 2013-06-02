@@ -1,4 +1,7 @@
 
+   * Finally defined in README and code minimum Perl version required - 5.8.8 (pretty old, AFAIK there are no
+   supported distributions with older Perls) 
+
   * Reading and parsing Journal file optimized (~ 2 times faster for UTF-8 filenames, and ~3 times faster
   for ASCII-only filenames)
 
