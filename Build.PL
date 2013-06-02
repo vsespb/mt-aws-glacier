@@ -79,6 +79,7 @@ my $build = Module::Build->new(
 
 		# CORE MODULES OR DUAL-LIFE MODULES
 		'Data::Dumper' => 0,
+		'Time::HiRes' => 0,
 		'open' => 0,
 		
 	}

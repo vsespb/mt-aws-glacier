@@ -66,6 +66,7 @@ t/integration/journal_parselines.t
 t/integration/journal_readwrite.t
 t/integration/metadata.t
 t/integration/metadata_mt1.t
+t/integration/system_flock.t
 t/integration/t_treehash.t
 t/integration/utf8.t
 t/integration/utf8_journal.t
