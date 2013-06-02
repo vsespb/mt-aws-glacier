@@ -56,17 +56,11 @@ sub sanity_relative_filename
 sub is_relative_filename
 {
 	my ($filename) = @_;
-	return undef unless (defined($filename) && length($filename));
-	return undef if $filename =~ m{(
-		[\r\n\t]|
-		/{2,}|
-		^/|
-		^\.\.?/|
-		^\.\.?$|
-		/\.\.?/|
-		/\.\.?$|
-		//
-	)}x;
+	return unless (defined($filename) && length($filename));
+	return if $filename =~ tr{\r\n\t}{} or index($filename, '//') != -1 or substr($filename, 0, 1) eq '/';
+	return undef if $filename =~ m{
+		(^|/)\.\.?(/|$)
+	}x;
 	1;
 }
 
