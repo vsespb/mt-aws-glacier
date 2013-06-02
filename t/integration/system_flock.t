@@ -72,7 +72,7 @@ if (fork()) {
 	seek $fh, 0, SEEK_SET;
 	print $fh "ABCD\n";
 	flock $fh, LOCK_UN or confess;
-	is scalar <$fromchild>, "OK\n";
+	is scalar <$fromchild>, "OK\n"
 } else {
    $fromchild->writer();
    $fromchild->autoflush(1);
@@ -93,5 +93,6 @@ if (fork()) {
 	seek $fh, 0, SEEK_SET;
 	confess unless (scalar <$fh> eq "ABCD\n");
 	print $fromchild "OK\n";
+	usleep(300); # protect parent from SIGCHLD
 }
 1;
