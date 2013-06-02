@@ -9,15 +9,15 @@ die "OS unsupported\n" if ($^O eq 'MSWin32');
 
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
-	author => 'Victor Efimov',
-	dist_author => 'Victor Efimov',
+	author => 'Victor Efimov <vs@vs-dev.com>',
+	dist_author => 'Victor Efimov <vs@vs-dev.com>',
 	recursive_test_files=>1,
 	dist_abstract=>'mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier',
 	license     =>'gpl3',
 	scripts => ['mtglacier'],
 	meta_add => {
 		no_index => {
-			directory => [ qw( lib/App/MtAws ) ],
+			namespace => [ 'App::MtAws' ],
 		},
 	},
 	meta_merge => {
@@ -31,7 +31,7 @@ my $build = Module::Build->new(
 		'perl' => 5.008008, # 5.8.8
 		
 		'LWP::UserAgent' => 6,
-		'LWP::Protocol::https' => 0, # actually can be listed as optional
+		'LWP::Protocol::https' => 0, # actually can be listed as optional. but also should be in build_requires
 		'JSON::XS' => 0,
 		'HTTP::Request::Common' => 0, # required by LWP::UserAgent, but I use i directly also
 

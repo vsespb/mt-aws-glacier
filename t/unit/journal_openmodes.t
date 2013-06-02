@@ -34,7 +34,7 @@ use Test::MockModule;
 use POSIX;
 use Carp;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 die "Cannot work under root" unless $>;
 

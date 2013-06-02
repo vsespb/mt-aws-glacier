@@ -30,7 +30,7 @@ use App::MtAws::ConfigEngine;
 use File::Path;
 use Encode;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 warning_fatal();
 

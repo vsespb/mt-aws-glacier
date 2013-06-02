@@ -31,7 +31,7 @@ use Test::MockModule;
 use Carp;
 use Data::Dumper;
 use TestUtils;
-use File::Temp;
+use File::Temp ();
 
 warning_fatal();
 
