@@ -31,7 +31,6 @@ use App::MtAws::Utils;
 use TestUtils;
 
 warning_fatal();
-
 # Filenames only, no directory name
 
 for (qw!a a/b a/b/c!, qq! a/ b /c!, qq!a / c!, qq!0!, qq! 0!) {
@@ -164,13 +163,13 @@ ok ( !App::MtAws::Utils::is_relative_filename('/a '), "should disallow leading s
 ok ( !App::MtAws::Utils::is_relative_filename('/ '), "should disallow leading slash");
 
 ok ( !App::MtAws::Utils::is_relative_filename('../etc/password'), "should not allow two dots in path");
-ok ( !App::MtAws::Utils::sanity_relative_filename('/../etc/password'), "should not allow two dots in path");
-ok ( !App::MtAws::Utils::sanity_relative_filename('/../../etc/password'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::is_relative_filename('/../etc/password'), "should not allow two dots in path 2");
+ok ( !App::MtAws::Utils::is_relative_filename('/../../etc/password'), "should not allow two dots in path");
 
-ok ( !App::MtAws::Utils::sanity_relative_filename('..'), "should not allow two dots in path");
-ok ( !App::MtAws::Utils::sanity_relative_filename('../'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::is_relative_filename('..'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::is_relative_filename('../'), "should not allow two dots in path");
 
-ok ( !App::MtAws::Utils::sanity_relative_filename('../'), "should not allow two dots in path");
+ok ( !App::MtAws::Utils::is_relative_filename('../'), "should not allow two dots in path");
 
 ok ( App::MtAws::Utils::is_relative_filename('ф..b'), "should allow two dots in name");
 ok ( App::MtAws::Utils::is_relative_filename('a..ф'), "should allow two dots in name");
