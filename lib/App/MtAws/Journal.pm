@@ -112,7 +112,7 @@ sub process_line
 		# Journal version 'A'
 	if (($time, $archive_id, $size, $mtime, $treehash, $relfilename) =
 		$line =~ /^A\t([0-9]{1,20})\tCREATED\t(\S+)\t([0-9]{1,20})\t([+-]?[0-9]{1,20})\t(\S+)\t(.*?)$/) {
-		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
+		confess "invalid filename" unless defined(is_relative_filename($relfilename));
 		$self->_add_file($relfilename, {
 			time => $time,
 			archive_id => $archive_id,
@@ -133,7 +133,7 @@ sub process_line
 	
 	} elsif (($time, $archive_id, $size, $treehash, $relfilename) =
 		$line =~ /^([0-9]{1,20}) CREATED (\S+) ([0-9]{1,20}) (\S+) (.*?)$/) {
-		confess "invalid filename" unless defined($relfilename = sanity_relative_filename($relfilename));
+		confess "invalid filename" unless defined(is_relative_filename($relfilename));
 		#die if $self->{journal_h}->{$relfilename};
 		$self->_add_file($relfilename, {
 			time => $time,
@@ -200,13 +200,13 @@ sub add_entry
 	if ($e->{type} eq 'CREATED') {
 		#" CREATED $archive_id $data->{filesize} $data->{final_hash} $data->{relfilename}"
 		defined( $e->{$_} ) || confess "bad $_" for (qw/time archive_id size mtime treehash relfilename/);
-		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
-		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$filename");
+		confess "invalid filename" unless defined(is_relative_filename($e->{relfilename}));
+		$self->_write_line("A\t$e->{time}\tCREATED\t$e->{archive_id}\t$e->{size}\t$e->{mtime}\t$e->{treehash}\t$e->{relfilename}");
 	} elsif ($e->{type} eq 'DELETED') {
 		#  DELETED $data->{archive_id} $data->{relfilename}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id relfilename/);
-		confess "invalid filename" unless defined(my $filename = sanity_relative_filename($e->{relfilename}));
-		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$filename");
+		confess "invalid filename" unless defined(is_relative_filename($e->{relfilename}));
+		$self->_write_line("A\t$e->{time}\tDELETED\t$e->{archive_id}\t$e->{relfilename}");
 	} elsif ($e->{type} eq 'RETRIEVE_JOB') {
 		#  RETRIEVE_JOB $data->{archive_id}
 		defined( $e->{$_} ) || confess "bad $_" for (qw/archive_id job_id/);

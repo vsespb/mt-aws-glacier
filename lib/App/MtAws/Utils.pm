@@ -53,11 +53,12 @@ sub sanity_relative_filename
 	return $filename;
 }
 
-sub is_relative_filename # TODO: test
+sub is_relative_filename
 {
 	my ($filename) = @_;
-	my $newname = sanity_relative_filename($filename);
-	return defined($newname) && ($filename eq $newname); 
+	return undef if !(defined($filename) && length($filename)) || $filename =~ m!([\r\n\t]|\A/+\z)!g;
+	length && !/^\.\.?$/ or return for split '/', $filename;
+	1;
 }
 
 

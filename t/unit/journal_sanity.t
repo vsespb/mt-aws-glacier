@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 166;
+use Test::More tests => 168;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -222,6 +222,9 @@ ok ( App::MtAws::Utils::is_relative_filename('\\\\..\\a'), "should allow backsla
 ok ( App::MtAws::Utils::is_relative_filename('\\\\.'), "should allow backslash");
 ok ( App::MtAws::Utils::is_relative_filename('\\\\a'), "should allow backslash");
 ok ( App::MtAws::Utils::is_relative_filename('\\\\.\\a'), "should allow backslash");
+
+ok ( App::MtAws::Utils::is_relative_filename('0'), "should allow last component to be false");
+ok ( App::MtAws::Utils::is_relative_filename('0/0'), "should allow last component to be false");
 
 1;
 
