@@ -162,6 +162,7 @@ sub is_wide_string
 }
 
 # if we have ASCII-only data, let's drop UTF-8 flag in order to optimize some regexp stuff
+# TODO: write also version which does not check is_utf8 - it's faster when utf8 always set 
 sub try_drop_utf8_flag
 {
 	Encode::_utf8_off($_[0]) if utf8::is_utf8($_[0]) && (bytes::length($_[0]) == length($_[0]));

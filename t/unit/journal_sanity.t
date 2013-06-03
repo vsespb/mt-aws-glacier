@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 168;
+use Test::More tests => 5238;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -224,6 +224,36 @@ ok ( App::MtAws::Utils::is_relative_filename('\\\\.\\a'), "should allow backslas
 
 ok ( App::MtAws::Utils::is_relative_filename('0'), "should allow last component to be false");
 ok ( App::MtAws::Utils::is_relative_filename('0/0'), "should allow last component to be false");
+
+
+# again, stresstestingm just in case
+
+my @valid_components = (qw/ф 0 a abc µ µµ µФ/, "\\", "\\\\");
+my @spaces = map { ' ' x $_ } 1..4;
+my @dots = ('.', '..', '...', '....');
+for my $good (
+	@valid_components, @spaces,
+	(map {
+		my $dot = $_;
+		map {
+			("$_$dot", "$dot$_", "$dot$_$dot");
+		} @spaces, @valid_components;
+	} @dots ),
+) {
+	ok is_relative_filename($good);
+	ok is_relative_filename("$good/$good");
+	ok is_relative_filename("$good/");
+	ok is_relative_filename("$good/$good/");
+
+	for my $bad (
+		"/$good",
+		(map { ("$good/$_", "$good/$_/", "$_/$good", "$_/$good/", "a/$_/$good", "a/$_/$good/")  } ('.', '..')),
+	) {
+		ok ! is_relative_filename($_);
+		my $s = App::MtAws::Utils::sanity_relative_filename($_);
+		ok !defined($s) || ($s ne $_);
+	}
+}
 
 1;
 
