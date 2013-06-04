@@ -31,7 +31,7 @@ use URI;
 use TestUtils;
 use Test::More;
 use File::Temp ();
-#warning_fatal();
+warning_fatal();
 
 my $test_size = 3_000_000 - 1;
 
