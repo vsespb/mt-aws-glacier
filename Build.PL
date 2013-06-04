@@ -1,3 +1,5 @@
+
+use 5.008008; # minumum perl version is 5.8.8, ancient cpan clients will ignore 'requires/perl' below
 use strict;
 use warnings;
 use Module::Build;
@@ -30,8 +32,8 @@ my $build = Module::Build->new(
 	requires => {
 		'perl' => 5.008008, # 5.8.8
 		
-		'LWP::UserAgent' => 6,
-		'LWP::Protocol::https' => 0, # actually can be listed as optional. but also should be in build_requires
+		'LWP' => 0,
+		# 'LWP::Protocol::https' => 6, # optional.
 		'JSON::XS' => 0,
 		'HTTP::Request::Common' => 0, # required by LWP::UserAgent, but I use i directly also
 

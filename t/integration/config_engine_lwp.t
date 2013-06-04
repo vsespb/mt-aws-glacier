@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 23;
+use Test::More;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -34,9 +34,12 @@ use LWP::UserAgent;
 warning_fatal();
 
 
-ok (LWP::UserAgent->is_protocol_supported("https"));
-ok (LWP->VERSION() >= 6);
-ok (LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6);
+
+if((LWP->VERSION() >= 6) && (LWP::UserAgent->is_protocol_supported("https")) && (LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6)) {
+	plan tests => 20;
+} else {
+	plan skip_all => 'Test cannot be performed witht LWP 6+ and LWP::Protocol::https 6+';
+}
 
 
 for (
