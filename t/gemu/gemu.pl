@@ -36,9 +36,11 @@ for my $n (1..$children_count) {
 #			}
 			my $request = $conn->get_request();
 			next unless $request;
-			my $resp = child_worker($request);
-			$conn->force_last_request();
-			$conn->send_response($resp);
+			my $resp = child_worker($conn, $request);
+			if ($resp) {
+				$conn->force_last_request();
+				$conn->send_response($resp);
+			}
 		}
 	}
 }
@@ -46,7 +48,8 @@ sleep(10000);
 
 sub child_worker
 {
-	my $data = parse_request(@_);
+	my ($conn, $request) = @_;
+	my $data = parse_request($request);
 	# CREATE MULTIPART UPLOAD
 	if (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads$!)) {
 		my ($account, $vault) = ($1,$2);
@@ -298,7 +301,7 @@ sub child_worker
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->content(get_next_jobs($account, $vault, $limit, @jobs));
 		return $resp;
-	# DOWNLOAD FILE
+	# DOWNLOAD FILE OR INVENTORY
 	} elsif (($data->{method} eq 'GET') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs/(.*?)/output$!)) {
 		my ($account, $vault, $job_id) = ($1,$2,$3);
 		defined($account)||croak;
@@ -331,19 +334,30 @@ sub child_worker
 				$treehash->calc_tree();
 				my $th = $treehash->get_final_hash();
 				
-				my $resp = HTTP::Response->new(206, "Fine");
-				$resp->header('x-amz-sha256-tree-hash', $th);
-				$resp->header('Content-Range', "bytes ${start}-${end}/$total");
-				$resp->content($buf);
-				return $resp;
+				$conn->send_basic_header(206);
+				print $conn header_line('Content-Length', length($buf));
+				print $conn header_line('x-amz-sha256-tree-hash', $th);
+				print $conn header_line('Content-Range', "bytes ${start}-${end}/$total");
+				$conn->send_crlf;
+				print $conn $buf;
+				return;
 			} else {
 				print Dumper({archive_id=>$archive_id, archive_path=>$archive_path, archive=>$archive, job=>$job});
+				my $total = -s $archive_path;
 				open (my $in, "<", $archive_path)||confess;
 				binmode $in;
-				my $resp = HTTP::Response->new(200, "Fine");
-				$resp->header('x-amz-sha256-tree-hash', $archive->{treehash});
-				$resp->content(output_cb($in));
-				return $resp;
+				
+				my $chunk_size = 4096;
+				
+				$conn->send_basic_header(200);
+				print $conn header_line('Content-Length', $total);
+				print $conn header_line('x-amz-sha256-tree-hash', $archive->{treehash});
+				$conn->send_crlf;
+				
+				while(my $res = read($in, my $buf, $chunk_size)) {
+					print $conn $buf;
+				}
+				return;
 			}
 		} elsif ($job->{type} eq 'inventory-retrieval'){
 			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
@@ -383,23 +397,12 @@ sub child_worker
 	confess;
 }
 
-sub output_cb
-{
-	my ($file) = @_;
-	my $chunk_size = 4096;
-	my $total = 0;
-	sub {
-		my $res = read($file, my $buf, $chunk_size);
-		$total += $res;
-		#sleep 1;
-		#if ($total > 2_000_000_000) {
-		#	sleep 190;
-		#}
-		die unless defined $res;
-		return $res == 0 ? undef : $buf;
-	}
-}
 
+sub header_line
+{
+	my ($k, $v) = @_;
+	"$k: ".$v."\015\012";
+}
 
 sub get_next_jobs
 {
