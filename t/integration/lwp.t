@@ -36,7 +36,7 @@ warning_fatal();
 my $test_size = 2_000_000;
 
 my ($base) = initialize_processes();
-	plan tests => 5;
+	plan tests => 12;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -60,33 +60,75 @@ my ($base) = initialize_processes();
 	
 	sub httpd_get_content_length
 	{
-	    my($c, $req, $size) = @_;
+	    my($c, $req, $size, $header_size) = @_;
 	    $c->send_basic_header(200);
 	    
-	    my $s = 'x' x $test_size;
-	    print $c "Content-Length: $size\015\012";
+	    my $s = 'x' x $size;
+	    print $c "Content-Length: $header_size\015\012";
 	    $c->send_crlf;
 	    print $c $s;
 	}
 	
+	# success with size defined
 	{
 		open F, ">$tmpfile";
 		close F;
-		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile, size => $test_size);
-		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {writer => $writer});
-		is -s $tmpfile, 2_000_000;
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+			{writer => $writer, expected_size => $test_size});
+		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
 	}
 	
+	# success with no size defined
+	{
+		open F, ">$tmpfile";
+		close F;
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+			{writer => $writer});
+		is -s $tmpfile, $test_size;
+		ok($resp->is_success);
+	}
+	
+	# truncated response, no size is defined
 	{
 		no warnings 'redefine';
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
-		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile, size => $test_size);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-11), {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {writer => $writer});
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+			{writer => $writer});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
 		is -s $tmpfile, 2_000_000;
+	}
+	
+	# truncated response, size is defined
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+			{writer => $writer, expected_size => $test_size});
+		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
+		is $g->{last_retry_reason}, 'Unexpected end of data';
+		is -s $tmpfile, 2_000_000;
+	}
+	
+	# correct response, expected size is wrong
+	{
+		open F, ">$tmpfile";
+		close F;
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+			{writer => $writer, expected_size => $test_size+1});
+		is $err->{code}, 'wrong_file_size_in_journal'; # TODO: test with cmp_deep and exception()
+		is -s $tmpfile, 0;
 	}
 	
 	sub httpd_get_quit

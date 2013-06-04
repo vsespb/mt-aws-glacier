@@ -32,10 +32,10 @@ my $build = Module::Build->new(
 	requires => {
 		'perl' => 5.008008, # 5.8.8
 		
-		'LWP' => 0,
+		'LWP' => 5,
+		'HTTP::Request::Common' => 5, # required by LWP::UserAgent, but I use i directly also
 		# 'LWP::Protocol::https' => 6, # optional.
 		'JSON::XS' => 0,
-		'HTTP::Request::Common' => 0, # required by LWP::UserAgent, but I use i directly also
 
 
 		# core modules for Perl > 5.8.x

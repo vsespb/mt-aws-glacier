@@ -234,7 +234,8 @@ sub retrieval_download_job
 	my $binary_tempfile = $tmp->filename;
 	my $character_tempfile = characterfilename($binary_tempfile);
 	close $tmp;
-	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size);
+	$self->{expected_size} = $size;
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile);
 
 	$self->{method} = 'GET';
 
@@ -278,8 +279,8 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position,
-		size => $size, filename => $filename);
+	$self->{expected_size} = $size;
+	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position, filename => $filename);
 
 	$self->{method} = 'GET';
 	my $end_position = $position + $size - 1;
@@ -520,8 +521,24 @@ sub perform_lwp
 		} elsif ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
 		} elsif ($self->{writer}) {
-			$self->{writer}->reinit();
-			$resp = $ua->request($req, sub { $self->{writer}->add_data($_[0]) });
+			my $size = undef;
+			$resp = $ua->request($req, sub {
+				unless (defined($size)) {
+					if ($_[1] && $_[1]->isa('HTTP::Response')) {
+						$size = $_[1]->content_length;
+						if (!$size || ($self->{expected_size} && $size != $self->{expected_size})) {
+							die exception
+								wrong_file_size_in_journal =>
+									'Wrong Content-Length received from server, probably wrong file size in Journal or wrong server';
+						}
+						$self->{writer}->reinit($size);
+					} else {
+						# we should "confess" here, but we cant, only exceptions propogated
+						die exception "unknow_error" => "Unknown error, probably LWP version is too old";
+					}
+				}
+				$self->{writer}->add_data($_[0]);
+			});
 		} else {
 			$resp = $ua->request($req);
 		}
@@ -531,6 +548,8 @@ sub perform_lwp
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
 			$self->{last_retry_reason} = $resp->code;
 			throttle($i);
+		} elsif (defined($resp->header('X-Died')) && (get_exception($resp->header('X-Died')))) {
+			die $resp->header('X-Died'); # propogate own own exceptions
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
 			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
 			$self->{last_retry_reason} = 'X-Died';
