@@ -78,6 +78,7 @@ my $build = Module::Build->new(
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => 0,
+		'HTTP::Daemon' => 5,
 
 		# CORE MODULES OR DUAL-LIFE MODULES
 		'Data::Dumper' => 0,
