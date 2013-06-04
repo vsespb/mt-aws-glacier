@@ -31,6 +31,9 @@ use URI;
 use TestUtils;
 use Test::More;
 use File::Temp ();
+
+warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION unless @ARGV;
+
 warning_fatal();
 
 my $test_size = 3_000_000 - 1;
@@ -157,6 +160,8 @@ my ($base) = initialize_processes();
 	{
 		# TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
 		local $SIG{__WARN__} = sub {
+			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
+			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
 			confess "Termination after a warning: $_[0]" unless $_[0] =~ /uninitialized/i;
 		} ;
 		
