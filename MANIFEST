@@ -64,6 +64,7 @@ t/integration/config_read_config.t
 t/integration/journal.t
 t/integration/journal_parselines.t
 t/integration/journal_readwrite.t
+t/integration/lwp.t
 t/integration/metadata.t
 t/integration/metadata_mt1.t
 t/integration/system_flock.t

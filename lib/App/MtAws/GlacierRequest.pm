@@ -477,6 +477,7 @@ sub perform_lwp
 	my ($self) = @_;
 	
 	for my $i (1.._max_retries) {
+		undef $self->{last_retry_reason};
 		$self->_sign();
 
 		my $ua = LWP::UserAgent->new(timeout => 120);
@@ -528,15 +529,18 @@ sub perform_lwp
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
+			$self->{last_retry_reason} = $resp->code;
 			throttle($i);
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
 			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
+			$self->{last_retry_reason} = 'X-Died';
 			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			if ($self->{writer}) {
 				my ($c, $reason) = $self->{writer}->finish();
 				if ($c eq 'retry') {
 					print "PID $$ HTTP $reason. Will retry ($dt seconds spent for request)\n";
+					$self->{last_retry_reason} = $reason;
 					throttle($i);
 				} elsif ($c ne 'ok') {
 					confess;
@@ -582,3 +586,15 @@ sub trim
 
 
 1;
+__END__
+		} elsif ($resp->code =~ /^40[03]$/) {
+			if ($resp->content_type eq 'application/json') {
+				my $json = JSON::XS->new->allow_nonref;
+				my $scalar = eval { $json->decode( $resp->content ); }; # we assume content always in utf8
+				if (defined $scalar) {
+					my $code = $scalar->{code};
+					my $type = $scalar->{type};
+					my $message = $scalar->{message};
+				}
+			}
+			die;
