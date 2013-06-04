@@ -33,10 +33,10 @@ use Test::More;
 use File::Temp ();
 warning_fatal();
 
-my $test_size = 2_000_000;
+my $test_size = 3_000_000 - 1;
 
 my ($base) = initialize_processes();
-	plan tests => 12;
+	plan tests => 14;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -67,6 +67,23 @@ my ($base) = initialize_processes();
 	    print $c "Content-Length: $header_size\015\012";
 	    $c->send_crlf;
 	    print $c $s;
+	}
+	
+	sub httpd_get_without_content_length
+	{
+	    my($c, $req, $size) = @_;
+		my $resp = HTTP::Response->new(200, 'Fine');
+		my $sent = 0;
+		# force chunked-response
+		$resp->content(sub {
+			if (!$sent) {
+				$sent = 1;
+				return 'x' x $size;
+			} else {
+				return '';
+			}
+		});
+		$c->send_response($resp);
 	}
 	
 	# success with size defined
@@ -101,7 +118,7 @@ my ($base) = initialize_processes();
 			{writer => $writer});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
-		is -s $tmpfile, 2_000_000;
+		is -s $tmpfile, $test_size;
 	}
 	
 	# truncated response, size is defined
@@ -114,9 +131,9 @@ my ($base) = initialize_processes();
 			{writer => $writer, expected_size => $test_size});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
-		is -s $tmpfile, 2_000_000;
+		is -s $tmpfile, $test_size;
 	}
-	
+
 	# correct response, expected size is wrong
 	{
 		open F, ">$tmpfile";
@@ -131,6 +148,20 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, 0;
 	}
 	
+	# correct response, no size header sent (chunked response? or maybe http/1.0)
+	{
+		open F, ">$tmpfile";
+		close F;
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my ($g, $resp, $err) = make_glacier_request('GET', "without_content_length/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+			{writer => $writer, expected_size => $test_size});
+		is $err->{code}, 'wrong_file_size_in_journal';
+		is -s $tmpfile, 0;
+	}
+
 	sub httpd_get_quit
 	{
 	    my($c) = @_;
@@ -147,7 +178,7 @@ sub initialize_processes
 	if (@ARGV && $ARGV[0] eq 'daemon') {
 		require HTTP::Daemon;
 		my $d = HTTP::Daemon->new(Timeout => 20, LocalAddr => '127.0.0.1');
-	
+		$SIG{PIPE}='IGNORE';
 		$| = 1;
 		print "Please to meet you at: <URL:", $d->url, ">\n";
 
