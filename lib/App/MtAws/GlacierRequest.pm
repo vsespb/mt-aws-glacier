@@ -538,6 +538,7 @@ sub perform_lwp
 					}
 				}
 				$self->{writer}->add_data($_[0]);
+				1;
 			});
 		} else {
 			$resp = $ua->request($req);
