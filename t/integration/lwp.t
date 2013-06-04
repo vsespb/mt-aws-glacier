@@ -153,28 +153,33 @@ my ($base) = initialize_processes();
 		is $err->{code}, 'wrong_file_size_in_journal'; # TODO: test with cmp_deep and exception()
 		is -s $tmpfile, 0;
 	}
-	
-	# correct response, size is zero
-	{
-		no warnings 'redefine';
-		local *App::MtAws::GlacierRequest::_sleep = sub { die };
-		for (qw/GET PUT POST DELETE/) {
-			no warnings 'uninitialized'; # TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
-			my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
-			ok $resp && !$err, "empty response should work for $_ method";
-		}
-	}
 
-	# data truncated, writer not used 
 	{
-		no warnings 'redefine';
-		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
-		local *App::MtAws::GlacierRequest::_sleep = sub { };
-		for (qw/GET PUT POST DELETE/) {
-			no warnings 'uninitialized'; # TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
-			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
-			is $err->{code}, 'too_many_tries', "Code for $_";
-			is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
+		# TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
+		local $SIG{__WARN__} = sub {
+			confess "Termination after a warning: $_[0]" unless $_[0] =~ /uninitialized/i;
+		} ;
+		
+		# correct response, size is zero
+		{
+			no warnings 'redefine';
+			local *App::MtAws::GlacierRequest::_sleep = sub { die };
+			for (qw/GET PUT POST DELETE/) {
+				my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
+				ok $resp && !$err, "empty response should work for $_ method";
+			}
+		}
+	
+		# data truncated, writer not used 
+		{
+			no warnings 'redefine';
+			local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+			local *App::MtAws::GlacierRequest::_sleep = sub { };
+			for (qw/GET PUT POST DELETE/) {
+				my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
+				is $err->{code}, 'too_many_tries', "Code for $_";
+				is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
+			}
 		}
 	}
 
