@@ -96,7 +96,7 @@ sub finish
 	my ($self) = @_;
 	$self->_flush();
 	$self->{total_commited_length} == $self->{total_length} or confess; 
-	return $self->{total_length} == $self->{size} ? ('ok') : ('retry', 'Unexpected end of data');
+	return ($self->{total_length} && ($self->{total_length} == $self->{size})) ? ('ok') : ('retry', 'Unexpected end of data');
 }
 
 package App::MtAws::HttpSegmentWriter;
@@ -223,6 +223,48 @@ sub finish
 	my @r = $self->SUPER::finish();
 	close $self->{fh} or confess;
 	return @r;
+}
+
+
+package App::MtAws::HttpMemoryWriter;
+
+use strict;
+use warnings;
+use utf8;
+use App::MtAws::Utils;
+use Carp;
+use base qw/App::MtAws::HttpWriter/;
+
+
+sub new
+{
+    my ($class, %args) = @_;
+    my $self = {};
+    bless $self, $class;
+    return $self;
+}
+
+sub reinit
+{
+	my $self = shift;
+	$self->{size} = shift;
+	$self->{buffer} = '';
+	$self->{total_length} = 0;
+}
+
+sub add_data
+{
+	my $self = $_[0];
+	return unless defined($_[1]);
+	$self->{buffer} .= $_[1];
+	$self->{total_length} += length($_[1]);
+	1;
+}
+
+sub finish
+{
+	my ($self) = @_;
+	return ($self->{total_length} && ($self->{total_length} == $self->{size})) ? ('ok') : ('retry', 'Unexpected end of data');
 }
 
 1;

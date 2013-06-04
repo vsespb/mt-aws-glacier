@@ -316,34 +316,16 @@ sub retrieval_download_to_memory
 
 	$jobid||confess;
    
+	$self->{expected_size} = undef;
+	$self->{writer} = App::MtAws::HttpMemoryWriter->new();
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
 	
-	if ($ENV{MTGLACIER_DEBUG_INVENTORY}) {
-		my $d_content = $resp->decoded_content;
-		my $content = $resp->content;
-		
-		open FF, ">_download_inventory_headers.log";
-		print FF $resp->request->dump;
-		print FF $resp->dump;
-		print FF "\n\nContent length:[".length($d_content)."]\n";
-		print FF "Content match decoded content:[".($d_content eq $content)."]\n";
-		close FF;
-
-		open FF, ">_download_inventory_body.log";
-		print FF $d_content;
-		close FF;
-	}
-
-	if ($resp) {
-		my $r = $resp->decoded_content; # decoded_content is NOT binary string because MIME type is not text/*
-		confess if is_wide_string($r);
-		return $r;
-	} else {
-		return undef;
-	}
+	$resp or confess;
+	return $self->{writer}->{buffer};
 }
 
 # TODO: remove
