@@ -146,7 +146,7 @@ sub initialize_processes
 {
 	if (@ARGV && $ARGV[0] eq 'daemon') {
 		require HTTP::Daemon;
-		my $d = HTTP::Daemon->new(timeout => 20);
+		my $d = HTTP::Daemon->new(Timeout => 20, LocalAddr => '127.0.0.1');
 	
 		$| = 1;
 		print "Please to meet you at: <URL:", $d->url, ">\n";
