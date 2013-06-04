@@ -54,8 +54,7 @@
             "IO::Pipe" : "0",
             "IO::Select" : "0",
             "JSON::XS" : "0",
-            "LWP::Protocol::https" : "0",
-            "LWP::UserAgent" : "6",
+            "LWP" : "0",
             "List::Util" : "0",
             "POSIX" : "0",
             "PerlIO::encoding" : "0",
@@ -74,7 +73,7 @@
    "provides" : {
       "App::MtAws" : {
          "file" : "lib/App/MtAws.pm",
-         "version" : "0.961_3"
+         "version" : "0.961_4"
       },
       "App::MtAws::CheckLocalHashCommand" : {
          "file" : "lib/App/MtAws/CheckLocalHashCommand.pm",
@@ -238,5 +237,5 @@
          "url" : "https://github.com/vsespb/mt-aws-glacier"
       }
    },
-   "version" : "0.961_3"
+   "version" : "0.961_4"
 }
