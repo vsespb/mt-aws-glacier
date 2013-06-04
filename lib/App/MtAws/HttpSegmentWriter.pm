@@ -40,11 +40,6 @@ sub initialize
 {
 	my ($self) = @_;
     $self->{write_threshold} = 2*1024*1024;
-    
-    # when to append string to existing, or when to use new buffer
-    # this actually affects both string concatenation performance and file write performance
-    # (data flushed right after writing single append_threshold chunk); 
-    $self->{append_threshold} = 64*1024; # 1024*1024;
 }
 
 sub reinit
