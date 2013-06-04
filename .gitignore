@@ -11,6 +11,7 @@ Build.bat
 Makefile
 Makefile.old
 MANIFEST.bak
+META.yml
 MYMETA.yml
 MYMETA.json
 nytprof.out
