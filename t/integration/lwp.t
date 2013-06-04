@@ -171,7 +171,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		for (qw/GET PUT POST DELETE/) {
 			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
-			is $err->{code}, 'too_many_tries', $_;
+			is $err->{code}, 'too_many_tries', "$err $_";
 			is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
 		}
 	}
