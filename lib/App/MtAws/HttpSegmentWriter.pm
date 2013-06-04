@@ -40,17 +40,12 @@ sub initialize
 {
 	my ($self) = @_;
     $self->{write_threshold} = 2*1024*1024;
-    
-    # when to append string to existing, or when to use new buffer
-    # this actually affects both string concatenation performance and file write performance
-    # (data flushed right after writing single append_threshold chunk); 
-    $self->{append_threshold} = 64*1024; # 1024*1024;
-    $self->{size} or confess;
 }
 
 sub reinit
 {
-	my ($self) = @_;
+	my ($self, $size) = @_;
+	$self->{size}=$size;
 	$self->{totalsize}=0;
 	$self->{total_commited_length} = $self->{pending_length} = $self->{total_length} = 0;
 	$self->{buffer} = '';
@@ -144,10 +139,10 @@ sub initialize
 
 sub reinit
 {
-	my ($self) = @_;
+	my $self = shift;
 	$self->{incr_position} = 0;
 	$self->{treehash} = App::MtAws::TreeHash->new();
-	$self->SUPER::reinit();
+	$self->SUPER::reinit(@_);
 }
 
 sub treehash { shift->{treehash} }
@@ -204,12 +199,12 @@ sub initialize
 
 sub reinit
 {
-	my ($self) = @_;
+	my $self = shift;
 	undef $self->{fh};
 	open_file($self->{fh}, $self->{tempfile}, mode => '+<', binary => 1) or confess "cant open file $self->{tempfile} $!";
 	binmode $self->{fh};
 	$self->{treehash} = App::MtAws::TreeHash->new();
-	$self->SUPER::reinit();
+	$self->SUPER::reinit(@_);
 }
 
 sub treehash { shift->{treehash} }

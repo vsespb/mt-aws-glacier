@@ -183,6 +183,7 @@ sub check_https
 {
 	if (present('protocol') and value('protocol') eq 'https') {
 		if (LWP::UserAgent->is_protocol_supported("https")) {
+			# to get LWP version, use LWP->VERSION instead of LWP::UserAgent->VERSION
 			error('LWP::UserAgent 6.x required to use HTTPS') unless LWP->VERSION() >= 6;
 			require LWP::Protocol::https;
 			error('LWP::Protocol::https 6.x required to use HTTPS') unless LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6;

@@ -48,6 +48,17 @@ describe "new" => sub {
 		cmp_set headers('x-amz-glacier-version' => '2012-06-01', 'Host' => $g->{host}), $g->{headers};
 	};
 
+	it "should work with token" => sub {
+		for my $token (qw/mytokenJHGYJUHhT 0/) {
+			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret',
+				protocol=>'http', vault=>'vault', token => $token});
+			ok $g->{token} eq $token;
+			cmp_set
+				$g->{headers},
+				headers('x-amz-glacier-version' => '2012-06-01', 'Host' => $g->{host}, 'x-amz-security-token' => $token);
+		}
+	};
+	
 	it "should die without region" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'}) };
 	};
@@ -98,6 +109,17 @@ describe "perform_lwp" => sub {
 		}
 	};
 	describe "throttle" => sub {
+		it 'should work' => sub {
+			my @sleep_args;
+			my $retries = App::MtAws::GlacierRequest::_max_retries();
+			is $retries, 100;
+			App::MtAws::GlacierRequest->expects('_sleep')->returns(sub { push @sleep_args, shift } )->exactly($retries);
+			App::MtAws::GlacierRequest::throttle($_) for (1..App::MtAws::GlacierRequest::_max_retries);
+			cmp_deeply [ @sleep_args ],
+				[ (map { 1 } (1..5)), (map { 5 } (1..5)), (map { 15 } (1..10)), (map { 60 } (1..30)), (map { 180 } (1..50)) ]
+		};
+	};
+	describe "throttling" => sub {
 		my $retries = 3;
 		it "should throttle 408/500" => sub {
 			for my $code (qw/408 500/) {

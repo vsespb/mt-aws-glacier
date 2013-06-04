@@ -22,10 +22,12 @@
 
 use strict;
 use warnings;
-use Test::Simple tests => 3;
+use Test::Simple tests => 45;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
+use Encode;
+use App::MtAws::Utils;
 
 warning_fatal();
 
@@ -37,5 +39,21 @@ my $str = "Тест";
 ok ( length($str) == 4);
 ok ( bytes::length($str) == 8);
 ok (utf8::is_utf8($str));
+
+use utf8;
+
+for my $sample ("µ", "Ф", "Xµ", "XФ", "µФ", "XµФ") { # mix of ASCII, Unicode (128..255) and Unicode > 255 chars
+	ok utf8::is_utf8($sample);
+	ok is_wide_string($sample );
+	ok !is_wide_string(encode("UTF-8", $sample ));
+	try_drop_utf8_flag $sample;
+	ok utf8::is_utf8($sample);
+	
+	my ($ascii, undef) = split(';', "abcdef;$sample");
+	ok utf8::is_utf8($ascii);
+	ok !is_wide_string($ascii);
+	try_drop_utf8_flag $ascii;
+	ok !utf8::is_utf8($ascii);
+} 
 
 1;

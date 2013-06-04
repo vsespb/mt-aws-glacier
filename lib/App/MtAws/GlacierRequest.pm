@@ -234,7 +234,8 @@ sub retrieval_download_job
 	my $binary_tempfile = $tmp->filename;
 	my $character_tempfile = characterfilename($binary_tempfile);
 	close $tmp;
-	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile, size => $size);
+	$self->{expected_size} = $size;
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile);
 
 	$self->{method} = 'GET';
 
@@ -278,8 +279,8 @@ sub segment_download_job
    
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	
-	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position,
-		size => $size, filename => $filename);
+	$self->{expected_size} = $size;
+	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position, filename => $filename);
 
 	$self->{method} = 'GET';
 	my $end_position = $position + $size - 1;
@@ -453,25 +454,23 @@ sub _sign
 }
 
 
+sub _max_retries { 100 }
+sub _sleep($) { sleep shift }
+
 sub throttle
 {
 	my ($i) = @_;
 	if ($i <= 5) {
-		sleep 1;
+		_sleep 1;
 	} elsif ($i <= 10) {
-		sleep 5;
+		_sleep 5;
 	} elsif ($i <= 20) {
-		sleep 15;
+		_sleep 15;
 	} elsif ($i <= 50) {
-		sleep 60
+		_sleep 60
 	} else {
-		sleep 180;
+		_sleep 180;
 	}
-}
-
-sub _max_retries
-{
-	100
 }
 
 sub perform_lwp
@@ -479,6 +478,7 @@ sub perform_lwp
 	my ($self) = @_;
 	
 	for my $i (1.._max_retries) {
+		undef $self->{last_retry_reason};
 		$self->_sign();
 
 		my $ua = LWP::UserAgent->new(timeout => 120);
@@ -521,8 +521,25 @@ sub perform_lwp
 		} elsif ($self->{content_file}) {
 			$resp = $ua->request($req, $self->{content_file});
 		} elsif ($self->{writer}) {
-			$self->{writer}->reinit();
-			$resp = $ua->request($req, sub { $self->{writer}->add_data($_[0]) });
+			my $size = undef;
+			$resp = $ua->request($req, sub {
+				unless (defined($size)) {
+					if ($_[1] && $_[1]->isa('HTTP::Response')) {
+						$size = $_[1]->content_length;
+						if (!$size || ($self->{expected_size} && $size != $self->{expected_size})) {
+							die exception
+								wrong_file_size_in_journal =>
+									'Wrong Content-Length received from server, probably wrong file size in Journal or wrong server';
+						}
+						$self->{writer}->reinit($size);
+					} else {
+						# we should "confess" here, but we cant, only exceptions propogated
+						die exception "unknow_error" => "Unknown error, probably LWP version is too old";
+					}
+				}
+				$self->{writer}->add_data($_[0]);
+				1;
+			});
 		} else {
 			$resp = $ua->request($req);
 		}
@@ -530,15 +547,20 @@ sub perform_lwp
 
 		if ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
+			$self->{last_retry_reason} = $resp->code;
 			throttle($i);
+		} elsif (defined($resp->header('X-Died')) && (get_exception($resp->header('X-Died')))) {
+			die $resp->header('X-Died'); # propogate own own exceptions
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
 			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
+			$self->{last_retry_reason} = 'X-Died';
 			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {
 			if ($self->{writer}) {
 				my ($c, $reason) = $self->{writer}->finish();
 				if ($c eq 'retry') {
 					print "PID $$ HTTP $reason. Will retry ($dt seconds spent for request)\n";
+					$self->{last_retry_reason} = $reason;
 					throttle($i);
 				} elsif ($c ne 'ok') {
 					confess;
@@ -584,3 +606,15 @@ sub trim
 
 
 1;
+__END__
+		} elsif ($resp->code =~ /^40[03]$/) {
+			if ($resp->content_type eq 'application/json') {
+				my $json = JSON::XS->new->allow_nonref;
+				my $scalar = eval { $json->decode( $resp->content ); }; # we assume content always in utf8
+				if (defined $scalar) {
+					my $code = $scalar->{code};
+					my $type = $scalar->{type};
+					my $message = $scalar->{message};
+				}
+			}
+			die;
