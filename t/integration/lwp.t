@@ -36,7 +36,7 @@ warning_fatal();
 my $test_size = 3_000_000 - 1;
 
 my ($base) = initialize_processes();
-	plan tests => 14;
+	plan tests => 26;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -58,7 +58,7 @@ my ($base) = initialize_processes();
 		return $resp ? ($g, $resp, undef) : ($g, undef, $@);
 	}
 	
-	sub httpd_get_content_length
+	sub httpd_content_length
 	{
 	    my($c, $req, $size, $header_size) = @_;
 	    $c->send_basic_header(200);
@@ -69,7 +69,13 @@ my ($base) = initialize_processes();
 	    print $c $s;
 	}
 	
-	sub httpd_get_without_content_length
+	sub httpd_empty_response
+	{
+	    my($c, $req, $size, $header_size) = @_;
+	    $c->send_basic_header(200);
+	}
+	
+	sub httpd_without_content_length
 	{
 	    my($c, $req, $size) = @_;
 		my $resp = HTTP::Response->new(200, 'Fine');
@@ -148,6 +154,28 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, 0;
 	}
 	
+	# correct response, size is zero
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_sleep = sub { die };
+		for (qw/GET PUT POST DELETE/) {
+			my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
+			ok $resp && !$err, "empty response should work for $_ method";
+		}
+	}
+
+	# data truncated, writer not used 
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		for (qw/GET PUT POST DELETE/) {
+			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
+			is $err->{code}, 'too_many_tries', $_;
+			is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
+		}
+	}
+
 	# correct response, no size header sent (chunked response? or maybe http/1.0)
 	{
 		open F, ">$tmpfile";
@@ -162,7 +190,7 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, 0;
 	}
 
-	sub httpd_get_quit
+	sub httpd_quit
 	{
 	    my($c) = @_;
 	    $c->send_error(503, "Bye, bye");
@@ -177,7 +205,7 @@ sub initialize_processes
 {
 	if (@ARGV && $ARGV[0] eq 'daemon') {
 		require HTTP::Daemon;
-		my $d = HTTP::Daemon->new(Timeout => 20, LocalAddr => '127.0.0.1');
+		my $d = HTTP::Daemon->new(Timeout => 10, LocalAddr => '127.0.0.1');
 		$SIG{PIPE}='IGNORE';
 		$| = 1;
 		print "Please to meet you at: <URL:", $d->url, ">\n";
@@ -188,7 +216,7 @@ sub initialize_processes
 			my @p = $r->uri->path_segments;
 			shift @p;
 			my $p = shift @p;
-			my $func = lc("httpd_" . $r->method . "_$p");
+			my $func = lc("httpd_$p");
 			if (defined &$func) {
 				no strict 'refs';
 				&$func($c, $r, @p);

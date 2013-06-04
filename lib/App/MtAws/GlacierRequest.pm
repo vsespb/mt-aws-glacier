@@ -549,6 +549,10 @@ sub perform_lwp
 				} else {
 					return $resp;
 				}
+			} elsif (defined($resp->content_length) && $resp->content_length != length($resp->content)){
+				print "PID $$ HTTP Unexpected end of data. Will retry ($dt seconds spent for request)\n";
+				$self->{last_retry_reason}='Unexpected end of data';
+				throttle($i);
 			} else {
 				return $resp;
 			}
