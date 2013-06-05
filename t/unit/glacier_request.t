@@ -153,10 +153,30 @@ describe "perform_lwp" => sub {
 					}, exception 'too_many_tries' => "Request was not successful after $retries retries";
 				});
 				ok ! defined $resp;
+				is $g->{last_retry_reason}, $code;
 				cmp_deeply [@throttle_args], [(1..$retries)];
 				my @matches = $out =~ /PID $$ HTTP $code This might be normal. Will retry \(\d+ seconds spent for request\)/g;
 				is scalar @matches, $retries;
 			}
+		};
+		it "should throttle Internal Response" => sub {
+			my $g = App::MtAws::GlacierRequest->new({%common_options});
+			($g->{method}, $g->{url}) = ('GET', 'test');
+			my @throttle_args;
+			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
+			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
+			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(500, "err", ["Client-Warning" => "Internal response"]))->exactly($retries);
+			my $out='';
+			my $resp = capture_stdout($out, sub {
+				assert_raises_exception sub {
+					$g->perform_lwp();
+				}, exception 'too_many_tries' => "Request was not successful after $retries retries";
+			});
+			ok ! defined $resp;
+			is $g->{last_retry_reason}, 'Internal response';
+			cmp_deeply [@throttle_args], [(1..$retries)];
+			my @matches = $out =~ /PID $$ HTTP connection problem. Will retry \(\d+ seconds spent for request\)/g;
+			is scalar @matches, $retries;
 		};
 		it "should throttle X-Died and read timeout" => sub {
 			my $g = App::MtAws::GlacierRequest->new({%common_options});
