@@ -532,7 +532,7 @@ sub perform_lwp
 			$self->{last_retry_reason} = $resp->code;
 			throttle($i);
 		} elsif (defined($resp->header('X-Died')) && (get_exception($resp->header('X-Died')))) {
-			die $resp->header('X-Died'); # propogate own own exceptions
+			die $resp->header('X-Died'); # propogate our own exceptions
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
 			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
 			$self->{last_retry_reason} = 'X-Died';
