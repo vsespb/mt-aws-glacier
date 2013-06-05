@@ -35,6 +35,7 @@ use TestUtils;
 use File::Temp ();
 
 warning_fatal();
+die "Cannot work under root" unless $>;
 
 my $TEMP = File::Temp->newdir();
 my $mtroot = $TEMP->dirname();
