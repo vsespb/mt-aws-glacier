@@ -554,6 +554,23 @@ sub perform_lwp
 				return $resp;
 			}
 		} else {
+			if ($resp->code =~ /^40[03]$/) {
+				if ($resp->content_type && $resp->content_type eq 'application/json') {
+					my $json = JSON::XS->new->allow_nonref;
+					my $scalar = eval { $json->decode( $resp->content ); }; # we assume content always in utf8
+					if (defined $scalar) {
+						my $code = $scalar->{code};
+						my $type = $scalar->{type};
+						my $message = $scalar->{message};
+						if ($code eq 'ThrottlingException') {
+							print "PID $$ ThrottlingException. Will retry ($dt seconds spent for request)\n";
+							$self->{last_retry_reason} = 'ThrottlingException';
+							throttle($i);
+							next;
+						}
+					}
+				}
+			}
 			print STDERR "Error:\n";
 			print STDERR $req->dump;
 			print STDERR $resp->dump;

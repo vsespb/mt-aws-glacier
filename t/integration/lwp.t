@@ -31,15 +31,19 @@ use URI;
 use TestUtils;
 use Test::More;
 use File::Temp ();
+use HTTP::Daemon;
 
-warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION unless @ARGV;
+warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION() unless @ARGV;
 
 warning_fatal();
 
 my $test_size = 3_000_000 - 1;
 
+
+my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
+
 my ($base) = initialize_processes();
-	plan tests => 26;
+	plan tests => 38;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -106,6 +110,54 @@ my ($base) = initialize_processes();
 		ok($resp->is_success);
 	}
 	
+	sub httpd_chunked_throttling_exception
+	{
+	    my($c, $req) = @_;
+		my $resp = HTTP::Response->new(400);
+		$resp->content_type('application/json');
+	    my $s = $throttling_exception;
+		my $sent = 0;
+		# force chunked-response
+		$resp->content(sub {
+			if (!$sent) {
+				$sent = 1;
+				return $s;
+			} else {
+				return '';
+			}
+		});
+		$c->send_response($resp);
+	}
+	
+	sub httpd_throttling_exception
+	{
+	    my($c, $req, $size, $header_size) = @_;
+	    $c->send_basic_header(400);
+	    my $s = $throttling_exception;
+	    print $c "Content-Length: ".length($s)."\015\012";
+	    print $c "Content-Type: application/json\015\012";
+	    $c->send_crlf;
+	    print $c $s;
+	}
+	# correct request, but HTTP 400 with exception in JSON
+	{
+		open F, ">$tmpfile";
+		close F;
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		for my $method (qw/GET PUT POST DELETE/) {
+			for my $action (qw/chunked_throttling_exception/) {
+				my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+				my ($g, $resp, $err) = make_glacier_request($method, $action, {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+					{writer => $writer, expected_size => $test_size});
+				is -s $tmpfile, 0;
+				is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
+				is $g->{last_retry_reason}, 'ThrottlingException', "ThrottlingException for $method,$action";
+			}
+		}
+	}
+
 	# success with no size defined
 	{
 		open F, ">$tmpfile";
@@ -216,7 +268,6 @@ my ($base) = initialize_processes();
 sub initialize_processes
 {
 	if (@ARGV && $ARGV[0] eq 'daemon') {
-		require HTTP::Daemon;
 		my $d = HTTP::Daemon->new(Timeout => 10, LocalAddr => '127.0.0.1');
 		$SIG{PIPE}='IGNORE';
 		$| = 1;
