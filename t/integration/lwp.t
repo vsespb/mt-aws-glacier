@@ -32,16 +32,19 @@ use TestUtils;
 use Test::More;
 use File::Temp ();
 use HTTP::Daemon;
+#use HTTP::Daemon::SSL;
 
 warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION() unless @ARGV;
 
 warning_fatal();
 
+my $proto = 'http';
+
 my $test_size = 3_000_000 - 1;
 
 
 my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
-my %common_options = (region => 'r', key => 'k', secret => 's', protocol => 'http', timeout => 20);
+my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $proto, timeout => 20);
 my ($base) = initialize_processes();
 	plan tests => 38;
 
@@ -254,13 +257,15 @@ my ($base) = initialize_processes();
 	}
 	
 	my $ua = new LWP::UserAgent;
-	my $req = new HTTP::Request GET => "http://$base/quit";
+	my $req = new HTTP::Request GET => "$proto://$base/quit";
 	my $resp = $ua->request($req);
 
 sub initialize_processes
 {
 	if (@ARGV && $ARGV[0] eq 'daemon') {
-		my $d = HTTP::Daemon->new(Timeout => 10, LocalAddr => '127.0.0.1');
+		my $d = $proto eq 'http' ?
+			HTTP::Daemon->new(Timeout => 10, LocalAddr => '127.0.0.1') :
+			HTTP::Daemon::SSL->new(Timeout => 10, LocalAddr => '127.0.0.1'); # need certs/ dir
 		$SIG{PIPE}='IGNORE';
 		$| = 1;
 		print "Please to meet you at: <URL:", $d->url, ">\n";
@@ -288,7 +293,7 @@ sub initialize_processes
 		my $perl = $Config{'perlpath'};
 		open(DAEMON, "'$perl' $0 daemon |") or die "Can't exec daemon: $!";
 		my $greeting = <DAEMON>;
-		$greeting =~ m!<URL:http://([^/]+)/>! or die;
+		$greeting =~ m!<URL:https?://([^/]+)/>! or die;
 		my $base = $1;
 		require LWP::UserAgent;
 		require HTTP::Request;
