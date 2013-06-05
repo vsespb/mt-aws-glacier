@@ -35,7 +35,6 @@ use TestUtils;
 use File::Temp ();
 
 warning_fatal();
-die "Cannot work under root" unless $>;
 
 my $TEMP = File::Temp->newdir();
 my $mtroot = $TEMP->dirname();
@@ -55,7 +54,9 @@ unlink $file;
 	unlink $file;
 }
 
-{
+SKIP: {
+	skip "Cannot run under root", 3 unless $>;
+	 
 	create($file, 'x');
 	chmod 0000, $file;
 	my $job = App::MtAws::FileCreateJob->new(filename => $file, relfilename => 'job_file_create', partsize => 2);
