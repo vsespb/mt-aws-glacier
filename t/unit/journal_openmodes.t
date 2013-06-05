@@ -36,7 +36,6 @@ use Carp;
 use TestUtils;
 use File::Temp ();
 
-die "Cannot work under root" unless $>;
 
 warning_fatal();
 
@@ -82,7 +81,9 @@ chmod 0744, $file if -e $file;
 	ok $@ ne '', "should_exist should work when true and file missing";
 }
 
-{
+SKIP: {
+	skip "Cannot run under root", 6 unless $>;
+	
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 	
 	create($file, $fixture);
@@ -171,7 +172,8 @@ chmod 0744, $file if -e $file;
 	ok -s $file, "should write to file, even without closing file";
 }
 
-{
+SKIP: {
+	skip "Cannot run under root", 6 unless $>;
 	unlink($file);
 	create($file, $fixture);
 	chmod 0444, $file;

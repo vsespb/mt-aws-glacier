@@ -33,8 +33,6 @@ use POSIX;
 use TestUtils;
 use File::Temp ();
 
-die "Cannot work under root" unless $>;
-
 warning_fatal();
 
 my $TEMP = File::Temp->newdir();
@@ -65,7 +63,8 @@ my $data = 	{
 		size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
 }
 
-{
+SKIP: {
+	skip "Cannot run under root", 5 unless $>;
 	my $file = "$rootdir/def/abc";
 	mkpath "$rootdir/def";
 	chmod 0744, $file;
