@@ -33,14 +33,15 @@ use Data::Dumper;
 use TestUtils;
 
 warning_fatal();
-
+my %common_options = (region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault', timeout => 180);
 describe "new" => sub {
 	it "should work" => sub {
-		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+		my $g = App::MtAws::GlacierRequest->new({%common_options});
 		ok $g->isa('App::MtAws::GlacierRequest'), "create correct object";
 		ok $g->{service} eq 'glacier';
 		ok $g->{account_id} eq '-';
 		ok $g->{region} eq 'region';
+		ok $g->{timeout} == 180;
 		ok $g->{key} eq 'key';
 		ok $g->{secret} eq 'secret';
 		ok $g->{vault} eq 'vault';
@@ -50,8 +51,7 @@ describe "new" => sub {
 
 	it "should work with token" => sub {
 		for my $token (qw/mytokenJHGYJUHhT 0/) {
-			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret',
-				protocol=>'http', vault=>'vault', token => $token});
+			my $g = App::MtAws::GlacierRequest->new({%common_options, token => $token});
 			ok $g->{token} eq $token;
 			cmp_set
 				$g->{headers},
@@ -59,35 +59,52 @@ describe "new" => sub {
 		}
 	};
 	
+	it "should work with timeout" => sub {
+		for my $timeout (qw/0 120 86400/) {
+			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret',
+				protocol=>'http', vault=>'vault', timeout => $timeout});
+			ok $g->{timeout} eq $timeout;
+			($g->{method}, $g->{url}) = ('GET', 'test');
+			my @opts;
+			LWP::UserAgent->expects('new')->returns(sub { @opts = @_; undef});
+			eval{my $resp = $g->perform_lwp();};
+			cmp_deeply [@opts], [qw/LWP::UserAgent timeout/, $timeout];
+		}
+	};
+	
 	it "should die without region" => sub {
-		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'}) };
+		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', secret=>'secret', protocol=>'http', vault=>'vault', timeout => 180}) };
 	};
 	
 	it "should die without secret" => sub {
-		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', protocol=>'http', vault=>'vault'}) };
+		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', protocol=>'http', vault=>'vault', timeout => 180}) };
+	};
+	
+	it "should die without timeout" => sub {
+		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', protocol=>'http', vault=>'vault', secret => 'secret'}) };
 	};
 	
 	it "should die without protocol" => sub {
-		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', vault=>'vault'}) };
+		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', vault=>'vault', timeout => 180}) };
 	};
 	
 	it "should not die without vault" => sub {
-		ok eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol=>'http'}) };
+		ok eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol=>'http', timeout => 180}) };
 	};
 	
 	it "should die with wrong protocol" => sub {
-		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol => 'xyz'}) };
+		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol => 'xyz', timeout => 180}) };
 	};
 	
 	it "should not die with https" => sub {
-		ok eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol => 'https'}) };
+		ok eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol => 'https', timeout => 180}) };
 	};
 };
 
 
 describe "create_multipart_upload" => sub {
 	it "should throw exception if filename too long" => sub {
-		my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+		my $g = App::MtAws::GlacierRequest->new({%common_options});
 		my $filename = 'x' x 2000;
 		ok ! defined eval { $g->create_multipart_upload(2, $filename, time()); 1 };
 		ok is_exception('file_name_too_big');
@@ -101,7 +118,7 @@ describe "create_multipart_upload" => sub {
 describe "perform_lwp" => sub {
 	it "should work with 2xx codes" => sub {
 		for my $code (200..209) {
-			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+			my $g = App::MtAws::GlacierRequest->new({%common_options});
 			($g->{method}, $g->{url}) = ('GET', 'test');
 			LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code, 'OK'));
 			my $resp = $g->perform_lwp();
@@ -123,7 +140,7 @@ describe "perform_lwp" => sub {
 		my $retries = 3;
 		it "should throttle 408/500" => sub {
 			for my $code (qw/408 500/) {
-				my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+				my $g = App::MtAws::GlacierRequest->new({%common_options});
 				($g->{method}, $g->{url}) = ('GET', 'test');
 				my @throttle_args;
 				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
@@ -136,13 +153,33 @@ describe "perform_lwp" => sub {
 					}, exception 'too_many_tries' => "Request was not successful after $retries retries";
 				});
 				ok ! defined $resp;
+				is $g->{last_retry_reason}, $code;
 				cmp_deeply [@throttle_args], [(1..$retries)];
 				my @matches = $out =~ /PID $$ HTTP $code This might be normal. Will retry \(\d+ seconds spent for request\)/g;
 				is scalar @matches, $retries;
 			}
 		};
+		it "should throttle Internal Response" => sub {
+			my $g = App::MtAws::GlacierRequest->new({%common_options});
+			($g->{method}, $g->{url}) = ('GET', 'test');
+			my @throttle_args;
+			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
+			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
+			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(500, "err", ["Client-Warning" => "Internal response"]))->exactly($retries);
+			my $out='';
+			my $resp = capture_stdout($out, sub {
+				assert_raises_exception sub {
+					$g->perform_lwp();
+				}, exception 'too_many_tries' => "Request was not successful after $retries retries";
+			});
+			ok ! defined $resp;
+			is $g->{last_retry_reason}, 'Internal response';
+			cmp_deeply [@throttle_args], [(1..$retries)];
+			my @matches = $out =~ /PID $$ HTTP connection problem \(timeout\?\). Will retry \(\d+ seconds spent for request\)/g;
+			is scalar @matches, $retries;
+		};
 		it "should throttle X-Died and read timeout" => sub {
-			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+			my $g = App::MtAws::GlacierRequest->new({%common_options});
 			($g->{method}, $g->{url}) = ('GET', 'test');
 			my @throttle_args;
 			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
@@ -161,7 +198,7 @@ describe "perform_lwp" => sub {
 		};
 		it "should catch other codes as unknown errors" => sub {
 			for my $code (300..309, 400..407, 409) {
-				my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault'});
+				my $g = App::MtAws::GlacierRequest->new({%common_options});
 				($g->{method}, $g->{url}) = ('GET', 'test');
 				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->once;

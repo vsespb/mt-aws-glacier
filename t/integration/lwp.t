@@ -31,12 +31,22 @@ use URI;
 use TestUtils;
 use Test::More;
 use File::Temp ();
+use HTTP::Daemon;
+#use HTTP::Daemon::SSL;
+
+warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION() unless @ARGV;
+
 warning_fatal();
+
+my $proto = 'http';
 
 my $test_size = 3_000_000 - 1;
 
+
+my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
+my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $proto, timeout => 20);
 my ($base) = initialize_processes();
-	plan tests => 14;
+	plan tests => 41;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -58,7 +68,7 @@ my ($base) = initialize_processes();
 		return $resp ? ($g, $resp, undef) : ($g, undef, $@);
 	}
 	
-	sub httpd_get_content_length
+	sub httpd_content_length
 	{
 	    my($c, $req, $size, $header_size) = @_;
 	    $c->send_basic_header(200);
@@ -69,7 +79,26 @@ my ($base) = initialize_processes();
 	    print $c $s;
 	}
 	
-	sub httpd_get_without_content_length
+	sub httpd_content_length_400
+	{
+	    my($c, $req) = @_;
+	    $c->send_basic_header(400);
+	    
+	    my $s = $throttling_exception;
+	    my $truncated = length($s) + 1;
+	    print $c "Content-Length: $truncated\015\012";
+	    print $c "Content-Type: application/json\015\012";
+	    $c->send_crlf;
+	    print $c $s;
+	}
+	
+	sub httpd_empty_response
+	{
+	    my($c, $req, $size, $header_size) = @_;
+	    $c->send_basic_header(200);
+	}
+	
+	sub httpd_without_content_length
 	{
 	    my($c, $req, $size) = @_;
 		my $resp = HTTP::Response->new(200, 'Fine');
@@ -91,18 +120,67 @@ my ($base) = initialize_processes();
 		open F, ">$tmpfile";
 		close F;
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size});
 		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
 	}
 	
+	sub httpd_chunked_throttling_exception
+	{
+	    my($c, $req) = @_;
+		my $resp = HTTP::Response->new(400);
+		$resp->content_type('application/json');
+	    my $s = $throttling_exception;
+		my $sent = 0;
+		# force chunked-response
+		$resp->content(sub {
+			if (!$sent) {
+				$sent = 1;
+				return $s;
+			} else {
+				return '';
+			}
+		});
+		$c->send_response($resp);
+	}
+	
+	sub httpd_throttling_exception
+	{
+	    my($c, $req, $size, $header_size) = @_;
+	    $c->send_basic_header(400);
+	    my $s = $throttling_exception;
+	    print $c "Content-Length: ".length($s)."\015\012";
+	    print $c "Content-Type: application/json\015\012";
+	    $c->send_crlf;
+	    print $c $s;
+	}
+	# correct request, but HTTP 400 with exception in JSON
+	{
+		# TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
+		open F, ">$tmpfile";
+		close F;
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		for my $method (qw/GET PUT POST DELETE/) {
+			for my $action (qw/chunked_throttling_exception/) {
+				my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+				my ($g, $resp, $err) = make_glacier_request($method, $action, {%common_options},
+					{writer => $writer, expected_size => $test_size, dataref => \''});
+				is -s $tmpfile, 0;
+				is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
+				is $g->{last_retry_reason}, 'ThrottlingException', "ThrottlingException for $method,$action";
+			}
+		}
+	}
+
 	# success with no size defined
 	{
 		open F, ">$tmpfile";
 		close F;
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {%common_options},
 			{writer => $writer});
 		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
@@ -114,10 +192,23 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {%common_options},
 			{writer => $writer});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
+		is -s $tmpfile, $test_size;
+	}
+	
+	# truncated response for HTTP 400
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length_400", {%common_options},
+			{writer => $writer});
+		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
+		is $g->{last_retry_reason}, 'ThrottlingException'; # TODO: BUG actually need to detect truncated response as well, and this is actually bug
 		is -s $tmpfile, $test_size;
 	}
 	
@@ -127,7 +218,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
@@ -142,12 +233,34 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/$test_size/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size+1});
 		is $err->{code}, 'wrong_file_size_in_journal'; # TODO: test with cmp_deep and exception()
 		is -s $tmpfile, 0;
 	}
-	
+
+	# correct response, size is zero
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_sleep = sub { die };
+		for (qw/GET PUT POST DELETE/) {
+			my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {%common_options}, {dataref=>\''});
+			ok $resp && !$err, "empty response should work for $_ method";
+		}
+	}
+
+	# data truncated, writer not used 
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		for (qw/GET PUT POST DELETE/) {
+			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {%common_options}, {dataref=>\''});
+			is $err->{code}, 'too_many_tries', "Code for $_";
+			is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
+		}
+	}
+
 	# correct response, no size header sent (chunked response? or maybe http/1.0)
 	{
 		open F, ">$tmpfile";
@@ -156,13 +269,13 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "without_content_length/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "without_content_length/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size});
 		is $err->{code}, 'wrong_file_size_in_journal';
 		is -s $tmpfile, 0;
 	}
 
-	sub httpd_get_quit
+	sub httpd_quit
 	{
 	    my($c) = @_;
 	    $c->send_error(503, "Bye, bye");
@@ -170,14 +283,15 @@ my ($base) = initialize_processes();
 	}
 	
 	my $ua = new LWP::UserAgent;
-	my $req = new HTTP::Request GET => "http://$base/quit";
+	my $req = new HTTP::Request GET => "$proto://$base/quit";
 	my $resp = $ua->request($req);
 
 sub initialize_processes
 {
 	if (@ARGV && $ARGV[0] eq 'daemon') {
-		require HTTP::Daemon;
-		my $d = HTTP::Daemon->new(Timeout => 20, LocalAddr => '127.0.0.1');
+		my $d = $proto eq 'http' ?
+			HTTP::Daemon->new(Timeout => 10, LocalAddr => '127.0.0.1') :
+			HTTP::Daemon::SSL->new(Timeout => 10, LocalAddr => '127.0.0.1'); # need certs/ dir
 		$SIG{PIPE}='IGNORE';
 		$| = 1;
 		print "Please to meet you at: <URL:", $d->url, ">\n";
@@ -188,7 +302,7 @@ sub initialize_processes
 			my @p = $r->uri->path_segments;
 			shift @p;
 			my $p = shift @p;
-			my $func = lc("httpd_" . $r->method . "_$p");
+			my $func = lc("httpd_$p");
 			if (defined &$func) {
 				no strict 'refs';
 				&$func($c, $r, @p);
@@ -205,7 +319,7 @@ sub initialize_processes
 		my $perl = $Config{'perlpath'};
 		open(DAEMON, "'$perl' $0 daemon |") or die "Can't exec daemon: $!";
 		my $greeting = <DAEMON>;
-		$greeting =~ m!<URL:http://([^/]+)/>! or die;
+		$greeting =~ m!<URL:https?://([^/]+)/>! or die;
 		my $base = $1;
 		require LWP::UserAgent;
 		require HTTP::Request;

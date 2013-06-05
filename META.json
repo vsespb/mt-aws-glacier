@@ -140,6 +140,10 @@
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
          "version" : 0
       },
+      "App::MtAws::HttpMemoryWriter" : {
+         "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
+         "version" : 0
+      },
       "App::MtAws::HttpSegmentWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
          "version" : 0

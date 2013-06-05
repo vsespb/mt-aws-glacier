@@ -26,6 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use FindBin;
+use Config;
 
 # build requirements
 use JSON::XS ();
@@ -44,7 +45,7 @@ my $testplan = 45;
 
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',
-    ($ARGV[0] && $ARGV[0] eq 'cover') ? (switches	=> '-MDevel::Cover') : (exec => ['perl']),
+    ($ARGV[0] && $ARGV[0] eq 'cover') ? (switches	=> '-MDevel::Cover') : (exec => [$Config{'perlpath'}]),
     merge           => 1,
    #verbosity       => 1,
     normalize       => 1,

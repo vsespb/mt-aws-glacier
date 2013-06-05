@@ -55,6 +55,7 @@ t/integration/config_engine_filters.t
 t/integration/config_engine_leaf.t
 t/integration/config_engine_lwp.t
 t/integration/config_engine_segment_size.t
+t/integration/config_engine_timeout.t
 t/integration/config_engine_token.t
 t/integration/config_engine_upload_file.t
 t/integration/config_engine_v078.t

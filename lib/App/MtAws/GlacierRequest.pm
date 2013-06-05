@@ -46,9 +46,8 @@ sub new
 	my $self = {};
 	bless $self, $class;
 	
-	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol/);
+	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol timeout/);
 	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault token/); # TODO: validate vault later
-	
 	
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
 	$self->{service} ||= 'glacier';
@@ -321,29 +320,8 @@ sub retrieval_download_to_memory
 
 	my $resp = $self->perform_lwp();
 	
-	if ($ENV{MTGLACIER_DEBUG_INVENTORY}) {
-		my $d_content = $resp->decoded_content;
-		my $content = $resp->content;
-		
-		open FF, ">_download_inventory_headers.log";
-		print FF $resp->request->dump;
-		print FF $resp->dump;
-		print FF "\n\nContent length:[".length($d_content)."]\n";
-		print FF "Content match decoded content:[".($d_content eq $content)."]\n";
-		close FF;
-
-		open FF, ">_download_inventory_body.log";
-		print FF $d_content;
-		close FF;
-	}
-
-	if ($resp) {
-		my $r = $resp->decoded_content; # decoded_content is NOT binary string because MIME type is not text/*
-		confess if is_wide_string($r);
-		return $r;
-	} else {
-		return undef;
-	}
+	$resp or confess;
+	return $resp->content;
 }
 
 # TODO: remove
@@ -481,7 +459,7 @@ sub perform_lwp
 		undef $self->{last_retry_reason};
 		$self->_sign();
 
-		my $ua = LWP::UserAgent->new(timeout => 120);
+		my $ua = LWP::UserAgent->new(timeout => $self->{timeout});
 		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Lets hard code this.
 		$ua->agent("mt-aws-glacier/$App::MtAws::VERSION (http://mt-aws.com/) "); 
 		my $req = undef;
@@ -545,7 +523,11 @@ sub perform_lwp
 		}
 		my $dt = time()-$t0;
 
-		if ($resp->code =~ /^(500|408)$/) {
+		if (($resp->code eq '500') && $resp->header('Client-Warning') && ($resp->header('Client-Warning') eq 'Internal response')) { 
+			print "PID $$ HTTP connection problem (timeout?). Will retry ($dt seconds spent for request)\n";
+			$self->{last_retry_reason} = 'Internal response';
+			throttle($i);
+		} elsif ($resp->code =~ /^(500|408)$/) {
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
 			$self->{last_retry_reason} = $resp->code;
 			throttle($i);
@@ -567,10 +549,31 @@ sub perform_lwp
 				} else {
 					return $resp;
 				}
+			} elsif (defined($resp->content_length) && $resp->content_length != length($resp->content)){
+				print "PID $$ HTTP Unexpected end of data. Will retry ($dt seconds spent for request)\n";
+				$self->{last_retry_reason}='Unexpected end of data';
+				throttle($i);
 			} else {
 				return $resp;
 			}
 		} else {
+			if ($resp->code =~ /^40[03]$/) {
+				if ($resp->content_type && $resp->content_type eq 'application/json') {
+					my $json = JSON::XS->new->allow_nonref;
+					my $scalar = eval { $json->decode( $resp->content ); }; # we assume content always in utf8
+					if (defined $scalar) {
+						my $code = $scalar->{code};
+						my $type = $scalar->{type};
+						my $message = $scalar->{message};
+						if ($code eq 'ThrottlingException') {
+							print "PID $$ ThrottlingException. Will retry ($dt seconds spent for request)\n";
+							$self->{last_retry_reason} = 'ThrottlingException';
+							throttle($i);
+							next;
+						}
+					}
+				}
+			}
 			print STDERR "Error:\n";
 			print STDERR $req->dump;
 			print STDERR $resp->dump;
