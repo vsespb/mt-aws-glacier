@@ -175,7 +175,7 @@ describe "perform_lwp" => sub {
 			ok ! defined $resp;
 			is $g->{last_retry_reason}, 'Internal response';
 			cmp_deeply [@throttle_args], [(1..$retries)];
-			my @matches = $out =~ /PID $$ HTTP connection problem. Will retry \(\d+ seconds spent for request\)/g;
+			my @matches = $out =~ /PID $$ HTTP connection problem \(timeout\?\). Will retry \(\d+ seconds spent for request\)/g;
 			is scalar @matches, $retries;
 		};
 		it "should throttle X-Died and read timeout" => sub {

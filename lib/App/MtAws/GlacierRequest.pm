@@ -524,7 +524,7 @@ sub perform_lwp
 		my $dt = time()-$t0;
 
 		if (($resp->code eq '500') && $resp->header('Client-Warning') && ($resp->header('Client-Warning') eq 'Internal response')) { 
-			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
+			print "PID $$ HTTP connection problem (timeout?). Will retry ($dt seconds spent for request)\n";
 			$self->{last_retry_reason} = 'Internal response';
 			throttle($i);
 		} elsif ($resp->code =~ /^(500|408)$/) {
