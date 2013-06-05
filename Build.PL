@@ -12,7 +12,7 @@ die "OS unsupported\n" if ($^O eq 'MSWin32');
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
 	use_tap_harness    => 1,
-	tap_harness_args   => { jobs => 8, merge=>1 },
+	tap_harness_args   => { jobs => 8 },
 	author => 'Victor Efimov <vs@vs-dev.com>',
 	dist_author => 'Victor Efimov <vs@vs-dev.com>',
 	recursive_test_files=>1,
