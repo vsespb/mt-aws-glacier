@@ -46,7 +46,7 @@ my $test_size = 3_000_000 - 1;
 my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
 my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $proto, timeout => 20);
 my ($base) = initialize_processes();
-	plan tests => 38;
+	plan tests => 41;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -75,6 +75,19 @@ my ($base) = initialize_processes();
 	    
 	    my $s = 'x' x $size;
 	    print $c "Content-Length: $header_size\015\012";
+	    $c->send_crlf;
+	    print $c $s;
+	}
+	
+	sub httpd_content_length_400
+	{
+	    my($c, $req) = @_;
+	    $c->send_basic_header(400);
+	    
+	    my $s = $throttling_exception;
+	    my $truncated = length($s) + 1;
+	    print $c "Content-Length: $truncated\015\012";
+	    print $c "Content-Type: application/json\015\012";
 	    $c->send_crlf;
 	    print $c $s;
 	}
@@ -183,6 +196,19 @@ my ($base) = initialize_processes();
 			{writer => $writer});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
+		is -s $tmpfile, $test_size;
+	}
+	
+	# truncated response for HTTP 400
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length_400", {%common_options},
+			{writer => $writer});
+		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
+		is $g->{last_retry_reason}, 'ThrottlingException'; # TODO: BUG actually need to detect truncated response as well, and this is actually bug
 		is -s $tmpfile, $test_size;
 	}
 	
