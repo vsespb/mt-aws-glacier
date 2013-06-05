@@ -316,16 +316,13 @@ sub retrieval_download_to_memory
 
 	$jobid||confess;
    
-	$self->{expected_size} = undef;
-	$self->{writer} = App::MtAws::HttpMemoryWriter->new();
-
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
 	
 	$resp or confess;
-	return $self->{writer}->{buffer};
+	return $resp->content;
 }
 
 # TODO: remove
