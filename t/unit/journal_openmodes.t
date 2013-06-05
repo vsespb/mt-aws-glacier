@@ -36,6 +36,8 @@ use Carp;
 use TestUtils;
 use File::Temp ();
 
+die "Cannot work under root" unless $>;
+
 warning_fatal();
 
 my $TEMP = File::Temp->newdir();
