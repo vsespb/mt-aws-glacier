@@ -569,6 +569,13 @@ For more information see [find][find] and [File::Find][File::Find] manuals.
 [find]:http://unixhelp.ed.ac.uk/CGI/man-cgi?find
 [File::Find]:http://search.cpan.org/perldoc?File%3A%3AFind
 
+8. `timeout` (all commands which connect Amazon Glacier API)
+
+	Sets the timeout value in seconds, default value is 180 seconds. Request to Amazon Glacier is retried, if if no activity
+	on the connection to the server is observed for `timeout` seconds. This means that the time it takes for the complete whole
+	request might be longer.
+
+
 ## Configuring Character Encodings
 
 Autodetection of locale/encodings not implemented yet, but currently there is ability to tune encodings manually.

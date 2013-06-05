@@ -39,7 +39,7 @@ warning_fatal();
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
-my %misc_opts = ('journal-encoding' => 'UTF-8', 'filenames-encoding' => 'UTF-8', 'terminal-encoding' => 'UTF-8', 'config-encoding' => 'UTF-8');
+my %misc_opts = ('journal-encoding' => 'UTF-8', 'filenames-encoding' => 'UTF-8', 'terminal-encoding' => 'UTF-8', 'config-encoding' => 'UTF-8', timeout => 180);
 
 # SYNC
 for (

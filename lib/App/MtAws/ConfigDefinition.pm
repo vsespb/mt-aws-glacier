@@ -277,6 +277,7 @@ sub get_config
 			validation(option('secret'), $invalid_format, sub { /^[\x21-\x7e]{40}$/ }),
 			validation(option('region'), $invalid_format, sub { /^[A-Za-z0-9\-]{3,20}$/ }),
 			optional(validation(option('token'), $invalid_format, sub { /^[\x21-\x7e]{20,1024}$/ })),
+			validation(option('timeout', default => 180), $invalid_format, sub { /^[0-9]{1,5}$/ }),
 			validation(option('protocol', default => 'http'), message('protocol must be "https" or "http"'), sub { /^https?$/ }),
 		);
 		

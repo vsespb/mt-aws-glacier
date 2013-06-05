@@ -1,3 +1,6 @@
+  * Enhancement: 'timeout' option added for network socket timeout and documentation updated. Default timeout
+  changed from 120 to 180 seconds
+
   * Detection of Amazon Glacier ThrottlingException
 
   * Better handling of server closing connection, after headers sent, for download-inventory as well

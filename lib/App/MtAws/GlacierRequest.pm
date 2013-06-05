@@ -46,9 +46,8 @@ sub new
 	my $self = {};
 	bless $self, $class;
 	
-	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol/);
+	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol timeout/);
 	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault token/); # TODO: validate vault later
-	
 	
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
 	$self->{service} ||= 'glacier';
@@ -460,7 +459,7 @@ sub perform_lwp
 		undef $self->{last_retry_reason};
 		$self->_sign();
 
-		my $ua = LWP::UserAgent->new(timeout => 120);
+		my $ua = LWP::UserAgent->new(timeout => $self->{timeout});
 		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Lets hard code this.
 		$ua->agent("mt-aws-glacier/$App::MtAws::VERSION (http://mt-aws.com/) "); 
 		my $req = undef;

@@ -53,6 +53,7 @@ my %common = (
 			protocol => 'http',
 			vault =>'myvault',
 			config=>'glacier.cfg',
+			timeout => 180,
 			'journal-encoding' => 'UTF-8',
 			'filenames-encoding' => 'UTF-8',
 			'terminal-encoding' => 'UTF-8',

@@ -41,7 +41,7 @@ my $test_size = 3_000_000 - 1;
 
 
 my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
-
+my %common_options = (region => 'r', key => 'k', secret => 's', protocol => 'http', timeout => 20);
 my ($base) = initialize_processes();
 	plan tests => 38;
 
@@ -104,7 +104,7 @@ my ($base) = initialize_processes();
 		open F, ">$tmpfile";
 		close F;
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size});
 		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
@@ -150,7 +150,7 @@ my ($base) = initialize_processes();
 		for my $method (qw/GET PUT POST DELETE/) {
 			for my $action (qw/chunked_throttling_exception/) {
 				my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-				my ($g, $resp, $err) = make_glacier_request($method, $action, {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+				my ($g, $resp, $err) = make_glacier_request($method, $action, {%common_options},
 					{writer => $writer, expected_size => $test_size, dataref => \''});
 				is -s $tmpfile, 0;
 				is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
@@ -164,7 +164,7 @@ my ($base) = initialize_processes();
 		open F, ">$tmpfile";
 		close F;
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my (undef, $resp, undef) = make_glacier_request('GET', "content_length/$test_size/$test_size", {%common_options},
 			{writer => $writer});
 		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
@@ -176,7 +176,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {%common_options},
 			{writer => $writer});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
@@ -189,7 +189,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/".($test_size-1)."/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size});
 		is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 		is $g->{last_retry_reason}, 'Unexpected end of data';
@@ -204,7 +204,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/$test_size/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "content_length/$test_size/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size+1});
 		is $err->{code}, 'wrong_file_size_in_journal'; # TODO: test with cmp_deep and exception()
 		is -s $tmpfile, 0;
@@ -215,7 +215,7 @@ my ($base) = initialize_processes();
 		no warnings 'redefine';
 		local *App::MtAws::GlacierRequest::_sleep = sub { die };
 		for (qw/GET PUT POST DELETE/) {
-			my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {dataref=>\''});
+			my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {%common_options}, {dataref=>\''});
 			ok $resp && !$err, "empty response should work for $_ method";
 		}
 	}
@@ -226,7 +226,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		for (qw/GET PUT POST DELETE/) {
-			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {dataref=>\''});
+			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {%common_options}, {dataref=>\''});
 			is $err->{code}, 'too_many_tries', "Code for $_";
 			is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
 		}
@@ -240,7 +240,7 @@ my ($base) = initialize_processes();
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
 		local *App::MtAws::GlacierRequest::_sleep = sub { };
 		my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
-		my ($g, $resp, $err) = make_glacier_request('GET', "without_content_length/$test_size", {region => 'r', key => 'k', secret => 's', protocol => 'http'},
+		my ($g, $resp, $err) = make_glacier_request('GET', "without_content_length/$test_size", {%common_options},
 			{writer => $writer, expected_size => $test_size});
 		is $err->{code}, 'wrong_file_size_in_journal';
 		is -s $tmpfile, 0;
