@@ -142,11 +142,6 @@ my ($base) = initialize_processes();
 	# correct request, but HTTP 400 with exception in JSON
 	{
 		# TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
-		local $SIG{__WARN__} = sub {
-			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
-			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
-			confess "Termination after a warning: $_[0]" unless $_[0] =~ /uninitialized/i;
-		} ;
 		open F, ">$tmpfile";
 		close F;
 		no warnings 'redefine';
@@ -156,7 +151,7 @@ my ($base) = initialize_processes();
 			for my $action (qw/chunked_throttling_exception/) {
 				my $writer = App::MtAws::HttpFileWriter->new(tempfile => $tmpfile);
 				my ($g, $resp, $err) = make_glacier_request($method, $action, {region => 'r', key => 'k', secret => 's', protocol => 'http'},
-					{writer => $writer, expected_size => $test_size});
+					{writer => $writer, expected_size => $test_size, dataref => \''});
 				is -s $tmpfile, 0;
 				is $err->{code}, 'too_many_tries'; # TODO: test with cmp_deep and exception()
 				is $g->{last_retry_reason}, 'ThrottlingException', "ThrottlingException for $method,$action";
@@ -215,34 +210,25 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, 0;
 	}
 
+	# correct response, size is zero
 	{
-		# TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
-		local $SIG{__WARN__} = sub {
-			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
-			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
-			confess "Termination after a warning: $_[0]" unless $_[0] =~ /uninitialized/i;
-		} ;
-		
-		# correct response, size is zero
-		{
-			no warnings 'redefine';
-			local *App::MtAws::GlacierRequest::_sleep = sub { die };
-			for (qw/GET PUT POST DELETE/) {
-				my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
-				ok $resp && !$err, "empty response should work for $_ method";
-			}
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_sleep = sub { die };
+		for (qw/GET PUT POST DELETE/) {
+			my ($g, $resp, $err) = make_glacier_request($_, "empty_response", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {dataref=>\''});
+			ok $resp && !$err, "empty response should work for $_ method";
 		}
-	
-		# data truncated, writer not used 
-		{
-			no warnings 'redefine';
-			local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
-			local *App::MtAws::GlacierRequest::_sleep = sub { };
-			for (qw/GET PUT POST DELETE/) {
-				my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {});
-				is $err->{code}, 'too_many_tries', "Code for $_";
-				is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
-			}
+	}
+
+	# data truncated, writer not used 
+	{
+		no warnings 'redefine';
+		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
+		local *App::MtAws::GlacierRequest::_sleep = sub { };
+		for (qw/GET PUT POST DELETE/) {
+			my ($g, $resp, $err) = make_glacier_request($_, "content_length/499/501", {region => 'r', key => 'k', secret => 's', protocol => 'http'}, {dataref=>\''});
+			is $err->{code}, 'too_many_tries', "Code for $_";
+			is $g->{last_retry_reason}, 'Unexpected end of data', "Reason for $_";
 		}
 	}
 
