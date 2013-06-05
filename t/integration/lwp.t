@@ -141,6 +141,12 @@ my ($base) = initialize_processes();
 	}
 	# correct request, but HTTP 400 with exception in JSON
 	{
+		# TODO: seems some versions of LWP raise this warnign, actually move to GlacierRequest
+		local $SIG{__WARN__} = sub {
+			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
+			#Use of uninitialized value in concatenation (.) or string at /home/travis/perl5/perlbrew/perls/5.14/lib/site_perl/5.14.2/HTTP/Message.pm line 167, <DAEMON> line 1.
+			confess "Termination after a warning: $_[0]" unless $_[0] =~ /uninitialized/i;
+		} ;
 		open F, ">$tmpfile";
 		close F;
 		no warnings 'redefine';
