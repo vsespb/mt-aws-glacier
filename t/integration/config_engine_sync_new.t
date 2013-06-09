@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 8;
+use Test::More tests => 119;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -37,16 +37,14 @@ sub assert_options($$@)
 	my $expected = shift;;
 	my $res = config_create_and_parse(@_);
 	ok !($res->{errors}||$res->{warnings}), $msg;
-	#use Data::Dumper; print Dumper $res->{errors};
 	cmp_deeply $res->{options}, superhashof($expected), $msg;
 }
 
-sub assert_segment_error($$@)
+sub assert_error($$@)
 {
 	my $msg = shift;;
 	my $error = shift;;
 	my $res = config_create_and_parse(@_);
-	print $error;
 	cmp_deeply $res->{errors}, $error, $msg;
 }
 
@@ -66,6 +64,58 @@ for my $line (
 			ok ! exists $res->{options}->{new};
 			$res = config_create_and_parse(@$line, @other_opts, '--new');
 			ok $res->{options}->{new};
+			
+			for my $other_opts (
+				[{}],
+				[{ new => 1}, '--new'],
+				[{'delete-removed' => 1}, '--delete-removed'],
+			) {
+				my @other_opts_a = @$other_opts;
+				my $addhash = shift @other_opts_a;
+				assert_error "detect with wrong value should not work without replace-modified (while ".
+					(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
+					" is active)",
+						[{'format' => 'option_for_command_can_be_used_only_with', a => 'detect', b => 'replace-modified', c => 'sync'},
+						{'format' => 'invalid_format', a => 'detect', value => 'xyz'}],
+						@$line, '--detect', 'xyz', @other_opts_a;
+
+				for (qw/treehash mtime mtime-and-treehash mtime-or-treehash/) {
+					assert_options "detect=$_ should work with replace-modified (while ".
+						(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
+						" is active)",
+							{ 'detect' => $_, %$addhash },
+							@$line, '--replace-modified', '--detect', $_, @other_opts_a;
+
+					assert_error "detect=$_ should not work without replace-modified (while ".
+						(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
+						" is active)",
+							[{'format' => 'option_for_command_can_be_used_only_with', a => 'detect', b => 'replace-modified', c => 'sync'}],
+							@$line, '--detect', $_, @other_opts_a;
+							
+					fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', detect => $_, sub {
+						assert_options "detect=$_ in config should work with replace-modified (while ".
+							(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
+							" is active)",
+								{ 'detect' => $_, %$addhash },
+								@$line, '--replace-modified', '--detect', $_, @other_opts_a;
+								
+						assert_options "detect=$_ in config should not work without replace-modified (while ".
+							(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
+							" is active)",
+								{ 'detect' => $_, %$addhash },
+								@$line, @other_opts_a;
+								
+					};
+					
+					fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', detect => $_, 'replace-modified' => 1, sub {
+						assert_options "detect=$_ in config should work with replace-modified in config (while ".
+							(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
+							" is active)",
+								{ 'detect' => $_, %$addhash },
+								@$line, '--detect', $_, @other_opts_a;
+					}
+				}
+			}
 		}
 	}
 }

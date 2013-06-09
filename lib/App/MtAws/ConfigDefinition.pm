@@ -210,14 +210,25 @@ sub check_max_size
 	}
 }
 
+sub detect_opts
+{
+	
+	return unless present('detect');
+	seen('detect'), do { # TODO: movify configengine to somehow simplify this
+		explicit('detect') && (!present('replace-modified')) ?
+		error("option_for_command_can_be_used_only_with", a => 'detect', b => 'replace-modified', c => 'sync') :
+		();
+	};
+}
+
 sub sync_opts
 {
 	my @sync_opts = qw/new replace-modified delete-removed/;
 	optional(@sync_opts);
 	if (present('new') || present('replace-modified') || present('delete-removed')) {
-		@sync_opts;
+		@sync_opts
 	} else {
-		impose('new', 1);
+		impose('new', 1); # TODO: can cause problems in the future
 	}
 }
 
@@ -239,6 +250,7 @@ sub get_config
 		message 'mandatory', "Please specify %option a%", allow_redefine => 1;
 		message 'cannot_read_config', 'Cannot read config file "%config%"';
 		message 'deprecated_option', '%option% deprecated, use %main% instead';
+		message 'option_for_command_can_be_used_only_with', "Option %option a% for %command c% command can be used only together with %option b%";
 		
 		
 		for (option 'dir', deprecated => ['to-dir', 'from-dir']) {
@@ -285,11 +297,19 @@ sub get_config
 
 
 		
-		option('new', type=>''),
-		option('replace-modified', type=>''),
-		option('delete-removed', type=>''),
+		option('new', type=>'');
+		option('replace-modified', type=>'');
+		option('delete-removed', type=>'');
 		
 
+		# treehash, mtime, mtime-and-treehash, mtime-or-treehash
+		# mtime-and-treehash := treat_as_modified if differs(mtime) && differs(treehash)
+		# mtime-or-treehash := treat_as_modified if differs(mtime) or differs(treehash)
+		validation
+			option('detect', default => 'mtime-and-treehash'),
+			$invalid_format,
+			sub { my $v = $_; first { $_ eq $v } qw/treehash mtime mtime-and-treehash mtime-or-treehash/ }; 
+		
 		my @config_opts = (
 			validation(option('key'), $invalid_format, sub { /^[A-Za-z0-9]{20}$/ }),
 			validation(option('secret'), $invalid_format, sub { /^[\x21-\x7e]{40}$/ }),
@@ -328,7 +348,8 @@ sub get_config
 		
 		command 'sync' => sub {
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, sync_opts, check_https, qw/dir vault concurrency partsize/, writable_journal('journal'),
+				optional('config'), mandatory(@encodings), @config_opts, sync_opts, detect_opts, check_https,
+				qw/dir vault concurrency partsize/, writable_journal('journal'),
 				optional(qw/max-number-of-files leaf-optimization/),
 				filter_options, optional('dry-run')
 			))

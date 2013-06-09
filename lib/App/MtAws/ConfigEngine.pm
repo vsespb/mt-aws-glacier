@@ -33,8 +33,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
 				mandatory optional seen deprecated validate scope
-				present valid value lists raw_option custom error warning impose/;
-				
+				present valid value lists raw_option custom error warning impose explicit/;
 
 our $context; # it's a not a global. always localized in code
 
@@ -558,6 +557,13 @@ sub present(@) # TODO: test that it works with arrays
 	my $name = @_ ? shift : $_;
 	assert_option for $name;
 	return defined($context->{options}->{$name}->{value})
+};
+
+# TODO: test
+sub explicit(@) # TODO: test that it works with arrays
+{
+	my $name = @_ ? shift : $_;
+	return present($name) && $context->{options}->{$name}->{source} eq 'option'
 };
 
 sub valid($)

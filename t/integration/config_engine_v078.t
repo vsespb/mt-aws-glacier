@@ -64,6 +64,7 @@ for (
 			partsize => $default_partsize,
 			journal => 'journal.log',
 			new => 1,
+			detect => 'mtime-and-treehash',
 			'leaf-optimization' => '1',
 		}, "$_ result");
 		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
@@ -89,6 +90,7 @@ for (
 			vault=>'myvault',
 			dir => '/data/backup',
 			new => 1,
+			detect => 'mtime-and-treehash',
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
@@ -116,6 +118,7 @@ for (
 			vault=>'myvault',
 			dir => '/data/backup',
 			new => 1,
+			detect => 'mtime-and-treehash',
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
@@ -140,6 +143,7 @@ for (
 			vault=>'myvault',
 			dir => '/data/backup',
 			new => 1,
+			detect => 'mtime-and-treehash',
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
@@ -171,6 +175,7 @@ for (
 			concurrency => 8,
 			partsize => 2,
 			new => 1,
+			detect => 'mtime-and-treehash',
 			journal => 'journal.log',
 			'leaf-optimization' => '1',
 		}, "$_ result");
@@ -226,6 +231,7 @@ for (
 			concurrency => $default_concurrency,
 			'max-number-of-files' => 42,
 			new => 1,
+			detect => 'mtime-and-treehash',
 			partsize => $default_partsize,
 			journal => 'journal.log',
 			'leaf-optimization' => '1',
