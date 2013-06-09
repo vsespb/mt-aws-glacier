@@ -63,6 +63,7 @@ for (
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
+			new => 1,
 			'leaf-optimization' => '1',
 		}, "$_ result");
 		is_deeply($warnings, ['from-dir deprecated, use dir instead', 'to-vault deprecated, use vault instead'], "$_ warnings text");
@@ -87,6 +88,7 @@ for (
 			protocol => 'http',
 			vault=>'myvault',
 			dir => '/data/backup',
+			new => 1,
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
@@ -113,6 +115,7 @@ for (
 			config => 'glacier.cfg',
 			vault=>'myvault',
 			dir => '/data/backup',
+			new => 1,
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
@@ -136,6 +139,7 @@ for (
 			config => 'glacier.cfg',
 			vault=>'myvault',
 			dir => '/data/backup',
+			new => 1,
 			concurrency => $default_concurrency,
 			partsize => $default_partsize,
 			journal => 'journal.log',
@@ -166,6 +170,7 @@ for (
 			dir => '/data/backup',
 			concurrency => 8,
 			partsize => 2,
+			new => 1,
 			journal => 'journal.log',
 			'leaf-optimization' => '1',
 		}, "$_ result");
@@ -220,6 +225,7 @@ for (
 			dir => '/data/backup',
 			concurrency => $default_concurrency,
 			'max-number-of-files' => 42,
+			new => 1,
 			partsize => $default_partsize,
 			journal => 'journal.log',
 			'leaf-optimization' => '1',

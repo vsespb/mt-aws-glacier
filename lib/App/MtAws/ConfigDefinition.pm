@@ -210,6 +210,17 @@ sub check_max_size
 	}
 }
 
+sub sync_opts
+{
+	my @sync_opts = qw/new replace-modified delete-removed/;
+	optional(@sync_opts);
+	if (present('new') || present('replace-modified') || present('delete-removed')) {
+		@sync_opts;
+	} else {
+		impose('new', 1);
+	}
+}
+
 sub get_config
 {
 	my (%args) = @_;
@@ -272,6 +283,13 @@ sub get_config
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
 
+
+		
+		option('new', type=>''),
+		option('replace-modified', type=>''),
+		option('delete-removed', type=>''),
+		
+
 		my @config_opts = (
 			validation(option('key'), $invalid_format, sub { /^[A-Za-z0-9]{20}$/ }),
 			validation(option('secret'), $invalid_format, sub { /^[\x21-\x7e]{40}$/ }),
@@ -310,7 +328,7 @@ sub get_config
 		
 		command 'sync' => sub {
 			validate(mandatory(
-				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault concurrency partsize/, writable_journal('journal'),
+				optional('config'), mandatory(@encodings), @config_opts, sync_opts, check_https, qw/dir vault concurrency partsize/, writable_journal('journal'),
 				optional(qw/max-number-of-files leaf-optimization/),
 				filter_options, optional('dry-run')
 			))
