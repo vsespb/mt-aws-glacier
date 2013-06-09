@@ -213,7 +213,6 @@ sub check_max_size
 sub detect_opts
 {
 	
-	return unless present('detect');
 	seen('detect'), do { # TODO: movify configengine to somehow simplify this
 		explicit('detect') && (!present('replace-modified')) ?
 		error("option_for_command_can_be_used_only_with", a => 'detect', b => 'replace-modified', c => 'sync') :
