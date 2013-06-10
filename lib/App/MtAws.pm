@@ -116,37 +116,12 @@ sub process
 	if ($action eq 'sync') {
 		die "Not a directory $options->{dir}" unless -d binaryfilename $options->{dir};
 		
-		my $partsize = delete $options->{partsize};
-		
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir},
 			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'});
-		
-		with_forks !$options->{'dry-run'}, $options, sub {
-			$j->read_journal(should_exist => 0);
-			$j->read_new_files($options->{'max-number-of-files'});
-			
-			if ($options->{'dry-run'}) {
-				for (@{ $j->{newfiles_a} }) {
-					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-					print "Will UPLOAD $absfilename\n";
-				}
-			} else {
-				$j->open_for_write();
-				
-				my @joblist;
-				for (@{ $j->{newfiles_a} }) {
-					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$partsize));
-					push @joblist, $ft;
-				}
-				if (scalar @joblist) {
-					my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
-					my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-					die unless $R;
-				}
-				$j->close_for_write();
-			}
-		}
+
+		require App::MtAws::SyncCommand;
+		App::MtAws::SyncCommand::run($options, $j);
+
 	} elsif ($action eq 'upload-file') {
 		
 		defined(my $relfilename = $options->{relfilename})||confess;
