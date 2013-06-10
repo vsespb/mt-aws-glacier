@@ -26,6 +26,7 @@ use utf8;
 use Carp;
 use constant ONE_MB => 1024*1024;
 use App::MtAws::JobProxy;
+use App::MtAws::JobListProxy;
 use App::MtAws::FileCreateJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
