@@ -54,35 +54,37 @@ describe "command" => sub {
 			is $options, $options;
 			$cb->();
 		});
-		my @files = qw/file1 file2 file3 file4/;
-		App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns(sub {
-			App::MtAws::Journal->expects("read_new_files")->with($options->{'max-number-of-files'})->returns(sub {
-				App::MtAws::Journal->expects("open_for_write")->returns(sub {
-					App::MtAws::SyncCommand->expects("fork_engine")->returns(sub {
-						App::MtAws::ParentWorker->expects("process_task")->returns(sub {
-							App::MtAws::Journal->expects("close_for_write")->once;	
-							ok $_[1]->isa('App::MtAws::JobListProxy');
-							my @jobs = @{$_[1]->{jobs}};
-							for (@files) {
-								my $job = shift @jobs;
-								is $job->{job}{relfilename}, $_;
-								is $job->{job}{partsize}, $options->{partsize}*1024*1024;
-								ok $job->isa('App::MtAws::JobProxy');
-								ok $job->{job}->isa('App::MtAws::FileCreateJob');
-							}
-							return (1)
-						} )->once;
-	
-						bless { parent_worker =>
-							bless {}, 'App::MtAws::ParentWorker'
-						}, 'App::MtAws::ForkEngine';
-					})->once;
-					
-				})->once;
-			} )->once;
+		App::MtAws::Journal->expects("read_journal")->returns(sub {
+			shift;
+			cmp_deeply [@_], [should_exist => 0];
+		})->once;
+		App::MtAws::Journal->expects("read_new_files")->returns(sub { is $_[1], $options->{'max-number-of-files'}} )->once;
+		App::MtAws::Journal->expects("open_for_write")->once;
+		App::MtAws::Journal->expects("close_for_write")->once;
+		
+		App::MtAws::SyncCommand->expects("fork_engine")->returns(sub {
+			bless { parent_worker =>
+				bless {}, 'App::MtAws::ParentWorker'
+			}, 'App::MtAws::ForkEngine';
 		})->once;
 		
+		my @files = qw/file1 file2 file3 file4/;
+		
+		App::MtAws::ParentWorker->expects("process_task")->returns(sub {
+			ok $_[1]->isa('App::MtAws::JobListProxy');
+			my @jobs = @{$_[1]->{jobs}};
+			for (@files) {
+				my $job = shift @jobs;
+				is $job->{job}{relfilename}, $_;
+				is $job->{job}{partsize}, $options->{partsize}*1024*1024;
+				ok $job->isa('App::MtAws::JobProxy');
+				ok $job->{job}->isa('App::MtAws::FileCreateJob');
+			}
+			return (1)
+		} )->once;
+		
 		$j->{newfiles_a} = [ map { { relfilename => $_ }} @files ];
+		
 		App::MtAws::SyncCommand::run($options, $j);
 	};
 };
