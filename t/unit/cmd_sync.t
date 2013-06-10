@@ -46,8 +46,8 @@ our $order_n;
 
 
 describe "command" => sub {
-	it "should work" => sub {
-		my $options = { 'max-number-of-files' => 10, partsize => 2 };
+	it "new should work" => sub {
+		my $options = { 'max-number-of-files' => 10, partsize => 2, new => 1 };
 		my $j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
 
 		local $order_n = 0;

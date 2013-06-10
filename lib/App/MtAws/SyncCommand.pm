@@ -46,17 +46,18 @@ sub run
 			}
 		} else {
 			$j->open_for_write();
-			
-			my @joblist;
-			for (@{ $j->{newfiles_a} }) {
-				my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
-				push @joblist, $ft;
-			}
-			if (scalar @joblist) {
-				my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
-				my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-				die unless $R;
+			if ($options->{new}) {
+				my @joblist;
+				for (@{ $j->{newfiles_a} }) {
+					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
+					push @joblist, $ft;
+				}
+				if (scalar @joblist) {
+					my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
+					my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
+					die unless $R;
+				}
 			}
 			$j->close_for_write();
 		}
