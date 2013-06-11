@@ -247,28 +247,13 @@ sub _write_line
 # Reading file listing
 #
 
-sub read_all_files
-{
-	my ($self) = @_;
-	$self->{listing} = $self->_read_files({new => 1, existing=>1});
-}
-
-sub read_new_files
-{
-	my ($self, $max_number_of_files) = @_;
-	$self->{listing} = $self->_read_files({new => 1}, $max_number_of_files);
-}
-
-sub read_existing_files
-{
-	my ($self) = @_;
-	$self->{listing} = $self->_read_files({existing => 1});
-}
-
-
-sub _read_files
+sub read_files
 {
 	my ($self, $mode, $max_number_of_files) = @_;
+
+	my %checkmode = %$mode;
+	defined $checkmode{$_} && delete $checkmode{$_} for qw/new existing missing/;
+	confess "Unknown mode: ".join(';', keys %checkmode) if %checkmode;
 	
 	confess unless defined($self->{root_dir});
 	my $filelist = { new => [], existing => [] };
@@ -315,7 +300,7 @@ sub _read_files
 		}
 	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
 	
-	$filelist;
+	$self->{listing} = $filelist;
 }
 
 sub character_filename

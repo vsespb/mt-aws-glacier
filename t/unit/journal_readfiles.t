@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 46;
+use Test::More tests => 40;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -61,42 +61,6 @@ my $data = {
 		ok( !$J->_can_read_filename_for_mode($anotherfile, {}));
 }
 
-# test read_all_files
-{
-		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
-		my @args;
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_read_files', sub { (undef, @args) = @_; return {new=>['fileA']}});
-		$J->read_all_files();
-		
-		is_deeply(\@args, [{new=>1, existing=>1}]);
-		is_deeply($J->{listing}{new}, ['fileA']);
-}
-
-# test read_new_files
-{
-		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
-		my @args;
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_read_files', sub { (undef, @args) = @_; return {new=>['fileB']}});
-		$J->read_new_files(117);
-		
-		is_deeply(\@args, [{new=>1},117]);
-		is_deeply($J->{listing}{new}, ['fileB']);
-}
-
-# test read_existing_files
-{
-		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
-		my @args;
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_read_files', sub { (undef, @args) = @_; return { existing => ['fileC']}});
-		$J->read_existing_files();
-		
-		is_deeply(\@args, [{existing=>1}]);
-		is_deeply($J->{listing}{existing}, ['fileC']);
-}
-
 # max_number_of_files should be triggered
 {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
@@ -113,7 +77,7 @@ my $data = {
 			});
 			
 		$File::Find::prune = 0;
-		my $filelist = $J->_read_files({new=>1, existing=>1}, $maxfiles);
+		my $filelist = $J->read_files({new=>1, existing=>1}, $maxfiles);
 		
 		my $expected = { existing=>[], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]]}; 
 		is_deeply($filelist, $expected);
@@ -137,7 +101,7 @@ my $data = {
 			});
 			
 		$File::Find::prune = 1;
-		my $filelist = $J->_read_files({new=>1, existing=>1}, $maxfiles);
+		my $filelist = $J->read_files({new=>1, existing=>1}, $maxfiles);
 		
 		my $expected = { existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist]}; 
 		is_deeply($filelist, $expected);
@@ -160,7 +124,7 @@ my $data = {
 			});
 			
 		$File::Find::prune = 1;
-		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
+		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
 		
 		my $expected = { existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist] };
 		is_deeply($filelist, $expected);
@@ -181,7 +145,7 @@ my $data = {
 				$args->{wanted}->() for (@filelist);
 			});
 			
-		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
+		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
 		is_deeply($filelist, {new=>[],existing=>[]});
 }
 
@@ -199,7 +163,7 @@ my $data = {
 				$args->{wanted}->() for (@filelist);
 			});
 		
-		ok ! defined eval { $J->_read_files({new=>1, existing=>1}, 0); 1; };
+		ok ! defined eval { $J->read_files({new=>1, existing=>1}, 0); 1; };
 		is get_exception->{code}, 'invalid_octets_filename';
 		is get_exception->{filename}, hex_dump_string($brokenname);
 		is get_exception->{enc}, "UTF-8";
@@ -218,7 +182,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 				$args->{wanted}->() for (@filelist);
 			});
 		
-		ok ! defined eval { $J->_read_files({new=>1, existing=>1}, 0); 1; };
+		ok ! defined eval { $J->read_files({new=>1, existing=>1}, 0); 1; };
 		is get_exception->{filename}, hex_dump_string($brokenname);
 		is get_exception->{code}, 'invalid_chars_filename';
 		ok exception_message(get_exception) =~ /Not allowed characters in filename/i;
@@ -239,7 +203,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 				$args->{wanted}->() for (@filelist);
 			});
 			
-		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
+		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
 		is_deeply($filelist, {new=>[],existing=>[]});
 }
 
@@ -258,7 +222,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 				$args->{wanted}->() for (map { "$rootdir/$_" } @filelist);
 			});
 			
-		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
+		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
 		ok($args->{no_chdir} == 1);
 		ok($root_dir eq $rootdir);
 		ok(defined($args->{wanted}));
