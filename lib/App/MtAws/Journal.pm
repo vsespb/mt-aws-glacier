@@ -304,7 +304,7 @@ sub read_files
 		}
 	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
 	
-	unless ($self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
+	if ($mode->{missing} && !$self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
 		for (keys %missing) {
 			unless ($self->_is_file_exists(binaryfilename $self->absfilename($_))) {
 				push @{$self->{listing}{missing}}, { relfilename => $_ };
@@ -312,8 +312,6 @@ sub read_files
 			}
 		}
 	}
-	
-	# TODO: copy %missing to listing, check max_number_of_files
 }
 
 sub _listing_exceeed_max_number_of_files
