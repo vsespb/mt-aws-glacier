@@ -40,7 +40,7 @@ sub run
 		$j->read_new_files($options->{'max-number-of-files'});
 		
 		if ($options->{'dry-run'}) {
-			for (@{ $j->{newfiles_a} }) {
+			for (@{ $j->{listing}{new} }) {
 				my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
 				print "Will UPLOAD $absfilename\n";
 			}
@@ -48,7 +48,7 @@ sub run
 			$j->open_for_write();
 			if ($options->{new}) {
 				my @joblist;
-				for (@{ $j->{newfiles_a} }) {
+				for (@{ $j->{listing}{new} }) {
 					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
 					push @joblist, $ft;

@@ -89,7 +89,8 @@ describe "command" => sub {
 			return (1)
 		} )->once;
 		
-		$j->{newfiles_a} = [ map { { relfilename => $_ }} @files ];
+		$j->{listing}{existing} = [];
+		$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
 		
 		App::MtAws::SyncCommand::run($options, $j);
 	};
