@@ -346,23 +346,23 @@ sub absfilename
 sub _can_read_filename_for_mode
 {
 	my ($self, $relfilename, $mode) = @_;
-	my $ok = 0;
 	if ($mode->{new} && $mode->{existing}) {
-		$ok = 1;
+		return 1;
 	} elsif ($mode->{new}) {
 		if (!defined($self->{journal_h}->{$relfilename})) {
-			$ok = 1;
+			return 1;
 		} else {
 			print "Skip $relfilename\n";
+			return 0;
 		}
 	} elsif ($mode->{existing}) {
 		if (defined($self->{journal_h}->{$relfilename})) {
-			$ok = 1;
+			return 1;
 		} else {
 			print "Not exists $relfilename\n";
+			return 0;
 		}
 	}
-	$ok;
 }
 
 
