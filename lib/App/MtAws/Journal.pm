@@ -304,7 +304,7 @@ sub _read_files
 			my $orig_relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
-					if ($self->_can_read_filename_for_mode($orig_relfilename, $mode)) {
+					if (my $use_mode = $self->_can_read_filename_for_mode($orig_relfilename, $mode)) {
 						my $relfilename;
 						confess "Invalid filename: ".hex_dump_string($orig_relfilename)
 							unless defined($relfilename = sanity_relative_filename($orig_relfilename));
@@ -346,20 +346,23 @@ sub absfilename
 sub _can_read_filename_for_mode
 {
 	my ($self, $relfilename, $mode) = @_;
-	if ($mode->{new} && $mode->{existing}) {
-		return 1;
-	} elsif ($mode->{new}) {
-		if (!defined($self->{journal_h}->{$relfilename})) {
-			return 1;
-		} else {
+	
+	if (defined($self->{journal_h}->{$relfilename})) {
+		if ($mode->{existing}) {
+			return 'existing';
+		} elsif ($mode->{new}) { # AND not $mode->{existing}
 			print "Skip $relfilename\n";
 			return 0;
-		}
-	} elsif ($mode->{existing}) {
-		if (defined($self->{journal_h}->{$relfilename})) {
-			return 1;
 		} else {
+			return 0;
+		}
+	} else {
+		if ($mode->{new}) {
+			return 'new';
+		} elsif ($mode->{existing}) { # AND not $mode->{new}
 			print "Not exists $relfilename\n";
+			return 0;
+		} else {
 			return 0;
 		}
 	}

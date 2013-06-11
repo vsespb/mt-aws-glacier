@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 44;
+use Test::More tests => 46;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -50,14 +50,15 @@ my $data = {
 		my $anotherfile = 'newfile1';
 		$J->{journal_h}->{$relfilename} = $data;
 		
-		ok( $J->_can_read_filename_for_mode($relfilename, {new=>1, existing=>1}) == 1);
-		ok( $J->_can_read_filename_for_mode($anotherfile, {new=>1, existing=>1}) == 1);
+		is( $J->_can_read_filename_for_mode($relfilename, {new=>1, existing=>1}), 'existing');
+		is( $J->_can_read_filename_for_mode($relfilename, {existing=>1}), 'existing');
+		ok( ! $J->_can_read_filename_for_mode($relfilename, {new=>1}) );
+		ok( !$J->_can_read_filename_for_mode($relfilename, {}));
 		
-		ok( $J->_can_read_filename_for_mode($relfilename, {new=>1}) == 0);
-		ok( $J->_can_read_filename_for_mode($anotherfile, {new=>1}) == 1);
-
-		ok( $J->_can_read_filename_for_mode($relfilename, {existing=>1}) == 1);
-		ok( $J->_can_read_filename_for_mode($anotherfile, {existing=>1}) == 0);
+		is( $J->_can_read_filename_for_mode($anotherfile, {new=>1, existing=>1}), 'new');
+		is( $J->_can_read_filename_for_mode($anotherfile, {new=>1}), 'new');
+		ok( !$J->_can_read_filename_for_mode($anotherfile, {existing=>1}));
+		ok( !$J->_can_read_filename_for_mode($anotherfile, {}));
 }
 
 # test read_all_files
