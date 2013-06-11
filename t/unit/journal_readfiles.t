@@ -66,11 +66,11 @@ my $data = {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
 		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_read_files', sub { (undef, @args) = @_; return ['fileA']});
+			mock('_read_files', sub { (undef, @args) = @_; return {new=>['fileA']}});
 		$J->read_all_files();
 		
 		is_deeply(\@args, [{new=>1, existing=>1}]);
-		is_deeply($J->{allfiles_a}, ['fileA']);
+		is_deeply($J->{listing}{new}, ['fileA']);
 }
 
 # test read_new_files
@@ -78,11 +78,11 @@ my $data = {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
 		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_read_files', sub { (undef, @args) = @_; return ['fileB']});
+			mock('_read_files', sub { (undef, @args) = @_; return {new=>['fileB']}});
 		$J->read_new_files(117);
 		
 		is_deeply(\@args, [{new=>1},117]);
-		is_deeply($J->{newfiles_a}, ['fileB']);
+		is_deeply($J->{listing}{new}, ['fileB']);
 }
 
 # test read_existing_files
@@ -90,11 +90,11 @@ my $data = {
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		my @args;
 		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_read_files', sub { (undef, @args) = @_; return ['fileC']});
+			mock('_read_files', sub { (undef, @args) = @_; return { existing => ['fileC']}});
 		$J->read_existing_files();
 		
 		is_deeply(\@args, [{existing=>1}]);
-		is_deeply($J->{existingfiles_a}, ['fileC']);
+		is_deeply($J->{listing}{existing}, ['fileC']);
 }
 
 # max_number_of_files should be triggered
@@ -115,8 +115,8 @@ my $data = {
 		$File::Find::prune = 0;
 		my $filelist = $J->_read_files({new=>1, existing=>1}, $maxfiles);
 		
-		my @expected = map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]; 
-		is_deeply($filelist, \@expected);
+		my $expected = { existing=>[], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]]}; 
+		is_deeply($filelist, $expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
 }
@@ -139,8 +139,8 @@ my $data = {
 		$File::Find::prune = 1;
 		my $filelist = $J->_read_files({new=>1, existing=>1}, $maxfiles);
 		
-		my @expected = map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
-		is_deeply($filelist, \@expected);
+		my $expected = { existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist]}; 
+		is_deeply($filelist, $expected);
 		ok($maxfiles >= scalar @filelist - 1);
 		ok($File::Find::prune == 0);
 }
@@ -162,8 +162,8 @@ my $data = {
 		$File::Find::prune = 1;
 		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
 		
-		my @expected = map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist; 
-		is_deeply($filelist, \@expected);
+		my $expected = { existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist] };
+		is_deeply($filelist, $expected);
 		ok($File::Find::prune == 0);
 }
 
@@ -182,7 +182,7 @@ my $data = {
 			});
 			
 		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
-		is_deeply($filelist, []);
+		is_deeply($filelist, {new=>[],existing=>[]});
 }
 
 # should catch broken UTF-8 in filename
@@ -240,7 +240,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 			});
 			
 		my $filelist = $J->_read_files({new=>1, existing=>1}, 0);
-		is_deeply($filelist, []);
+		is_deeply($filelist, {new=>[],existing=>[]});
 }
 
 # should pass correct options to find

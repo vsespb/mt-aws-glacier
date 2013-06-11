@@ -250,19 +250,19 @@ sub _write_line
 sub read_all_files
 {
 	my ($self) = @_;
-	$self->{allfiles_a} = $self->_read_files({new => 1, existing=>1});
+	$self->{listing} = $self->_read_files({new => 1, existing=>1});
 }
 
 sub read_new_files
 {
 	my ($self, $max_number_of_files) = @_;
-	$self->{newfiles_a} = $self->_read_files({new => 1}, $max_number_of_files);
+	$self->{listing} = $self->_read_files({new => 1}, $max_number_of_files);
 }
 
 sub read_existing_files
 {
 	my ($self) = @_;
-	$self->{existingfiles_a} = $self->_read_files({existing => 1});
+	$self->{listing} = $self->_read_files({existing => 1});
 }
 
 
@@ -271,13 +271,13 @@ sub _read_files
 	my ($self, $mode, $max_number_of_files) = @_;
 	
 	confess unless defined($self->{root_dir});
-	my $filelist = [];
+	my $filelist = { new => [], existing => [] };
 	my $i = 0;
 	# TODO: find better workaround than "-s"
 	$File::Find::prune = 0;
 	$File::Find::dont_use_nlink = !$self->{leaf_optimization};
 	File::Find::find({ wanted => sub {
-		if ($max_number_of_files && (scalar @$filelist >= $max_number_of_files)) {
+		if ($max_number_of_files && ((scalar @{$filelist->{new}})+(scalar @{$filelist->{existing}}) >= $max_number_of_files)) {
 			$File::Find::prune = 1;
 			return;
 		}
@@ -308,7 +308,7 @@ sub _read_files
 						my $relfilename;
 						confess "Invalid filename: ".hex_dump_string($orig_relfilename)
 							unless defined($relfilename = sanity_relative_filename($orig_relfilename));
-						push @$filelist, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
+						push @{$filelist->{$use_mode}}, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
 					}
 				}
 			}

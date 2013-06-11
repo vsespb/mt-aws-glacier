@@ -92,10 +92,10 @@ sub test_real_files
 	$j->read_all_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{exclude} } @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{new}}+scalar @{$j->{listing}{existing}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{allfiles_a}}) {
+	for my $realfile (@{$j->{listing}{new}}, @{$j->{listing}{existing}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
 	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
@@ -114,10 +114,10 @@ sub test_all_files
 	$j->read_all_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} } @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{new}}+scalar @{$j->{listing}{existing}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{allfiles_a}}) {
+	for my $realfile (@{$j->{listing}{new}}, @{$j->{listing}{existing}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
 	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
@@ -138,10 +138,10 @@ sub test_new_files
 	$j->read_new_files();
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
 
-	ok((scalar @checkfiles) == scalar @{$j->{newfiles_a}}, "number of planned and real files match");
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{new}}, "number of planned and real files match");
 
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{newfiles_a}}) {
+	for my $realfile (@{$j->{listing}{new}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
 	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
@@ -161,10 +161,10 @@ sub test_existing_files
 	$j->read_existing_files();
 	
 	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{existingfiles_a}}, "number of planed and real files match");
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{existing}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{existingfiles_a}}) {
+	for my $realfile (@{$j->{listing}{existing}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
 	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
