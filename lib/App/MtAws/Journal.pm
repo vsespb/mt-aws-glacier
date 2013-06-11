@@ -256,13 +256,16 @@ sub read_files
 	confess "Unknown mode: ".join(';', keys %checkmode) if %checkmode;
 	
 	confess unless defined($self->{root_dir});
-	my $filelist = { new => [], existing => [] };
+	
+	my %missing = $mode->{'missing'} ? %{$self->{journal_h}} : ();
+	
+	$self->{listing} = { new => [], existing => [], missing => [] };
 	my $i = 0;
 	# TODO: find better workaround than "-s"
 	$File::Find::prune = 0;
 	$File::Find::dont_use_nlink = !$self->{leaf_optimization};
 	File::Find::find({ wanted => sub {
-		if ($max_number_of_files && ((scalar @{$filelist->{new}})+(scalar @{$filelist->{existing}}) >= $max_number_of_files)) {
+		if ($self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
 			$File::Find::prune = 1;
 			return;
 		}
@@ -289,18 +292,40 @@ sub read_files
 			my $orig_relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
+					my $relfilename;
+					confess "Invalid filename: ".hex_dump_string($orig_relfilename)
+						unless defined($relfilename = sanity_relative_filename($orig_relfilename));
 					if (my $use_mode = $self->_can_read_filename_for_mode($orig_relfilename, $mode)) {
-						my $relfilename;
-						confess "Invalid filename: ".hex_dump_string($orig_relfilename)
-							unless defined($relfilename = sanity_relative_filename($orig_relfilename));
-						push @{$filelist->{$use_mode}}, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
+						push @{$self->{listing}{$use_mode}}, { relfilename => $relfilename }; # TODO: we can reduce memory usage even more. we don't need hash here probably??
 					}
+					delete $missing{$relfilename} if ($mode->{missing});
 				}
 			}
 		}
 	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
 	
-	$self->{listing} = $filelist;
+	unless ($self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
+		for (keys %missing) {
+			unless ($self->_is_file_exists(binaryfilename $self->absfilename($_))) {
+				push @{$self->{listing}{missing}}, { relfilename => $_ };
+				last if $self->_listing_exceeed_max_number_of_files($max_number_of_files);
+			}
+		}
+	}
+	
+	# TODO: copy %missing to listing, check max_number_of_files
+}
+
+sub _listing_exceeed_max_number_of_files
+{
+	my ($self, $max_number_of_files) = @_;
+	($max_number_of_files && (
+		(
+			(scalar @{$self->{listing}{new}}) +
+			(scalar @{$self->{listing}{existing}}) +
+			(scalar @{$self->{listing}{missing}})
+		)  >= $max_number_of_files)
+	);
 }
 
 sub character_filename

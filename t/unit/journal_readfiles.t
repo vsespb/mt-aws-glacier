@@ -77,10 +77,10 @@ my $data = {
 			});
 			
 		$File::Find::prune = 0;
-		my $filelist = $J->read_files({new=>1, existing=>1}, $maxfiles);
+		$J->read_files({new=>1, existing=>1}, $maxfiles);
 		
-		my $expected = { existing=>[], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]]}; 
-		is_deeply($filelist, $expected);
+		my $expected = { missing => [], existing=>[], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]]}; 
+		is_deeply($J->{listing}, $expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
 }
@@ -101,10 +101,10 @@ my $data = {
 			});
 			
 		$File::Find::prune = 1;
-		my $filelist = $J->read_files({new=>1, existing=>1}, $maxfiles);
+		$J->read_files({new=>1, existing=>1}, $maxfiles);
 		
-		my $expected = { existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist]}; 
-		is_deeply($filelist, $expected);
+		my $expected = { missing => [], existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist]}; 
+		is_deeply($J->{listing}, $expected);
 		ok($maxfiles >= scalar @filelist - 1);
 		ok($File::Find::prune == 0);
 }
@@ -124,10 +124,10 @@ my $data = {
 			});
 			
 		$File::Find::prune = 1;
-		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
+		$J->read_files({new=>1, existing=>1}, 0);
 		
-		my $expected = { existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist] };
-		is_deeply($filelist, $expected);
+		my $expected = { missing => [], existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist] };
+		is_deeply($J->{listing}, $expected);
 		ok($File::Find::prune == 0);
 }
 
@@ -145,8 +145,8 @@ my $data = {
 				$args->{wanted}->() for (@filelist);
 			});
 			
-		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
-		is_deeply($filelist, {new=>[],existing=>[]});
+		$J->read_files({new=>1, existing=>1}, 0);
+		is_deeply($J->{listing}, {new=>[],existing=>[],missing=>[]});
 }
 
 # should catch broken UTF-8 in filename
@@ -203,8 +203,8 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 				$args->{wanted}->() for (@filelist);
 			});
 			
-		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
-		is_deeply($filelist, {new=>[],existing=>[]});
+		$J->read_files({new=>1, existing=>1}, 0);
+		is_deeply($J->{listing}, {new=>[],existing=>[], missing => []});
 }
 
 # should pass correct options to find
@@ -222,7 +222,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 				$args->{wanted}->() for (map { "$rootdir/$_" } @filelist);
 			});
 			
-		my $filelist = $J->read_files({new=>1, existing=>1}, 0);
+		$J->read_files({new=>1, existing=>1}, 0);
 		ok($args->{no_chdir} == 1);
 		ok($root_dir eq $rootdir);
 		ok(defined($args->{wanted}));
