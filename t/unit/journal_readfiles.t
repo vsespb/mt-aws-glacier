@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 40;
+use Test::More tests => 69;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -32,6 +32,7 @@ use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use Test::MockModule;
 use Encode;
+use List::Util qw/min/;
 use TestUtils;
 
 warning_fatal();
@@ -83,6 +84,47 @@ my $data = {
 		is_deeply($J->{listing}, $expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
+}
+
+# max_number_of_files should be triggered with missing files
+for my $n (0..4) {
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my @existing = qw{file2 file3 file4};
+		my @missing = qw{fileA fileB fileC};
+		my @new = qw{file1 file5 file6 file7};
+		
+		$J->{journal_h} = { map { $_ => { relfilename => $_ } } (@existing, @missing) };
+		my $maxfiles = scalar @existing + (scalar @new) + $n;
+		my $n_or_files = min $n, scalar @missing;
+		
+		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
+			mock('_is_file_exists', sub {  $_[1] =~ /file\d$/ });
+
+		(my $mock_find = Test::MockModule->new('File::Find'))->
+			mock('find', sub {
+				my ($args) = @_;
+				$args->{wanted}->() for (map { "$rootdir/$_" } (@new, @existing));
+			});
+			
+		$File::Find::prune = 0;
+		$J->read_files({new=>1, existing=>1, missing=>1}, $maxfiles);
+		
+		my $expected = {
+			missing => [map { {relfilename => $_} } @missing[0..$n_or_files-1]],
+			existing=> [map { {relfilename => $_} } @existing],
+			new =>[map { {relfilename => $_} } @new], 
+		}; 
+		cmp_deeply($J->{listing}{new}, $expected->{new});
+		cmp_deeply($J->{listing}{existing}, $expected->{existing});
+		
+		is scalar @{$J->{listing}{missing}}, $n_or_files;
+		my %m = map { $_ => 1 } @missing;
+		for (@{$J->{listing}{missing}}) {
+			ok delete $m{$_->{relfilename}}, $_->{relfilename};
+		}
+		
+		ok($File::Find::prune == 0);
 }
 
 # max_number_of_files should not be triggered
