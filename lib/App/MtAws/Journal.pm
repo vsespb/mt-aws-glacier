@@ -250,19 +250,19 @@ sub _write_line
 sub read_all_files
 {
 	my ($self) = @_;
-	$self->{allfiles_a} = $self->_read_files('all');
+	$self->{allfiles_a} = $self->_read_files({new => 1, existing=>1});
 }
 
 sub read_new_files
 {
 	my ($self, $max_number_of_files) = @_;
-	$self->{newfiles_a} = $self->_read_files('new', $max_number_of_files);
+	$self->{newfiles_a} = $self->_read_files({new => 1}, $max_number_of_files);
 }
 
 sub read_existing_files
 {
 	my ($self) = @_;
-	$self->{existingfiles_a} = $self->_read_files('existing');
+	$self->{existingfiles_a} = $self->_read_files({existing => 1});
 }
 
 
@@ -347,15 +347,15 @@ sub _can_read_filename_for_mode
 {
 	my ($self, $relfilename, $mode) = @_;
 	my $ok = 0;
-	if ($mode eq 'all') {
+	if ($mode->{new} && $mode->{existing}) {
 		$ok = 1;
-	} elsif ($mode eq 'new') {
+	} elsif ($mode->{new}) {
 		if (!defined($self->{journal_h}->{$relfilename})) {
 			$ok = 1;
 		} else {
 			print "Skip $relfilename\n";
 		}
-	} elsif ($mode eq 'existing') {
+	} elsif ($mode->{existing}) {
 		if (defined($self->{journal_h}->{$relfilename})) {
 			$ok = 1;
 		} else {
