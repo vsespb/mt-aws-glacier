@@ -10,6 +10,7 @@ lib/App/MtAws/ConfigDefinition.pm
 lib/App/MtAws/ConfigEngine.pm
 lib/App/MtAws/CreateVaultJob.pm
 lib/App/MtAws/DeleteVaultJob.pm
+lib/App/MtAws/DownloadInventoryCommand.pm
 lib/App/MtAws/Exceptions.pm
 lib/App/MtAws/FileCreateJob.pm
 lib/App/MtAws/FileFinishJob.pm
@@ -36,6 +37,7 @@ lib/App/MtAws/RetrieveCommand.pm
 lib/App/MtAws/RetrieveInventoryJob.pm
 lib/App/MtAws/SegmentDownloadJob.pm
 lib/App/MtAws/SingleDownloadJob.pm
+lib/App/MtAws/SyncCommand.pm
 lib/App/MtAws/Task.pm
 lib/App/MtAws/TreeHash.pm
 lib/App/MtAws/Utils.pm
@@ -55,6 +57,7 @@ t/integration/config_engine_filters.t
 t/integration/config_engine_leaf.t
 t/integration/config_engine_lwp.t
 t/integration/config_engine_segment_size.t
+t/integration/config_engine_sync_new.t
 t/integration/config_engine_timeout.t
 t/integration/config_engine_token.t
 t/integration/config_engine_upload_file.t
@@ -77,7 +80,9 @@ t/JournalTest.pm
 t/test_cover
 t/TestUtils.pm
 t/unit/cmd_check_local_hash.t
+t/unit/cmd_download_inventory.t
 t/unit/cmd_retrieve.t
+t/unit/cmd_sync.t
 t/unit/config_engine_new.t
 t/unit/config_engine_parse.t
 t/unit/exceptions.t
