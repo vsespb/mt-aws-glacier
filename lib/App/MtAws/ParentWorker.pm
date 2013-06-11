@@ -63,6 +63,8 @@ sub process_task
 				$task_list->{$task->{id}} = $task;
 				send_data($worker->{tochild}, $task->{action}, $task->{id}, $task->{data}, $task->{attachment}) or
 					$self->comm_error;
+			} elsif ($result eq 'done') {
+				return (1, undef);
 			} else {
 				die;
 			}

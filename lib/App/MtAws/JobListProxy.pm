@@ -59,7 +59,8 @@ sub get_task
 			if ($status eq 'wait') {
 				last unless ($maxcnt--);
 			} elsif ($status eq 'done') {
-				confess;
+				$self->do_finish($job->{jobid});
+				redo; # TODO: can optimize here..
 			} else {
 				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
 				$self->{pending}->{$newtask->{id}} = $newtask;
@@ -86,21 +87,28 @@ sub finish_task
 	if ($status eq 'ok'){
 		return ("ok");
 	} elsif ($status eq 'done') {
-		delete $self->{jobs_h}->{$jobid};
-		my $idx = 0;
-		for my $j (@{$self->{jobs_a}}) {
-			if ($j->{jobid} == $task->{jobid}) {
-				splice(@{$self->{jobs_a}}, $idx, 1);
-				last;
-			}
-			++$idx;
-		}
-		if (scalar @{$self->{jobs_a}}) {
-			return 'ok';
-		} else {
-			return 'done';
-		}
+		return $self->do_finish($jobid);
 	}
 }
-	
+
+
+sub do_finish
+{
+	my ($self, $jobid) = @_;
+	delete $self->{jobs_h}->{$jobid};
+	my $idx = 0;
+	for my $j (@{$self->{jobs_a}}) {
+		if ($j->{jobid} == $jobid) {
+			splice(@{$self->{jobs_a}}, $idx, 1);
+			last;
+		}
+		++$idx;
+	}
+	if (scalar @{$self->{jobs_a}}) {
+		return 'ok';
+	} else {
+		return 'done';
+	}
+}
+
 1;
