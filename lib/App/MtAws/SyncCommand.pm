@@ -27,9 +27,12 @@ use Carp;
 use constant ONE_MB => 1024*1024;
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
+use App::MtAws::JobIteratorProxy;
 use App::MtAws::FileCreateJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
+use App::MtAws::Utils;
+use File::stat;
 
 
 sub run
@@ -37,7 +40,14 @@ sub run
 	my ($options, $j) = @_;
 	with_forks !$options->{'dry-run'}, $options, sub {
 		$j->read_journal(should_exist => 0);
-		$j->read_new_files($options->{'max-number-of-files'});
+		
+		my $read_journal_opts = {
+			$options->{'new'} ? ('new' => 1) : (),
+			$options->{'replace-modified'} ? ('existing' => 1) : (),
+			$options->{'delete-removed'} ? ('missing' => 1) : (),
+		};
+		
+		$j->read_files($read_journal_opts, $options->{'max-number-of-files'}); # TODO: sometimes read only 'new' files
 		
 		if ($options->{'dry-run'}) {
 			for (@{ $j->{listing}{new} }) {
@@ -46,18 +56,55 @@ sub run
 			}
 		} else {
 			$j->open_for_write();
+			my @joblist;
+			
 			if ($options->{new}) {
-				my @joblist;
 				for (@{ $j->{listing}{new} }) {
 					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
 					push @joblist, $ft;
 				}
-				if (scalar @joblist) {
-					my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
-					my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-					die unless $R;
-				}
+			}
+
+			if ($options->{'replace-modified'}) {
+				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
+					while (my $rec = pop @{ $j->{listing}{existing} }) {
+						my $relfilename = $rec->{relfilename};
+						my $absfilename = $j->absfilename($relfilename);
+						my $file = $j->{journal_h}->{$relfilename}||confess;
+						my $binaryfilename = binaryfilename $absfilename;
+						if (defined($file->{mtime}) && (my $actual_mtime = stat($binaryfilename)->mtime) != $file->{mtime}) {
+							return App::MtAws::JobProxy->new(job=>
+								App::MtAws::FileCreateJob->new(filename => $absfilename,
+									relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+									finish_cb => sub {
+										App::MtAws::FileListDeleteJob->new(archives => [{
+											archive_id => $j->{journal_h}->{$relfilename}->{archive_id}, relfilename => $relfilename
+										}])
+									})
+							);
+						} else {
+							next;
+						}
+					}
+					return;
+				});
+			}
+			if ($options->{'delete-removed'}) {
+				App::MtAws::JobIteratorProxy->new(iterator => sub {
+					if (my $rec = pop @{ $j->{listing}{missing} }) {
+						App::MtAws::FileListDeleteJob->new(archives => [{
+							archive_id => $j->{journal_h}->{$rec->{relfilename}}->{archive_id}, relfilename => $rec->{relfilename}
+						}]);
+					} else {
+						return;
+					}
+				});
+			}
+			if (scalar @joblist) {
+				my $lt = App::MtAws::JobListProxy->new(z=>1,maxcnt=>10,jobs => \@joblist);
+				my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
+				die unless $R;
 			}
 			$j->close_for_write();
 		}
