@@ -63,8 +63,12 @@ sub get_task
 					return ('wait') unless --$maxcnt;
 				}
 			} elsif ($status eq 'done') {
-				$self->do_finish($job->{jobid});
-				redo; # TODO: can optimize here..
+				my ($s, $t) = $self->do_finish($job->{jobid});
+				if ($s eq 'ok') {
+					redo; # TODO: can optimize here..
+				} else {
+					return ($s, $t); # if done
+				}
 			} else {
 				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
 				$self->{pending}->{$newtask->{id}} = $newtask;
