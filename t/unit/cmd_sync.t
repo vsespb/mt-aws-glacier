@@ -62,7 +62,11 @@ describe "command" => sub {
 		});
 		
 		App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns(order_cb(1))->once;#returns(sub{ is ++shift->{_stage}, 1 })
-		App::MtAws::Journal->expects("read_new_files")->with($options->{'max-number-of-files'})->returns(order_cb(2))->once;
+		App::MtAws::Journal->expects("read_files")->returns(sub {
+			order(2);
+			shift;
+			cmp_deeply [@_], [{new=>1}, $options->{'max-number-of-files'}];
+		})->once;
 		App::MtAws::Journal->expects("open_for_write")->returns(order_cb(3))->once;
 		App::MtAws::Journal->expects("close_for_write")->returns(order_cb(6))->once;
 		
