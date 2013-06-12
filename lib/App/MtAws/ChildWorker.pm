@@ -23,6 +23,7 @@ package App::MtAws::ChildWorker;
 use App::MtAws::LineProtocol;
 use App::MtAws::GlacierRequest;
 use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 use strict;
 use warnings;
 use utf8;
@@ -172,6 +173,29 @@ sub process
 				confess unless $r;
 				$result = { };
 				$console_out = "Deleted vault $data->{name}";
+			} elsif ($action eq 'verify_file') {
+				my $th = App::MtAws::TreeHash->new();
+				my $binaryfilename = binaryfilename $data->{filename};
+				die exception file_is_zero => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
+					filename => $data->{filename}
+						unless -s $binaryfilename;
+						
+				open_file(my $F, $data->{filename}, mode => '<', binary => 1) or
+					die exception upload_file_open_error => "Unable to open task file %string filename% for reading, errno=%errno%",
+						filename => $data->{filename}, errno => $!;
+						
+				$th->eat_file($F);
+				close $F or confess;
+				$th->calc_tree();
+				my $treehash = $th->get_final_hash();
+				
+				if ($treehash eq $data->{treehash}) {
+					$result = { match => 1 };
+					$console_out = "Checked treehash for $data->{filename} - MATCH";
+				} else {
+					$result = { match => 0 };
+					$console_out = "Checked treehash for $data->{filename} - DOES NOT MATCH";
+				}
 			} else {
 				die $action;
 			}

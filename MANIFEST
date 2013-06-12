@@ -17,6 +17,7 @@ lib/App/MtAws/FileFinishJob.pm
 lib/App/MtAws/FileListDeleteJob.pm
 lib/App/MtAws/FileListRetrievalJob.pm
 lib/App/MtAws/FileUploadJob.pm
+lib/App/MtAws/FileVerifyAndUploadJob.pm
 lib/App/MtAws/Filter.pm
 lib/App/MtAws/ForkEngine.pm
 lib/App/MtAws/GlacierRequest.pm

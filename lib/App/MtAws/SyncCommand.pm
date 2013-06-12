@@ -29,6 +29,7 @@ use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
 use App::MtAws::FileCreateJob;
+use App::MtAws::FileVerifyAndUploadJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
 use App::MtAws::Utils;
@@ -75,14 +76,12 @@ sub run
 						my $binaryfilename = binaryfilename $absfilename;
 						if (defined($file->{mtime}) && (my $actual_mtime = stat($binaryfilename)->mtime) != $file->{mtime}) {
 							return App::MtAws::JobProxy->new(job=>
-								App::MtAws::FileCreateJob->new(filename => $absfilename,
+								App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
 									relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
-									finish_cb => sub {
-										App::MtAws::FileListDeleteJob->new(archives => [{
-											archive_id => $j->{journal_h}->{$relfilename}->{archive_id}, relfilename => $relfilename
-										}])
-									})
-							);
+									delete_after_upload => 1,
+									archive_id => $j->{journal_h}->{$relfilename}->{archive_id},
+									treehash => $j->{journal_h}->{$relfilename}->{treehash}
+							));
 						} else {
 							next;
 						}
