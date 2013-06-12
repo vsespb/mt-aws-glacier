@@ -68,6 +68,7 @@ sub run
 			}
 
 			if ($options->{'replace-modified'}) {
+				confess unless $options->{detect};
 				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
 					while (my $rec = pop @{ $j->{listing}{existing} }) {
 						my $relfilename = $rec->{relfilename};
@@ -77,7 +78,7 @@ sub run
 						
 						my $should_upload = 0;
 						
-						my $mtime_differs = $options->{detect} =~ /(^|_)mtime(_|$)/ ? # don't make stat() call if we don't need it
+						my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
 							defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
 							undef;
 						
@@ -94,7 +95,7 @@ sub run
 						} else {
 							confess;
 						}
-						
+
 						if ($should_upload eq 'treehash') {
 							return App::MtAws::JobProxy->new(job=>
 								App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
@@ -122,7 +123,7 @@ sub run
 				});
 			}
 			if ($options->{'delete-removed'}) {
-				App::MtAws::JobIteratorProxy->new(iterator => sub {
+				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
 					if (my $rec = pop @{ $j->{listing}{missing} }) {
 						App::MtAws::FileListDeleteJob->new(archives => [{
 							archive_id => $j->{journal_h}->{$rec->{relfilename}}->{archive_id}, relfilename => $rec->{relfilename}
