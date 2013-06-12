@@ -36,7 +36,7 @@ sub new
     $self->{jobs_a} = [];
     my $i = 1;
     for my $job (@{$self->{jobs}}) {
-    	push @{$self->{jobs_a}}, { jobid => $i, job => $job };
+    	unshift @{$self->{jobs_a}}, { jobid => $i, job => $job };
     	$self->{jobs_h}->{$i} = $job;
     	++$i;
     }
@@ -53,7 +53,7 @@ sub get_task
 {
 	my ($self) = @_;
 	if (scalar @{$self->{jobs_a}}) {
-		my $maxcnt = 30;
+		my $maxcnt = $self->{maxcnt}||30;
 		for my $job (@{$self->{jobs_a}}) {
 			my ($status, $task) = $job->{job}->get_task();
 			if ($status eq 'wait') {
@@ -78,13 +78,15 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	my $jobid = $task->{jobid};
+	my $id = $task->{id};
 	
-	$task->{task}->{result} = $task->{result}; # TODO: move to App::MtAws::ProxyTask
+	$task->pop;
 	
-	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task->{task});
-	delete $self->{pending}->{$task->{id}};
+	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task);
+	delete $self->{pending}->{$id};
 	
 	if ($status eq 'ok'){
+		delete $task->{result};
 		return ("ok");
 	} elsif ($status eq 'done') {
 		return $self->do_finish($jobid);

@@ -29,20 +29,32 @@ sub new
 {
     my ($class, %args) = @_;
     my $self = \%args;
+
+    my $task = $self->{task}||die;
+    my $id = $self->{id}||die;
+    my $jobid = $self->{jobid}||die;
+   
+    $self = $task;
+    
+    $self->{_stack} ||= [];
+    push @{ $self->{_stack} }, { id => $self->{id}, jobid => $self->{jobid} };
+    
+    $self->{id} = $id;
+    $self->{jobid} = $jobid;
+    
     bless $self, $class;
-    $self->{task}||die;
-    $self->{id}||die;
-    $self->{jobid}||die;
-    
-    $self->{task}->{jobid} = $self->{jobid};
-    $self->{action} = $self->{task}->{action};
-    $self->{attachment} = $self->{task}->{attachment};
-    $self->{data} = $self->{task}->{data};
-    $self->{result} = {};
-    
     defined($self->{id})||die;
     return $self;
 }
 
+sub pop
+{
+	my ($self) = @_;
+	my $stack = $self->{_stack};
+	my $s = pop @$stack;
+	$self->{id} = $s->{id};
+	$self->{jobid} = $s->{jobid};
+	$self;
+}
 	
 1;
