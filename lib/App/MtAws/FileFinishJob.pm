@@ -66,7 +66,11 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
-		return ("done");
+		if ($self->{finish_cb}) {
+			return ("ok replace", $self->{finish_cb}->($task));
+		} else {
+			return ("done");
+		}
 	} else {
 		die;
 	}

@@ -91,7 +91,7 @@ sub finish_task
 	my ($self, $task) = @_;
 	delete $self->{uploadparts}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{uploadparts}} == 0) {
-		return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
+		return ("ok replace", App::MtAws::FileFinishJob->new(finish_cb => $self->{finish_cb}, upload_id => $self->{upload_id}, mtime => $self->{mtime}, relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
 	} else {
 		return ("ok");
 	}

@@ -85,6 +85,7 @@ sub finish_task
 	if ($self->{raised}) {
 		return ("ok replace", App::MtAws::FileUploadJob->new(
 			fh => $self->{fh},
+			finish_cb => $self->{finish_cb},
 			relfilename => $self->{relfilename},
 			partsize => $self->{partsize},
 			upload_id => $task->{result}->{upload_id},
