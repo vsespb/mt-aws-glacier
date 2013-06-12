@@ -36,7 +36,7 @@ sub new
     $self->{jobs_a} = [];
     my $i = 1;
     for my $job (@{$self->{jobs}}) {
-    	unshift @{$self->{jobs_a}}, { jobid => $i, job => $job };
+    	push @{$self->{jobs_a}}, { jobid => $i, job => $job };
     	$self->{jobs_h}->{$i} = $job;
     	++$i;
     }
@@ -57,7 +57,7 @@ sub get_task
 		for my $job (@{$self->{jobs_a}}) {
 			my ($status, $task) = $job->{job}->get_task();
 			if ($status eq 'wait') {
-				last unless ($maxcnt--);
+				last unless --$maxcnt;
 			} elsif ($status eq 'done') {
 				$self->do_finish($job->{jobid});
 				redo; # TODO: can optimize here..
@@ -92,7 +92,6 @@ sub finish_task
 		return $self->do_finish($jobid);
 	}
 }
-
 
 sub do_finish
 {
