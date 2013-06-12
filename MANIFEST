@@ -24,6 +24,7 @@ lib/App/MtAws/HttpSegmentWriter.pm
 lib/App/MtAws/InventoryDownloadJob.pm
 lib/App/MtAws/InventoryFetchJob.pm
 lib/App/MtAws/Job.pm
+lib/App/MtAws/JobIteratorProxy.pm
 lib/App/MtAws/JobListProxy.pm
 lib/App/MtAws/JobProxy.pm
 lib/App/MtAws/Journal.pm
