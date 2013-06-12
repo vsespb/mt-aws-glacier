@@ -95,10 +95,10 @@ sub finish_task
 	
 	if ($status eq 'ok'){
 		delete $task->{result};
-		return ("ok");
 	} elsif ($status eq 'done') {
-		return $self->do_finish($jobid);
+		$self->do_finish($jobid);
 	}
+	return ("ok");
 }
 
 sub do_finish
@@ -113,11 +113,7 @@ sub do_finish
 		}
 		++$idx;
 	}
-	if (scalar @{$self->{jobs_a}}) {
-		return 'ok';
-	} else {
-		return 'done';
-	}
+	return 'ok';
 }
 
 1;
