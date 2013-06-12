@@ -57,7 +57,11 @@ sub get_task
 		for my $job (@{$self->{jobs_a}}) {
 			my ($status, $task) = $job->{job}->get_task();
 			if ($status eq 'wait') {
-				last unless --$maxcnt;
+				if ($self->{one_by_one}) {
+					return ('wait');
+				} else {
+					return ('wait') unless --$maxcnt;
+				}
 			} elsif ($status eq 'done') {
 				$self->do_finish($job->{jobid});
 				redo; # TODO: can optimize here..
