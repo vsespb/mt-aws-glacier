@@ -348,7 +348,7 @@ sub child_worker
 				binmode $in;
 				
 				my $chunk_size = 4096;
-				
+
 				$conn->send_basic_header(200);
 				print $conn header_line('Content-Length', $total);
 				print $conn header_line('x-amz-sha256-tree-hash', $archive->{treehash});
@@ -361,10 +361,11 @@ sub child_worker
 			}
 		} elsif ($job->{type} eq 'inventory-retrieval'){
 			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
-			defined($output)||croak;
-			my $resp = HTTP::Response->new(200, "Fine");
-			$resp->content($$output);
-			return $resp;
+			$conn->send_basic_header(200);
+			print $conn header_line('Content-Length', length($$output));
+			$conn->send_crlf;
+			print $conn $$output;
+			return;
 		} else {
 			croak;
 		}
