@@ -36,7 +36,7 @@ sub new
     defined($self->{relfilename})||die;
     $self->{partsize}||die;
     defined($self->{mtime})||die;
-    $self->{upload_id}||die;
+    $self->{upload_id}||confess;
     $self->{fh}||die;
     $self->{all_raised} = 0;
     $self->{position} = 0;
