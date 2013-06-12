@@ -81,11 +81,6 @@ sub wait_worker
 	my @ready;
 	do { @ready = $self->{disp_select}->can_read(); } until @ready || $! != EINTR;
 	for my $fh (@ready) {
-		#if (eof($fh)) {
-		#	$self->{disp_select}->remove($fh);
-		#	die "Unexpeced EOF in Pipe";
-		#	next; 
-		#}
 		my ($pid, undef, $taskid, $data, $resultattachmentref) = get_data($fh);
 		$pid or $self->comm_error;
 		push @{$self->{freeworkers}}, $pid;
@@ -93,14 +88,14 @@ sub wait_worker
 		$task->{result} = $data;
 		$task->{attachmentref} = $resultattachmentref;
 		print "PID $pid $task->{result}->{console_out}\n";
-		my ($result) = $ft->finish_task($task);
-		delete $task_list->{$taskid};
-	
 		if ($task->{result}->{journal_entry}) {
 			confess unless defined $journal;
 			$journal->add_entry($task->{result}->{journal_entry});
 		}
-		  
+
+		delete $task_list->{$taskid};
+		my ($result) = $ft->finish_task($task);
+	
 		if ($result eq 'done') {
 			return ($task->{result}, $task->{attachmentref});
 		} 
