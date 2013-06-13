@@ -43,6 +43,7 @@ sub add
 		}
 	}
 	if (defined($after)) {
+		splice @$self, $after + 1, 0, $o;
 	} else {
 		unshift @$self, $o;
 	}
