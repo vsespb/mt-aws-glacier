@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 137;
+use Test::More tests => 248;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -36,9 +36,11 @@ warning_fatal();
 
 sub object
 {
-	my ($time, $mtime, $filename) = @_;
-	{ time => $time, mtime => $mtime, ($filename ? (filename => $filename) : () )}; 
+	my ($time, $mtime, $filename, $archive_id) = @_;
+	{ time => $time, mtime => $mtime, ($filename ? (filename => $filename) : () ), ($archive_id ? (archive_id => $archive_id) : () )}; 
 }
+
+# _cmp tests
 
 {
 	my $cmp = \&App::MtAws::FileVersions::_cmp;
@@ -54,6 +56,8 @@ sub object
 		is $cmp->(object($_->[0], 456), object($_->[1], 123)), 1, "cmp should work when a.mtime > b.mtime";
 	}
 }
+
+# adding elements tests
 
 for (100, 123, 300) {
 	my $v = App::MtAws::FileVersions->new();
@@ -99,6 +103,61 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 		ok $v->[$i]{time} <= $v->[$i+1]{time}, "$i-th element ($v->[$i]{time}) should be less then next one ($v->[$i+1]{time}), for $_";
 		if ($v->[$i]{time} == $v->[$i+1]{time}) {
 			ok !$v->[$i]{filename} && $v->[$i+1]{filename} eq 'latest', "if everything equal, later added element should go last"
+		}
+	}
+}
+
+# _delete_by_archive_id test
+{
+	my $v = App::MtAws::FileVersions->new();
+	my $aid = 'abc123';
+	$v->add(object(123, undef, undef, $aid));
+	is scalar @$v, 1, "should contain one element";
+	ok $v->delete_by_archive_id($aid);
+	is scalar @$v, 0, "deletion of one element should work";
+}
+
+{
+	sub create_objects
+	{
+		my ($v, $n) = @_;
+		my @filenames;
+		for my $i (1..$_-2) {
+			$v->add(object(200+$i, undef, "a$i", "id$i"));
+			push @filenames, "a$i";
+		}
+		@filenames;
+	}
+	for (2..10) {
+		{
+			my $v = App::MtAws::FileVersions->new();
+			my $aid = 'abc123';
+			$v->add(object(123, undef, 'f1', 'anotherid'));
+			$v->add(object(456, undef, 'f2', $aid));
+			
+			my @filenames = create_objects($v, $_-2);
+			
+			is scalar @$v, $_, "should contain $_ elements";
+			cmp_deeply [map { $_->{filename} } @$v], ['f1', @filenames, 'f2'];
+			ok $v->delete_by_archive_id($aid);
+			is scalar @$v, $_ - 1, "deletion of last element should work in $_-items array";
+			cmp_deeply [map { $_->{filename} } @$v], ['f1', @filenames];
+			ok !$v->delete_by_archive_id('nonexistant');
+		}
+		{
+			my $v = App::MtAws::FileVersions->new();
+			my $aid = 'abc123';
+			$v->add(object(123, undef, 'f1', $aid));
+			$v->add(object(456, undef, 'f2', 'anotherid'));
+			
+			my @filenames = create_objects($v, $_-2);
+			
+			is scalar @$v, $_, "should contain $_ elements";
+			cmp_deeply [map { $_->{filename} } @$v], ['f1', @filenames, 'f2'];
+			ok $v->delete_by_archive_id($aid);
+			is scalar @$v, $_ - 1, "deletion of first element should work in $_-items array";
+			cmp_deeply [map { $_->{filename} } @$v], [@filenames, 'f2'];
+			ok !$v->delete_by_archive_id('nonexistant');
 		}
 	}
 }

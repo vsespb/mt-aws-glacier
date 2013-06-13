@@ -55,6 +55,18 @@ sub all
 	@$self;
 }
 
+sub delete_by_archive_id
+{
+	my ($self, $archive_id) = @_;
+	for (my $i = 0; $i <= $#$self; ++$i) { # O(n) search !
+		if ($self->[$i]{archive_id} eq $archive_id) {
+			splice @$self, $i, 1;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 # if mtime defined for both a,b - compare mtime. otherwise compare time
 # if mtime equal, compare time too
 sub _cmp
