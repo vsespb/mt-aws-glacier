@@ -64,6 +64,9 @@ sub _cmp
 	# when $a->{mtime} <=> $b->{mtime} returns 1 or -1, we use that
 	( defined($a->{mtime}) && defined($b->{mtime}) && ($a->{mtime} <=> $b->{mtime}) ) ||
 	( $a->{'time'} <=> $b->{'time'} );
+	
+	# possible alternative formula:
+	#(defined($a->{mtime}) ? $a->{mtime} : $a->{time}) <=> (defined($b->{mtime}) ? $b->{mtime} : $b->{time})
 }
 
 1;

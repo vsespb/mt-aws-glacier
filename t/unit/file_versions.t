@@ -107,11 +107,11 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 # but I still implement this to define how files can be sorted in practice
 {
 	my $v = App::MtAws::FileVersions->new();
-	$v->add(object(3, 123, 'f1'));
-	$v->add(object(4, undef, 'withoutname'));
-	$v->add(object(2, 456, 'f2'));
+	$v->add(object(7, undef, 'f1'));
+	$v->add(object(8, 5, 'f2')); # loaded later tha f1, but we know mtime of f2 is before f1 is loaded
+	# anyway we ignore mtime and think who is later loaded is older
 	
-	cmp_deeply [map { $_->{filename} } @$v], [qw/f1 f2 withoutname/], "objects without mtime can be on top"
+	cmp_deeply [map { $_->{filename} } @$v], [qw/f1 f2/], "objects without mtime can be on top"
 	
 }
 
