@@ -55,7 +55,7 @@ sub _find
 				return $mid;
 			}
 			$start = $mid + 1;
-		} elsif ($r < 0) {
+		} else { # $r < 0
 			$end = $mid - 1;
 		}
 	}
