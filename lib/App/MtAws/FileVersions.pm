@@ -35,6 +35,17 @@ sub new
 sub add
 {
 	my ($self, $o) = @_;
+	my $after = $self->_find($o);
+	if (defined($after)) {
+		splice @$self, $after + 1, 0, $o;
+	} else {
+		unshift @$self, $o;
+	}
+}
+
+sub _find
+{
+	my ($self, $o) = @_;
 	my $after = undef;
 	for (my $i = $#$self; $i >= 0; --$i) { # TODO: need implement binary search. insertion order is now random
 		if (_cmp($self->[$i], $o) <= 0) {
@@ -42,11 +53,7 @@ sub add
 			last;
 		}
 	}
-	if (defined($after)) {
-		splice @$self, $after + 1, 0, $o;
-	} else {
-		unshift @$self, $o;
-	}
+	$after;
 }
 
 sub all
