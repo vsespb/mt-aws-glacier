@@ -67,6 +67,7 @@ my $build = Module::Build->new(
 		'constant' => 0,
 		'lib' => 0,
 		'strict' => 0,
+		'integer' => 0,
 		'utf8' => 0,
 		'warnings' => 0,
 		'FindBin' => 0,

@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 248;
+use Test::More tests => 2221;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -57,11 +57,111 @@ sub object
 	}
 }
 
+# _mid tests
+
+{
+	my $mid = \&App::MtAws::FileVersions::_mid;
+	for my $base (0..3) {
+		is $mid->($base, $base+0), $base+0;
+		is $mid->($base, $base+1), $base+0;
+		is $mid->($base, $base+2), $base+1;
+		is $mid->($base, $base+3), $base+1;
+		is $mid->($base, $base+4), $base+2;
+		is $mid->($base, $base+5), $base+2;
+	}
+}
+
+# _find tests
+
+{
+	my $v = bless [], 'App::MtAws::FileVersions';
+	ok ! defined $v->_find(object(5)), '_find 0 elements, should return before everything';
+}
+
+{
+	my $v = bless [object(10)], 'App::MtAws::FileVersions';
+	ok ! defined $v->_find(object(5)), '_find 1 element, should return before everything';
+	is $v->_find(object(15)), 0, '_find 1 element, should return after 0-th';
+	is $v->_find(object(10)), 0, '_find 1 element, should return after 0-th if elements are equal';
+}
+
+{
+	my $v = bless [object(10), object(20)], 'App::MtAws::FileVersions';
+	ok ! defined $v->_find(object(5)), '_find 2 element, should return before everything';
+	is $v->_find(object(10)), 0, '_find 2 element, should return after 0-th if elements are equal';
+	is $v->_find(object(15)), 0, '_find 2 element, should return after 0-th';
+
+	is $v->_find(object(20)), 1, '_find 2 element, should return after 1st if elements are equal';
+	is $v->_find(object(25)), 1, '_find 2 element, should return after 1st';
+}
+
+# same tests as above, but for N elements
+for (1..10) {
+	my @elements = map { $_* 10 } 1..$_;
+	my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
+	
+	for (my $i = 0; $i <= $#elements; ++$i) {
+		is $v->_find(object($elements[$i])), $i, "find $_ elements, should return after $i";
+		if ($i > 0) {
+			is $v->_find(object($elements[$i]-3)), $i - 1, "find $_ elements, should return after ".($i-1)." for ".($elements[$i]-3);
+		} else {
+			ok ! defined $v->_find(object($elements[$i]-3)), "find $_ elements, should return before everything for ".($elements[$i]-3);
+		}
+		if ($i == $#elements) {
+			is $v->_find(object($elements[$i]+3)), $i, "find $_ elements, should return after ".($i)." for ".($elements[$i]+3);
+		}
+	}
+}
+
+{
+	my $n = 3;
+	for my $before (1..$n) { for my $same (1..$n) { for my $after (1..$n) {
+		my @elements = ( (map { $_* 10 } 1..$before), (map { ($before + 1) * 10 } 1..$same), (map { ($before + 1) * 10 + $_* 10 } 1..$after) );
+		my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
+		for (my $i = 0; $i <= $#elements; ++$i) {
+			my $after = $v->_find(object($elements[$i]));
+			ok $elements[$after] <= $elements[$i], "$after: elements[$after] <= elements[$i] $elements[$after] <= $elements[$i]";
+			if ($after+1 <= $#elements) {
+				ok $elements[$after+1] > $elements[$i], "$after: elements[".($after+1)."] <= elements[$i] ".$elements[($after+1)]." <= $elements[$i]";
+			}
+			for (my $j = 0; $j <= $#elements; ++$j) {
+				if (!defined $after) {
+					ok $elements[$j] > $elements[$i], "$after: elements[$j] > elements[$i] $elements[$j] > $elements[$i]";
+				} elsif ($j > $after) {
+					ok $elements[$j] > $elements[$i], "$after: elements[$j] > elements[$i] $elements[$j] > $elements[$i]";
+					last;
+				} else {
+					ok $elements[$j] <= $elements[$i], "$after: elements[$j] <= elements[$i] $elements[$j] <= $elements[$i]";
+				}
+			}
+			my $after2 = $v->_find(object($elements[$i]-3));
+			if (defined $after2) {
+				ok $elements[$after2] <= $elements[$i]-3, "$after: elements[$after2] <= elements[$i]-3 $elements[$after2] <= ".($elements[$i]-3);
+				if ($after2+1 <= $#elements) {
+					ok $elements[$after2+1] > $elements[$i]-3, "$after: elements[".($after2+1)."] <= elements[$i]-3 ".$elements[($after2+1)]." <= ".($elements[$i]-3);
+				}
+			} else {
+				ok $elements[0] > $elements[$i]-3, "$after: elements[0] <= elements[$i]-3 $elements[0] <= ".($elements[$i]-3);
+			}
+			for (my $j = 0; $j <= $#elements; ++$j) {
+				if (!defined $after2) {
+					ok $elements[$j] > $elements[$i]-3, "$after: elements[$j] > elements[$i]-3 $elements[$j] > ".($elements[$i]-3);
+				} elsif ($j > $after2) {
+					ok $elements[$j] > $elements[$i]-3, "$after: elements[$j] > elements[$i]-3 $elements[$j] > ".($elements[$i]-3);
+					last;
+				} else {
+					ok $elements[$j] <= $elements[$i]-3, "$after: elements[$j] <= elements[$i]-3 $elements[$j] <= ".($elements[$i]-3);
+				}
+			}
+		}
+	}}}
+}
+exit;
 # adding elements tests
 
 for (100, 123, 300) {
 	my $v = App::MtAws::FileVersions->new();
-	my $o1 = object(123, undef);
+	my $o1 = object(123);
 	my $o2 = object($_, undef, 'latest');
 	$v->add($o1);
 	$v->add($o2);
@@ -74,9 +174,9 @@ for (100, 123, 300) {
 
 for (100, 300, 500) {
 	my $v = App::MtAws::FileVersions->new();
-	my $o1 = object(123, undef);
-	my $o2 = object(456, undef);
-	my $o3 = object($_, undef);
+	my $o1 = object(123);
+	my $o2 = object(456);
+	my $o3 = object($_);
 	$v->add($o1);
 	$v->add($o2);
 	$v->add($o3);
@@ -89,7 +189,7 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	my $v = App::MtAws::FileVersions->new();
 	my @objects;
 	for my $el ((200, 210, 220, 230, 310, 320, 330)) {
-		my $o = object($el, undef);
+		my $o = object($el);
 		push @objects, $o;
 		$v->add($o);
 	}

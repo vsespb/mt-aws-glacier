@@ -46,14 +46,26 @@ sub add
 sub _find
 {
 	my ($self, $o) = @_;
-	my $after = undef;
-	for (my $i = $#$self; $i >= 0; --$i) { # TODO: need implement binary search. insertion order is now random
-		if (_cmp($self->[$i], $o) <= 0) {
-			$after = $i;
-			last;
+	my ($start, $end) = (0, $#$self);
+	while ($end >= $start) {
+		my $mid = _mid($start, $end);
+		my $r = _cmp($o, $self->[$mid]);
+		if ($r >= 0) {
+			if ($mid == $end || _cmp($o, $self->[$mid+1]) < 0) {
+				return $mid;
+			}
+			$start = $mid + 1;
+		} elsif ($r < 0) {
+			$end = $mid - 1;
 		}
 	}
-	$after;
+	return undef;
+}
+
+sub _mid
+{
+	use integer;
+	($_[0]+$_[1])/2;
 }
 
 sub all
