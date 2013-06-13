@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 2221;
+use Test::More tests => 995;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -124,16 +124,6 @@ for (1..10) {
 			if ($after+1 <= $#elements) {
 				ok $elements[$after+1] > $elements[$i], "$after: elements[".($after+1)."] <= elements[$i] ".$elements[($after+1)]." <= $elements[$i]";
 			}
-			for (my $j = 0; $j <= $#elements; ++$j) {
-				if (!defined $after) {
-					ok $elements[$j] > $elements[$i], "$after: elements[$j] > elements[$i] $elements[$j] > $elements[$i]";
-				} elsif ($j > $after) {
-					ok $elements[$j] > $elements[$i], "$after: elements[$j] > elements[$i] $elements[$j] > $elements[$i]";
-					last;
-				} else {
-					ok $elements[$j] <= $elements[$i], "$after: elements[$j] <= elements[$i] $elements[$j] <= $elements[$i]";
-				}
-			}
 			my $after2 = $v->_find(object($elements[$i]-3));
 			if (defined $after2) {
 				ok $elements[$after2] <= $elements[$i]-3, "$after: elements[$after2] <= elements[$i]-3 $elements[$after2] <= ".($elements[$i]-3);
@@ -143,20 +133,10 @@ for (1..10) {
 			} else {
 				ok $elements[0] > $elements[$i]-3, "$after: elements[0] <= elements[$i]-3 $elements[0] <= ".($elements[$i]-3);
 			}
-			for (my $j = 0; $j <= $#elements; ++$j) {
-				if (!defined $after2) {
-					ok $elements[$j] > $elements[$i]-3, "$after: elements[$j] > elements[$i]-3 $elements[$j] > ".($elements[$i]-3);
-				} elsif ($j > $after2) {
-					ok $elements[$j] > $elements[$i]-3, "$after: elements[$j] > elements[$i]-3 $elements[$j] > ".($elements[$i]-3);
-					last;
-				} else {
-					ok $elements[$j] <= $elements[$i]-3, "$after: elements[$j] <= elements[$i]-3 $elements[$j] <= ".($elements[$i]-3);
-				}
-			}
 		}
 	}}}
 }
-exit;
+
 # adding elements tests
 
 for (100, 123, 300) {
