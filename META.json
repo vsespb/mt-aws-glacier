@@ -4,7 +4,7 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4005, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Module::Build version 0.4005, CPAN::Meta::Converter version 2.131560",
    "license" : [
       "open_source"
    ],
@@ -63,6 +63,7 @@
             "Time::localtime" : "0",
             "bytes" : "0",
             "constant" : "0",
+            "integer" : "0",
             "lib" : "0",
             "perl" : "5.008008",
             "strict" : "0",
@@ -77,156 +78,133 @@
          "version" : "0.962"
       },
       "App::MtAws::CheckLocalHashCommand" : {
-         "file" : "lib/App/MtAws/CheckLocalHashCommand.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/CheckLocalHashCommand.pm"
       },
       "App::MtAws::ChildWorker" : {
-         "file" : "lib/App/MtAws/ChildWorker.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/ChildWorker.pm"
       },
       "App::MtAws::ConfigDefinition" : {
-         "file" : "lib/App/MtAws/ConfigDefinition.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/ConfigDefinition.pm"
       },
       "App::MtAws::ConfigEngine" : {
-         "file" : "lib/App/MtAws/ConfigEngine.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/ConfigEngine.pm"
       },
       "App::MtAws::CreateVaultJob" : {
-         "file" : "lib/App/MtAws/CreateVaultJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/CreateVaultJob.pm"
       },
       "App::MtAws::DeleteVaultJob" : {
-         "file" : "lib/App/MtAws/DeleteVaultJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/DeleteVaultJob.pm"
+      },
+      "App::MtAws::DownloadInventoryCommand" : {
+         "file" : "lib/App/MtAws/DownloadInventoryCommand.pm"
       },
       "App::MtAws::Exceptions" : {
-         "file" : "lib/App/MtAws/Exceptions.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/Exceptions.pm"
       },
       "App::MtAws::FileCreateJob" : {
-         "file" : "lib/App/MtAws/FileCreateJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/FileCreateJob.pm"
       },
       "App::MtAws::FileFinishJob" : {
-         "file" : "lib/App/MtAws/FileFinishJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/FileFinishJob.pm"
       },
       "App::MtAws::FileListDeleteJob" : {
-         "file" : "lib/App/MtAws/FileListDeleteJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/FileListDeleteJob.pm"
       },
       "App::MtAws::FileListRetrievalJob" : {
-         "file" : "lib/App/MtAws/FileListRetrievalJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/FileListRetrievalJob.pm"
       },
       "App::MtAws::FileUploadJob" : {
-         "file" : "lib/App/MtAws/FileUploadJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/FileUploadJob.pm"
+      },
+      "App::MtAws::FileVerifyAndUploadJob" : {
+         "file" : "lib/App/MtAws/FileVerifyAndUploadJob.pm"
+      },
+      "App::MtAws::FileVersions" : {
+         "file" : "lib/App/MtAws/FileVersions.pm"
       },
       "App::MtAws::Filter" : {
-         "file" : "lib/App/MtAws/Filter.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/Filter.pm"
       },
       "App::MtAws::ForkEngine" : {
-         "file" : "lib/App/MtAws/ForkEngine.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/ForkEngine.pm"
       },
       "App::MtAws::GlacierRequest" : {
-         "file" : "lib/App/MtAws/GlacierRequest.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/GlacierRequest.pm"
       },
       "App::MtAws::HttpFileWriter" : {
-         "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/HttpSegmentWriter.pm"
       },
       "App::MtAws::HttpMemoryWriter" : {
-         "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/HttpSegmentWriter.pm"
       },
       "App::MtAws::HttpSegmentWriter" : {
-         "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/HttpSegmentWriter.pm"
       },
       "App::MtAws::HttpWriter" : {
-         "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/HttpSegmentWriter.pm"
       },
       "App::MtAws::InventoryDownloadJob" : {
-         "file" : "lib/App/MtAws/InventoryDownloadJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/InventoryDownloadJob.pm"
       },
       "App::MtAws::InventoryFetchJob" : {
-         "file" : "lib/App/MtAws/InventoryFetchJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/InventoryFetchJob.pm"
       },
       "App::MtAws::Job" : {
-         "file" : "lib/App/MtAws/Job.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/Job.pm"
+      },
+      "App::MtAws::JobIteratorProxy" : {
+         "file" : "lib/App/MtAws/JobIteratorProxy.pm"
       },
       "App::MtAws::JobListProxy" : {
-         "file" : "lib/App/MtAws/JobListProxy.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/JobListProxy.pm"
       },
       "App::MtAws::JobProxy" : {
-         "file" : "lib/App/MtAws/JobProxy.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/JobProxy.pm"
       },
       "App::MtAws::Journal" : {
-         "file" : "lib/App/MtAws/Journal.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/Journal.pm"
       },
       "App::MtAws::LineProtocol" : {
-         "file" : "lib/App/MtAws/LineProtocol.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/LineProtocol.pm"
       },
       "App::MtAws::MetaData" : {
-         "file" : "lib/App/MtAws/MetaData.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/MetaData.pm"
       },
       "App::MtAws::ParentWorker" : {
-         "file" : "lib/App/MtAws/ParentWorker.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/ParentWorker.pm"
       },
       "App::MtAws::ProxyTask" : {
-         "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/ProxyTask.pm"
       },
       "App::MtAws::RetrievalDownloadJob" : {
-         "file" : "lib/App/MtAws/RetrievalDownloadJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/RetrievalDownloadJob.pm"
       },
       "App::MtAws::RetrievalFetchJob" : {
-         "file" : "lib/App/MtAws/RetrievalFetchJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/RetrievalFetchJob.pm"
       },
       "App::MtAws::RetrieveCommand" : {
-         "file" : "lib/App/MtAws/RetrieveCommand.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/RetrieveCommand.pm"
       },
       "App::MtAws::RetrieveInventoryJob" : {
-         "file" : "lib/App/MtAws/RetrieveInventoryJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/RetrieveInventoryJob.pm"
       },
       "App::MtAws::SegmentDownloadJob" : {
-         "file" : "lib/App/MtAws/SegmentDownloadJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/SegmentDownloadJob.pm"
       },
       "App::MtAws::SingleDownloadJob" : {
-         "file" : "lib/App/MtAws/SingleDownloadJob.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/SingleDownloadJob.pm"
+      },
+      "App::MtAws::SyncCommand" : {
+         "file" : "lib/App/MtAws/SyncCommand.pm"
       },
       "App::MtAws::Task" : {
-         "file" : "lib/App/MtAws/Task.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/Task.pm"
       },
       "App::MtAws::TreeHash" : {
-         "file" : "lib/App/MtAws/TreeHash.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/TreeHash.pm"
       },
       "App::MtAws::Utils" : {
-         "file" : "lib/App/MtAws/Utils.pm",
-         "version" : 0
+         "file" : "lib/App/MtAws/Utils.pm"
       }
    },
    "release_status" : "stable",
