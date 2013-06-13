@@ -35,29 +35,28 @@ sub new
 sub add
 {
 	my ($self, $o) = @_;
-	my $before = undef;
-	for (my $i = 0; $i <= $#$self; ++$i) { # TODO: optimize, usually we add elements which are greater than latest
-		if (_cmp($self->[$i], $o) > 0) {
-			$before = $i;
+	my $after = undef;
+	for (my $i = $#$self; $i >= 0; --$i) {
+		if (_cmp($self->[$i], $o) <= 0) {
+			$after = $i;
 			last;
 		}
 	}
-	if (defined($before)) {
-		for (my $i = $#$self; $i >= $before; --$i) {
+	if (defined($after)) {
+		for (my $i = $#$self; $i > $after; --$i) {
 			$self->[$i+1] = $self->[$i];
 		}
-		$self->[$before] = $o;
+		$self->[$after+1] = $o;
 	} else {
-		push @$self, $o;
+		unshift @$self, $o;
 	}
 }
 
 sub _cmp
 {
 	my ($a, $b) = @_;
-	my $r = ( defined($a->{mtime}) && defined($b->{mtime}) && ($a->{mtime} != $b->{mtime}) && ($a->{mtime} <=> $b->{mtime}) ) ||
+	( defined($a->{mtime}) && defined($b->{mtime}) && ($a->{mtime} <=> $b->{mtime}) ) ||
 	( $a->{'time'} <=> $b->{'time'} );
-	$r 
 }
 
 1;
