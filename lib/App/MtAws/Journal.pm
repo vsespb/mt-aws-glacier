@@ -45,7 +45,7 @@ sub new
 	
 	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
-	$self->{versions_h} = {};
+	$self->{archive_h} = {};
 	
 	$self->{used_versions} = {};
 	$self->{output_version} = 'B' unless defined($self->{output_version});
@@ -86,6 +86,7 @@ sub read_journal
 		}
 		close $F or confess;
 	}
+	$self->_index_archives_as_files();
 	return;
 }
 
@@ -133,7 +134,8 @@ sub process_line
 		}
 		
 		
-		$self->_add_file($relfilename, {
+		$self->_add_archive({
+			relfilename => $relfilename,
 			time => $time,
 			archive_id => $archive_id,
 			size => $size,
@@ -142,7 +144,7 @@ sub process_line
 		});
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 	} elsif (($ver, $time, $archive_id, $relfilename) = $line =~ /^([ABC])\t([0-9]{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
-		$self->_delete_file($relfilename); # TODO avoid stuff like $1 $2 $3 etc
+		$self->_delete_archive($archive_id); # TODO avoid stuff like $1 $2 $3 etc
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 	} elsif (($ver, $time, $archive_id, $job_id) = $line =~ /^([ABC])\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
 		$self->_retrieve_job($time, $archive_id, $job_id);
@@ -153,8 +155,8 @@ sub process_line
 	} elsif (($time, $archive_id, $size, $treehash, $relfilename) =
 		$line =~ /^([0-9]{1,20}) CREATED (\S+) ([0-9]{1,20}) (\S+) (.*?)$/) {
 		confess "invalid filename" unless is_relative_filename($relfilename);
-		#die if $self->{journal_h}->{$relfilename};
-		$self->_add_file($relfilename, {
+		$self->_add_archive({
+			relfilename => $relfilename,
 			time => $time,
 			mtime => undef,
 			archive_id => $archive_id,
@@ -163,7 +165,7 @@ sub process_line
 		});
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} elsif ($line =~ /^[0-9]{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
-		$self->_delete_file($2);
+		$self->_delete_archive($1);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} elsif (($time, $archive_id) = $line =~ /^([0-9]{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
 		$self->_retrieve_job($time, $archive_id);
@@ -180,9 +182,26 @@ sub process_line
 	}
 }
 
-sub _add_file
+sub _add_archive
 {
-	my ($self, $relfilename, $args) = @_;
+	my ($self, $args) = @_;
+	if (!$self->{filter} || $self->{filter}->check_filenames($args->{relfilename})) {
+		confess "duplicate entry" if $self->{archive_h}{$args->{archive_id}};
+		$self->{archive_h}{$args->{archive_id}} = $args;
+	}
+}
+
+sub _delete_archive
+{
+	my ($self, $archive_id) = @_;
+	$self->{archive_h}{$archive_id} or confess "archive $archive_id not found in archive_h"; # TODO: put it to backlog, process later?
+	delete $self->{archive_h}{$archive_id};
+}
+
+sub _add_filename
+{
+	my ($self, $args) = @_;
+	my $relfilename = $args->{relfilename};
 	if ($self->{journal_h}{$relfilename}) {
 		if (ref $self->{journal_h}{$relfilename} eq ref {}) {
 			my $v = App::MtAws::FileVersions->new();
@@ -194,17 +213,13 @@ sub _add_file
 		}
 	} else {
 		$self->{journal_h}{$relfilename} = $args
-			if (!$self->{filter} || $self->{filter}->check_filenames($relfilename));
 	}
-	
 }
 
-sub _delete_file
+sub _index_archives_as_files
 {
-	my ($self, $relfilename) = @_;
-	delete $self->{journal_h}->{$relfilename}
-		if $self->{journal_h}->{$relfilename} && (!$self->{filter} || $self->{filter}->check_filenames($relfilename));
-		# TODO: exception or warning if $files->{$2}
+	my ($self) = @_;
+	$self->_add_filename($_) for (values %{$self->{archive_h}});
 }
 
 sub _retrieve_job

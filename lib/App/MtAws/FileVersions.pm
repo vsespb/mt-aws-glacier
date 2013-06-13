@@ -36,7 +36,7 @@ sub add
 {
 	my ($self, $o) = @_;
 	my $after = undef;
-	for (my $i = $#$self; $i >= 0; --$i) { # TODO: maybe implement binary insertion sort? however we usually push to the end..
+	for (my $i = $#$self; $i >= 0; --$i) { # TODO: need implement binary search. insertion order is now random
 		if (_cmp($self->[$i], $o) <= 0) {
 			$after = $i;
 			last;
@@ -55,6 +55,7 @@ sub all
 	@$self;
 }
 
+# TODO: NOT USED
 sub delete_by_archive_id
 {
 	my ($self, $archive_id) = @_;

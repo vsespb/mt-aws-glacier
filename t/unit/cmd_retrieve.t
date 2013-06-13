@@ -74,6 +74,7 @@ require App::MtAws::RetrieveCommand;
 		$J->{last_read_time} = $data->{'time'} + 10;
 	
 		my $d =  {
+			relfilename => $relfilename,
 			time => $data->{'time'} - 20,
 			archive_id => $data->{archive_id},
 			size => $data->{size},
@@ -81,8 +82,8 @@ require App::MtAws::RetrieveCommand;
 			treehash => $data->{treehash},
 		};
 			
-		$J->_add_file($relfilename, $d);	
-		#$J->_retrieve_job($data->{'time'} - 10, $data->{archive_id}, $data->{job_id});
+		$J->_add_archive($d);
+		$J->_index_archives_as_files();	
 		
 		cmp_deeply [App::MtAws::RetrieveCommand::get_file_list($options, $J)],
 			[{archive_id => $data->{archive_id}, relfilename => $relfilename, filename => "${rootdir}/$relfilename"}], 'should work';
@@ -93,6 +94,7 @@ require App::MtAws::RetrieveCommand;
 		$J->{last_read_time} = $data->{'time'} + 10;
 	
 		my $d =  {
+			relfilename => $relfilename,
 			time => $data->{'time'} - 20,
 			archive_id => $data->{archive_id},
 			size => $data->{size},
@@ -100,7 +102,8 @@ require App::MtAws::RetrieveCommand;
 			treehash => $data->{treehash},
 		};
 			
-		$J->_add_file($relfilename, $d);	
+		$J->_add_archive($d);
+		$J->_index_archives_as_files();	
 		
 		open F, ">", "${rootdir}/$relfilename";
 		close F;
@@ -113,6 +116,7 @@ require App::MtAws::RetrieveCommand;
 		$J->{last_read_time} = $data->{'time'} + 10;
 	
 		my $d =  {
+			relfilename => $relfilename,
 			time => $data->{'time'} - 20,
 			archive_id => $data->{archive_id},
 			size => $data->{size},
@@ -120,7 +124,8 @@ require App::MtAws::RetrieveCommand;
 			treehash => $data->{treehash},
 		};
 			
-		$J->_add_file($relfilename, $d);	
+		$J->_add_archive($d);
+		$J->_index_archives_as_files();	
 		$J->_retrieve_job($data->{'time'} - 10, $data->{archive_id}, $data->{job_id});
 		
 		is scalar App::MtAws::RetrieveCommand::get_file_list($options, $J), 0, "should skip already retrieved files";
@@ -141,6 +146,7 @@ require App::MtAws::RetrieveCommand;
 		
 		for (1..10) {
 			my $d =  {
+				relfilename => $relfilename."$_",
 				time => $data->{'time'} - 20,
 				archive_id => $data->{archive_id}."$_",
 				size => $data->{size},
@@ -148,8 +154,9 @@ require App::MtAws::RetrieveCommand;
 				treehash => $data->{treehash},
 			};
 				
-			$J->_add_file($relfilename."$_", $d);
-		}	
+			$J->_add_archive($d);
+		}
+		$J->_index_archives_as_files();
 		
 		is scalar App::MtAws::RetrieveCommand::get_file_list($options, $J), $max, "should respect max-number-of-files for $max";
 	}
@@ -169,6 +176,7 @@ require App::MtAws::RetrieveCommand;
 	
 	for (1..9) {
 		my $d =  {
+			relfilename => $relfilename."$_",
 			time => $data->{'time'} - 20,
 			archive_id => $data->{archive_id}."$_",
 			size => $data->{size},
@@ -176,12 +184,13 @@ require App::MtAws::RetrieveCommand;
 			treehash => $data->{treehash},
 		};
 			
-		$J->_add_file($relfilename."$_", $d);
+		$J->_add_archive($d);
 		if ($_ % 2 != 0) {
 			open F, ">", "${rootdir}/$relfilename$_";
 			close F;
 		}
 	}	
+	$J->_index_archives_as_files();
 	
 	for (App::MtAws::RetrieveCommand::get_file_list($options, $J)) {
 		my ($n) = $_->{relfilename} =~ /(\d)$/;
@@ -202,6 +211,7 @@ require App::MtAws::RetrieveCommand;
 	
 	for (1..9) {
 		my $d =  {
+			relfilename => $relfilename."$_",
 			time => $data->{'time'} - 20,
 			archive_id => $data->{archive_id}."$_",
 			size => $data->{size},
@@ -209,9 +219,10 @@ require App::MtAws::RetrieveCommand;
 			treehash => $data->{treehash},
 		};
 			
-		$J->_add_file($relfilename."$_", $d);
+		$J->_add_archive($d);
 		$J->_retrieve_job($data->{'time'} - 10, $data->{archive_id}."$_", $data->{job_id}."$_") if $_ % 2 != 0;
 	}	
+	$J->_index_archives_as_files();
 	
 	for (App::MtAws::RetrieveCommand::get_file_list($options, $J)) {
 		my ($n) = $_->{archive_id} =~ /(\d)$/;

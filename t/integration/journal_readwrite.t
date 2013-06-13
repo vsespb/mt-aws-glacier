@@ -179,17 +179,18 @@ sub test_all_ok
 		{
 				my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		
-				my ($args, $filename);
+				my ($args);
 				
 				(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-					mock('_add_file', sub {	(undef, $filename, $args) = @_;	});
+					mock('_add_filename', sub {	(undef, $args) = @_;	});
 				
 				$J->process_line("$ver\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
+				$J->_index_archives_as_files();
 				ok($args);
 				ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
 				ok ( ( $data->{_mtime_should_be_undef} && !defined($args->{mtime}) )
 					or ( !$data->{_mtime_should_be_undef} && $data->{mtime} eq $args->{mtime} ) );
-				ok( $J->absfilename($filename) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
+				ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
 				is_deeply($J->{used_versions}, {$ver=>1});
 		}
 		
@@ -197,14 +198,14 @@ sub test_all_ok
 		{
 				my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 		
-				my ($filename);
+				my ($archive_id);
 				
 				(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-					mock('_delete_file', sub {	(undef, $filename) = @_;	});
+					mock('_delete_archive', sub {	(undef, $archive_id) = @_;	});
 				
 				$J->process_line("$ver\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
-				ok(defined $filename);
-				ok($filename eq $data->{relfilename});
+				ok(defined $archive_id);
+				ok($archive_id eq $data->{archive_id});
 				is_deeply($J->{used_versions}, {$ver=>1});
 		}
 	
@@ -235,15 +236,16 @@ sub test_all_ok
 	{
 			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
-			my ($args, $filename);
+			my ($args);
 			
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_add_file', sub {	(undef, $filename, $args) = @_;	});
+				mock('_add_filename', sub {	(undef, $args) = @_;	});
 			
 			$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $data->{relfilename}");
+			$J->_index_archives_as_files();
 			ok($args);
 			ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
-			ok( $J->absfilename($filename) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
+			ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
 			
 			is_deeply($J->{used_versions}, {'0'=>1});
 	}
@@ -252,14 +254,14 @@ sub test_all_ok
 	{
 			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 	
-			my ($filename);
+			my ($archive_id);
 			
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_delete_file', sub {	(undef, $filename) = @_;	});
+				mock('_delete_archive', sub {	(undef, $archive_id) = @_;	});
 			
 			$J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}");
-			ok(defined $filename);
-			ok($filename eq $data->{relfilename});
+			ok(defined $archive_id);
+			ok($archive_id eq $data->{archive_id});
 			is_deeply($J->{used_versions}, {'0'=>1});
 	}
 	
@@ -304,7 +306,7 @@ sub test_all_fails_for_create_A
 			my $called = 0;
 			
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_add_file', sub {	$called = 1 });
+				mock('_add_archive', sub {	$called = 1 });
 			
 			my %D;
 			$D{$_} = "\t" for (1..7);
@@ -343,7 +345,7 @@ sub test_all_fails_for_create_07
 			my $called = 0;
 			
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_add_file', sub {	$called = 1});
+				mock('_add_archive', sub {	$called = 1});
 			
 			my %D;
 			$D{$_} = ' ' for (1..5);
@@ -377,7 +379,7 @@ sub test_all_fails_for_delete
 			my $called = 0;
 			
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_delete_file', sub {	$called = 1});
+				mock('_delete_archive', sub {	$called = 1});
 			
 			ok ! defined eval { $J->process_line("$ver\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}"); 1; };
 			ok (! $called);
@@ -396,7 +398,7 @@ sub test_all_fails_for_delete
 			my $called = 0;
 			
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_delete_file', sub {	$called = 1 });
+				mock('_delete_archive', sub {	$called = 1 });
 			
 			ok ! defined eval { $J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}"); 1; };
 			ok(! $called);
