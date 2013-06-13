@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 995;
+use Test::More tests => 1361;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -113,12 +113,14 @@ for (1..10) {
 	}
 }
 
+# same "stresstest", but some elements have repeations
 {
-	my $n = 3;
-	for my $before (1..$n) { for my $same (1..$n) { for my $after (1..$n) {
+	for my $before (1..4) { for my $same (1..4) { for my $after (1..3) {
 		my @elements = ( (map { $_* 10 } 1..$before), (map { ($before + 1) * 10 } 1..$same), (map { ($before + 1) * 10 + $_* 10 } 1..$after) );
 		my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
+		my %seen;
 		for (my $i = 0; $i <= $#elements; ++$i) {
+			next if $seen{$elements[$i]}++; # we have some repetions (array produced with $same)
 			my $after = $v->_find(object($elements[$i]));
 			ok $elements[$after] <= $elements[$i], "$after: elements[$after] <= elements[$i] $elements[$after] <= $elements[$i]";
 			if ($after+1 <= $#elements) {
