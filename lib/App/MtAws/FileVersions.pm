@@ -36,17 +36,13 @@ sub add
 {
 	my ($self, $o) = @_;
 	my $after = undef;
-	for (my $i = $#$self; $i >= 0; --$i) {
+	for (my $i = $#$self; $i >= 0; --$i) { # TODO: maybe implement binary insertion sort? however we usually push to the end..
 		if (_cmp($self->[$i], $o) <= 0) {
 			$after = $i;
 			last;
 		}
 	}
 	if (defined($after)) {
-		for (my $i = $#$self; $i > $after; --$i) {
-			$self->[$i+1] = $self->[$i];
-		}
-		$self->[$after+1] = $o;
 	} else {
 		unshift @$self, $o;
 	}
