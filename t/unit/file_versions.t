@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 116;
+use Test::More tests => 136;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -83,11 +83,18 @@ for (100, 300, 500) {
 
 for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	my $v = App::MtAws::FileVersions->new();
-	for my $el (200, 210, 220, 230, 310, 320, 330) {
-		$v->add(object($el, undef));
+	my @objects;
+	for my $el ((200, 210, 220, 230, 310, 320, 330)) {
+		my $o = object($el, undef);
+		push @objects, $o;
+		$v->add($o);
 	}
-	$v->add(object($_, undef, 'latest'));
+	my $o = object($_, undef, 'latest');
+	$v->add($o);
+	push @objects, $o;
 	is scalar @$v, 8, "should add $_";
+	is scalar $v->all, scalar @$v, "all() should return all data";
+	cmp_deeply [$v->all], [sort { App::MtAws::FileVersions::_cmp($a, $b) } @objects], "all should return sorted data";
 	for (my $i = 0; $i < $#$v; ++$i) {
 		ok $v->[$i]{time} <= $v->[$i+1]{time}, "$i-th element ($v->[$i]{time}) should be less then next one ($v->[$i+1]{time}), for $_";
 		if ($v->[$i]{time} == $v->[$i+1]{time}) {

@@ -94,6 +94,7 @@ t/unit/filter.t
 t/unit/glacier_request.t
 t/unit/job_file_create.t
 t/unit/job_segment_download.t
+t/unit/journal_add_delete.t
 t/unit/journal_openmodes.t
 t/unit/journal_readfiles.t
 t/unit/journal_readjournal.t

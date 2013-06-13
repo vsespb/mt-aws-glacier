@@ -33,6 +33,7 @@ use IO::Handle;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use App::MtAws::Filter;
+use App::MtAws::FileVersions;
 
 sub new
 {
@@ -44,6 +45,7 @@ sub new
 	
 	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
+	$self->{versions_h} = {};
 	
 	$self->{used_versions} = {};
 	$self->{output_version} = 'B' unless defined($self->{output_version});
@@ -181,14 +183,27 @@ sub process_line
 sub _add_file
 {
 	my ($self, $relfilename, $args) = @_;
-	$self->{journal_h}->{$relfilename} = $args if (!$self->{filter} || $self->{filter}->check_filenames($relfilename));
+	if ($self->{journal_h}{$relfilename}) {
+		if (ref $self->{journal_h}{$relfilename} eq ref {}) {
+			my $v = App::MtAws::FileVersions->new();
+			$v->add($self->{journal_h}{$relfilename});
+			$v->add($args);
+			$self->{journal_h}{$relfilename} = $v;
+		} else {
+			$self->{journal_h}{$relfilename}->add($args);
+		}
+	} else {
+		$self->{journal_h}{$relfilename} = $args
+			if (!$self->{filter} || $self->{filter}->check_filenames($relfilename));
+	}
+	
 }
 
 sub _delete_file
 {
 	my ($self, $relfilename) = @_;
 	delete $self->{journal_h}->{$relfilename}
-		if (!$self->{filter} || $self->{filter}->check_filenames($relfilename)) && $self->{journal_h}->{$relfilename};
+		if $self->{journal_h}->{$relfilename} && (!$self->{filter} || $self->{filter}->check_filenames($relfilename));
 		# TODO: exception or warning if $files->{$2}
 }
 

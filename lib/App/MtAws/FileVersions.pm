@@ -49,6 +49,12 @@ sub add
 	}
 }
 
+sub all
+{
+	my ($self) = @_;
+	@$self;
+}
+
 # if mtime defined for both a,b - compare mtime. otherwise compare time
 # if mtime equal, compare time too
 sub _cmp
