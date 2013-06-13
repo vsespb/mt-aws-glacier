@@ -49,9 +49,13 @@ sub add
 	}
 }
 
+# if mtime defined for both a,b - compare mtime. otherwise compare time
+# if mtime equal, compare time too
 sub _cmp
 {
 	my ($a, $b) = @_;
+	# when $a->{mtime} <=> $b->{mtime} returns 0 (equal), we magicaly switch to 'time' comparsion
+	# when $a->{mtime} <=> $b->{mtime} returns 1 or -1, we use that
 	( defined($a->{mtime}) && defined($b->{mtime}) && ($a->{mtime} <=> $b->{mtime}) ) ||
 	( $a->{'time'} <=> $b->{'time'} );
 }
