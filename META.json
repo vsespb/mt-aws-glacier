@@ -29,6 +29,7 @@
             "Test::MockModule" : "0",
             "Test::Spec" : "0",
             "Time::HiRes" : "0",
+            "URI" : "0",
             "open" : "0"
          }
       },
@@ -38,6 +39,9 @@
          }
       },
       "runtime" : {
+         "recommends" : {
+            "LWP::Protocol::https" : "6"
+         },
          "requires" : {
             "Carp" : "0",
             "Digest::SHA" : "0",

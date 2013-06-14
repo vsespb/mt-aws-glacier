@@ -36,7 +36,6 @@ my $build = Module::Build->new(
 		
 		'LWP' => 5,
 		'HTTP::Request::Common' => 5, # required by LWP::UserAgent, but I use i directly also
-		# 'LWP::Protocol::https' => 6, # optional.
 		'JSON::XS' => 0,
 
 
@@ -81,6 +80,7 @@ my $build = Module::Build->new(
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => 0,
+		'URI' => 0,
 		'HTTP::Daemon' => 5,
 
 		# CORE MODULES OR DUAL-LIFE MODULES
@@ -88,6 +88,9 @@ my $build = Module::Build->new(
 		'Time::HiRes' => 0,
 		'open' => 0,
 		
+	},
+	recommends => {
+		'LWP::Protocol::https' => 6,
 	}
 );
 
