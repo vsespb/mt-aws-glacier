@@ -36,8 +36,8 @@ warning_fatal();
 
 sub object
 {
-	my ($time, $mtime, $filename, $archive_id) = @_;
-	{ time => $time, mtime => $mtime, ($filename ? (filename => $filename) : () ), ($archive_id ? (archive_id => $archive_id) : () )}; 
+	my ($time, $mtime, $archive_id) = @_;
+	{ time => $time, mtime => $mtime, ($archive_id ? (archive_id => $archive_id) : () )}; 
 }
 
 # _cmp tests
@@ -152,7 +152,7 @@ for (100, 123, 300) {
 	is scalar @$v, 2, "should add second element";
 	ok $v->[0]{time} <= $v->[1]{time}, "should add second element right";
 	if ($v->[0]{time} == $v->[1]{time}) {
-		ok !$v->[0]{filename} && $v->[1]{filename} eq 'latest', "if everything equal, later added element should go last"
+		ok !$v->[0]{archive_id} && $v->[1]{archive_id} eq 'latest', "if everything equal, later added element should go last"
 	}
 }
 
@@ -186,7 +186,7 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	for (my $i = 0; $i < $#$v; ++$i) {
 		ok $v->[$i]{time} <= $v->[$i+1]{time}, "$i-th element ($v->[$i]{time}) should be less then next one ($v->[$i+1]{time}), for $_";
 		if ($v->[$i]{time} == $v->[$i+1]{time}) {
-			ok !$v->[$i]{filename} && $v->[$i+1]{filename} eq 'latest', "if everything equal, later added element should go last"
+			ok !$v->[$i]{archive_id} && $v->[$i+1]{archive_id} eq 'latest', "if everything equal, later added element should go last"
 		}
 	}
 }
@@ -195,7 +195,7 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 {
 	my $v = App::MtAws::FileVersions->new();
 	my $aid = 'abc123';
-	$v->add(object(123, undef, undef, $aid));
+	$v->add(object(123, undef, $aid));
 	is scalar @$v, 1, "should contain one element";
 	ok $v->delete_by_archive_id($aid);
 	is scalar @$v, 0, "deletion of one element should work";
@@ -205,42 +205,42 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	sub create_objects
 	{
 		my ($v, $n) = @_;
-		my @filenames;
+		my @ids;
 		for my $i (1..$_-2) {
-			$v->add(object(200+$i, undef, "a$i", "id$i"));
-			push @filenames, "a$i";
+			$v->add(object(200+$i, undef, "id$i"));
+			push @ids, "id$i";
 		}
-		@filenames;
+		@ids;
 	}
 	for (2..10) {
 		{
 			my $v = App::MtAws::FileVersions->new();
 			my $aid = 'abc123';
-			$v->add(object(123, undef, 'f1', 'anotherid'));
-			$v->add(object(456, undef, 'f2', $aid));
+			$v->add(object(123, undef, 'anotherid'));
+			$v->add(object(456, undef, $aid));
 			
-			my @filenames = create_objects($v, $_-2);
+			my @ids = create_objects($v, $_-2);
 			
 			is scalar @$v, $_, "should contain $_ elements";
-			cmp_deeply [map { $_->{filename} } @$v], ['f1', @filenames, 'f2'];
+			cmp_deeply [map { $_->{archive_id} } @$v], ['anotherid', @ids, $aid];
 			ok $v->delete_by_archive_id($aid);
 			is scalar @$v, $_ - 1, "deletion of last element should work in $_-items array";
-			cmp_deeply [map { $_->{filename} } @$v], ['f1', @filenames];
+			cmp_deeply [map { $_->{archive_id} } @$v], ['anotherid', @ids];
 			ok !$v->delete_by_archive_id('nonexistant');
 		}
 		{
 			my $v = App::MtAws::FileVersions->new();
 			my $aid = 'abc123';
-			$v->add(object(123, undef, 'f1', $aid));
-			$v->add(object(456, undef, 'f2', 'anotherid'));
+			$v->add(object(123, undef, $aid));
+			$v->add(object(456, undef, 'anotherid'));
 			
-			my @filenames = create_objects($v, $_-2);
+			my @ids = create_objects($v, $_-2);
 			
 			is scalar @$v, $_, "should contain $_ elements";
-			cmp_deeply [map { $_->{filename} } @$v], ['f1', @filenames, 'f2'];
+			cmp_deeply [map { $_->{archive_id} } @$v], [$aid, @ids, 'anotherid'];
 			ok $v->delete_by_archive_id($aid);
 			is scalar @$v, $_ - 1, "deletion of first element should work in $_-items array";
-			cmp_deeply [map { $_->{filename} } @$v], [@filenames, 'f2'];
+			cmp_deeply [map { $_->{archive_id} } @$v], [@ids, 'anotherid'];
 			ok !$v->delete_by_archive_id('nonexistant');
 		}
 	}
@@ -252,13 +252,13 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	my $v = App::MtAws::FileVersions->new();
 	ok !defined $v->latest();
 	$v->add(object(123, undef, 'f1'));
-	is $v->latest->{filename}, 'f1';
+	is $v->latest->{archive_id}, 'f1';
 	$v->add(object(200, undef, 'f2'));
-	is $v->latest->{filename}, 'f2';
+	is $v->latest->{archive_id}, 'f2';
 	$v->add(object(199, undef, 'f3'));
-	is $v->latest->{filename}, 'f2';
+	is $v->latest->{archive_id}, 'f2';
 	$v->add(object(456, undef, 'f4'));
-	is $v->latest->{filename}, 'f4';
+	is $v->latest->{archive_id}, 'f4';
 }
 
 
@@ -270,7 +270,7 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	$v->add(object(8, 5, 'f2')); # loaded later than f1, but we know mtime of f2 is before f1 is loaded
 	# anyway we ignore mtime and think who is later loaded is older
 	
-	cmp_deeply [map { $_->{filename} } @$v], [qw/f1 f2/], "objects without mtime can be on top"
+	cmp_deeply [map { $_->{archive_id} } @$v], [qw/f1 f2/], "objects without mtime can be on top"
 	
 }
 
@@ -279,7 +279,7 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	$v->add(object(7, undef, 'f1'));
 	$v->add(object(7, 5, 'f2'));
 	
-	cmp_deeply [map { $_->{filename} } @$v], [qw/f1 f2/], "if at least one mtime missed, and time is same, we go natural order"
+	cmp_deeply [map { $_->{archive_id} } @$v], [qw/f1 f2/], "if at least one mtime missed, and time is same, we go natural order"
 }
 1;
 
