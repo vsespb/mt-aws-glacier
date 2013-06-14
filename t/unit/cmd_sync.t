@@ -50,28 +50,21 @@ describe "command" => sub {
 		my $options = { 'max-number-of-files' => 10, partsize => 2, new => 1 };
 		my $j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
 
-		local $order_n = 0;
-		sub order_cb { my $n = shift; sub { is ++$order_n, $n } };
-		sub order { order_cb(@_)->() };
-
-		App::MtAws::SyncCommand->expects("with_forks")->returns(sub{
+		ordered_test sub {
+		App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
 			my ($flag, $options, $cb) = @_;
 			is $flag, !$options->{'dry-run'};
 			is $options, $options;
 			$cb->();
 		});
-		
-		App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns(order_cb(1))->once;#returns(sub{ is ++shift->{_stage}, 1 })
-		App::MtAws::Journal->expects("read_files")->returns(sub {
-			order(2);
+		App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
+		App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
 			shift;
 			cmp_deeply [@_], [{new=>1}, $options->{'max-number-of-files'}];
 		})->once;
-		App::MtAws::Journal->expects("open_for_write")->returns(order_cb(3))->once;
-		App::MtAws::Journal->expects("close_for_write")->returns(order_cb(6))->once;
+		App::MtAws::Journal->expects("open_for_write")->returns_ordered->once;
 		
-		App::MtAws::SyncCommand->expects("fork_engine")->returns(sub {
-			order(4);
+		App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
 			bless { parent_worker =>
 				bless {}, 'App::MtAws::ParentWorker'
 			}, 'App::MtAws::ForkEngine';
@@ -79,8 +72,7 @@ describe "command" => sub {
 		
 		my @files = qw/file1 file2 file3 file4/;
 		
-		App::MtAws::ParentWorker->expects("process_task")->returns(sub {
-			order(5);
+		App::MtAws::ParentWorker->expects("process_task")->returns_ordered(sub {
 			ok $_[1]->isa('App::MtAws::JobListProxy');
 			my @jobs = @{$_[1]->{jobs}};
 			for (@files) {
@@ -92,11 +84,13 @@ describe "command" => sub {
 			}
 			return (1)
 		} )->once;
+		App::MtAws::Journal->expects("close_for_write")->returns_ordered->once;
 		
 		$j->{listing}{existing} = [];
 		$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
 		
 		App::MtAws::SyncCommand::run($options, $j);
+		};
 	};
 };
 

@@ -35,7 +35,7 @@ use Carp;
 
 our %disable_validations;
 our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal
-capture_stdout capture_stderr assert_raises_exception/;
+capture_stdout capture_stderr assert_raises_exception ordered_test/;
 
 sub warning_fatal
 {
@@ -108,6 +108,29 @@ sub assert_raises_exception(&@)
 	my $err = $@;
 	cmp_deeply $err, superhashof($exception);
 	return ;
+}
+
+our $mock_order_declare;
+our $mock_order_realtime;
+sub ordered_test
+{
+	local $mock_order_realtime = 0;
+	local $mock_order_declare = 0;
+	no warnings 'once';
+	
+	local *Test::Spec::Mocks::Expectation::returns_ordered = sub {
+		my ($self, $arg) = @_;
+		my $n = ++$mock_order_declare;
+		print "n=$n\n";
+		if (!defined($arg)) {
+			return $self->returns(sub{ is ++$mock_order_realtime, $n; });
+		} elsif (ref $arg eq 'CODE') {
+			return $self->returns(sub{ is ++$mock_order_realtime, $n; $arg->(@_); });
+		} else {
+			return $self->returns(sub{ is ++$mock_order_realtime, $n; $arg; });
+		}
+	};
+	shift->();
 }
 
 1;
