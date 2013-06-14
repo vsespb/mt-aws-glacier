@@ -38,7 +38,7 @@ sub run
 	
 	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error, $error_io) = (0,0,0,0,0,0);
 	for my $f (keys %$files) {
-		my $file=$files->{$f};
+		my $file=$j->latest($f);
 		my $absfilename = $j->absfilename($f);
 		
 		if ($options->{'dry-run'}) {
@@ -68,8 +68,8 @@ sub run
 					++$error_mtime;
 				}
 				if (-s $binaryfilename == $file->{size}) {
-					if ($treehash eq $files->{$f}->{treehash}) {
-						print "OK $f $files->{$f}->{size} $files->{$f}->{treehash}\n";
+					if ($treehash eq $file->{treehash}) {
+						print "OK $f $file->{size} $file->{treehash}\n";
 						++$no_error;
 					} else {
 						print "TREEHASH MISSMATCH $f\n";
