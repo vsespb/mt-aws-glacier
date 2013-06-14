@@ -73,7 +73,7 @@ sub run
 					while (my $rec = pop @{ $j->{listing}{existing} }) {
 						my $relfilename = $rec->{relfilename};
 						my $absfilename = $j->absfilename($relfilename);
-						my $file = $j->{journal_h}->{$relfilename}||confess;
+						my $file = $j->latest($relfilename);
 						my $binaryfilename = binaryfilename $absfilename;
 						
 						my $should_upload = 0;
@@ -95,7 +95,6 @@ sub run
 						} else {
 							confess;
 						}
-
 						if ($should_upload eq 'treehash') {
 							return App::MtAws::JobProxy->new(job=>
 								App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
@@ -126,7 +125,7 @@ sub run
 				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
 					if (my $rec = pop @{ $j->{listing}{missing} }) {
 						App::MtAws::FileListDeleteJob->new(archives => [{
-							archive_id => $j->{journal_h}->{$rec->{relfilename}}->{archive_id}, relfilename => $rec->{relfilename}
+							archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
 						}]);
 					} else {
 						return;
