@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 44;
+use Test::More tests => 43;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -125,6 +125,13 @@ warning_fatal();
 	local *App::MtAws::FileVersions::latest = sub { $saved = shift; "TEST" };
 	is $j->latest('file2'), 'TEST', "latest call FileVersions latest()";
 	ok $saved->isa('App::MtAws::FileVersions'), 'latest call FileVersions latest() right';
+} 
+
+{
+	my $j = App::MtAws::Journal->new('journal_file' => '.');
+	my $obj2 = { relfilename => 'file2', archive_id => 'a2', time => 42, mtime => undef };
+	$j->_add_filename($obj2);
+	ok ! defined eval { $j->latest('not-a-file'); 1 }, "should confess if file not found";
 } 
 
 # _add_archive
