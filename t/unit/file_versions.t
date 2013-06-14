@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 617;
+use Test::More tests => 622;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -245,6 +245,22 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 		}
 	}
 }
+
+# latest() tests
+
+{
+	my $v = App::MtAws::FileVersions->new();
+	ok !defined $v->latest();
+	$v->add(object(123, undef, 'f1'));
+	is $v->latest->{filename}, 'f1';
+	$v->add(object(200, undef, 'f2'));
+	is $v->latest->{filename}, 'f2';
+	$v->add(object(199, undef, 'f3'));
+	is $v->latest->{filename}, 'f2';
+	$v->add(object(456, undef, 'f4'));
+	is $v->latest->{filename}, 'f4';
+}
+
 
 # these tests does not make sense, as sort behaviour already tested above
 # but I still implement this to define how files can be sorted in practice

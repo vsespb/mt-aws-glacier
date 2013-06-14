@@ -74,6 +74,12 @@ sub all
 	@$self;
 }
 
+sub latest
+{
+	my ($self) = @_;
+	$#$self == -1 ? undef : $self->[-1];
+}
+
 # TODO: NOT USED
 sub delete_by_archive_id
 {
