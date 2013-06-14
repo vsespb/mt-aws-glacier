@@ -167,15 +167,15 @@ END
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 1);
 			
-			my $files = $j->{journal_h};
-			if (scalar keys %$files) {
+			my $archives = $j->{archive_h};
+			if (scalar keys %$archives) {
 				if ($options->{'dry-run'}) {
-						for (keys %$files) {
-							print "Will DELETE archive $files->{$_}{archive_id} (filename $_)\n"
+						for (keys %$archives) {
+							print "Will DELETE archive $_ (filename $archives->{$_}{relfilename})\n"
 						}
 				} else {
 					$j->open_for_write();
-					my @filelist = map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_ } } keys %{$files};
+					my @filelist = map { {archive_id => $_, relfilename =>$archives->{$_}->{relfilename} } } keys %{$archives};
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListDeleteJob->new(archives => \@filelist ));
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
