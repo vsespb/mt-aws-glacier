@@ -51,7 +51,7 @@ warning_fatal();
 	is scalar keys %{$j->{journal_h}}, 1, "should add second file - one key";
 	ok $j->{journal_h}->{file1}, "should add second file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add second file - reference should be blessed into FileVersions';
-	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1], "should add second file - versions dhoule be in right order";
+	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1], "should add second file - versions should be in right order";
 } 
 
 {
@@ -64,7 +64,7 @@ warning_fatal();
 	is scalar keys %{$j->{journal_h}}, 2, "should add second file if there are multiple files";
 	ok $j->{journal_h}->{file1}, "should add second file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add second file - reference should be blessed into FileVersions';
-	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1], "should add second file - versions dhoule be in right order";
+	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1], "should add second file - versions should be in right order";
 } 
 
 {
@@ -78,7 +78,7 @@ warning_fatal();
 	is scalar keys %{$j->{journal_h}}, 1, "should add third file - one key";
 	ok $j->{journal_h}->{file1}, "should add third file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add third file - reference should be blessed into FileVersions';
-	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions dhoule be in right order";
+	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions should be in right order";
 } 
 
 {
@@ -93,7 +93,7 @@ warning_fatal();
 	is scalar keys %{$j->{journal_h}}, 2, "should add third file is there are multiple files";
 	ok $j->{journal_h}->{file1}, "should add third file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add third file - reference should be blessed into FileVersions';
-	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions dhoule be in right order";
+	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions should be in right order";
 } 
 
 # _add_archive
