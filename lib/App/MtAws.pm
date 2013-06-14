@@ -202,16 +202,17 @@ END
 			my %filelist =	map { $_->{archive_id} => $_ }
 				grep { ! binaryfilename -f $_->{filename} }
 				map {
+					my $entry = $j->latest($_);
 					{
-						archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, size => $files->{$_}{size},
-						treehash => $files->{$_}{treehash}, relfilename =>$_, filename=> $j->absfilename($_)
+						archive_id => $entry->{archive_id}, mtime => $entry->{mtime}, size => $entry->{size},
+						treehash => $entry->{treehash}, relfilename =>$_, filename=> $j->absfilename($_)
 					}
 				}
 				keys %{$files};
 			if (keys %filelist) {
 				if ($options->{'dry-run'}) {
-					for (values %filelist) {
-						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n"
+					for (keys %filelist) {
+						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n" for ($j->latest($_));
 					}
 				} else {
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
