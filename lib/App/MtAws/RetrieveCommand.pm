@@ -61,7 +61,8 @@ sub get_file_list
 	# TODO: refactor
 	my @filelist =
 		grep { !$j->{active_retrievals}{$_->{archive_id}} && ! -f binaryfilename $_->{filename} }
-		map { {archive_id => $files->{$_}->{archive_id}, relfilename =>$_, filename=> $j->absfilename($_) } }
+		map { {archive_id => $_->{archive_id}, relfilename => $_->{relfilename}, filename=> $j->absfilename($_->{relfilename}) } }
+		map { $j->latest($_) } # TODO: two maps is not effective
 		keys %{$files};
 	@filelist  = splice(@filelist, 0, $options->{'max-number-of-files'});
 }
