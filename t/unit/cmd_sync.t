@@ -51,45 +51,45 @@ describe "command" => sub {
 		my $j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
 
 		ordered_test sub {
-		App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
-			my ($flag, $options, $cb) = @_;
-			is $flag, !$options->{'dry-run'};
-			is $options, $options;
-			$cb->();
-		});
-		App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
-		App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
-			shift;
-			cmp_deeply [@_], [{new=>1}, $options->{'max-number-of-files'}];
-		})->once;
-		App::MtAws::Journal->expects("open_for_write")->returns_ordered->once;
-		
-		App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
-			bless { parent_worker =>
-				bless {}, 'App::MtAws::ParentWorker'
-			}, 'App::MtAws::ForkEngine';
-		})->once;
-		
-		my @files = qw/file1 file2 file3 file4/;
-		
-		App::MtAws::ParentWorker->expects("process_task")->returns_ordered(sub {
-			ok $_[1]->isa('App::MtAws::JobListProxy');
-			my @jobs = @{$_[1]->{jobs}};
-			for (@files) {
-				my $job = shift @jobs;
-				is $job->{job}{relfilename}, $_;
-				is $job->{job}{partsize}, $options->{partsize}*1024*1024;
-				ok $job->isa('App::MtAws::JobProxy');
-				ok $job->{job}->isa('App::MtAws::FileCreateJob');
-			}
-			return (1)
-		} )->once;
-		App::MtAws::Journal->expects("close_for_write")->returns_ordered->once;
-		
-		$j->{listing}{existing} = [];
-		$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
-		
-		App::MtAws::SyncCommand::run($options, $j);
+			App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
+				my ($flag, $options, $cb) = @_;
+				is $flag, !$options->{'dry-run'};
+				is $options, $options;
+				$cb->();
+			});
+			App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
+			App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
+				shift;
+				cmp_deeply [@_], [{new=>1}, $options->{'max-number-of-files'}];
+			})->once;
+			App::MtAws::Journal->expects("open_for_write")->returns_ordered->once;
+			
+			App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
+				bless { parent_worker =>
+					bless {}, 'App::MtAws::ParentWorker'
+				}, 'App::MtAws::ForkEngine';
+			})->once;
+			
+			my @files = qw/file1 file2 file3 file4/;
+			
+			App::MtAws::ParentWorker->expects("process_task")->returns_ordered(sub {
+				ok $_[1]->isa('App::MtAws::JobListProxy');
+				my @jobs = @{$_[1]->{jobs}};
+				for (@files) {
+					my $job = shift @jobs;
+					is $job->{job}{relfilename}, $_;
+					is $job->{job}{partsize}, $options->{partsize}*1024*1024;
+					ok $job->isa('App::MtAws::JobProxy');
+					ok $job->{job}->isa('App::MtAws::FileCreateJob');
+				}
+				return (1)
+			} )->once;
+			App::MtAws::Journal->expects("close_for_write")->returns_ordered->once;
+			
+			$j->{listing}{existing} = [];
+			$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
+			
+			App::MtAws::SyncCommand::run($options, $j);
 		};
 	};
 };
