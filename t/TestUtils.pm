@@ -121,7 +121,6 @@ sub ordered_test
 	local *Test::Spec::Mocks::Expectation::returns_ordered = sub {
 		my ($self, $arg) = @_;
 		my $n = ++$mock_order_declare;
-		print "n=$n\n";
 		if (!defined($arg)) {
 			return $self->returns(sub{ is ++$mock_order_realtime, $n; });
 		} elsif (ref $arg eq 'CODE') {
