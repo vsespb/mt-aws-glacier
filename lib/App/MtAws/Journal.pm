@@ -233,6 +233,13 @@ sub _retrieve_job
 	}
 }
 
+sub latest
+{
+	my ($self, $relfilename) = @_;
+	my $e = $self->{journal_h}{$relfilename} or confess "$relfilename not found in journal";
+	(ref $e eq ref {}) ? $e : $e->latest();
+}
+
 #
 # Wrting journal
 #

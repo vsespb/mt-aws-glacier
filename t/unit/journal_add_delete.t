@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 38;
+use Test::More tests => 44;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -94,6 +94,37 @@ warning_fatal();
 	ok $j->{journal_h}->{file1}, "should add third file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add third file - reference should be blessed into FileVersions';
 	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions should be in right order";
+} 
+
+# latest()
+
+{
+	my $j = App::MtAws::Journal->new('journal_file' => '.');
+	my $obj1 = { relfilename => 'file1', archive_id => 'a1', time => 123, mtime => undef };
+	my $obj2 = { relfilename => 'file2', archive_id => 'a2', time => 42, mtime => undef };
+	my $obj3 = { relfilename => 'file2', archive_id => 'a3', time => 43, mtime => undef };
+	my $obj4 = { relfilename => 'file4', archive_id => 'a4', time => 123, mtime => undef };
+	$j->_add_filename($obj1);
+	is $j->latest('file1')->{archive_id}, 'a1', "latest should work";
+	$j->_add_filename($obj2);
+	is $j->latest('file2')->{archive_id}, 'a2', "latest should FileVersions";
+	$j->_add_filename($obj3);
+	is $j->latest('file2')->{archive_id}, 'a3', "latest should work with FileVersions when there are two elements";
+	$j->_add_filename($obj4);
+	is $j->latest('file4')->{archive_id}, 'a4', "latest should with multiple files";
+} 
+
+{
+	my $j = App::MtAws::Journal->new('journal_file' => '.');
+	my $obj2 = { relfilename => 'file2', archive_id => 'a2', time => 42, mtime => undef };
+	my $obj3 = { relfilename => 'file2', archive_id => 'a3', time => 43, mtime => undef };
+	$j->_add_filename($obj2);
+	$j->_add_filename($obj3);
+	no warnings 'redefine';
+	my $saved = undef;
+	local *App::MtAws::FileVersions::latest = sub { $saved = shift; "TEST" };
+	is $j->latest('file2'), 'TEST', "latest call FileVersions latest()";
+	ok $saved->isa('App::MtAws::FileVersions'), 'latest call FileVersions latest() right';
 } 
 
 # _add_archive
