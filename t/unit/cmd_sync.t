@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Spec;
+use Test::Spec 0.46;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";

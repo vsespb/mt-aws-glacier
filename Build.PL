@@ -79,7 +79,7 @@ my $build = Module::Build->new(
 		'Test::Deep' => 0,
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
-		'Test::Spec' => 0,
+		'Test::Spec' => 0.46,
 		'URI' => 0,
 		'HTTP::Daemon' => 5,
 
