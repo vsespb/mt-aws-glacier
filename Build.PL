@@ -34,8 +34,8 @@ my $build = Module::Build->new(
 	requires => {
 		'perl' => 5.008008, # 5.8.8
 		
-		'LWP' => 5,
-		'HTTP::Request::Common' => 5, # required by LWP::UserAgent, but I use i directly also
+		'LWP' => '5.82',
+		'HTTP::Request::Common' => '5.82', # required by LWP::UserAgent, but I use i directly also
 		'JSON::XS' => 0,
 
 
@@ -53,7 +53,7 @@ my $build = Module::Build->new(
 		'File::Path' => 0,
 		'File::Spec' => 0,
 		'File::stat' => 0,
-		'Getopt::Long' => 0,
+		'Getopt::Long' => '2.24',
 		'IO::Handle' => 0,
 		'IO::Pipe' => 0,
 		'IO::Select' => 0,
@@ -79,7 +79,7 @@ my $build = Module::Build->new(
 		'Test::Deep' => 0,
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
-		'Test::Spec' => 0.46,
+		'Test::Spec' => '0.46',
 		'URI' => 0,
 		'HTTP::Daemon' => 5,
 
