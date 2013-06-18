@@ -34,7 +34,7 @@ my $build = Module::Build->new(
 	requires => {
 		'perl' => 5.008008, # 5.8.8
 		
-		'LWP' => '5.82',
+		'LWP' => '5.82', # 5.82 dump() method + some bugfixes in 5.819
 		'HTTP::Request::Common' => '5.82', # required by LWP::UserAgent, but I use i directly also
 		'JSON::XS' => 0,
 
@@ -76,7 +76,7 @@ my $build = Module::Build->new(
 	},
 	build_requires => {
 		'TAP::Harness' => 0,
-		'Test::Deep' => 0,
+		'Test::Deep' => '!= 0.090, != 0.091', # issue fixed here fixed https://metacpan.org/diff/release/FDALY/Test-Deep-0.091/FDALY/Test-Deep-0.092
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => '0.46',

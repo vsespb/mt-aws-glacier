@@ -28,7 +28,7 @@ use warnings;
 use App::MtAws::ConfigDefinition;
 use App::MtAws::ConfigEngine;
 use Test::More;
-use Test::Deep;
+
 require Exporter;
 use base qw/Exporter/;
 use Carp;
@@ -36,6 +36,8 @@ use Carp;
 our %disable_validations;
 our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal
 capture_stdout capture_stderr assert_raises_exception ordered_test/;
+
+use Test::Deep; # should be last line, after EXPORT stuff, otherwise versions ^(0\.089|0\.09[0-9].*) do something nastly with exports
 
 sub warning_fatal
 {
