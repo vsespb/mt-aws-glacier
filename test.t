@@ -36,7 +36,7 @@ use LWP::UserAgent ();
 use DateTime ();
 use Test::Spec ();
 use LWP::Protocol::https ();
-use MIME::Base64 3.11;
+use MIME::Base64;
 # for 5.8.x stock perl
 use Digest::SHA ();
 # /build requirements
@@ -61,4 +61,4 @@ die "We have ".scalar @all." tests, instead of $testplan" unless @all == $testpl
 my @first = grep { $_ =~ $priotity } @all;
 my @others = grep { $_ !~ $priotity } @all;
 die unless scalar @first + scalar @others == scalar @all;
-$harness->runtests(@first, @others);
+die unless $harness->runtests(@first, @others)->get_status eq 'PASS';
