@@ -57,7 +57,7 @@ my $build = Module::Build->new(
 		'IO::Handle' => 0,
 		'IO::Pipe' => 0,
 		'IO::Select' => 0,
-		'List::Util' => 0,
+		'List::Util' => '1.11', # needed for Test::Spec, however 1.19 is released with perl 5.8.9
 		'POSIX' => 0,
 		'PerlIO::encoding' => 0,
 		'Time::Local' => 0,
@@ -79,8 +79,8 @@ my $build = Module::Build->new(
 		'Test::Deep' => '!= 0.090, != 0.091', # issue fixed here fixed https://metacpan.org/diff/release/FDALY/Test-Deep-0.091/FDALY/Test-Deep-0.092
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
-		'Test::Spec' => '0.46',
-		'URI' => 0,
+		'Test::Spec' => '0.46', # we need with() new in 0.46
+		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => 5,
 
 		# CORE MODULES OR DUAL-LIFE MODULES

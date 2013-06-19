@@ -29,7 +29,7 @@
             "Test::MockModule" : "0",
             "Test::Spec" : "0.46",
             "Time::HiRes" : "0",
-            "URI" : "0",
+            "URI" : "1.10",
             "open" : "0"
          }
       },
@@ -60,7 +60,7 @@
             "IO::Select" : "0",
             "JSON::XS" : "0",
             "LWP" : "5.82",
-            "List::Util" : "0",
+            "List::Util" : "1.11",
             "POSIX" : "0",
             "PerlIO::encoding" : "0",
             "Time::Local" : "0",
