@@ -34,8 +34,8 @@ my $build = Module::Build->new(
 	requires => {
 		'perl' => 5.008008, # 5.8.8
 		
-		'LWP' => '5.82', # 5.82 dump() method + some bugfixes in 5.819
-		'HTTP::Request::Common' => '5.82', # required by LWP::UserAgent, but I use i directly also
+		'LWP' => '5.803', # ancient CentOS 5.x version
+		'HTTP::Request' => 0, # either shipped with LWP, or prereq by LWP, does not contain correct version, sometimes
 		'JSON::XS' => 0,
 
 
@@ -81,7 +81,7 @@ my $build = Module::Build->new(
 		'DateTime' => 0,
 		'Test::Spec' => '0.46', # we need with() new in 0.46
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
-		'HTTP::Daemon' => 5,
+		'HTTP::Daemon' => '1.36',
 
 		# CORE MODULES OR DUAL-LIFE MODULES
 		'Data::Dumper' => 0,

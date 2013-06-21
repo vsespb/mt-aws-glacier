@@ -24,8 +24,9 @@ use strict;
 use warnings;
 use utf8;
 use POSIX;
+use LWP 5.803;
 use LWP::UserAgent;
-use HTTP::Request::Common;
+use HTTP::Request;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
@@ -474,17 +475,17 @@ sub perform_lwp
 		}
 		$url .= "?$self->{params_s}" if $self->{params_s};
 		if ($self->{method} eq 'PUT') {
-			$req = HTTP::Request::Common::PUT( $url, Content=>$self->{dataref});
+			$req = HTTP::Request->new(PUT => $url, undef, $self->{dataref});
 		} elsif ($self->{method} eq 'POST') {
 			if ($self->{dataref}) {
-				$req = HTTP::Request::Common::POST( $url, Content_Type => 'form-data', Content=>${$self->{dataref}});
+				$req = HTTP::Request->new(POST => $url, [Content_Type => 'form-data'], ${$self->{dataref}});
 			} else {
-				$req = HTTP::Request::Common::POST( $url );
+				$req = HTTP::Request->new(POST => $url );
 			}
 		} elsif ($self->{method} eq 'DELETE') {
-			$req = HTTP::Request::Common::DELETE( $url);
+			$req = HTTP::Request->new(DELETE => $url);
 		} elsif ($self->{method} eq 'GET') {
-			$req = HTTP::Request::Common::GET( $url);
+			$req = HTTP::Request->new(GET => $url);
 		} else {
 			confess;
 		}
@@ -575,9 +576,7 @@ sub perform_lwp
 				}
 			}
 			print STDERR "Error:\n";
-			print STDERR $req->dump;
-			print STDERR $resp->dump;
-			print STDERR "\n";
+			print STDERR dump_request_response($req, $resp);
 			die exception 'http_unexpected_reply' => 'Unexpected reply from remote server';
 		}
 	}

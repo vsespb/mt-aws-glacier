@@ -29,6 +29,7 @@ use Carp;
 use Encode;
 use POSIX;
 use App::MtAws::Exceptions;
+use LWP::UserAgent;
 use bytes;
 no bytes;
 
@@ -38,7 +39,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string characterfilename try_drop_utf8_flag/;
+is_wide_string characterfilename try_drop_utf8_flag dump_request_response/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -223,6 +224,35 @@ sub hex_dump_string
 	$str;
 }
 
+sub dump_request_response
+{
+	my ($req, $resp) = @_;
+	my $out = '';
+	$out .= "===REQUEST:\n";
+	$out .= join(" ", $req->method, $req->uri)."\n";
+	
+	my $req_headers = $req->headers->as_string;
+	
+	$req_headers =~ s!^(Authorization:.*Credential=)([A-Za-z0-9]+)/!$1***REMOVED***/!;
+	$req_headers =~ s!^(Authorization:.*Signature=)([A-Za-z0-9]+)!$1***REMOVED***!;
+	
+	$out .= $req_headers;
+	
+	if ($req->content_type ne 'application/octet-stream' && $req->content && length($req->content)) {
+		$out .= "\n".$req->content;
+	}
+	
+	$out .= "\n===RESPONSE:\n";
+	$out .= $resp->protocol." " if $resp->protocol;
+	$out .= $resp->status_line."\n";
+	$out .= $resp->headers->as_string;
+
+	if ($resp->content_type eq 'application/json' && $resp->content && length($resp->content)) {
+		$out .= "\n".$resp->content;
+	}
+	$out .= "\n\n";
+	$out;
+}
 
 1;
 
