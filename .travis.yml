@@ -7,4 +7,5 @@ perl:
 before_install:
   cpanm -n Devel::Cover::Report::Coveralls
 script:
-  perl Build.PL && ./Build build && cover -test -report coveralls
+  MT_NO_HARNESS=1 perl Build.PL && ./Build build && cover -test -report coveralls
+

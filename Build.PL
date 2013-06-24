@@ -11,8 +11,6 @@ die "OS unsupported\n" if ($^O eq 'MSWin32');
 
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
-	use_tap_harness    => 1,
-	tap_harness_args   => { jobs => 8 },
 	author => 'Victor Efimov <vs@vs-dev.com>',
 	dist_author => 'Victor Efimov <vs@vs-dev.com>',
 	recursive_test_files=>1,
@@ -75,7 +73,7 @@ my $build = Module::Build->new(
 		#
 	},
 	build_requires => {
-		'TAP::Harness' => 0,
+		$ENV{MT_NO_HARNESS} ? () : ('TAP::Harness' => 0),
 		'Test::Deep' => '!= 0.090, != 0.091', # issue fixed here fixed https://metacpan.org/diff/release/FDALY/Test-Deep-0.091/FDALY/Test-Deep-0.092
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
@@ -91,7 +89,8 @@ my $build = Module::Build->new(
 	},
 	recommends => {
 		'LWP::Protocol::https' => 6,
-	}
+	},
+	$ENV{MT_NO_HARNESS} ? () : (use_tap_harness    => 1, tap_harness_args   => { jobs => 8 }),
 );
 
 $build->create_build_script();
