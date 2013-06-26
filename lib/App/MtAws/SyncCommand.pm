@@ -36,6 +36,60 @@ use App::MtAws::Utils;
 use File::stat;
 
 
+sub next_modified
+{
+	my ($options, $j) = @_;
+	while (my $rec = pop @{ $j->{listing}{existing} }) {
+		my $relfilename = $rec->{relfilename};
+		my $absfilename = $j->absfilename($relfilename);
+		my $file = $j->latest($relfilename);
+		my $binaryfilename = binaryfilename $absfilename;
+		
+		my $should_upload = 0;
+		
+		my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
+			defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
+			undef;
+		
+		if ($file->{size} != -s $binaryfilename) {
+			$should_upload = 'create';
+		} elsif ($options->{detect} eq 'mtime') {
+			$should_upload = $mtime_differs ? 'create' : 0;
+		} elsif ($options->{detect} eq 'treehash') {
+			$should_upload = 'treehash';
+		} elsif ($options->{detect} eq 'mtime-and-treehash') {
+			$should_upload = $mtime_differs ? 'treehash' : 0;
+		} elsif ($options->{detect} eq 'mtime-or-treehash') {
+			$should_upload = $mtime_differs ? 'create' : 'treehash';
+		} else {
+			confess;
+		}
+		if ($should_upload eq 'treehash') {
+			return App::MtAws::JobProxy->new(job=>
+				App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
+					relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+					delete_after_upload => 1,
+					archive_id => $file->{archive_id},
+					treehash => $file->{treehash}
+			));
+		} elsif ($should_upload eq 'create') {
+			return App::MtAws::JobProxy->new(job=> App::MtAws::FileCreateJob->new(
+				filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+				(finish_cb => sub {
+					App::MtAws::FileListDeleteJob->new(archives => [{
+						archive_id => $file->{archive_id}, relfilename => $relfilename
+					}])
+				})
+			));
+		} elsif (!$should_upload) {
+			next;
+		} else {
+			confess;
+		}
+	}
+	return;
+}
+
 sub run
 {
 	my ($options, $j) = @_;
@@ -63,57 +117,7 @@ sub run
 
 		if ($options->{'replace-modified'}) {
 			confess unless $options->{detect};
-			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
-				while (my $rec = pop @{ $j->{listing}{existing} }) {
-					my $relfilename = $rec->{relfilename};
-					my $absfilename = $j->absfilename($relfilename);
-					my $file = $j->latest($relfilename);
-					my $binaryfilename = binaryfilename $absfilename;
-					
-					my $should_upload = 0;
-					
-					my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
-						defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
-						undef;
-					
-					if ($file->{size} != -s $binaryfilename) {
-						$should_upload = 'create';
-					} elsif ($options->{detect} eq 'mtime') {
-						$should_upload = $mtime_differs ? 'create' : 0;
-					} elsif ($options->{detect} eq 'treehash') {
-						$should_upload = 'treehash';
-					} elsif ($options->{detect} eq 'mtime-and-treehash') {
-						$should_upload = $mtime_differs ? 'treehash' : 0;
-					} elsif ($options->{detect} eq 'mtime-or-treehash') {
-						$should_upload = $mtime_differs ? 'create' : 'treehash';
-					} else {
-						confess;
-					}
-					if ($should_upload eq 'treehash') {
-						return App::MtAws::JobProxy->new(job=>
-							App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
-								relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
-								delete_after_upload => 1,
-								archive_id => $file->{archive_id},
-								treehash => $file->{treehash}
-						));
-					} elsif ($should_upload eq 'create') {
-						return App::MtAws::JobProxy->new(job=> App::MtAws::FileCreateJob->new(
-							filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
-							(finish_cb => sub {
-								App::MtAws::FileListDeleteJob->new(archives => [{
-									archive_id => $file->{archive_id}, relfilename => $relfilename
-								}])
-							})
-						));
-					} elsif (!$should_upload) {
-						next;
-					} else {
-						confess;
-					}
-				}
-				return;
-			});
+			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub { next_modified($options, $j) });
 		}
 		if ($options->{'delete-removed'}) {
 			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
