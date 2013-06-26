@@ -42,38 +42,70 @@ require App::MtAws::SyncCommand;
 
 warning_fatal();
 
-our $order_n;
-
-
 describe "command" => sub {
+	
+	my $j;
+	
+	before each => sub {
+		$j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
+	};
+	
+	sub expect_with_forks
+	{
+		App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
+			my ($flag, $options, $cb) = @_;
+			is $flag, !$options->{'dry-run'};
+			is $options, $options;
+			$cb->();
+		});
+	}
+	
+	sub expect_journal_init
+	{
+		my ($options) = @_;
+		App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
+		App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
+			shift;
+			cmp_deeply [@_], [{new=>1}, $options->{'max-number-of-files'}];
+		})->once;
+		App::MtAws::Journal->expects("open_for_write")->returns_ordered->once;
+	}
+	
+	sub expect_fork_engine
+	{
+		App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
+			bless { parent_worker =>
+				bless {}, 'App::MtAws::ParentWorker'
+			}, 'App::MtAws::ForkEngine';
+		})->once;
+	}
+	
+	sub expect_journal_close
+	{
+		App::MtAws::Journal->expects("close_for_write")->returns_ordered->once;
+	}
+	
+	sub expect_process_task
+	{
+		my ($j, $cb) = @_;
+		App::MtAws::ParentWorker->expects("process_task")->returns_ordered(sub {
+			my ($self, $job, $journal) = @_;
+			ok $self->isa('App::MtAws::ParentWorker');
+			is $journal, $j;
+			$cb->($job);
+		} )->once;
+	}
+	
 	it "new should work" => sub {
 		my $options = { 'max-number-of-files' => 10, partsize => 2, new => 1 };
-		my $j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
-
 		ordered_test sub {
-			App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
-				my ($flag, $options, $cb) = @_;
-				is $flag, !$options->{'dry-run'};
-				is $options, $options;
-				$cb->();
-			});
-			App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
-			App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
-				shift;
-				cmp_deeply [@_], [{new=>1}, $options->{'max-number-of-files'}];
-			})->once;
-			App::MtAws::Journal->expects("open_for_write")->returns_ordered->once;
-			
-			App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
-				bless { parent_worker =>
-					bless {}, 'App::MtAws::ParentWorker'
-				}, 'App::MtAws::ForkEngine';
-			})->once;
-			
+			expect_with_forks;
+			expect_journal_init($options);
+			expect_fork_engine;
 			my @files = qw/file1 file2 file3 file4/;
-			
-			App::MtAws::ParentWorker->expects("process_task")->returns_ordered(sub {
-				my ($self, $job, $journal) = @_;
+
+			expect_process_task($j, sub {
+				my ($job) = @_;
 				ok $job->isa('App::MtAws::JobListProxy');
 				is scalar @{ $job->{jobs} }, 1;
 				my $itt = $job->{jobs}[0];
@@ -85,9 +117,9 @@ describe "command" => sub {
 					ok $task->{job}->isa('App::MtAws::FileCreateJob');
 				}
 				return (1)
-			} )->once;
-			App::MtAws::Journal->expects("close_for_write")->returns_ordered->once;
-			
+			});
+
+			expect_journal_close;
 			$j->{listing}{existing} = [];
 			$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
 			
