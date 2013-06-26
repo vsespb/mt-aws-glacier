@@ -225,7 +225,7 @@ END
 			my $files = $j->{journal_h};
 			# TODO: refactor
 			my %filelist =	map { $_->{archive_id} => $_ }
-				grep { ! binaryfilename -f $_->{filename} }
+				grep { !-f binaryfilename $_->{filename} }
 				map {
 					{
 						archive_id => $files->{$_}->{archive_id}, mtime => $files->{$_}{mtime}, size => $files->{$_}{size},
