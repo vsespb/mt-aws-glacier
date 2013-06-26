@@ -1,4 +1,8 @@
-### 2013-06-01 v0.962 beta
+### 2013-06-26 v0.963 beta
+
+  * Fixed - restore-completed sometimes restore existing files when filesystem-encoding is not UTF-8  and filename contains non-ASCII characters
+
+### 2013-06-05 v0.962 beta
 
   * Enhancement: 'timeout' option added for network socket timeout and documentation updated. Default timeout
   changed from 120 to 180 seconds
