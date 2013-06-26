@@ -84,4 +84,11 @@ sub finish_task
 		die;
 	}
 }
+
+sub will_do
+{
+	my ($self) = @_;
+	"Will VERIFY treehash and UPLOAD $self->{filename} if modified";
+}
+	
 1;

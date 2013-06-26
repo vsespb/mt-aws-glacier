@@ -58,5 +58,12 @@ sub finish_task
 		return @res;
 	}
 }
+
+sub will_do
+{
+	# TODO: does it make any sense to call will_do() after job replaced?? probably yes..
+	# for example we can dump pending jobs anytime.. 
+	shift->{job}->will_do();
+}
 	
 1;

@@ -90,6 +90,40 @@ sub next_modified
 	return;
 }
 
+sub next_missing
+{
+	my ($options, $j) = @_;
+	if (my $rec = pop @{ $j->{listing}{missing} }) {
+		App::MtAws::FileListDeleteJob->new(archives => [{
+			archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
+		}]);
+	} else {
+		return;
+	}
+}
+
+sub next_new
+{
+	my ($options, $j) = @_;
+	if (my $rec = pop @{ $j->{listing}{new} }) {
+		my ($absfilename, $relfilename) = ($j->absfilename($rec->{relfilename}), $rec->{relfilename});
+		App::MtAws::JobProxy->new(job =>
+				App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
+	} else {
+		return;
+	}
+}
+
+sub print_dry_run
+{
+	my ($itt) = @_;
+	while (my $rec = $itt->()) {
+		for ($rec->will_do()) {
+			print $_."\n";
+		}
+	}
+}
+
 sub run
 {
 	my ($options, $j) = @_;
@@ -108,30 +142,34 @@ sub run
 		my @joblist;
 		
 		if ($options->{new}) {
-			for (@{ $j->{listing}{new} }) {
-				my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
-				push @joblist, $ft;
+			my $itt = sub { next_new($options, $j) };
+			if ($options->{'dry-run'}) {
+				print_dry_run($itt);
+			} else {
+				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
 			}
 		}
 
 		if ($options->{'replace-modified'}) {
 			confess unless $options->{detect};
-			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub { next_modified($options, $j) });
+			my $itt = sub { next_modified($options, $j) };
+			if ($options->{'dry-run'}) {
+				print_dry_run($itt);
+			} else {
+				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+			}
 		}
 		if ($options->{'delete-removed'}) {
-			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
-				if (my $rec = pop @{ $j->{listing}{missing} }) {
-					App::MtAws::FileListDeleteJob->new(archives => [{
-						archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
-					}]);
-				} else {
-					return;
-				}
-			});
+			my $itt = sub { next_missing($options, $j) };
+			if ($options->{'dry-run'}) {
+				print_dry_run($itt);
+			} else {
+				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+			}
 		}
+
 		if (scalar @joblist) {
-			my $lt = App::MtAws::JobListProxy->new(z=>1,maxcnt=>10,jobs => \@joblist);
+			my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
 			my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
 			die unless $R;
 		}

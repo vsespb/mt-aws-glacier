@@ -36,8 +36,8 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     bless $self, $class;
-    defined($self->{filename}||$self->{stdin})||die;
-    defined($self->{relfilename})||die;
+    defined($self->{filename}) || $self->{stdin} || confess "no filename nor stdin";
+    defined($self->{relfilename}) || confess "no relfilename";
     $self->{partsize}||die;
     $self->{raised} = 0;
     return $self;
@@ -93,6 +93,18 @@ sub finish_task
 		));
 	} else {
 		die;
+	}
+}
+
+sub will_do
+{
+	my ($self) = @_;
+	if (defined($self->{filename})) {
+		"Will UPLOAD $self->{filename}";
+	} elsif ($self->{stdin}) {
+		"Will UPLOAD stream from STDIN";
+	} else {
+		confess;
 	}
 }
 1;

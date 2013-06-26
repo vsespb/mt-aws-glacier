@@ -69,5 +69,11 @@ sub finish_task
 		return ("ok");
 	}
 }
+
+sub will_do
+{
+	my ($self) = @_;
+	map { "Will DELETE archive $_->{archive_id} (filename $_->{relfilename})" } @{$self->{archives}};
+}
 	
 1;
