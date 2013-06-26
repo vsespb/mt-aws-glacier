@@ -200,7 +200,7 @@ END
 			my $files = $j->{journal_h};
 			# TODO: refactor
 			my %filelist =	map { $_->{archive_id} => $_ }
-				grep { ! binaryfilename -f $_->{filename} }
+				grep { !-f binaryfilename $_->{filename} }
 				map {
 					my $entry = $j->latest($_);
 					{
