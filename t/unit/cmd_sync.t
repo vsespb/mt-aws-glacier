@@ -73,14 +73,16 @@ describe "command" => sub {
 			my @files = qw/file1 file2 file3 file4/;
 			
 			App::MtAws::ParentWorker->expects("process_task")->returns_ordered(sub {
-				ok $_[1]->isa('App::MtAws::JobListProxy');
-				my @jobs = @{$_[1]->{jobs}};
+				my ($self, $job, $journal) = @_;
+				ok $job->isa('App::MtAws::JobListProxy');
+				is scalar @{ $job->{jobs} }, 1;
+				my $itt = $job->{jobs}[0];
 				for (@files) {
-					my $job = shift @jobs;
-					is $job->{job}{relfilename}, $_;
-					is $job->{job}{partsize}, $options->{partsize}*1024*1024;
-					ok $job->isa('App::MtAws::JobProxy');
-					ok $job->{job}->isa('App::MtAws::FileCreateJob');
+					my $task = $itt->{iterator}->();
+					is $task->{job}{relfilename}, $_;
+					is $task->{job}{partsize}, $options->{partsize}*1024*1024;
+					ok $task->isa('App::MtAws::JobProxy');
+					ok $task->{job}->isa('App::MtAws::FileCreateJob');
 				}
 				return (1)
 			} )->once;

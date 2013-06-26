@@ -39,7 +39,7 @@ use File::stat;
 sub next_modified
 {
 	my ($options, $j) = @_;
-	while (my $rec = pop @{ $j->{listing}{existing} }) {
+	while (my $rec = shift @{ $j->{listing}{existing} }) {
 		my $relfilename = $rec->{relfilename};
 		my $absfilename = $j->absfilename($relfilename);
 		my $file = $j->latest($relfilename);
@@ -93,7 +93,7 @@ sub next_modified
 sub next_missing
 {
 	my ($options, $j) = @_;
-	if (my $rec = pop @{ $j->{listing}{missing} }) {
+	if (my $rec = shift @{ $j->{listing}{missing} }) {
 		App::MtAws::FileListDeleteJob->new(archives => [{
 			archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
 		}]);
@@ -105,7 +105,7 @@ sub next_missing
 sub next_new
 {
 	my ($options, $j) = @_;
-	if (my $rec = pop @{ $j->{listing}{new} }) {
+	if (my $rec = shift @{ $j->{listing}{new} }) {
 		my ($absfilename, $relfilename) = ($j->absfilename($rec->{relfilename}), $rec->{relfilename});
 		App::MtAws::JobProxy->new(job =>
 				App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
