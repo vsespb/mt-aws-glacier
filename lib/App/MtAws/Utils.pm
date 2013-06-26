@@ -39,7 +39,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string characterfilename try_drop_utf8_flag dump_request_response/;
+is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -153,7 +153,7 @@ sub file_size($%)
 	if ($args{use_filename_encoding}) {
 		$filename = binaryfilename $filename;
 	}
-	croak unless -f $filename;
+	confess "file not exists" unless -f $filename;
 	return -s $filename;
 }
 

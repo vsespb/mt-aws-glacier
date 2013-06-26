@@ -51,7 +51,7 @@ sub next_modified
 			defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
 			undef;
 		
-		if ($file->{size} != -s $binaryfilename) {
+		if ($file->{size} != file_size($absfilename)) {
 			$should_upload = 'create';
 		} elsif ($options->{detect} eq 'mtime') {
 			$should_upload = $mtime_differs ? 'create' : 0;
@@ -128,7 +128,7 @@ sub run
 {
 	my ($options, $j) = @_;
 	with_forks !$options->{'dry-run'}, $options, sub {
-		$j->read_journal(should_exist => 0);
+		$j->read_journal(should_exist => 0); # TODO: what about case when --new is missing?
 		
 		my $read_journal_opts = {
 			$options->{'new'} ? ('new' => 1) : (),
