@@ -50,95 +50,88 @@ sub run
 		
 		$j->read_files($read_journal_opts, $options->{'max-number-of-files'}); # TODO: sometimes read only 'new' files
 		
-		if ($options->{'dry-run'}) {
+		$j->open_for_write();
+		my @joblist;
+		
+		if ($options->{new}) {
 			for (@{ $j->{listing}{new} }) {
 				my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-				print "Will UPLOAD $absfilename\n";
+				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
+				push @joblist, $ft;
 			}
-		} else {
-			$j->open_for_write();
-			my @joblist;
-			
-			if ($options->{new}) {
-				for (@{ $j->{listing}{new} }) {
-					my ($absfilename, $relfilename) = ($j->absfilename($_->{relfilename}), $_->{relfilename});
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
-					push @joblist, $ft;
-				}
-			}
-
-			if ($options->{'replace-modified'}) {
-				confess unless $options->{detect};
-				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
-					while (my $rec = pop @{ $j->{listing}{existing} }) {
-						my $relfilename = $rec->{relfilename};
-						my $absfilename = $j->absfilename($relfilename);
-						my $file = $j->latest($relfilename);
-						my $binaryfilename = binaryfilename $absfilename;
-						
-						my $should_upload = 0;
-						
-						my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
-							defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
-							undef;
-						
-						if ($file->{size} != -s $binaryfilename) {
-							$should_upload = 'create';
-						} elsif ($options->{detect} eq 'mtime') {
-							$should_upload = $mtime_differs ? 'create' : 0;
-						} elsif ($options->{detect} eq 'treehash') {
-							$should_upload = 'treehash';
-						} elsif ($options->{detect} eq 'mtime-and-treehash') {
-							$should_upload = $mtime_differs ? 'treehash' : 0;
-						} elsif ($options->{detect} eq 'mtime-or-treehash') {
-							$should_upload = $mtime_differs ? 'create' : 'treehash';
-						} else {
-							confess;
-						}
-						if ($should_upload eq 'treehash') {
-							return App::MtAws::JobProxy->new(job=>
-								App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
-									relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
-									delete_after_upload => 1,
-									archive_id => $file->{archive_id},
-									treehash => $file->{treehash}
-							));
-						} elsif ($should_upload eq 'create') {
-							return App::MtAws::JobProxy->new(job=> App::MtAws::FileCreateJob->new(
-								filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
-								(finish_cb => sub {
-									App::MtAws::FileListDeleteJob->new(archives => [{
-										archive_id => $file->{archive_id}, relfilename => $relfilename
-									}])
-								})
-							));
-						} elsif (!$should_upload) {
-							next;
-						} else {
-							confess;
-						}
-					}
-					return;
-				});
-			}
-			if ($options->{'delete-removed'}) {
-				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
-					if (my $rec = pop @{ $j->{listing}{missing} }) {
-						App::MtAws::FileListDeleteJob->new(archives => [{
-							archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
-						}]);
-					} else {
-						return;
-					}
-				});
-			}
-			if (scalar @joblist) {
-				my $lt = App::MtAws::JobListProxy->new(z=>1,maxcnt=>10,jobs => \@joblist);
-				my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-				die unless $R;
-			}
-			$j->close_for_write();
 		}
+
+		if ($options->{'replace-modified'}) {
+			confess unless $options->{detect};
+			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
+				while (my $rec = pop @{ $j->{listing}{existing} }) {
+					my $relfilename = $rec->{relfilename};
+					my $absfilename = $j->absfilename($relfilename);
+					my $file = $j->latest($relfilename);
+					my $binaryfilename = binaryfilename $absfilename;
+					
+					my $should_upload = 0;
+					
+					my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
+						defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
+						undef;
+					
+					if ($file->{size} != -s $binaryfilename) {
+						$should_upload = 'create';
+					} elsif ($options->{detect} eq 'mtime') {
+						$should_upload = $mtime_differs ? 'create' : 0;
+					} elsif ($options->{detect} eq 'treehash') {
+						$should_upload = 'treehash';
+					} elsif ($options->{detect} eq 'mtime-and-treehash') {
+						$should_upload = $mtime_differs ? 'treehash' : 0;
+					} elsif ($options->{detect} eq 'mtime-or-treehash') {
+						$should_upload = $mtime_differs ? 'create' : 'treehash';
+					} else {
+						confess;
+					}
+					if ($should_upload eq 'treehash') {
+						return App::MtAws::JobProxy->new(job=>
+							App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
+								relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+								delete_after_upload => 1,
+								archive_id => $file->{archive_id},
+								treehash => $file->{treehash}
+						));
+					} elsif ($should_upload eq 'create') {
+						return App::MtAws::JobProxy->new(job=> App::MtAws::FileCreateJob->new(
+							filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+							(finish_cb => sub {
+								App::MtAws::FileListDeleteJob->new(archives => [{
+									archive_id => $file->{archive_id}, relfilename => $relfilename
+								}])
+							})
+						));
+					} elsif (!$should_upload) {
+						next;
+					} else {
+						confess;
+					}
+				}
+				return;
+			});
+		}
+		if ($options->{'delete-removed'}) {
+			push @joblist, App::MtAws::JobIteratorProxy->new(iterator => sub {
+				if (my $rec = pop @{ $j->{listing}{missing} }) {
+					App::MtAws::FileListDeleteJob->new(archives => [{
+						archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
+					}]);
+				} else {
+					return;
+				}
+			});
+		}
+		if (scalar @joblist) {
+			my $lt = App::MtAws::JobListProxy->new(z=>1,maxcnt=>10,jobs => \@joblist);
+			my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
+			die unless $R;
+		}
+		$j->close_for_write();
 	}
 }
 
