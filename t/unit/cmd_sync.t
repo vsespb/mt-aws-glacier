@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 108;
+use Test::More tests => 114;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -95,9 +95,16 @@ describe "command" => sub {
 			sub test_should_upload
 			{
 				my ($detect, $mtime_differs, $mtime_expected, $expected) = @_;
-				App::MtAws::SyncCommand->expects("is_mtime_differs")->returns($mtime_differs)->once if $mtime_expected;
+				my $opts = {detect => $detect};
+				my $file = {mtime => 123, size => 42};
+				if ($mtime_expected) {
+					App::MtAws::SyncCommand->expects("is_mtime_differs")->returns(sub {
+						cmp_deeply [$opts, $file, 'file1'], [@_];
+						return $mtime_differs;
+					})->once
+				}
 				App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
-				cmp_deeply App::MtAws::SyncCommand::should_upload({detect => $detect},{mtime => 123, size => 42}, 'file1'), $expected;
+				cmp_deeply App::MtAws::SyncCommand::should_upload($opts, $file, 'file1'), $expected;
 			}
 
 			describe "detect=mtime" => sub {
