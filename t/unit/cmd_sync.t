@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 182;
+use Test::More tests => 214;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -38,6 +38,7 @@ use Carp;
 use App::MtAws::MetaData;
 use App::MtAws::DownloadInventoryCommand;
 use File::Temp ();
+use List::Util qw/first/;
 use Data::Dumper;
 require App::MtAws::SyncCommand;
 
@@ -146,6 +147,7 @@ describe "command" => sub {
 			
 			describe "detect is unknown" => sub {
 				my $file = {mtime => 123, size => 42};
+				App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
 				ok ! defined eval { App::MtAws::SyncCommand::should_upload({detect => 'xyz'}, $file, 'file1'); 1; };
 			} 
 		};
@@ -367,6 +369,26 @@ describe "command" => sub {
 			$j->_add_filename(my $r2 = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
 			App::MtAws::Journal->expects("latest")->with('file1')->returns($r2)->once;
 			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+		};
+	};
+
+	describe "get_journal_opts" => sub {
+		it "should work in all cases" => sub {
+			for my $n (0, 1) {
+				for my $r (0, 1) {
+					for my $d (0, 1) {
+						my $options = {};
+						$options->{new} = 1 if $n;
+						$options->{'replace-modified'} = 1 if $r;
+						$options->{'delete-removed'} = 1 if $d;
+						my $res = App::MtAws::SyncCommand::get_journal_opts($options);
+						ok ! first { !/^(new|existing|missing)$/ } keys %$res; # make sure we don't have other keys here
+						cmp_deeply $res->{new}, bool $n; # can be 0, undef, not existant etc
+						cmp_deeply $res->{existing}, bool $r;
+						cmp_deeply $res->{missing}, bool $d;
+					}
+				}
+			}
 		};
 	};
 

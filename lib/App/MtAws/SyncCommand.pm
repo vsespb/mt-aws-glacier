@@ -139,17 +139,23 @@ sub print_dry_run
 	}
 }
 
+sub get_journal_opts
+{
+	my ($options) = @_;
+	return {
+		$options->{'new'} ? ('new' => 1) : (),
+		$options->{'replace-modified'} ? ('existing' => 1) : (),
+		$options->{'delete-removed'} ? ('missing' => 1) : (),
+	};
+}
+
 sub run
 {
 	my ($options, $j) = @_;
 	with_forks !$options->{'dry-run'}, $options, sub {
 		$j->read_journal(should_exist => 0); # TODO: what about case when --new is missing?
 		
-		my $read_journal_opts = {
-			$options->{'new'} ? ('new' => 1) : (),
-			$options->{'replace-modified'} ? ('existing' => 1) : (),
-			$options->{'delete-removed'} ? ('missing' => 1) : (),
-		};
+		my $read_journal_opts = get_journal_opts($options);
 		
 		$j->read_files($read_journal_opts, $options->{'max-number-of-files'}); # TODO: sometimes read only 'new' files
 		
