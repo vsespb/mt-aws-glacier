@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 214;
+use Test::More tests => 321;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -514,6 +514,57 @@ describe "command" => sub {
 				App::MtAws::SyncCommand::run($options, $j);
 			};
 		};
+		
+		it "should work with combination of options" => sub {
+			for my $n (0, 1) { for my $r (0, 1) { for my $d (0, 1) {
+				my $options = {
+					'max-number-of-files' => 10, partsize => 2,
+					$n ? (new => 1) : (),
+					$r ? ('replace-modified' => 1, detect => 'mtime-or-treehash') : (),
+					$d ? ('delete-removed' => 1) : (),
+				};
+				ordered_test sub {
+					expect_with_forks;
+					expect_journal_init($options, App::MtAws::SyncCommand::get_journal_opts($options));
+					
+					my @files = qw/file1 file2 file3 file4/;
+					
+					{
+						my $res = App::MtAws::SyncCommand->expects("next_new")->returns("sub_next_new");
+						$n ? $res->once : $res->never;
+					}
+					{
+						my $res = App::MtAws::SyncCommand->expects("next_modified")->returns("sub_next_modified");
+						$r ? $res->once : $res->never;
+					}
+					{
+						my $res = App::MtAws::SyncCommand->expects("next_missing")->returns("sub_next_missing");
+						$d ? $res->once : $res->never;
+					}
+					if ($n || $r || $d) {
+						expect_fork_engine;
+						expect_process_task($j, sub {
+							my ($job) = @_;
+							ok $job->isa('App::MtAws::JobListProxy');
+							cmp_deeply [ map { $_->{iterator}->() } @{ $job->{jobs} } ], [
+								$n ? ('sub_next_new') : (),
+								$r ? ('sub_next_modified') : (),
+								$d ? ('sub_next_missing') : (),
+							];
+							return (1);
+						});
+					} else {
+						App::MtAws::SyncCommand->expects("fork_engine")->never;
+						App::MtAws::ParentWorker->expects("process_task")->never;
+						ok 1; # test that we got there, just in case
+					}
+		
+					expect_journal_close;
+					
+					App::MtAws::SyncCommand::run($options, $j);
+				};
+			}}}
+		}
 	}
 };
 
