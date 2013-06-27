@@ -37,12 +37,38 @@ use App::MtAws::Utils;
 
 
 
-sub is_mtime_differes
+sub is_mtime_differs
 {
 	my ($options, $journal_file, $absfilename) = @_;
 	my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
 		defined($journal_file->{mtime}) && file_mtime($absfilename) != $journal_file->{mtime} :
 		undef;
+}
+
+# implements a '--detect' logic for file (with check of file size and mtime)
+# returns:
+#  create - upload file
+#  treehash - upload a file if treehash differs
+#  FALSE - don't do anything
+sub should_upload
+{
+	my ($options, $journal_file, $absfilename) = @_;
+	
+	my $mtime_differs = is_mtime_differs($options, $journal_file, $absfilename);
+	
+	if ($journal_file->{size} != file_size($absfilename)) {
+		'create';
+	} elsif ($options->{detect} eq 'mtime') {
+		$mtime_differs ? 'create' : 0;
+	} elsif ($options->{detect} eq 'treehash') {
+		'treehash';
+	} elsif ($options->{detect} eq 'mtime-and-treehash') {
+		$mtime_differs ? 'treehash' : 0;
+	} elsif ($options->{detect} eq 'mtime-or-treehash') {
+		$mtime_differs ? 'create' : 'treehash';
+	} else {
+		confess;
+	}
 }
 
 sub next_modified
@@ -53,23 +79,8 @@ sub next_modified
 		my $absfilename = $j->absfilename($relfilename);
 		my $file = $j->latest($relfilename);
 		
-		my $should_upload = 0;
-		
-		my $mtime_differs = is_mtime_differes($options, $file, $absfilename);
-		
-		if ($file->{size} != file_size($absfilename)) {
-			$should_upload = 'create';
-		} elsif ($options->{detect} eq 'mtime') {
-			$should_upload = $mtime_differs ? 'create' : 0;
-		} elsif ($options->{detect} eq 'treehash') {
-			$should_upload = 'treehash';
-		} elsif ($options->{detect} eq 'mtime-and-treehash') {
-			$should_upload = $mtime_differs ? 'treehash' : 0;
-		} elsif ($options->{detect} eq 'mtime-or-treehash') {
-			$should_upload = $mtime_differs ? 'create' : 'treehash';
-		} else {
-			confess;
-		}
+		my $should_upload = should_upload($options, $file, $absfilename);
+
 		if ($should_upload eq 'treehash') {
 			return App::MtAws::JobProxy->new(job=>
 				App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
