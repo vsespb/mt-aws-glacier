@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 321;
+use Test::More tests => 326;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -89,6 +89,16 @@ describe "command" => sub {
 		};
 		
 		describe "should_upload" => sub {
+			
+			it "should define unique constants" => sub {
+				ok App::MtAws::SyncCommand::SHOULD_CREATE() != App::MtAws::SyncCommand::SHOULD_TREEHASH();
+				ok App::MtAws::SyncCommand::SHOULD_CREATE() != App::MtAws::SyncCommand::SHOULD_NOACTION();
+				
+				ok App::MtAws::SyncCommand::SHOULD_CREATE();
+				ok App::MtAws::SyncCommand::SHOULD_TREEHASH();
+				ok !App::MtAws::SyncCommand::SHOULD_NOACTION(); # one should be FALSE
+			};
+			
 			it "should always return create if file size differs" => sub {
 				for (@all_detect) {
 					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
