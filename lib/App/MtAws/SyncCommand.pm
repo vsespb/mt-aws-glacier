@@ -36,6 +36,15 @@ use App::MtAws::Journal;
 use App::MtAws::Utils;
 
 
+
+sub is_mtime_differes
+{
+	my ($options, $journal_file, $absfilename) = @_;
+	my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
+		defined($journal_file->{mtime}) && file_mtime($absfilename) != $journal_file->{mtime} :
+		undef;
+}
+
 sub next_modified
 {
 	my ($options, $j) = @_;
@@ -46,9 +55,7 @@ sub next_modified
 		
 		my $should_upload = 0;
 		
-		my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
-			defined($file->{mtime}) && file_mtime($absfilename) != $file->{mtime} :
-			undef;
+		my $mtime_differs = is_mtime_differes($options, $file, $absfilename);
 		
 		if ($file->{size} != file_size($absfilename)) {
 			$should_upload = 'create';

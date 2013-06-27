@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 85;
+use Test::More tests => 98;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -48,6 +48,34 @@ describe "command" => sub {
 	
 	before each => sub {
 		$j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
+	};
+		
+	describe "modified processing" => sub {
+		describe "is_mtime_differs" => sub {
+			it "should work when mtime same" => sub {
+				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 123;})->once;
+				ok !App::MtAws::SyncCommand::is_mtime_differes({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
+			};
+			it "should work when mtime greater than" => sub {
+				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 456;})->once;
+				ok App::MtAws::SyncCommand::is_mtime_differes({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
+			};
+			it "should work when mtime less than" => sub {
+				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
+				ok App::MtAws::SyncCommand::is_mtime_differes({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
+			};
+			it "should work when detect contans mtime" => sub {
+				for (qw/mtime mtime-and-treehash mtime-or-treehash/) {
+					App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
+					ok App::MtAws::SyncCommand::is_mtime_differes({detect => $_},{mtime => 123}, 'file1');
+				}
+			};
+			it "should work when detect does not contan mtime" => sub {
+				for (qw/treehash/) {
+					ok ! defined App::MtAws::SyncCommand::is_mtime_differes({detect => $_},{mtime => 123}, 'file1');
+				}
+			};
+		};
 	};
 		
 	describe "next_new" => sub {
