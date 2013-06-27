@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 176;
+use Test::More tests => 182;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -69,13 +69,17 @@ describe "command" => sub {
 				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
 				ok App::MtAws::SyncCommand::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
 			};
-			it "should work when detect contans mtime" => sub {
+			it "should work when mtime is undefined in journal" => sub {
+				App::MtAws::SyncCommand->expects("file_mtime")->never;
+				ok !App::MtAws::SyncCommand::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => undef}, 'file1');
+			};
+			it "should work when detect contains mtime" => sub {
 				for (@detect_with_mtime) {
 					App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
 					ok App::MtAws::SyncCommand::is_mtime_differs({detect => $_},{mtime => 123}, 'file1');
 				}
 			};
-			it "should work when detect does not contan mtime" => sub {
+			it "should work when detect does not contain mtime" => sub {
 				for (@detect_without_mtime) {
 					App::MtAws::SyncCommand->expects("file_mtime")->never;
 					ok ! defined App::MtAws::SyncCommand::is_mtime_differs({detect => $_},{mtime => 123}, 'file1');
@@ -139,6 +143,11 @@ describe "command" => sub {
 					test_should_upload('mtime-or-treehash', 0, 1, 'treehash');
 				};
 			};
+			
+			describe "detect is unknown" => sub {
+				my $file = {mtime => 123, size => 42};
+				ok ! defined eval { App::MtAws::SyncCommand::should_upload({detect => 'xyz'}, $file, 'file1'); 1; };
+			} 
 		};
 		
 		describe "next_modified" => sub {
@@ -257,6 +266,14 @@ describe "command" => sub {
 
 				is scalar @{ $j->{listing}{existing} }, 3;
 				ok !defined App::MtAws::SyncCommand::next_modified($options, $j);
+			};
+
+			it "should confess when should_upload returns something else" => sub {
+				my $file = {relfilename => 'file1', archive_id => 'zz1'};
+				$j->{listing}{existing} = [$file];
+				$j->_add_filename($file);
+				expect_should_upload($options, $j, $file, 'somethingelse');
+				ok !defined eval{ App::MtAws::SyncCommand::next_modified($options, $j); 1};
 			};
 		};
 		
