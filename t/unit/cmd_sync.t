@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 114;
+use Test::More tests => 174;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -138,6 +138,125 @@ describe "command" => sub {
 				it "should return 'treehash' when mtime same" => sub {
 					test_should_upload('mtime-or-treehash', 0, 1, 'treehash');
 				};
+			};
+		};
+		
+		describe "next_modified" => sub {
+			my $options;
+			before each => sub {
+				$options = { partsize => 2};
+			};
+			
+			sub expect_should_upload
+			{
+				my ($options, $j, $file, $toreturn) = @_;
+				App::MtAws::SyncCommand->expects("should_upload")->returns(sub {
+					my ($opt, $f, $absfilename) = @_;
+					cmp_deeply $opt, $options;
+					cmp_deeply $f, $file;
+					is $absfilename, $j->absfilename($file->{relfilename});
+					return $toreturn;
+				})->once;
+			}
+			
+			sub verify_create_job
+			{
+				my ($options, $j, $file, $rec) = @_;
+				ok $rec->isa('App::MtAws::JobProxy');
+				my $job = $rec->{job};
+				ok $job->isa('App::MtAws::FileCreateJob');
+				is $job->{partsize}, $options->{partsize}*1024*1024;
+				is $job->{relfilename}, $file->{relfilename};
+				is $job->{filename}, $j->absfilename($file->{relfilename});
+				
+				is ref $job->{finish_cb}, 'CODE';
+				
+				my $finish = $job->{finish_cb}->();
+				
+				ok $finish->isa('App::MtAws::FileListDeleteJob');
+				cmp_deeply $finish->{archives}, [{archive_id => $file->{archive_id}, relfilename => $file->{relfilename}}];
+			}
+			
+			sub verify_treehash_job
+			{
+				my ($options, $j, $file, $rec) = @_;
+				ok $rec->isa('App::MtAws::JobProxy');
+				my $job = $rec->{job};
+				ok $job->isa('App::MtAws::FileVerifyAndUploadJob');
+				is $job->{filename}, $j->absfilename($file->{relfilename});
+				is $job->{relfilename}, $file->{relfilename};
+				ok $job->{delete_after_upload};
+				is $job->{archive_id}, $file->{archive_id};
+				is $job->{treehash}, $file->{treehash};
+				is $job->{partsize}, $options->{partsize}*1024*1024;
+			}
+			
+
+			it "should work with zero files" => sub {
+				$j->{listing}{existing} = [];
+				ok !defined App::MtAws::SyncCommand::next_modified($options, $j);
+			};
+
+			it "should work when should_upload returns 'create'" => sub {
+				my $file = {relfilename => 'file1', archive_id => 'zz1'};
+				$j->{listing}{existing} = [$file];
+				$j->_add_filename($file);
+				expect_should_upload($options, $j, $file, 'create');
+				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				verify_create_job($options, $j, $file, $rec);
+
+				is scalar @{ $j->{listing}{existing} }, 0;
+				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j)); 
+			};
+
+			it "should work with two files" => sub {
+				my $file1 = {relfilename => 'file1', archive_id => 'zz1'};
+				my $file2 = {relfilename => 'file2', archive_id => 'zz2'};
+				$j->{listing}{existing} = [$file1, $file2];
+				$j->_add_filename($file1);
+				$j->_add_filename($file2);
+				expect_should_upload($options, $j, $file1, 'create');
+				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				verify_create_job($options, $j, $file1, $rec);
+
+				is scalar @{ $j->{listing}{existing} }, 1;
+
+				expect_should_upload($options, $j, $file2, 'create');
+				$rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				verify_create_job($options, $j, $file2, $rec);
+			};
+
+			it "should work when should_upload returns 'treehash'" => sub {
+				my $file = {relfilename => 'file1', archive_id => 'zz1', treehash => 'abcdef'};
+				$j->{listing}{existing} = [$file];
+				$j->_add_filename($file);
+				expect_should_upload($options, $j, $file, 'treehash');
+				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				verify_treehash_job($options, $j, $file, $rec);
+
+				is scalar @{ $j->{listing}{existing} }, 0;
+				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j)); 
+			};
+
+			it "should skip to next file when should_upload returns false" => sub {
+				for (1..10) {
+					my $file = {relfilename => "file$_", archive_id => "zz$_"};
+					push @{ $j->{listing}{existing} }, $file;
+					$j->_add_filename($file);
+				}
+				
+				my $file;
+				App::MtAws::SyncCommand->expects("should_upload")->returns(sub {
+					my ($opt, $f, $absfilename) = @_;
+					$file = $f;
+					return $f->{relfilename} eq 'file7' ? 'create' : 0;
+				})->exactly(10);
+				
+				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				verify_create_job($options, $j, $file, $rec);
+
+				is scalar @{ $j->{listing}{existing} }, 3;
+				ok !defined App::MtAws::SyncCommand::next_modified($options, $j);
 			};
 		};
 		
