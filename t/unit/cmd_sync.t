@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 326;
+use Test::More tests => 341;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -248,6 +248,29 @@ describe "command" => sub {
 				verify_create_job($options, $j, $file2, $rec);
 			};
 
+			it "should work with latest version of file" => sub {
+				my $file = {relfilename => 'file1', size => 123};
+				$j->{listing}{existing} = [$file];
+				$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111, , treehash => 'abc0'});
+				$j->_add_filename(my $r = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113, treehash => 'abc'});
+				$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112, , treehash => 'abc2'});
+				expect_should_upload($options, $j, $r, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				verify_treehash_job($options, $j, $r, $rec);
+				is scalar @{ $j->{listing}{existing} }, 0;
+			};
+			
+			it "should call latest() to get latest version of file" => sub {
+				my $file = {relfilename => 'file1', size => 123};
+				$j->{listing}{existing} = [$file];
+				$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111, , treehash => 'abc0'});
+				$j->_add_filename(my $r = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113, treehash => 'abc'});
+				$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112, , treehash => 'abc2'});
+				expect_should_upload($options, $j, $r, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+				App::MtAws::Journal->expects("latest")->with('file1')->returns($r)->once;
+				App::MtAws::SyncCommand::next_modified($options, $j);
+			};
+
 			it "should work when should_upload returns SHOULD_TREEHASH" => sub {
 				my $file = {relfilename => 'file1', archive_id => 'zz1', treehash => 'abcdef'};
 				$j->{listing}{existing} = [$file];
@@ -260,7 +283,7 @@ describe "command" => sub {
 				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j)); 
 			};
 
-			it "should skip to next file when should_upload returns false" => sub {
+			it "should skip to next file when should_upload returns SHOULD_NOACTION" => sub {
 				for (1..10) {
 					my $file = {relfilename => "file$_", archive_id => "zz$_"};
 					push @{ $j->{listing}{existing} }, $file;
