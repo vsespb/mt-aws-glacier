@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 71;
+use Test::More tests => 82;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -53,7 +53,7 @@ describe "command" => sub {
 	describe "next_new" => sub {
 		my $options;
 		before each => sub {
-			$options = { 'max-number-of-files' => 10, partsize => 2, new => 1 };
+			$options = { partsize => 2};
 		};
 		it "should work with one file" => sub {
 			$j->{listing}{new} = [{relfilename => 'file1'}];
@@ -81,7 +81,46 @@ describe "command" => sub {
 			$j->{listing}{new} = [];
 			ok ! defined( App::MtAws::SyncCommand::next_new($options, $j) );
 		};
-	},
+	};
+
+	describe "next_missing" => sub {
+		my $options;
+		before each => sub {
+			$options = { };
+		};
+		it "should work with one file" => sub {
+			my $r = {relfilename => 'file1', size => 123};
+			$j->{listing}{missing} = [$r];
+			$j->_add_filename($r);
+			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			ok $rec->isa('App::MtAws::FileListDeleteJob');
+			is scalar @{ $rec->{archives} }, 1;
+			my $job = $rec->{archives}[0];
+			is $job->{relfilename}, 'file1';
+			is scalar @{ $j->{listing}{missing} }, 0;
+			ok !defined (App::MtAws::SyncCommand::next_missing($options, $j)); 
+		};
+		it "should work with two files" => sub {
+			for ({relfilename => 'file1', size => 123}, {relfilename => 'file2', size => 456}) {
+				push @{ $j->{listing}{missing} }, $_;
+				$j->_add_filename($_);
+			}
+			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			ok $rec->isa('App::MtAws::FileListDeleteJob');
+			is scalar @{ $rec->{archives} }, 1;
+			my $job = $rec->{archives}[0];
+			is $job->{relfilename}, 'file1';
+			is scalar @{ $j->{listing}{missing} }, 1;
+			$rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			$job = $rec->{archives}[0];
+			is $job->{relfilename}, 'file2';
+		};
+		it "should work with zero files" => sub {
+			$j->{listing}{missing} = [];
+			ok ! defined( App::MtAws::SyncCommand::next_missing($options, $j) );
+		};
+	};
+
 	describe "run" => sub {
 		sub expect_with_forks
 		{

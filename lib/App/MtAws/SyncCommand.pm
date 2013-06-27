@@ -29,6 +29,7 @@ use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
 use App::MtAws::FileCreateJob;
+use App::MtAws::FileListDeleteJob;
 use App::MtAws::FileVerifyAndUploadJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
