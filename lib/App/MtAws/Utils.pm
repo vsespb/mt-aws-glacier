@@ -25,6 +25,7 @@ use strict;
 use warnings;
 use utf8;
 use File::Spec;
+use File::stat;
 use Carp;
 use Encode;
 use POSIX;
@@ -39,7 +40,7 @@ use base qw/Exporter/;
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size/;
+is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime/;
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -155,6 +156,17 @@ sub file_size($%)
 	}
 	confess "file not exists" unless -f $filename;
 	return -s $filename;
+}
+
+sub file_mtime($%)
+{
+	my $filename = shift;
+	my (%args) = (use_filename_encoding => 1, @_);
+	if ($args{use_filename_encoding}) {
+		$filename = binaryfilename $filename;
+	}
+	confess "file not exists" unless -f $filename;
+	return stat($filename)->mtime;
 }
 
 sub is_wide_string

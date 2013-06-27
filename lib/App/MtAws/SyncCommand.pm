@@ -34,7 +34,6 @@ use App::MtAws::FileVerifyAndUploadJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
 use App::MtAws::Utils;
-use File::stat;
 
 
 sub next_modified
@@ -44,12 +43,11 @@ sub next_modified
 		my $relfilename = $rec->{relfilename};
 		my $absfilename = $j->absfilename($relfilename);
 		my $file = $j->latest($relfilename);
-		my $binaryfilename = binaryfilename $absfilename;
 		
 		my $should_upload = 0;
 		
 		my $mtime_differs = $options->{detect} =~ /(^|[-_])mtime([-_]|$)/ ? # don't make stat() call if we don't need it
-			defined($file->{mtime}) && (stat($binaryfilename)->mtime) != $file->{mtime} :
+			defined($file->{mtime}) && file_mtime($absfilename) != $file->{mtime} :
 			undef;
 		
 		if ($file->{size} != file_size($absfilename)) {
