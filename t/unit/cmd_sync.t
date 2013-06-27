@@ -23,24 +23,22 @@
 use strict;
 use warnings;
 use utf8;
+
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+
+use Carp;
+use List::Util qw/first/;
+use Scalar::Util qw/looks_like_number/;
+
 use Test::Spec 0.46;
 use Test::More tests => 344;
 use Test::Deep;
-use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
-use App::MtAws::Journal;
-use File::Path;
-use POSIX;
-use TestUtils;
-use POSIX;
-use Time::Local;
-use Carp;
-use App::MtAws::MetaData;
-use App::MtAws::DownloadInventoryCommand;
-use File::Temp ();
-use List::Util qw/first/;
-use Scalar::Util qw/looks_like_number/;
+
 use Data::Dumper;
+use TestUtils;
+
+use App::MtAws::Journal;
 require App::MtAws::SyncCommand;
 
 warning_fatal();
