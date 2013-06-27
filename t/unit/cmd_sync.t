@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
+use Test::More tests => 71;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -43,13 +44,45 @@ require App::MtAws::SyncCommand;
 warning_fatal();
 
 describe "command" => sub {
-	describe "run" => sub {
-		my $j;
+	my $j;
+	
+	before each => sub {
+		$j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
+	};
 		
+	describe "next_new" => sub {
+		my $options;
 		before each => sub {
-			$j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
+			$options = { 'max-number-of-files' => 10, partsize => 2, new => 1 };
 		};
-		
+		it "should work with one file" => sub {
+			$j->{listing}{new} = [{relfilename => 'file1'}];
+			my $rec = App::MtAws::SyncCommand::next_new($options, $j);
+			ok $rec->isa('App::MtAws::JobProxy');
+			my $job = $rec->{job};
+			is $job->{partsize}, $options->{partsize}*1024*1024;
+			is $job->{relfilename}, 'file1';
+			is $job->{filename}, $j->absfilename('file1');
+			ok $job->isa('App::MtAws::FileCreateJob');
+			is scalar @{ $j->{listing}{new} }, 0;
+			ok !defined (App::MtAws::SyncCommand::next_new($options, $j)); 
+		};
+		it "should work with two files" => sub {
+			$j->{listing}{new} = [{relfilename => 'file1'}, {relfilename => 'file2'}];
+			my $rec = App::MtAws::SyncCommand::next_new($options, $j);
+			my $job = $rec->{job};
+			is $job->{relfilename}, 'file1';
+			is scalar @{ $j->{listing}{new} }, 1;
+			$rec = App::MtAws::SyncCommand::next_new($options, $j); 
+			$job = $rec->{job};
+			is $job->{relfilename}, 'file2';
+		};
+		it "should work with zero files" => sub {
+			$j->{listing}{new} = [];
+			ok ! defined( App::MtAws::SyncCommand::next_new($options, $j) );
+		};
+	},
+	describe "run" => sub {
 		sub expect_with_forks
 		{
 			App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
