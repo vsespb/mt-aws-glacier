@@ -25,6 +25,11 @@ use warnings;
 use utf8;
 use Carp;
 use constant ONE_MB => 1024*1024;
+
+use constant SHOULD_CREATE => 1;
+use constant SHOULD_TREEHASH => 2;
+use constant SHOULD_NOACTION => 0;
+
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
@@ -47,23 +52,23 @@ sub is_mtime_differs
 
 # implements a '--detect' logic for file (with check of file size and mtime)
 # returns:
-#  create - upload file
-#  treehash - upload a file if treehash differs
-#  FALSE - don't do anything
+#  SHOULD_CREATE - upload file
+#  SHOULD_TREEHASH - upload a file if treehash differs
+#  SHOULD_NOACTION - don't do anything
 sub should_upload
 {
 	my ($options, $journal_file, $absfilename) = @_;
 	
 	if ($journal_file->{size} != file_size($absfilename)) {
-		'create';
+		SHOULD_CREATE;
 	} elsif ($options->{detect} eq 'mtime') {
-		is_mtime_differs($options, $journal_file, $absfilename) ? 'create' : 0;
+		is_mtime_differs($options, $journal_file, $absfilename) ? SHOULD_CREATE : SHOULD_NOACTION;
 	} elsif ($options->{detect} eq 'treehash') {
-		'treehash';
+		SHOULD_TREEHASH;
 	} elsif ($options->{detect} eq 'mtime-and-treehash') {
-		is_mtime_differs($options, $journal_file, $absfilename) ? 'treehash' : 0;
+		is_mtime_differs($options, $journal_file, $absfilename) ? SHOULD_TREEHASH : SHOULD_NOACTION;
 	} elsif ($options->{detect} eq 'mtime-or-treehash') {
-		is_mtime_differs($options, $journal_file, $absfilename) ? 'create' : 'treehash';
+		is_mtime_differs($options, $journal_file, $absfilename) ? SHOULD_CREATE : SHOULD_TREEHASH;
 	} else {
 		confess;
 	}
@@ -79,7 +84,7 @@ sub next_modified
 		
 		my $should_upload = should_upload($options, $file, $absfilename);
 
-		if ($should_upload eq 'treehash') {
+		if ($should_upload == SHOULD_TREEHASH) {
 			return App::MtAws::JobProxy->new(job=>
 				App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
 					relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
@@ -87,7 +92,7 @@ sub next_modified
 					archive_id => $file->{archive_id},
 					treehash => $file->{treehash}
 			));
-		} elsif ($should_upload eq 'create') {
+		} elsif ($should_upload == SHOULD_CREATE) {
 			return App::MtAws::JobProxy->new(job=> App::MtAws::FileCreateJob->new(
 				filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 				(finish_cb => sub {
@@ -96,7 +101,7 @@ sub next_modified
 					}])
 				})
 			));
-		} elsif (!$should_upload) {
+		} elsif ($should_upload == SHOULD_NOACTION) {
 			next;
 		} else {
 			confess;

@@ -93,7 +93,8 @@ describe "command" => sub {
 				for (@all_detect) {
 					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
 					App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
-					is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'), 'create';
+					is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'),
+						App::MtAws::SyncCommand::SHOULD_CREATE();
 				}
 			};
 
@@ -114,34 +115,34 @@ describe "command" => sub {
 
 			describe "detect=mtime" => sub {
 				it "should return 'create' when mtime differs" => sub {
-					test_should_upload('mtime', 1, 1, 'create');
+					test_should_upload('mtime', 1, 1, App::MtAws::SyncCommand::SHOULD_CREATE());
 				};
 				it "should return FALSE when mtime same" => sub {
-					test_should_upload('mtime', 0, 1, bool(0));
+					test_should_upload('mtime', 0, 1, App::MtAws::SyncCommand::SHOULD_NOACTION());
 				};
 			};
 
 			describe "detect=treehash" => sub {
 				it "should return 'treehash' mtime is irrelevant" => sub {
-					test_should_upload('treehash', $_, 0, 'treehash') for (0,1);
+					test_should_upload('treehash', $_, 0, App::MtAws::SyncCommand::SHOULD_TREEHASH()) for (0,1);
 				};
 			};
 
 			describe "detect=mtime-and-treehash" => sub {
 				it "should return 'treehash' when mtime differs" => sub {
-					test_should_upload('mtime-and-treehash', 1, 1, 'treehash');
+					test_should_upload('mtime-and-treehash', 1, 1, App::MtAws::SyncCommand::SHOULD_TREEHASH());
 				};
 				it "should return FALSE when mtime same" => sub {
-					test_should_upload('mtime-and-treehash', 0, 1, bool(0));
+					test_should_upload('mtime-and-treehash', 0, 1, App::MtAws::SyncCommand::SHOULD_NOACTION());
 				};
 			};
 			
 			describe "detect=mtime-or-treehash" => sub {
 				it "should return 'create' when mtime differs" => sub {
-					test_should_upload('mtime-or-treehash', 1, 1, 'create');
+					test_should_upload('mtime-or-treehash', 1, 1, App::MtAws::SyncCommand::SHOULD_CREATE());
 				};
 				it "should return 'treehash' when mtime same" => sub {
-					test_should_upload('mtime-or-treehash', 0, 1, 'treehash');
+					test_should_upload('mtime-or-treehash', 0, 1, App::MtAws::SyncCommand::SHOULD_TREEHASH());
 				};
 			};
 			
@@ -208,11 +209,11 @@ describe "command" => sub {
 				ok !defined App::MtAws::SyncCommand::next_modified($options, $j);
 			};
 
-			it "should work when should_upload returns 'create'" => sub {
+			it "should work when should_upload returns SHOULD_CREATE" => sub {
 				my $file = {relfilename => 'file1', archive_id => 'zz1'};
 				$j->{listing}{existing} = [$file];
 				$j->_add_filename($file);
-				expect_should_upload($options, $j, $file, 'create');
+				expect_should_upload($options, $j, $file, App::MtAws::SyncCommand::SHOULD_CREATE());
 				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
 				verify_create_job($options, $j, $file, $rec);
 
@@ -226,22 +227,22 @@ describe "command" => sub {
 				$j->{listing}{existing} = [$file1, $file2];
 				$j->_add_filename($file1);
 				$j->_add_filename($file2);
-				expect_should_upload($options, $j, $file1, 'create');
+				expect_should_upload($options, $j, $file1, App::MtAws::SyncCommand::SHOULD_CREATE());
 				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
 				verify_create_job($options, $j, $file1, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 1;
 
-				expect_should_upload($options, $j, $file2, 'create');
+				expect_should_upload($options, $j, $file2, App::MtAws::SyncCommand::SHOULD_CREATE());
 				$rec = App::MtAws::SyncCommand::next_modified($options, $j);
 				verify_create_job($options, $j, $file2, $rec);
 			};
 
-			it "should work when should_upload returns 'treehash'" => sub {
+			it "should work when should_upload returns SHOULD_TREEHASH" => sub {
 				my $file = {relfilename => 'file1', archive_id => 'zz1', treehash => 'abcdef'};
 				$j->{listing}{existing} = [$file];
 				$j->_add_filename($file);
-				expect_should_upload($options, $j, $file, 'treehash');
+				expect_should_upload($options, $j, $file, App::MtAws::SyncCommand::SHOULD_TREEHASH());
 				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
 				verify_treehash_job($options, $j, $file, $rec);
 
@@ -260,7 +261,7 @@ describe "command" => sub {
 				App::MtAws::SyncCommand->expects("should_upload")->returns(sub {
 					my ($opt, $f, $absfilename) = @_;
 					$file = $f;
-					return $f->{relfilename} eq 'file7' ? 'create' : 0;
+					return $f->{relfilename} eq 'file7' ? App::MtAws::SyncCommand::SHOULD_CREATE() : App::MtAws::SyncCommand::SHOULD_NOACTION();
 				})->exactly(10);
 				
 				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
