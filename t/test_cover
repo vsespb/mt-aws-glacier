@@ -1,6 +1,6 @@
 #!/bin/sh
 cover -delete
 #perl -MDevel::Cover integration/config_engine_definitions.t
-#perl -MDevel::Cover unit/config_engine_new.t
-./test.t cover
-cover cover_db -report=html
+perl -MDevel::Cover unit/cmd_sync.t
+#./test.t cover
+cover cover_db -report=html -launch

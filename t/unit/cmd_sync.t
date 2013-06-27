@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 174;
+use Test::More tests => 176;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -52,7 +52,7 @@ describe "command" => sub {
 		
 	describe "modified processing" => sub {
 		
-		my @all_detect = qw/mtime mtime-and-treehash mtime-or-treehash/; # TODO: fetch from ConfigDefinition
+		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash/; # TODO: fetch from ConfigDefinition
 		my @detect_with_mtime = grep { /mtime/ } @all_detect;
 		my @detect_without_mtime = grep { ! /mtime/ } @all_detect;
 		
