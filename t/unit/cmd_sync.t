@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 111;
+use Test::More tests => 108;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -85,53 +85,51 @@ describe "command" => sub {
 		
 		describe "should_upload" => sub {
 			it "should always return create if file size differs" => sub {
-				for my $mtime_differs (0, 1) {
-					for (@all_detect) {
-						App::MtAws::SyncCommand->expects("is_mtime_differs")->returns($mtime_differs)->once;
-						App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
-						is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'), 'create';
-					}
+				for (@all_detect) {
+					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
+					App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
+					is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'), 'create';
 				}
 			};
 
 			sub test_should_upload
 			{
-				my ($detect, $mtime_differs, $expected) = @_;
-				App::MtAws::SyncCommand->expects("is_mtime_differs")->returns($mtime_differs)->once;
+				my ($detect, $mtime_differs, $mtime_expected, $expected) = @_;
+				App::MtAws::SyncCommand->expects("is_mtime_differs")->returns($mtime_differs)->once if $mtime_expected;
 				App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
 				cmp_deeply App::MtAws::SyncCommand::should_upload({detect => $detect},{mtime => 123, size => 42}, 'file1'), $expected;
 			}
 
 			describe "detect=mtime" => sub {
 				it "should return 'create' when mtime differs" => sub {
-					test_should_upload('mtime', 1, 'create');
+					test_should_upload('mtime', 1, 1, 'create');
 				};
 				it "should return FALSE when mtime same" => sub {
-					test_should_upload('mtime', 0, bool(0));
+					test_should_upload('mtime', 0, 1, bool(0));
 				};
 			};
 
 			describe "detect=treehash" => sub {
 				it "should return 'treehash' mtime is irrelevant" => sub {
-					test_should_upload('treehash', $_, 'treehash') for (0,1);
+					test_should_upload('treehash', $_, 0, 'treehash') for (0,1);
 				};
 			};
 
 			describe "detect=mtime-and-treehash" => sub {
 				it "should return 'treehash' when mtime differs" => sub {
-					test_should_upload('mtime-and-treehash', 1, 'treehash');
+					test_should_upload('mtime-and-treehash', 1, 1, 'treehash');
 				};
 				it "should return FALSE when mtime same" => sub {
-					test_should_upload('mtime-and-treehash', 0, bool(0));
+					test_should_upload('mtime-and-treehash', 0, 1, bool(0));
 				};
 			};
 			
 			describe "detect=mtime-or-treehash" => sub {
 				it "should return 'create' when mtime differs" => sub {
-					test_should_upload('mtime-or-treehash', 1, 'create');
+					test_should_upload('mtime-or-treehash', 1, 1, 'create');
 				};
 				it "should return 'treehash' when mtime same" => sub {
-					test_should_upload('mtime-or-treehash', 0, 'treehash');
+					test_should_upload('mtime-or-treehash', 0, 1, 'treehash');
 				};
 			};
 		};

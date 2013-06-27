@@ -54,18 +54,16 @@ sub should_upload
 {
 	my ($options, $journal_file, $absfilename) = @_;
 	
-	my $mtime_differs = is_mtime_differs($options, $journal_file, $absfilename);
-	
 	if ($journal_file->{size} != file_size($absfilename)) {
 		'create';
 	} elsif ($options->{detect} eq 'mtime') {
-		$mtime_differs ? 'create' : 0;
+		is_mtime_differs($options, $journal_file, $absfilename) ? 'create' : 0;
 	} elsif ($options->{detect} eq 'treehash') {
 		'treehash';
 	} elsif ($options->{detect} eq 'mtime-and-treehash') {
-		$mtime_differs ? 'treehash' : 0;
+		is_mtime_differs($options, $journal_file, $absfilename) ? 'treehash' : 0;
 	} elsif ($options->{detect} eq 'mtime-or-treehash') {
-		$mtime_differs ? 'create' : 'treehash';
+		is_mtime_differs($options, $journal_file, $absfilename) ? 'create' : 'treehash';
 	} else {
 		confess;
 	}
