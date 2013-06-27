@@ -85,7 +85,7 @@ my $build = Module::Build->new(
 		'Data::Dumper' => 0,
 		'Time::HiRes' => 0,
 		'open' => 0,
-		
+		'Scalar::Util' => '1.11',
 	},
 	recommends => {
 		'LWP::Protocol::https' => 6,

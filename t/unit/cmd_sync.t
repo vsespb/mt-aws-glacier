@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 341;
+use Test::More tests => 344;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -39,6 +39,7 @@ use App::MtAws::MetaData;
 use App::MtAws::DownloadInventoryCommand;
 use File::Temp ();
 use List::Util qw/first/;
+use Scalar::Util qw/looks_like_number/;
 use Data::Dumper;
 require App::MtAws::SyncCommand;
 
@@ -97,6 +98,11 @@ describe "command" => sub {
 				ok App::MtAws::SyncCommand::SHOULD_CREATE();
 				ok App::MtAws::SyncCommand::SHOULD_TREEHASH();
 				ok !App::MtAws::SyncCommand::SHOULD_NOACTION(); # one should be FALSE
+				
+				# numeric eq only
+				ok looks_like_number App::MtAws::SyncCommand::SHOULD_CREATE();
+				ok looks_like_number App::MtAws::SyncCommand::SHOULD_TREEHASH();
+				ok looks_like_number App::MtAws::SyncCommand::SHOULD_NOACTION();
 			};
 			
 			it "should always return create if file size differs" => sub {
