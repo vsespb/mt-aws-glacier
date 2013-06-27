@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec 0.46;
-use Test::More tests => 82;
+use Test::More tests => 85;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -118,6 +118,26 @@ describe "command" => sub {
 		it "should work with zero files" => sub {
 			$j->{listing}{missing} = [];
 			ok ! defined( App::MtAws::SyncCommand::next_missing($options, $j) );
+		};
+		it "should work with latest version of file" => sub {
+			my $r = {relfilename => 'file1', size => 123};
+			$j->{listing}{missing} = [$r];
+			$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111});
+			$j->_add_filename({relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
+			$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112});
+			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			ok $rec->isa('App::MtAws::FileListDeleteJob');
+			is scalar @{ $rec->{archives} }, 1;
+			my $job = $rec->{archives}[0];
+			is $job->{archive_id}, 'zz2';
+		};
+		it "should call latest() to get latest version of file" => sub {
+			my $r = {relfilename => 'file1', size => 123};
+			$j->{listing}{missing} = [$r];
+			$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111});
+			$j->_add_filename(my $r2 = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
+			App::MtAws::Journal->expects("latest")->with('file1')->returns($r2)->once;
+			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
 		};
 	};
 
