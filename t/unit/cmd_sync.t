@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 453;
+use Test::More tests => 455;
 use Test::Deep;
 
 use Data::Dumper;
@@ -164,6 +164,7 @@ describe "command" => sub {
 				my $file = {mtime => 123, size => 42};
 				App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
 				ok ! defined eval { App::MtAws::SyncCommand::should_upload({detect => 'xyz'}, $file, 'file1'); 1; };
+				ok $@ =~ /Invalid detect option in should_upload/;
 			} 
 		};
 		
@@ -312,8 +313,9 @@ describe "command" => sub {
 				my $file = {relfilename => 'file1', archive_id => 'zz1'};
 				$j->{listing}{existing} = [$file];
 				$j->_add_filename($file);
-				expect_should_upload($options, $j, $file, 'somethingelse');
+				expect_should_upload($options, $j, $file, 7656348);
 				ok !defined eval{ App::MtAws::SyncCommand::next_modified($options, $j); 1};
+				ok $@ =~ /Unknown value returned by should_upload/;
 			};
 		};
 		
