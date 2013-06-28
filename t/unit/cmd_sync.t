@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 374;
+use Test::More tests => 381;
 use Test::Deep;
 
 use Data::Dumper;
@@ -427,6 +427,80 @@ describe "command" => sub {
 					}
 				}
 			}
+		};
+	};
+
+	describe "print_dry_run" => sub {
+		{
+			package WillDoTest;
+			use Carp;
+			sub will_do {
+				my ($self) = @_;
+				if ($self->{toprint_a}) {
+				 	map { "Will ".$_ } @{ $self->{toprint_a} };
+				} elsif ($self->{toprint}) {
+					"Will ".$self->{toprint};
+				} elsif ($self->{empty}) {
+					''
+				} else {
+					return;
+				}
+			}
+		}
+		it "should work with zero elements" => sub {
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub {});
+			};
+			is $out, "";
+		};
+		it "should work with one element when it returns empty list" => sub {
+			my @a = bless {}, "WillDoTest";
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+			};
+			is $out, "";
+		};
+		it "should work with one element when it returns empty string" => sub {
+			my @a = bless {empty=>'1'}, "WillDoTest";
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+			};
+			is $out, "\n";
+		};
+		it "should work with one element" => sub {
+			my @a = bless { toprint => 42}, "WillDoTest";
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+			};
+			is $out, "Will 42\n";
+		};
+		it "should work with two elements" => sub {
+			my @a = (bless({ toprint => 42}, "WillDoTest"),bless({ toprint => 123}, "WillDoTest"));
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+			};
+			is $out, "Will 42\nWill 123\n";
+		};
+		it "should work with list elements" => sub {
+			my @a = bless { toprint_a => [42, 'zz']}, "WillDoTest";
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+			};
+			is $out, "Will 42\nWill zz\n";
+		};
+		it "should work with two list elements" => sub {
+			my @a = ( bless({ toprint_a => [42, 'zz']}, "WillDoTest"),  bless({ toprint_a => [123, 'ff']}, "WillDoTest"));
+			my $out = '';
+			capture_stdout $out => sub {
+				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+			};
+			is $out, "Will 42\nWill zz\nWill 123\nWill ff\n";
 		};
 	};
 

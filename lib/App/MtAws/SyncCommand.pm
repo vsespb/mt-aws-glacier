@@ -139,7 +139,7 @@ sub print_dry_run
 	my ($itt) = @_;
 	while (my $rec = $itt->()) {
 		for ($rec->will_do()) {
-			print $_."\n";
+			print $_, "\n";
 		}
 	}
 }
@@ -197,7 +197,7 @@ sub run
 		if (scalar @joblist) {
 			my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
 			my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-			die unless $R;
+			confess unless $R;
 		}
 		$j->close_for_write();
 	}
