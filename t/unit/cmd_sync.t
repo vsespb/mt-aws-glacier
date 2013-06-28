@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 381;
+use Test::More tests => 453;
 use Test::Deep;
 
 use Data::Dumper;
@@ -715,6 +715,52 @@ describe "command" => sub {
 					expect_journal_close;
 					
 					App::MtAws::SyncCommand::run($options, $j);
+				};
+			}}}
+		};
+		
+		it "should work with combination of options in dry-run mode" => sub {
+			for my $n (0, 1) { for my $r (0, 1) { for my $d (0, 1) {
+				my $options = {
+					'max-number-of-files' => 10, partsize => 2, 'dry-run' => 1,
+					$n ? (new => 1) : (),
+					$r ? ('replace-modified' => 1, detect => 'mtime-or-treehash') : (),
+					$d ? ('delete-removed' => 1) : (),
+				};
+				ordered_test sub {
+					expect_with_forks;
+					expect_journal_init($options, App::MtAws::SyncCommand::get_journal_opts($options));
+					
+					{
+						my $res = App::MtAws::SyncCommand->expects("next_new")->returns("sub_next_new");
+						$n ? $res->once : $res->never;
+					}
+					{
+						my $res = App::MtAws::SyncCommand->expects("next_modified")->returns("sub_next_modified");
+						$r ? $res->once : $res->never;
+					}
+					{
+						my $res = App::MtAws::SyncCommand->expects("next_missing")->returns("sub_next_missing");
+						$d ? $res->once : $res->never;
+					}
+					
+					my @dry_run_args;
+					App::MtAws::SyncCommand->expects("print_dry_run")->returns(sub {
+						push @dry_run_args, shift;
+					})->any_number;
+					
+					App::MtAws::SyncCommand->expects("fork_engine")->never;
+					App::MtAws::ParentWorker->expects("process_task")->never;
+		
+					expect_journal_close;
+					
+					App::MtAws::SyncCommand::run($options, $j);
+					
+					cmp_deeply [ map { $_->() } @dry_run_args ], [
+						$n ? ('sub_next_new') : (),
+						$r ? ('sub_next_modified') : (),
+						$d ? ('sub_next_missing') : (),
+					];
 				};
 			}}}
 		}
