@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 344;
+use Test::More tests => 374;
 use Test::Deep;
 
 use Data::Dumper;
@@ -553,6 +553,47 @@ describe "command" => sub {
 			};
 		};
 		
+		it "should work with delete-removed" => sub {
+			my $options = { 'max-number-of-files' => 10, partsize => 2, 'delete-removed' => 1 };
+			ordered_test sub {
+				expect_with_forks;
+				expect_journal_init($options, {missing=>1});
+				expect_fork_engine;
+				my %files = (
+					file1 => {archive_id => 'z123'},
+					file2 => {archive_id => 'z456'},
+					file3 => {archive_id => 'z789'},
+					file4 => {archive_id => 'z42'}
+				);
+	
+				expect_process_task($j, sub {
+					my ($job) = @_;
+					ok $job->isa('App::MtAws::JobListProxy');
+					is scalar @{ $job->{jobs} }, 1;
+					my $itt = $job->{jobs}[0];
+					for (sort keys %files) {
+						my $task = $itt->{iterator}->();
+						ok $task->isa('App::MtAws::FileListDeleteJob');
+						is scalar @{ $task->{archives} }, 1;
+						my $a = $task->{archives}[0];
+						is $a->{relfilename}, $_;
+						is $a->{archive_id}, $files{$_}{archive_id};
+					}
+					return (1)
+				});
+	
+				expect_journal_close;
+				$j->{listing}{missing} = [];
+				for (sort keys %files) {
+					my $r = {relfilename => $_, archive_id => $files{$_}{archive_id}};
+					$j->_add_filename($r);
+					push @{ $j->{listing}{missing} }, $r;
+				}
+				
+				App::MtAws::SyncCommand::run($options, $j);
+			};
+		};
+
 		it "should work with combination of options" => sub {
 			for my $n (0, 1) { for my $r (0, 1) { for my $d (0, 1) {
 				my $options = {
