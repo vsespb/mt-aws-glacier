@@ -49,6 +49,12 @@ my $build = Module::Build->new(
 		'File::Basename' => 0,
 		'File::Find' => 0,
 		'File::Path' => 0,
+		
+		
+		 # File::Temp - for tests we need 0.18, for code probably lower version is OK, perl 5.8.8 ships 0.16, 5.8.9 ships 0.20
+		 # TODO: decrease required version
+		'File::Temp' => '0.19',
+		
 		'File::Spec' => 0,
 		'File::stat' => 0,
 		'Getopt::Long' => '2.24',

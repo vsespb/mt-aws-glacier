@@ -24,6 +24,7 @@
             "Data::Dumper" : "0",
             "DateTime" : "0",
             "HTTP::Daemon" : "1.36",
+            "Scalar::Util" : "1.11",
             "TAP::Harness" : "0",
             "Test::Deep" : "!= 0.090, != 0.091",
             "Test::MockModule" : "0",
@@ -51,6 +52,7 @@
             "File::Find" : "0",
             "File::Path" : "0",
             "File::Spec" : "0",
+            "File::Temp" : "0.19",
             "File::stat" : "0",
             "FindBin" : "0",
             "Getopt::Long" : "2.24",
@@ -79,7 +81,7 @@
    "provides" : {
       "App::MtAws" : {
          "file" : "lib/App/MtAws.pm",
-         "version" : "0.962_3"
+         "version" : "0.963"
       },
       "App::MtAws::CheckLocalHashCommand" : {
          "file" : "lib/App/MtAws/CheckLocalHashCommand.pm"
@@ -211,7 +213,7 @@
          "file" : "lib/App/MtAws/Utils.pm"
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/vsespb/mt-aws-glacier/issues"
@@ -224,5 +226,5 @@
          "url" : "https://github.com/vsespb/mt-aws-glacier"
       }
    },
-   "version" : "0.962_3"
+   "version" : "0.963"
 }
