@@ -93,18 +93,32 @@ sub delete_by_archive_id
 	return 0;
 }
 
+# alternative 1:
+
 # if mtime defined for both a,b - compare mtime. otherwise compare time
 # if mtime equal, compare time too
+
+# when $a->{mtime} <=> $b->{mtime} returns 0 (equal), we magicaly switch to 'time' comparsion
+# when $a->{mtime} <=> $b->{mtime} returns 1 or -1, we use that
+# ( defined($a->{mtime}) && defined($b->{mtime}) && ($a->{mtime} <=> $b->{mtime}) ) ||
+# ( $a->{'time'} <=> $b->{'time'} );
+
+# alternative 2:
+# possible alternative formula:
+#(defined($a->{mtime}) ? $a->{mtime} : $a->{time}) <=> (defined($b->{mtime}) ? $b->{mtime} : $b->{time})
+
 sub _cmp
 {
 	my ($a, $b) = @_;
-	# when $a->{mtime} <=> $b->{mtime} returns 0 (equal), we magicaly switch to 'time' comparsion
-	# when $a->{mtime} <=> $b->{mtime} returns 1 or -1, we use that
-	( defined($a->{mtime}) && defined($b->{mtime}) && ($a->{mtime} <=> $b->{mtime}) ) ||
-	( $a->{'time'} <=> $b->{'time'} );
-	
-	# possible alternative formula:
-	#(defined($a->{mtime}) ? $a->{mtime} : $a->{time}) <=> (defined($b->{mtime}) ? $b->{mtime} : $b->{time})
+	# use mtime (but if missed, use time) for both values
+	(
+		(defined($a->{mtime}) ? $a->{mtime} : $a->{time}) # mtime1 or time1
+		<=>
+		(defined($b->{mtime}) ? $b->{mtime} : $b->{time}) # mtime2 or time2
+	) or # if copared values are equal (i.e. mtime1=mtime2 or in some cases mtime1=time2)
+	(
+		( $a->{'time'} <=> $b->{'time'} ) # compare time
+	)
 }
 
 1;
