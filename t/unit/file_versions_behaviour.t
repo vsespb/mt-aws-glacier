@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 576;
+use Test::More tests => 384;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -45,9 +45,9 @@ sub object
 
 {
 	my @all = (1,2,3);
-	for my $t1 (@all) { for my $m1 (@all, undef) { if (!defined($m1) || $m1 != $t1) {
+	for my $t1 (@all) { for my $m1 (@all, undef) { 
 	for my $t2 (@all) { if ($t2 != $t1) { for my $m2 (@all, undef) {
-	for my $t3 (@all) { if ($t3 != $t2) { for my $m3 (@all, undef) {
+	for my $t3 (@all) { if ( ($t3 != $t2) && ($t3 != $t1) ) { for my $m3 (@all, undef) {
 		
 		my ($x, $y, $z) = sort { $cmp->(object($a->[0], $a->[1]), object($b->[0], $b->[1])) } ( [$t1, $m1], [$t2, $m2], [$t3, $m3] );
 		$is_ok=1;
@@ -59,7 +59,7 @@ sub object
 
 	}}}
 	}}}
-	}}}
+	}}
 }
 
 
