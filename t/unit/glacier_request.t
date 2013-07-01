@@ -125,6 +125,16 @@ describe "perform_lwp" => sub {
 			is $resp->code, $code;
 		}
 	};
+	it "should construct correct User-Agent" => sub {
+		my $g = App::MtAws::GlacierRequest->new({%common_options});
+		($g->{method}, $g->{url}) = ('GET', 'test');
+		LWP::UserAgent->expects('request')->returns(sub {
+			my ($self, $req) = @_;
+			is $self->agent, "mt-aws-glacier/$App::MtAws::VERSION$App::MtAws::VERSION_MATURITY (http://mt-aws.com/) libwww-perl/".LWP->VERSION();
+			HTTP::Response->new(200, 'OK')
+		});
+		my $resp = $g->perform_lwp();
+	};
 	describe "throttle" => sub {
 		it 'should work' => sub {
 			my @sleep_args;

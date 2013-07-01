@@ -32,6 +32,7 @@ use TestUtils;
 use Test::More;
 use File::Temp ();
 use HTTP::Daemon;
+use App::MtAws;
 #use HTTP::Daemon::SSL;
 
 warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION() unless @ARGV;
@@ -46,7 +47,7 @@ my $test_size = 3_000_000 - 1;
 my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
 my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $proto, timeout => 20);
 my ($base) = initialize_processes();
-	plan tests => 41;
+	plan tests => 42;
 
 	my $TEMP = File::Temp->newdir();
 	my $mtroot = $TEMP->dirname();
@@ -92,6 +93,18 @@ my ($base) = initialize_processes();
 	    print $c $s;
 	}
 	
+	sub httpd_check_user_agent
+	{
+	    my($c, $req) = @_;
+	    $c->send_basic_header(200);
+	    
+	    my $ua = $req->header('User-Agent');
+	    my $ua_len = length($ua);
+	    print $c "Content-Length: $ua_len\015\012";
+	    $c->send_crlf;
+	    print $c $ua;
+	}
+
 	sub httpd_empty_response
 	{
 	    my($c, $req, $size, $header_size) = @_;
@@ -199,6 +212,13 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, $test_size;
 	}
 	
+	# user_agent
+	{
+		no warnings 'redefine';
+		my ($g, $resp, $err) = make_glacier_request('GET', "check_user_agent", {%common_options});
+		is  $resp->content, "mt-aws-glacier/$App::MtAws::VERSION$App::MtAws::VERSION_MATURITY (http://mt-aws.com/) libwww-perl/".LWP->VERSION();
+	}
+
 	# truncated response for HTTP 400
 	{
 		no warnings 'redefine';

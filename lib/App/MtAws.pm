@@ -39,7 +39,8 @@ use warnings;
 use utf8;
 use 5.008008; # minumum perl version is 5.8.8
 
-our $VERSION = "0.963beta";
+our $VERSION = "0.963";
+our $VERSION_MATURITY = "beta";
 
 use constant ONE_MB => 1024*1024;
 
@@ -82,7 +83,7 @@ sub process
 {
 	$|=1;
 	STDERR->autoflush(1); 
-	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION\n\n";
+	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
 	
 	my ($P) = @_;
 	my ($src, $vault, $journal);
