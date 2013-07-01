@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 5184;
+use Test::More tests => 5328;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -36,22 +36,41 @@ warning_fatal();
 
 my $cmp = \&App::MtAws::FileVersions::_cmp;
 
-sub object { { time => $_[0], mtime => $_[1] } }
+#
+# Let's try to define function normalize(), so that
+# normalize(a) <=> normalize(b) MUST equal to $cmp->(a, b);
+# 
+sub normalize
+{
+	my ($a) = @_;
+	sprintf("%011d%011d", defined($a->{mtime}) ? ($a->{mtime}, $a->{time})  : ($a->{time}, $a->{time}));
+}
 
 #
 # This test tests _cmp function behaviour (like transitivity), so you can change function algorithm, but this
-# test must pass anyway
+# test must pass anyway (i.e. it passes for different function without changing test code)
 #
+# Except you need to edit normalize() function
+
+sub object { { time => $_[0], mtime => $_[1] } }
 
 {
 	my @all = (1,2,3);
 	for my $t1 (@all) { for my $m1 (@all, undef) { 
+	my $f1 = object($t1, $m1);
 	for my $t2 (@all) { for my $m2 (@all, undef) {
+	my $f2 = object($t2, $m2);
+	
+	{ # work with all permutations of two objects
+		no warnings 'uninitialized';
+		is $cmp->($f1, $f2), normalize($f1) <=> normalize($f2),
+		"normalize([$t1, $m1]) <=> normalize([$t2, $m2]) should be equal to $cmp->([$t1, $m1], [$t2, $m2])";
+	}
+	
 	for my $t3 (@all) { for my $m3 (@all, undef) {
-		
-		my $f1 = object($t1, $m1);
-		my $f2 = object($t2, $m2);
 		my $f3 = object($t3, $m3);
+		
+		# work with all permutations of three objects
 		
 		{
 			my $is_ok = 1;
