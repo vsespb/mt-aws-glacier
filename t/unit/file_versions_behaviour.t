@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1728;
+use Test::More tests => 3456;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -35,13 +35,13 @@ use TestUtils;
 warning_fatal();
 
 my $cmp = \&App::MtAws::FileVersions::_cmp;
-my $is_ok=1;
 
-sub object
-{
-	my ($time, $mtime, $archive_id) = @_;
-	{ time => $time, mtime => $mtime, ($archive_id ? (archive_id => $archive_id) : () )}; 
-}
+sub object { { time => $_[0], mtime => $_[1] } }
+
+#
+# This test tests _cmp function behaviour (like transitivity), so you can change function algorithm, but this
+# test must pass anyway
+#
 
 {
 	my @all = (1,2,3);
@@ -53,19 +53,30 @@ sub object
 		my $f2 = object($t2, $m2);
 		my $f3 = object($t3, $m3);
 		
-		my ($x, $y, $z) = sort { $cmp->($a, $b) } ( $f1, $f2, $f3 );
-		$is_ok=1;
-		$is_ok = 0 unless $cmp->($x, $z) <= 0;
-		$is_ok = 0 unless $cmp->($x, $y) <= 0;
-		$is_ok = 0 unless $cmp->($y, $z) <= 0;
-
-		$is_ok = 0 unless $cmp->($z, $x) >= 0;
-		$is_ok = 0 unless $cmp->($y, $x) >= 0;
-		$is_ok = 0 unless $cmp->($z, $y) >= 0;
-
-		no warnings 'uninitialized';
-		ok $is_ok, "comparsion function should be transitive with [$t1, $m1], [$t2, $m2], [$t3, $m3]";
-
+		{
+			my $is_ok = 1;
+			my ($x, $y, $z) = sort { $cmp->($a, $b) } ( $f1, $f2, $f3 );
+			$is_ok = 0 unless $cmp->($x, $z) <= 0;
+			$is_ok = 0 unless $cmp->($x, $y) <= 0;
+			$is_ok = 0 unless $cmp->($y, $z) <= 0;
+	
+			$is_ok = 0 unless $cmp->($z, $x) >= 0;
+			$is_ok = 0 unless $cmp->($y, $x) >= 0;
+			$is_ok = 0 unless $cmp->($z, $y) >= 0;
+	
+			no warnings 'uninitialized';
+			ok $is_ok, "comparsion function should be transitive with [$t1, $m1], [$t2, $m2], [$t3, $m3]";
+		}
+		{
+			use sort 'stable';
+			my @order3 = sort { $cmp->($a, $b) } ( $f1, $f2, $f3 );
+			my @order2 = sort { $cmp->($a, $b) } ( $f1,      $f3 );
+			
+			my @order2a = grep { $_ != $f2 } @order3;
+			
+			no warnings 'uninitialized';
+			ok $order2[0] == $order2a[0] && $order2[1] == $order2a[1], "adding element to array should not change relative order of other elements [$t1, $m1], [$t2, $m2], [$t3, $m3]";
+		}
 	}}
 	}}
 	}}
