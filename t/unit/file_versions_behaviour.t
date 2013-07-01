@@ -49,15 +49,19 @@ sub object
 	for my $t2 (@all) { for my $m2 (@all, undef) {
 	for my $t3 (@all) { for my $m3 (@all, undef) {
 		
-		my ($x, $y, $z) = sort { $cmp->(object($a->[0], $a->[1]), object($b->[0], $b->[1])) } ( [$t1, $m1], [$t2, $m2], [$t3, $m3] );
+		my $f1 = object($t1, $m1);
+		my $f2 = object($t2, $m2);
+		my $f3 = object($t3, $m3);
+		
+		my ($x, $y, $z) = sort { $cmp->($a, $b) } ( $f1, $f2, $f3 );
 		$is_ok=1;
-		$is_ok = 0 unless $cmp->(object($x->[0], $x->[1]), object($z->[0], $z->[1])) <= 0;
-		$is_ok = 0 unless $cmp->(object($x->[0], $x->[1]), object($y->[0], $y->[1])) <= 0;
-		$is_ok = 0 unless $cmp->(object($y->[0], $y->[1]), object($z->[0], $z->[1])) <= 0;
+		$is_ok = 0 unless $cmp->($x, $z) <= 0;
+		$is_ok = 0 unless $cmp->($x, $y) <= 0;
+		$is_ok = 0 unless $cmp->($y, $z) <= 0;
 
-		$is_ok = 0 unless $cmp->(object($z->[0], $z->[1]), object($x->[0], $x->[1])) >= 0;
-		$is_ok = 0 unless $cmp->(object($y->[0], $y->[1]), object($x->[0], $x->[1])) >= 0;
-		$is_ok = 0 unless $cmp->(object($z->[0], $z->[1]), object($y->[0], $y->[1])) >= 0;
+		$is_ok = 0 unless $cmp->($z, $x) >= 0;
+		$is_ok = 0 unless $cmp->($y, $x) >= 0;
+		$is_ok = 0 unless $cmp->($z, $y) >= 0;
 
 		no warnings 'uninitialized';
 		ok $is_ok, "comparsion function should be transitive with [$t1, $m1], [$t2, $m2], [$t3, $m3]";
