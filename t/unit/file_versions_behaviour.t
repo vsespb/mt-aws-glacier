@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 5328;
+use Test::More tests => 1;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -54,7 +54,7 @@ sub normalize
 
 sub object { { time => $_[0], mtime => $_[1] } }
 
-{
+test_fast_ok sub {
 	my @all = (1,2,3);
 	for my $t1 (@all) { for my $m1 (@all, undef) { 
 	my $f1 = object($t1, $m1);
@@ -63,8 +63,8 @@ sub object { { time => $_[0], mtime => $_[1] } }
 	
 	{ # work with all permutations of two objects
 		no warnings 'uninitialized';
-		is $cmp->($f1, $f2), normalize($f1) <=> normalize($f2),
-		"normalize([$t1, $m1]) <=> normalize([$t2, $m2]) should be equal to $cmp->([$t1, $m1], [$t2, $m2])";
+		fast_ok $cmp->($f1, $f2) == (normalize($f1) <=> normalize($f2)),
+			sub { "normalize([$t1, $m1]) <=> normalize([$t2, $m2]) should be equal to cmp->([$t1, $m1], [$t2, $m2])" };
 	}
 	
 	for my $t3 (@all) { for my $m3 (@all, undef) {
@@ -84,7 +84,7 @@ sub object { { time => $_[0], mtime => $_[1] } }
 			$is_ok = 0 unless $cmp->($z, $y) >= 0;
 	
 			no warnings 'uninitialized';
-			ok $is_ok, "comparsion function should be transitive with [$t1, $m1], [$t2, $m2], [$t3, $m3]";
+			fast_ok $is_ok, sub { "comparsion function should be transitive with [$t1, $m1], [$t2, $m2], [$t3, $m3]" };
 		}
 		{
 			use sort 'stable';
@@ -94,19 +94,21 @@ sub object { { time => $_[0], mtime => $_[1] } }
 			my @order2a = grep { $_ != $f2 } @order3;
 			
 			no warnings 'uninitialized';
-			ok $order2[0] == $order2a[0] && $order2[1] == $order2a[1], "adding element to array should not change relative order of other elements [$t1, $m1], [$t2, $m2], [$t3, $m3]";
+			fast_ok $order2[0] == $order2a[0] && $order2[1] == $order2a[1],
+				sub { "adding element to array should not change relative order of other elements [$t1, $m1], [$t2, $m2], [$t3, $m3]" };
 		}
 		{
 			my @order1 = sort { $cmp->($a, $b) or $a <=> $b } ( $f1, $f2, $f3 ); # we add here another comparison function, to produce stable results
 			my @order2 = sort { $cmp->($a, $b) or $a <=> $b } reverse ( $f1, $f2, $f3 );
 			
 			no warnings 'uninitialized';
-			ok $order1[0] == $order2[0] && $order1[1] == $order2[1] && $order1[2] == $order2[2], "sort() and sort(reverse()) should return same data [$t1, $m1], [$t2, $m2], [$t3, $m3]";
+			fast_ok $order1[0] == $order2[0] && $order1[1] == $order2[1] && $order1[2] == $order2[2],
+				sub { "sort() and sort(reverse()) should return same data [$t1, $m1], [$t2, $m2], [$t3, $m3]" };
 		}
 	}}
 	}}
 	}}
-}
+}, "file versions comparison function should behave right";
 
 
 1;
