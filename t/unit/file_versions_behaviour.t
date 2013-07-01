@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 3456;
+use Test::More tests => 5184;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -76,6 +76,13 @@ sub object { { time => $_[0], mtime => $_[1] } }
 			
 			no warnings 'uninitialized';
 			ok $order2[0] == $order2a[0] && $order2[1] == $order2a[1], "adding element to array should not change relative order of other elements [$t1, $m1], [$t2, $m2], [$t3, $m3]";
+		}
+		{
+			my @order1 = sort { $cmp->($a, $b) or $a <=> $b } ( $f1, $f2, $f3 ); # we add here another comparison function, to produce stable results
+			my @order2 = sort { $cmp->($a, $b) or $a <=> $b } reverse ( $f1, $f2, $f3 );
+			
+			no warnings 'uninitialized';
+			ok $order1[0] == $order2[0] && $order1[1] == $order2[1] && $order1[2] == $order2[2], "sort() and sort(reverse()) should return same data [$t1, $m1], [$t2, $m2], [$t3, $m3]";
 		}
 	}}
 	}}
