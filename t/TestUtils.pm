@@ -35,7 +35,7 @@ use Carp;
 
 our %disable_validations;
 our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal
-capture_stdout capture_stderr assert_raises_exception ordered_test/;
+capture_stdout capture_stderr assert_raises_exception ordered_test test_fast_ok fast_ok/;
 
 use Test::Deep; # should be last line, after EXPORT stuff, otherwise versions ^(0\.089|0\.09[0-9].*) do something nastly with exports
 
@@ -133,5 +133,30 @@ sub ordered_test
 	};
 	shift->();
 }
+
+sub fast_ok
+{
+	my ($cond, $descr) = @_;
+	die { FAST_OK_FAILED => $descr } unless $cond;
+}
+
+sub test_fast_ok
+{
+	eval { shift->(); 1 } or do {
+		if ($@ && ref $@ eq ref {} && defined($@->{FAST_OK_FAILED})) {
+			my $msg = $@->{FAST_OK_FAILED};
+			if (ref $msg eq 'CODE') {
+				ok 0, $msg->();
+			} else {
+				ok 0, $msg;
+			}
+			return;
+		} else {
+			die $@;
+		}
+	};
+	ok (1, shift); 
+}
+
 
 1;

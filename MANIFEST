@@ -90,6 +90,7 @@ t/unit/config_engine_new.t
 t/unit/config_engine_parse.t
 t/unit/exceptions.t
 t/unit/file_versions.t
+t/unit/file_versions_behaviour.t
 t/unit/filter.t
 t/unit/glacier_request.t
 t/unit/job_file_create.t
@@ -104,5 +105,6 @@ t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
 t/unit/string_escape.t
+t/unit/test_test.t
 t/unit/u_treehash.t
 test.t
