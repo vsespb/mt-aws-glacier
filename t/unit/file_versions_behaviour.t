@@ -58,11 +58,26 @@ test_fast_ok sub {
 	my @all = (1,2,3);
 	for my $t1 (@all) { for my $m1 (@all, undef) { 
 	my $f1 = object($t1, $m1);
+	
+	#
+	# work with all permutations of one object
+	#
+	
+	# Testing Irreflexivity
+	fast_ok $cmp->($f1, $f1) == 0;
+	
 	for my $t2 (@all) { for my $m2 (@all, undef) {
 	my $f2 = object($t2, $m2);
 	
-	{ # work with all permutations of two objects
+	#
+	# work with all permutations of two objects
+	#
+	{
+		# Testing Antisymmetry
+		fast_ok $cmp->($f1, $f2) * $cmp->($f2, $f1) <= 0;
+		
 		no warnings 'uninitialized';
+		# Testing with normalize()
 		fast_ok $cmp->($f1, $f2) == (normalize($f1) <=> normalize($f2)),
 			sub { "normalize([$t1, $m1]) <=> normalize([$t2, $m2]) should be equal to cmp->([$t1, $m1], [$t2, $m2])" };
 	}
@@ -74,7 +89,14 @@ test_fast_ok sub {
 		
 		{
 			my $is_ok = 1;
+			
+			# Testing Transitivity of Equivalence
+			if (($cmp->($f1, $f2) == 0) && ($cmp->($f2, $f3) == 0)) {
+				$is_ok = 0 unless $cmp->($f1, $f3) == 0;
+			}
+
 			my ($x, $y, $z) = sort { $cmp->($a, $b) } ( $f1, $f2, $f3 );
+			# transitivity
 			$is_ok = 0 unless $cmp->($x, $z) <= 0;
 			$is_ok = 0 unless $cmp->($x, $y) <= 0;
 			$is_ok = 0 unless $cmp->($y, $z) <= 0;
@@ -82,7 +104,7 @@ test_fast_ok sub {
 			$is_ok = 0 unless $cmp->($z, $x) >= 0;
 			$is_ok = 0 unless $cmp->($y, $x) >= 0;
 			$is_ok = 0 unless $cmp->($z, $y) >= 0;
-	
+			
 			no warnings 'uninitialized';
 			fast_ok $is_ok, sub { "comparsion function should be transitive with [$t1, $m1], [$t2, $m2], [$t3, $m3]" };
 		}
