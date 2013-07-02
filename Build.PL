@@ -31,7 +31,7 @@ my $build = Module::Build->new(
 	},
 	requires => {
 		'perl' => 5.008008, # 5.8.8
-		
+
 		'LWP' => '5.803', # ancient CentOS 5.x version
 		'HTTP::Request' => 0, # either shipped with LWP, or prereq by LWP, does not contain correct version, sometimes
 		'JSON::XS' => 0,
@@ -39,7 +39,7 @@ my $build = Module::Build->new(
 
 		# core modules for Perl > 5.8.x
 		'Digest::SHA' => 0,
-		
+
 		#
 		# CORE MODULES OR DUAL-LIFE MODULES
 		#
@@ -49,12 +49,12 @@ my $build = Module::Build->new(
 		'File::Basename' => 0,
 		'File::Find' => 0,
 		'File::Path' => 0,
-		
-		
-		 # File::Temp - for tests we need 0.18, for code probably lower version is OK, perl 5.8.8 ships 0.16, 5.8.9 ships 0.20
+
+
+		 # File::Temp - for tests we need 0.19, for code probably lower version is OK, perl 5.8.8 ships 0.16, 5.8.9 ships 0.20
 		 # TODO: decrease required version
 		'File::Temp' => '0.19',
-		
+
 		'File::Spec' => 0,
 		'File::stat' => 0,
 		'Getopt::Long' => '2.24',
@@ -82,7 +82,7 @@ my $build = Module::Build->new(
 		$ENV{MT_NO_HARNESS} ? () : ('TAP::Harness' => 0),
 
 		# Test::Deep
-		# Does not work with 0.090, 0.091 (due to bug in Test::Deep) 
+		# Does not work with 0.090, 0.091 (due to bug in Test::Deep)
 		# issue fixed here fixed https://metacpan.org/diff/release/FDALY/Test-Deep-0.091/FDALY/Test-Deep-0.092
 		#
 		# However I cannot specify version as '!= 0.090, != 0.091' because some CPAN testers (yet) failed to recognize it
@@ -91,7 +91,7 @@ my $build = Module::Build->new(
 		# http://www.cpantesters.org/cpan/report/fc48c53e-e2fe-11e2-9ee6-a6098e6b5bd1
 		#
 		# so, specifying as '0.092'
-		
+
 		'Test::Deep' => '0.092',
 
 		'Test::MockModule' => 0,
