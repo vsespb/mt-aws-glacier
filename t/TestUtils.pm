@@ -153,12 +153,14 @@ sub test_fast_ok
 	my ($plan, $message, $cb) = @_;
 	local $test_fast_ok_cnt = $plan;
 	eval { $cb->(); 1 } or do {
-		if ($@ && ref $@ eq ref {} && defined($@->{FAST_OK_FAILED})) {
+		if ($@ && ref $@ eq ref {} && exists($@->{FAST_OK_FAILED})) {
 			my $msg = $@->{FAST_OK_FAILED};
-			if (ref $msg eq 'CODE') {
+			if (defined($msg) && ref $msg eq 'CODE') {
 				ok 0, $msg->();
-			} else {
+			} elsif (defined($msg)) {
 				ok 0, $msg;
+			} else {
+				ok 0, "$message - FAILED";
 			}
 			return;
 		} else {

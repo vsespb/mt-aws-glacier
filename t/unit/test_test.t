@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 11;
+use Test::More tests => 12;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -43,6 +43,18 @@ warning_fatal();
 	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		fast_ok 0, "my test failed!";
+	};
+}
+
+{
+	no warnings 'redefine';
+	local *TestUtils::ok = sub {
+		my ($r, $msg) = @_;
+		ok !$r && $msg eq 'my test - FAILED', "fast_ok should work when failed without message";
+	}; 
+	test_fast_ok 11, "my test" => sub {
+		fast_ok(1) for (1..10);
+		fast_ok 0;
 	};
 }
 
