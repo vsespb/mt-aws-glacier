@@ -7,7 +7,7 @@ use Module::Build;
 use lib qw(lib);
 
 
-die "OS unsupported\n" if ($^O eq 'MSWin32');
+die "OS unsupported\n" if ($^O eq 'MSWin32' or $^O eq 'cygwin');
 
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
