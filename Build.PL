@@ -80,7 +80,20 @@ my $build = Module::Build->new(
 	},
 	build_requires => {
 		$ENV{MT_NO_HARNESS} ? () : ('TAP::Harness' => 0),
-		'Test::Deep' => '!= 0.090, != 0.091', # issue fixed here fixed https://metacpan.org/diff/release/FDALY/Test-Deep-0.091/FDALY/Test-Deep-0.092
+
+		# Test::Deep
+		# Does not work with 0.090, 0.091 (due to bug in Test::Deep) 
+		# issue fixed here fixed https://metacpan.org/diff/release/FDALY/Test-Deep-0.091/FDALY/Test-Deep-0.092
+		#
+		# However I cannot specify version as '!= 0.090, != 0.091' because some CPAN testers (yet) failed to recognize it
+		# http://www.cpantesters.org/cpan/report/75a8f356-e307-11e2-bb8b-c8f40b763136
+		# http://www.cpantesters.org/cpan/report/de15b36c-e301-11e2-86e0-d3fada4a5016
+		# http://www.cpantesters.org/cpan/report/fc48c53e-e2fe-11e2-9ee6-a6098e6b5bd1
+		#
+		# so, specifying as '0.092'
+		
+		'Test::Deep' => '0.092',
+
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => '0.46', # we need with() new in 0.46

@@ -26,7 +26,7 @@
             "HTTP::Daemon" : "1.36",
             "Scalar::Util" : "1.11",
             "TAP::Harness" : "0",
-            "Test::Deep" : "!= 0.090, != 0.091",
+            "Test::Deep" : "0.092",
             "Test::MockModule" : "0",
             "Test::Spec" : "0.46",
             "Time::HiRes" : "0",
