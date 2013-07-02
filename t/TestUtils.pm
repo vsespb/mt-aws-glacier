@@ -134,15 +134,25 @@ sub ordered_test
 	shift->();
 }
 
+our $test_fast_ok_cnt = undef;
+
 sub fast_ok
 {
 	my ($cond, $descr) = @_;
 	die { FAST_OK_FAILED => $descr } unless $cond;
+	$test_fast_ok_cnt--;
+	1;
 }
 
+#
+# test_fast_ok 631, "Message" => sub {};
+# args: test plan, message (for case test pass), code block
+#
 sub test_fast_ok
 {
-	eval { shift->(); 1 } or do {
+	my ($plan, $message, $cb) = @_;
+	local $test_fast_ok_cnt = $plan;
+	eval { $cb->(); 1 } or do {
 		if ($@ && ref $@ eq ref {} && defined($@->{FAST_OK_FAILED})) {
 			my $msg = $@->{FAST_OK_FAILED};
 			if (ref $msg eq 'CODE') {
@@ -155,7 +165,11 @@ sub test_fast_ok
 			die $@;
 		}
 	};
-	ok (1, shift); 
+	if ($test_fast_ok_cnt) {
+		ok 0, "$message - expected $plan tests, but ran ".($plan - $test_fast_ok_cnt);
+	} else {
+		ok (1, $message);
+	} 
 }
 
 

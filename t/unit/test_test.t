@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 6;
+use Test::More tests => 11;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -40,10 +40,10 @@ warning_fatal();
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test failed!', "fast_ok should work when failed";
 	}; 
-	test_fast_ok sub {
+	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		fast_ok 0, "my test failed!";
-	}, "my test";
+	};
 }
 
 {
@@ -52,11 +52,11 @@ warning_fatal();
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test failed 123 !', "fast_ok should work when message is a closure";
 	}; 
-	test_fast_ok sub {
+	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		my $z = 123;
 		fast_ok 0, sub { "my test failed $z !" };
-	}, "my test";
+	};
 }
 
 {
@@ -65,19 +65,19 @@ warning_fatal();
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test failed!', "fast_ok should not continue execution";
 	}; 
-	test_fast_ok sub {
+	test_fast_ok 1, "my test" => sub {
 		fast_ok 0, "my test failed!";
 		ok 0, "should not continue execution"
-	}, "my test";
+	};
 }
 
 {
 	no warnings 'redefine';
 	ok ! eval {
-		test_fast_ok sub {
+		test_fast_ok 1, "my test" => sub {
 			fast_ok 1, "my test failed!";
 			die { x => 42}
-		}, "my test";
+		};
 		1;
 	}, "should propogate exceptions";
 	ok $@->{x} == 42, "should propogate exceptions";
@@ -89,10 +89,49 @@ warning_fatal();
 		my ($r, $msg) = @_;
 		ok $r && $msg eq 'my test', "fast_ok should work when ok";
 	}; 
-	test_fast_ok sub {
+	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		fast_ok 1, "my test failed!";
-	}, "my test";
+	};
+}
+
+{
+	no warnings 'redefine';
+	local *TestUtils::ok = sub {
+		my ($r, $msg) = @_;
+		ok !$r && $msg eq "my test - expected 12 tests, but ran 10", "fast_ok should fail when run too few tests";
+	}; 
+	test_fast_ok 12, "my test" => sub {
+		fast_ok(1) for (1..10);
+	};
+}
+
+{
+	no warnings 'redefine';
+	local *TestUtils::ok = sub {
+		my ($r, $msg) = @_;
+		ok !$r && $msg eq "my test - expected 12 tests, but ran 14", "fast_ok should fail when run too many tests";
+	}; 
+	test_fast_ok 12, "my test" => sub {
+		fast_ok(1) for (1..14);
+	};
+}
+
+{
+	no warnings 'redefine';
+	local *TestUtils::ok = sub {
+		my ($r, $msg) = @_;
+		ok $r, "should allow nesting of fast_ok";
+	}; 
+	test_fast_ok 12, "my test" => sub {
+		fast_ok(1) for (1..12);
+		test_fast_ok 7, "my test 2" => sub {
+			fast_ok(1) for (1..7);
+		};
+		test_fast_ok 3, "my test 2" => sub {
+			fast_ok(1) for (1..3);
+		}
+	};
 }
 
 1;

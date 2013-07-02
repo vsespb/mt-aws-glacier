@@ -54,7 +54,7 @@ sub normalize
 
 sub object { { time => $_[0], mtime => $_[1] } }
 
-test_fast_ok sub {
+test_fast_ok 5484, "file versions comparison function should behave right" => sub {
 	my @all = (1,2,3);
 	for my $t1 (@all) { for my $m1 (@all, undef) { 
 	my $f1 = object($t1, $m1);
@@ -130,7 +130,7 @@ test_fast_ok sub {
 	}}
 	}}
 	}}
-}, "file versions comparison function should behave right";
+};
 
 
 1;
