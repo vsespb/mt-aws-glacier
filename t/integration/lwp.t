@@ -21,6 +21,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+# Original authors of some code
+# (c) 1995-2010 Gisle Aas. All rights reserved.
+# (c) 1995 Martijn Koster. All rights reserved.
+
 use strict;
 use warnings;
 use FindBin;

@@ -65,7 +65,7 @@ sub _find
 sub _mid
 {
 	use integer;
-	($_[0]+$_[1])/2;
+	$_[0] + (($_[1] - $_[0])/2);
 }
 
 sub all
