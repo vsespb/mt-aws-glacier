@@ -36,7 +36,7 @@ sub run
 	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
 
-	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error, $error_io) = (0,0,0,0,0,0);
+	my ($error_hash, $error_size, $error_zero, $error_missed, $error_mtime, $no_error, $error_io) = (0,0,0,0,0,0,0);
 	for my $f (keys %$files) {
 		my $file=$j->latest($f);
 		my $absfilename = $j->absfilename($f);
@@ -49,7 +49,7 @@ sub run
 				my $size = file_size($absfilename);
 				unless ($size) {
 					print "ZERO SIZE $f\n";
-					++$error_size;
+					++$error_zero;
 					next;
 				}
 				if (defined($file->{mtime}) && (my $actual_mtime = file_mtime($absfilename)) != $file->{mtime}) {
@@ -86,9 +86,9 @@ sub run
 		}
 	}
 	unless ($options->{'dry-run'}) {
-		print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_missed MISSED\n$error_io ERRORS\n";
+		print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_zero ZERO SIZE\n$error_missed MISSED\n$error_io ERRORS\n";
 		print "($error_mtime of them have File Modification Time altered)\n";
-		die exception(check_local_hash_errors => 'check-local-hash reported errors') if $error_hash || $error_size || $error_missed || $error_io;
+		die exception(check_local_hash_errors => 'check-local-hash reported errors') if $error_hash || $error_size || $error_zero || $error_missed || $error_io;
 	}
 }
 

@@ -57,6 +57,7 @@ sub parse_out
 		($res{mtime}) = /^(\d) MODIFICATION TIME MISSMATCHES$/m and
 		($res{treehash}) = /^(\d) TREEHASH MISSMATCH$/m and
 		($res{size}) = /^(\d) SIZE MISSMATCH$/m and
+		($res{zero}) = /^(\d) ZERO SIZE$/m and
 		($res{missed}) = /^(\d) MISSED$/m and
 		($res{errors}) = /^(\d) ERRORS$/m or confess;
 	}
@@ -195,6 +196,24 @@ describe "command" => sub {
 				ok !$res;
 				like $out, qr/^SIZE MISSMATCH file1$/m;
 				check_ok($out, qw/size/);
+			};
+		};
+		it "should work when size is zero" => sub {
+			ordered_test sub {
+				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
+				$j->{journal_h} = { file1 => $file1 };
+
+				expect_file_exists;
+				expect_file_size 0;
+				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
+				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::TreeHash->expects("new")->never;
+
+				my ($res, $out) = run_command($options, $j);
+				ok !$res;
+				like $out, qr/^ZERO SIZE file1$/m;
+				check_ok($out, qw/zero/);
 			};
 		};
 	};
