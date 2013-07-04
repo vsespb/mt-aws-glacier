@@ -109,12 +109,12 @@ describe "command" => sub {
 		{
 			my ($options, $j) = @_;
 			my $out = '';
-			capture_stdout $out => sub {
+			my $res = capture_stdout $out => sub {
 				no warnings 'redefine';
 				local *_close = sub { 1 };
-				App::MtAws::CheckLocalHashCommand::run($options, $j);
+				return eval { App::MtAws::CheckLocalHashCommand::run($options, $j); 1 };
 			};
-			$out;
+			return ($res, $out);
 		}
 
 
@@ -131,10 +131,32 @@ describe "command" => sub {
 
 				expect_file_mtime $file1->{mtime};
 
-				my $out = run_command($options, $j);
+				my ($res, $out) = run_command($options, $j);
+				ok $res;
 				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
 				my %results = parse_out($out);
 				is delete $results{ok}, 1, "ok=1";
+				is $results{$_}, 0, "$_=0" for (keys %results);
+			};
+		};
+		it "should work when treehash does not match" => sub {
+			ordered_test sub {
+				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
+				$j->{journal_h} = { file1 => $file1 };
+
+				expect_file_exists;
+				expect_file_size $file1->{size};
+				expect_open_file;
+				expect_treehash "not_a_treehash";
+
+				expect_file_mtime $file1->{mtime};
+
+				my ($res, $out) = run_command($options, $j);
+				ok !$res;
+				like $out, qr/^TREEHASH MISSMATCH file1$/m;
+				my %results = parse_out($out);
+				is delete $results{treehash}, 1, "treehash=1";
 				is $results{$_}, 0, "$_=0" for (keys %results);
 			};
 		};
