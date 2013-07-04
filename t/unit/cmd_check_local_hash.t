@@ -124,11 +124,14 @@ describe "command" => sub {
 
 		sub expect_treehash
 		{
+			my ($file, $res) = @_;
 			my $treehash_mock = bless {}, 'App::MtAws::TreeHash';
 			App::MtAws::TreeHash->expects("new")->returns_ordered($treehash_mock);
-			$treehash_mock->expects("eat_file")->returns_ordered(0);
+			$treehash_mock->expects("eat_file")->returns_ordered(sub {
+				cmp_deeply [@_], [$treehash_mock, $file];
+			});
 			$treehash_mock->expects("calc_tree")->returns_ordered(0);
-			$treehash_mock->expects("get_final_hash")->returns_ordered(shift);
+			$treehash_mock->expects("get_final_hash")->returns_ordered($res);
 		}
 
 		sub run_command
@@ -159,7 +162,7 @@ describe "command" => sub {
 				expect_file_size $file1->{relfilename}, $file1->{size};
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
 				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
-				expect_treehash $file1->{treehash};
+				expect_treehash $fileobj, $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
@@ -175,7 +178,7 @@ describe "command" => sub {
 				expect_file_size $file1->{relfilename}, $file1->{size};
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
 				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
-				expect_treehash "not_a_treehash";
+				expect_treehash $fileobj, "not_a_treehash";
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
@@ -191,7 +194,7 @@ describe "command" => sub {
 				expect_file_size $file1->{relfilename}, $file1->{size};
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime}+1;
 				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
-				expect_treehash $file1->{treehash};
+				expect_treehash $fileobj, $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
