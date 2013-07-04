@@ -138,11 +138,11 @@ describe "command" => sub {
 
 		sub run_command
 		{
-			my ($options, $j) = @_;
+			my ($options, $j, $close_res) = (@_, 1);
 			my $out = '';
 			my $res = capture_stdout $out => sub {
 				no warnings 'redefine';
-				local *_close = sub { 1 };
+				local *_close = sub { $close_res };
 				return eval { App::MtAws::CheckLocalHashCommand::run($options, $j); 1 };
 			};
 			return ($res, $out);
@@ -284,6 +284,27 @@ describe "command" => sub {
 				my $estr = strerror(EACCES);
 				like $out, qr/^CANNOT OPEN file file1: $estr$/m;
 				check_ok($out, qw/errors/);
+			};
+		};
+		it "should confess when close return error" => sub {
+			ordered_test sub {
+				expect_read_journal $j, $file1;
+
+				expect_file_exists $file1->{relfilename};
+				expect_file_size $file1->{relfilename}, $file1->{size};
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
+				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
+
+				my $treehash_mock = bless {}, 'App::MtAws::TreeHash';
+				App::MtAws::TreeHash->expects("new")->returns_ordered($treehash_mock);
+				$treehash_mock->expects("eat_file")->returns_ordered(sub {
+					cmp_deeply [@_], [$treehash_mock, $fileobj];
+				});
+				$treehash_mock->expects("calc_tree")->never;
+				$treehash_mock->expects("get_final_hash")->never;
+
+				my ($res, $out) = run_command($options, $j, 0);
+				ok !$res;
 			};
 		};
 	};
