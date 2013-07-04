@@ -134,9 +134,9 @@ describe "command" => sub {
 				expect_file_exists;
 				expect_file_size $file1->{size};
 				expect_open_file;
-				expect_treehash $file1->{treehash};
 
 				expect_file_mtime $file1->{mtime};
+				expect_treehash $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
@@ -153,9 +153,9 @@ describe "command" => sub {
 				expect_file_exists;
 				expect_file_size $file1->{size};
 				expect_open_file;
-				expect_treehash "not_a_treehash";
 
 				expect_file_mtime $file1->{mtime};
+				expect_treehash "not_a_treehash";
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
@@ -172,14 +172,33 @@ describe "command" => sub {
 				expect_file_exists;
 				expect_file_size $file1->{size};
 				expect_open_file;
-				expect_treehash $file1->{treehash};
 
 				expect_file_mtime $file1->{mtime}+1;
+				expect_treehash $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
 				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
 				check_ok($out, qw/ok mtime/);
+			};
+		};
+		it "should work when size does not match" => sub {
+			ordered_test sub {
+				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
+				$j->{journal_h} = { file1 => $file1 };
+
+				expect_file_exists;
+				expect_file_size ($file1->{size}+1);
+				expect_open_file;
+
+				expect_file_mtime $file1->{mtime};
+				App::MtAws::TreeHash->expects("new")->never;
+
+				my ($res, $out) = run_command($options, $j);
+				ok !$res;
+				like $out, qr/^SIZE MISSMATCH file1$/m;
+				check_ok($out, qw/size/);
 			};
 		};
 	};

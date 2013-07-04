@@ -58,16 +58,16 @@ sub run
 					++$error_io;
 					next;
 				}
-				my $th = App::MtAws::TreeHash->new();
-				$th->eat_file($F); # TODO: don't calc tree hash if size differs!
-				close $F or confess;
-				$th->calc_tree();
-				my $treehash = $th->get_final_hash();
 				if (defined($file->{mtime}) && (my $actual_mtime = file_mtime($absfilename)) != $file->{mtime}) {
 					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
 					++$error_mtime;
 				}
 				if ($size == $file->{size}) {
+					my $th = App::MtAws::TreeHash->new();
+					$th->eat_file($F); # TODO: don't calc tree hash if size differs!
+					close $F or confess;
+					$th->calc_tree();
+					my $treehash = $th->get_final_hash();
 					if ($treehash eq $file->{treehash}) {
 						print "OK $f $file->{size} $file->{treehash}\n";
 						++$no_error;
