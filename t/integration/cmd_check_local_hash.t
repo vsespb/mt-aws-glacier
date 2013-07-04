@@ -54,13 +54,14 @@ my $data = 	{
 	treehash => '1368761bd826f76cae8b8a74b3aae210b476333484c2d612d061d52e36af631a',
 };
 
+my $content = "hello\n";
 
 {
 	unlink $journal;
 	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
 	$J->open_for_write();
 	$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => $data->{mtime}, archive_id => $data->{archive_id},
-		size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
+		size => length($content), treehash => $data->{treehash}, relfilename => $data->{relfilename} });
 }
 
 SKIP: {
@@ -69,10 +70,10 @@ SKIP: {
 	mkpath "$rootdir/def";
 	chmod 0744, $file;
 	open F, '>', $file or die $!;
-	print F "hello!\n";
+	print F $content;
 	close F;
 	chmod 0000, $file;
-	
+
 	my $options = {
 		region => 'reg',
 		journal => $journal,
@@ -80,14 +81,14 @@ SKIP: {
 		journal_encoding => 'UTF-8',
 		filenames_encoding => 'UTF-8',
 	};
-	
+
 	my $j = App::MtAws::Journal->new(journal_encoding => $options->{'journal-encoding'},
 		filenames_encoding => $options->{'filenames-encoding'},
 		journal_file => $options->{journal},
 		root_dir => $options->{dir},
 		filter => $options->{filters}{parsed});
 	require App::MtAws::CheckLocalHashCommand;
-	
+
 	my $out='';
 	ok ! defined capture_stdout $out, sub {
 		eval {
@@ -96,19 +97,19 @@ SKIP: {
 		};
 	};
 	my $err = $@;
-	
+
 	cmp_deeply $err, superhashof { code => 'check_local_hash_errors',
 		message => "check-local-hash reported errors"};
-		
+
 	ok $out =~ m!CANNOT OPEN file def/abc!;
 	ok $out =~ m!1 ERRORS!;
 	ok index($out, strerror(EACCES)) != -1;
 	# TODO: check also that 'next' is called!
-	
+
 	chmod 0744, $file;
 	unlink $file;
 1;
-	
+
 }
 
 

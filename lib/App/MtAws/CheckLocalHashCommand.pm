@@ -54,18 +54,20 @@ sub run
 					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
 					++$error_mtime;
 				}
-				my $F;
-				unless (open_file($F, $absfilename, mode => '<', binary => 1)) {
-					print "CANNOT OPEN file $f: $!\n";
-					++$error_io;
-					next;
-				}
 				if ($size) {
 					if ($size == $file->{size}) {
+
+						my $F;
+						unless (open_file($F, $absfilename, mode => '<', binary => 1)) {
+							print "CANNOT OPEN file $f: $!\n";
+							++$error_io;
+							next;
+						}
 						my $th = App::MtAws::TreeHash->new();
 						$th->eat_file($F); # TODO: don't calc tree hash if size differs!
 						close $F or confess;
 						$th->calc_tree();
+
 						my $treehash = $th->get_final_hash();
 						if ($treehash eq $file->{treehash}) {
 							print "OK $f $file->{size} $file->{treehash}\n";
@@ -87,7 +89,6 @@ sub run
 	}
 	unless ($options->{'dry-run'}) {
 		print "TOTALS:\n$no_error OK\n$error_mtime MODIFICATION TIME MISSMATCHES\n$error_hash TREEHASH MISSMATCH\n$error_size SIZE MISSMATCH\n$error_zero ZERO SIZE\n$error_missed MISSED\n$error_io ERRORS\n";
-		print "($error_mtime of them have File Modification Time altered)\n";
 		die exception(check_local_hash_errors => 'check-local-hash reported errors') if $error_hash || $error_size || $error_zero || $error_missed || $error_io;
 	}
 }
