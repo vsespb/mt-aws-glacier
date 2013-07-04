@@ -234,7 +234,7 @@ describe "command" => sub {
 				check_ok($out, qw/zero/);
 			};
 		};
-		it "should work when everything matches" => sub {
+		it "should work when file is not exists" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
@@ -248,6 +248,23 @@ describe "command" => sub {
 				ok !$res;
 				like $out, qr/^MISSED file1$/m;
 				check_ok($out, qw/missed/);
+			};
+		};
+		it "should never check mtime if it does not exist" => sub {
+			ordered_test sub {
+				my $file2 = {size => 1234, treehash => 'zz123ff', mtime => undef, relfilename => 'file2'};
+				expect_read_journal $j, $file2;
+
+				expect_file_exists $file2->{relfilename};
+				expect_file_size $file2->{relfilename}, $file2->{size};
+				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
+				expect_open_file my $fileobj = { mock => 1 }, $file2->{relfilename}, 1;
+				expect_treehash $fileobj, $file2->{treehash};
+
+				my ($res, $out) = run_command($options, $j);
+				ok $res;
+				like $out, qr/^OK file2 $file2->{size} $file2->{treehash}$/m;
+				check_ok($out, qw/ok/);
 			};
 		};
 	};
