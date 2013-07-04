@@ -42,7 +42,7 @@ sub run
 		my $absfilename = $j->absfilename($f);
 
 		if ($options->{'dry-run'}) {
-			print "Will check hash file $f\n"
+			print "Will check file $f\n"
 		} else {
 			if (file_exists($absfilename)) {
 				my $size = file_size($absfilename);

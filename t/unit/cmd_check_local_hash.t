@@ -307,6 +307,24 @@ describe "command" => sub {
 				ok !$res;
 			};
 		};
+		it "should work with dry-run" => sub {
+			ordered_test sub {
+				$options->{'dry-run'} = 1;
+				expect_read_journal $j, $file1;
+
+				App::MtAws::CheckLocalHashCommand->expects("file_exists")->never;
+				App::MtAws::CheckLocalHashCommand->expects("file_size")->never;
+				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
+				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::TreeHash->expects("new")->never;
+
+				my ($res, $out) = run_command($options, $j);
+				ok $res;
+				like $out, qr/^Will check file file1$/m;
+				unlike $out, qr/TREEHASH/;
+				unlike $out, qr/OK/;
+			};
+		};
 	};
 };
 
