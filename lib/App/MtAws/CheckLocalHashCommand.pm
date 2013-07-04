@@ -44,7 +44,6 @@ sub run
 		if ($options->{'dry-run'}) {
 			print "Will check hash file $f\n"
 		} else {
-			my $binaryfilename = binaryfilename $absfilename;
 			if (file_exists($absfilename)) {
 				my $size = file_size($absfilename);
 				unless ($size) {
