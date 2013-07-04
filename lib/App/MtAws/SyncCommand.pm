@@ -58,7 +58,7 @@ sub is_mtime_differs
 sub should_upload
 {
 	my ($options, $journal_file, $absfilename) = @_;
-	
+
 	if ($journal_file->{size} != file_size($absfilename)) {
 		SHOULD_CREATE;
 	} elsif ($options->{detect} eq 'mtime') {
@@ -81,7 +81,7 @@ sub next_modified
 		my $relfilename = $rec->{relfilename};
 		my $absfilename = $j->absfilename($relfilename);
 		my $file = $j->latest($relfilename);
-		
+
 		my $should_upload = should_upload($options, $file, $absfilename);
 
 		if ($should_upload == SHOULD_TREEHASH) {
@@ -159,14 +159,14 @@ sub run
 	my ($options, $j) = @_;
 	with_forks !$options->{'dry-run'}, $options, sub {
 		$j->read_journal(should_exist => 0); # TODO: what about case when --new is missing?
-		
+
 		my $read_journal_opts = get_journal_opts($options);
-		
+
 		$j->read_files($read_journal_opts, $options->{'max-number-of-files'}); # TODO: sometimes read only 'new' files
-		
+
 		$j->open_for_write();
 		my @joblist;
-		
+
 		if ($options->{new}) {
 			my $itt = sub { next_new($options, $j) };
 			if ($options->{'dry-run'}) {

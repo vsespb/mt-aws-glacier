@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-mt-aws-glacier - Perl Multithreaded Multipart sync to Amazon Glacier 
+mt-aws-glacier - Perl Multithreaded Multipart sync to Amazon Glacier
 
 =head1 SYNOPSIS
 
@@ -82,16 +82,16 @@ sub main
 sub process
 {
 	$|=1;
-	STDERR->autoflush(1); 
+	STDERR->autoflush(1);
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
-	
+
 	my ($P) = @_;
 	my ($src, $vault, $journal);
 	my $maxchildren = 4;
 	my $config = {};
 	my $config_filename;
-	
-	
+
+
 	my $res = App::MtAws::ConfigDefinition::get_config()->parse_options(@ARGV);
 	my ($action, $options) = ($res->{command}, $res->{options});
 	if ($res->{warnings}) {
@@ -111,12 +111,12 @@ sub process
 		binmode STDERR, ":encoding($options->{'terminal-encoding'})";
 		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
 	}
-	
+
 	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
-	
+
 	if ($action eq 'sync') {
 		die "Not a directory $options->{dir}" unless -d binaryfilename $options->{dir};
-		
+
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir},
 			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'});
 
@@ -124,30 +124,30 @@ sub process
 		App::MtAws::SyncCommand::run($options, $j);
 
 	} elsif ($action eq 'upload-file') {
-		
+
 		defined(my $relfilename = $options->{relfilename})||confess;
 		my $partsize = delete $options->{partsize};
-		
+
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal});
-		
+
 		with_forks 1, $options, sub {
-			
+
 			$j->read_journal(should_exist => 0);
-			
+
 			die <<"END"
 File with same name alredy exists in Journal.
 In the current version of mtglacier you are disallowed to store multiple versions of same file.
 Multiversion will be implemented in the future versions.
 END
 				if (defined $j->{journal_h}->{$relfilename});
-			
+
 			if ($options->{'data-type'} ne 'filename') {
 				binmode STDIN;
 				check_stdin_not_empty(); # after we fork, but before we touch Journal for write and create Amazon Glacier upload id
 			}
-			
+
 			$j->open_for_write();
-			
+
 			my $ft = ($options->{'data-type'} eq 'filename') ?
 				App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(
 					filename => $options->{filename},
@@ -157,17 +157,17 @@ END
 					stdin => 1,
 					relfilename => $relfilename,
 					partsize => ONE_MB*$partsize));
-			
+
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 			die unless $R;
 			$j->close_for_write();
 		}
 	} elsif ($action eq 'purge-vault') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, filter => $options->{filters}{parsed});
-		
+
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 1);
-			
+
 			my $archives = $j->{archive_h};
 			if (scalar keys %$archives) {
 				if ($options->{'dry-run'}) {
@@ -189,15 +189,16 @@ END
 	} elsif ($action eq 'restore') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed}, use_active_retrievals => 1);
 		confess unless $options->{'max-number-of-files'};
-				
+
+
 		require App::MtAws::RetrieveCommand;
 		App::MtAws::RetrieveCommand::run($options, $j);
 	} elsif ($action eq 'restore-completed') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
-		
+
 		with_forks !$options->{'dry-run'}, $options, sub {
 			$j->read_journal(should_exist => 1);
-			
+
 			my $files = $j->{journal_h};
 			# TODO: refactor
 			my %filelist =	map { $_->{archive_id} => $_ }
@@ -230,7 +231,7 @@ END
 		App::MtAws::CheckLocalHashCommand::run($options, $j);
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
-				
+
 		with_forks 1, $options, sub {
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrieveInventoryJob->new());
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
@@ -242,25 +243,25 @@ END
 		App::MtAws::DownloadInventoryCommand::run($options, $j);
 	} elsif ($action eq 'create-vault') {
 		$options->{concurrency} = 1;
-				
+
 		with_forks 1, $options, sub {
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::CreateVaultJob->new(name => $options->{'vault-name'}));
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'delete-vault') {
 		$options->{concurrency} = 1;
-				
+
 		with_forks 1, $options, sub {
 			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::DeleteVaultJob->new(name => $options->{'vault-name'}));
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {
-		
+
 		# we load here all dynamically loaded modules, to check that installation is correct.
 		require App::MtAws::CheckLocalHashCommand;
 		require App::MtAws::DownloadInventoryCommand;
 		require App::MtAws::RetrieveCommand;
-		
+
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
 
@@ -304,7 +305,7 @@ Config format (text file):
 	protocol=http
 
 END
-	
+
 	} else {
 		die "Wrong usage";
 	}
