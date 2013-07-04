@@ -67,6 +67,7 @@ sub parse_out
 describe "command" => sub {
 	my $j;
 	my $options;
+	my $file1 = {size => 123, treehash => 'zz123', mtime => 456, relfilename => 'file1'};
 
 	before each => sub {
 		$j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
@@ -77,7 +78,9 @@ describe "command" => sub {
 
 		sub expect_read_journal
 		{
-			shift->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+			my ($j, $file1) = @_;
+			$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+			$j->{journal_h} = { $file1->{relfilename} => $file1 };
 		}
 
 		sub expect_file_exists
@@ -133,9 +136,7 @@ describe "command" => sub {
 
 		it "should work when everything matches" => sub {
 			ordered_test sub {
-				expect_read_journal $j;
-				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
-				$j->{journal_h} = { file1 => $file1 };
+				expect_read_journal $j, $file1;
 
 				expect_file_exists;
 				expect_file_size $file1->{size};
@@ -151,9 +152,7 @@ describe "command" => sub {
 		};
 		it "should work when treehash does not match" => sub {
 			ordered_test sub {
-				expect_read_journal $j;
-				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
-				$j->{journal_h} = { file1 => $file1 };
+				expect_read_journal $j, $file1;
 
 				expect_file_exists;
 				expect_file_size $file1->{size};
@@ -169,9 +168,7 @@ describe "command" => sub {
 		};
 		it "should work when mtime does not match" => sub {
 			ordered_test sub {
-				expect_read_journal $j;
-				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
-				$j->{journal_h} = { file1 => $file1 };
+				expect_read_journal $j, $file1;
 
 				expect_file_exists;
 				expect_file_size $file1->{size};
@@ -187,9 +184,7 @@ describe "command" => sub {
 		};
 		it "should work when size does not match" => sub {
 			ordered_test sub {
-				expect_read_journal $j;
-				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
-				$j->{journal_h} = { file1 => $file1 };
+				expect_read_journal $j, $file1;
 
 				expect_file_exists;
 				expect_file_size ($file1->{size}+1);
@@ -205,9 +200,7 @@ describe "command" => sub {
 		};
 		it "should work when size is zero" => sub {
 			ordered_test sub {
-				expect_read_journal $j;
-				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
-				$j->{journal_h} = { file1 => $file1 };
+				expect_read_journal $j, $file1;
 
 				expect_file_exists;
 				expect_file_size 0;
@@ -223,9 +216,7 @@ describe "command" => sub {
 		};
 		it "should work when everything matches" => sub {
 			ordered_test sub {
-				expect_read_journal $j;
-				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
-				$j->{journal_h} = { file1 => $file1 };
+				expect_read_journal $j, $file1;
 
 				expect_file_exists 0;
 				App::MtAws::CheckLocalHashCommand->expects("file_size")->never;
