@@ -85,7 +85,11 @@ describe "command" => sub {
 
 		sub expect_file_exists
 		{
-			App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns_ordered(@_ ? shift : 1);
+			my ($filename, $res) = (@_, 1);
+			App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns_ordered(sub {
+				like shift, qr/\Q$filename\E$/;
+				$res;
+			});
 		}
 
 		sub expect_file_size
@@ -138,7 +142,7 @@ describe "command" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
-				expect_file_exists;
+				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{size};
 				expect_file_mtime $file1->{mtime};
 				expect_open_file;
@@ -154,7 +158,7 @@ describe "command" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
-				expect_file_exists;
+				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{size};
 				expect_file_mtime $file1->{mtime};
 				expect_open_file;
@@ -170,7 +174,7 @@ describe "command" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
-				expect_file_exists;
+				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{size};
 				expect_file_mtime $file1->{mtime}+1;
 				expect_open_file;
@@ -186,7 +190,7 @@ describe "command" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
-				expect_file_exists;
+				expect_file_exists $file1->{relfilename};
 				expect_file_size ($file1->{size}+1);
 				expect_file_mtime $file1->{mtime};
 				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
@@ -202,7 +206,7 @@ describe "command" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
-				expect_file_exists;
+				expect_file_exists $file1->{relfilename};
 				expect_file_size 0;
 				expect_file_mtime $file1->{mtime};
 				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
@@ -218,7 +222,7 @@ describe "command" => sub {
 			ordered_test sub {
 				expect_read_journal $j, $file1;
 
-				expect_file_exists 0;
+				expect_file_exists $file1->{relfilename}, 0;
 				App::MtAws::CheckLocalHashCommand->expects("file_size")->never;
 				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
 				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
