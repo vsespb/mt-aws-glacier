@@ -42,7 +42,7 @@ cmp_deeply exception('mycode' => 'MyMessage', myvar => 1),
 	{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', myvar => 1};
 cmp_deeply exception('mycode' => 'MyMessage', myvar => 1, anothervar => 2),
 	{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', myvar => 1, anothervar => 2};
-	
+
 my $existing_exception = exception('xcode' => 'xmessage', myvar => 'xvar');
 
 cmp_deeply exception($existing_exception, 'MyMessage'),
@@ -126,7 +126,7 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 		}
 		1;
 	}) {
-		is get_exception->{message}, 'NewMessage'; # warning - must have test plan to test this way 
+		is get_exception->{message}, 'NewMessage'; # warning - must have test plan to test this way
 	}
 }
 
@@ -194,8 +194,7 @@ ok exception_message(exception 'code' => 'My message %string a_42%', a_42 => 42,
 sub test_error(&$$)
 {
 	my ($cb, $where, $e) = @_;
-	my $out=''; # perl 5.8.x issue warning if undefined $out is used in open() below
-	capture_stderr $out, sub {
+	capture_stderr my $out, sub {
 		eval { die $e };
 		dump_error($where);
 	};

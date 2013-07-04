@@ -137,8 +137,7 @@ describe "command" => sub {
 		sub run_command
 		{
 			my ($options, $j, $close_res) = (@_, 1);
-			my $out = '';
-			my $res = capture_stdout $out => sub {
+			my $res = capture_stdout my $out => sub {
 				no warnings 'redefine';
 				local *_close = sub { $close_res };
 				return eval { App::MtAws::CheckLocalHashCommand::run($options, $j); 1 };

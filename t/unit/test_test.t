@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 12;
+use Test::More tests => 20;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -34,12 +34,16 @@ warning_fatal();
 
 # Tests of test libraries
 
+#
+# test_fask_ok/fask_ok
+#
+
 {
 	no warnings 'redefine';
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test failed!', "fast_ok should work when failed";
-	}; 
+	};
 	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		fast_ok 0, "my test failed!";
@@ -51,7 +55,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test - FAILED', "fast_ok should work when failed without message";
-	}; 
+	};
 	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		fast_ok 0;
@@ -63,7 +67,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test failed 123 !', "fast_ok should work when message is a closure";
-	}; 
+	};
 	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		my $z = 123;
@@ -76,7 +80,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq 'my test failed!', "fast_ok should not continue execution";
-	}; 
+	};
 	test_fast_ok 1, "my test" => sub {
 		fast_ok 0, "my test failed!";
 		ok 0, "should not continue execution"
@@ -100,7 +104,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok $r && $msg eq 'my test', "fast_ok should work when ok";
-	}; 
+	};
 	test_fast_ok 11, "my test" => sub {
 		fast_ok(1) for (1..10);
 		fast_ok 1, "my test failed!";
@@ -112,7 +116,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq "my test - expected 12 tests, but ran 10", "fast_ok should fail when run too few tests";
-	}; 
+	};
 	test_fast_ok 12, "my test" => sub {
 		fast_ok(1) for (1..10);
 	};
@@ -123,7 +127,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok !$r && $msg eq "my test - expected 12 tests, but ran 14", "fast_ok should fail when run too many tests";
-	}; 
+	};
 	test_fast_ok 12, "my test" => sub {
 		fast_ok(1) for (1..14);
 	};
@@ -134,7 +138,7 @@ warning_fatal();
 	local *TestUtils::ok = sub {
 		my ($r, $msg) = @_;
 		ok $r, "should allow nesting of fast_ok";
-	}; 
+	};
 	test_fast_ok 12, "my test" => sub {
 		fast_ok(1) for (1..12);
 		test_fast_ok 7, "my test 2" => sub {
@@ -144,6 +148,48 @@ warning_fatal();
 			fast_ok(1) for (1..3);
 		}
 	};
+}
+
+#
+# capture_stdout/capture_stdout
+#
+
+{
+	my $res = capture_stdout my $out, sub {
+		print "Test123\nTest456";
+		42;
+	};
+	is $res, 42;
+	is $out, "Test123\nTest456", "should work with stdout when out is undefined";
+}
+
+{
+	my $out = '';
+	my $res = capture_stdout $out => sub {
+		print "Test123\nTest456";
+		42;
+	};
+	is $res, 42;
+	is $out, "Test123\nTest456", "should work with stdout when out defined";
+}
+
+{
+	my $res = capture_stderr my $out, sub {
+		print STDERR "Test123\nTest456";
+		42;
+	};
+	is $res, 42;
+	is $out, "Test123\nTest456", "should work with stderr when out is undefined";
+}
+
+{
+	my $out = '';
+	my $res = capture_stderr $out => sub {
+		print STDERR "Test123\nTest456";
+		42;
+	};
+	is $res, 42;
+	is $out, "Test123\nTest456", , "should work with stdout when out is defined";
 }
 
 1;

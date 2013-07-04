@@ -62,12 +62,12 @@ sub disable_validations
 {
 	my ($cb, @data) = (pop @_, @_);
 	local %disable_validations = @data ?
-	( 
+	(
 		'override_validations' => {
 			map { $_ => undef } @data
 		},
 	) :
-	( 
+	(
 		'override_validations' => {
 			journal => undef,
 			secret  => undef,
@@ -91,6 +91,7 @@ sub config_create_and_parse(@)
 sub capture_stdout($&)
 {
 	local(*STDOUT);
+	$_[0]='';# perl 5.8.x issue warning if undefined $out is used in open() below
 	open STDOUT, '>', \$_[0] or die "Can't open STDOUT: $!";
 	$_[1]->();
 }
@@ -98,11 +99,12 @@ sub capture_stdout($&)
 sub capture_stderr($&)
 {
 	local(*STDERR);
+	$_[0]='';# perl 5.8.x issue warning if undefined $out is used in open() below
 	open STDERR, '>', \$_[0] or die "Can't open STDERR: $!";
 	$_[1]->();
 }
 
-# TODO: call only as assert_raises_exception sub {}, $e - don't omit sub! 
+# TODO: call only as assert_raises_exception sub {}, $e - don't omit sub!
 sub assert_raises_exception(&@)
 {
 	my ($cb, $exception) = @_;
@@ -119,7 +121,7 @@ sub ordered_test
 	local $mock_order_realtime = 0;
 	local $mock_order_declare = 0;
 	no warnings 'once';
-	
+
 	local *Test::Spec::Mocks::Expectation::returns_ordered = sub {
 		my ($self, $arg) = @_;
 		my $n = ++$mock_order_declare;
@@ -171,7 +173,7 @@ sub test_fast_ok
 		ok 0, "$message - expected $plan tests, but ran ".($plan - $test_fast_ok_cnt);
 	} else {
 		ok (1, $message);
-	} 
+	}
 }
 
 

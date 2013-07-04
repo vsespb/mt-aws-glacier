@@ -450,56 +450,49 @@ describe "command" => sub {
 			}
 		}
 		it "should work with zero elements" => sub {
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub {});
 			};
 			is $out, "";
 		};
 		it "should work with one element when it returns empty list" => sub {
 			my @a = bless {}, "WillDoTest";
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
 			};
 			is $out, "";
 		};
 		it "should work with one element when it returns empty string" => sub {
 			my @a = bless {empty=>'1'}, "WillDoTest";
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
 			};
 			is $out, "\n";
 		};
 		it "should work with one element" => sub {
 			my @a = bless { toprint => 42}, "WillDoTest";
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\n";
 		};
 		it "should work with two elements" => sub {
 			my @a = (bless({ toprint => 42}, "WillDoTest"),bless({ toprint => 123}, "WillDoTest"));
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\nWill 123\n";
 		};
 		it "should work with list elements" => sub {
 			my @a = bless { toprint_a => [42, 'zz']}, "WillDoTest";
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\nWill zz\n";
 		};
 		it "should work with two list elements" => sub {
 			my @a = ( bless({ toprint_a => [42, 'zz']}, "WillDoTest"),  bless({ toprint_a => [123, 'ff']}, "WillDoTest"));
-			my $out = '';
-			capture_stdout $out => sub {
+			capture_stdout my $out => sub {
 				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\nWill zz\nWill 123\nWill ff\n";

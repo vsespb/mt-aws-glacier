@@ -58,7 +58,7 @@ describe "new" => sub {
 				headers('x-amz-glacier-version' => '2012-06-01', 'Host' => $g->{host}, 'x-amz-security-token' => $token);
 		}
 	};
-	
+
 	it "should work with timeout" => sub {
 		for my $timeout (qw/0 120 86400/) {
 			my $g = App::MtAws::GlacierRequest->new({region=>'region', key=>'key', secret=>'secret',
@@ -71,31 +71,31 @@ describe "new" => sub {
 			cmp_deeply [@opts], [qw/LWP::UserAgent timeout/, $timeout];
 		}
 	};
-	
+
 	it "should die without region" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', secret=>'secret', protocol=>'http', vault=>'vault', timeout => 180}) };
 	};
-	
+
 	it "should die without secret" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', protocol=>'http', vault=>'vault', timeout => 180}) };
 	};
-	
+
 	it "should die without timeout" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', protocol=>'http', vault=>'vault', secret => 'secret'}) };
 	};
-	
+
 	it "should die without protocol" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', vault=>'vault', timeout => 180}) };
 	};
-	
+
 	it "should not die without vault" => sub {
 		ok eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol=>'http', timeout => 180}) };
 	};
-	
+
 	it "should die with wrong protocol" => sub {
 		ok ! eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol => 'xyz', timeout => 180}) };
 	};
-	
+
 	it "should not die with https" => sub {
 		ok eval { App::MtAws::GlacierRequest->new({key=>'key', region=>'region', secret=>'secret', protocol => 'https', timeout => 180}) };
 	};
@@ -156,8 +156,7 @@ describe "perform_lwp" => sub {
 				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 				App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->exactly($retries);
-				my $out='';
-				my $resp = capture_stdout($out, sub {
+				my $resp = capture_stdout(my $out, sub {
 					assert_raises_exception sub {
 						$g->perform_lwp();
 					}, exception 'too_many_tries' => "Request was not successful after $retries retries";
@@ -176,8 +175,7 @@ describe "perform_lwp" => sub {
 			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(500, "err", ["Client-Warning" => "Internal response"]))->exactly($retries);
-			my $out='';
-			my $resp = capture_stdout($out, sub {
+			my $resp = capture_stdout(my $out, sub {
 				assert_raises_exception sub {
 					$g->perform_lwp();
 				}, exception 'too_many_tries' => "Request was not successful after $retries retries";
@@ -195,8 +193,7 @@ describe "perform_lwp" => sub {
 			App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 			App::MtAws::GlacierRequest->expects('throttle')->returns(sub { push @throttle_args, shift } )->exactly($retries);
 			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(200, 'OK', [ 'X-Died' => 'Read Timeout at']))->exactly($retries);
-			my $out='';
-			my $resp = capture_stdout $out, sub {
+			my $resp = capture_stdout my $out, sub {
 				assert_raises_exception sub {
 					$g->perform_lwp();
 				}, exception 'too_many_tries' => "Request was not successful after $retries retries";
@@ -212,9 +209,8 @@ describe "perform_lwp" => sub {
 				($g->{method}, $g->{url}) = ('GET', 'test');
 				App::MtAws::GlacierRequest->expects('_max_retries')->any_number->returns($retries);
 				LWP::UserAgent->expects('request')->returns(HTTP::Response->new($code))->once;
-				my $out = '';
 				assert_raises_exception sub {
-					capture_stderr $out, sub {
+					capture_stderr my $out, sub {
 						$g->perform_lwp();
 					}
 				}, exception 'http_unexpected_reply' => "Unexpected reply from remote server";
@@ -234,7 +230,7 @@ sub headers {
 		push @headers, header(splice(@_, 0, 2))
 	}
 	\@headers;
-} 
+}
 
 runtests unless caller;
 
