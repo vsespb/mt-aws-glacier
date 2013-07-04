@@ -103,7 +103,11 @@ describe "command" => sub {
 
 		sub expect_file_mtime
 		{
-				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->returns_ordered(shift);
+			my ($filename, $res) = @_;
+			App::MtAws::CheckLocalHashCommand->expects("file_mtime")->returns_ordered(sub {
+				like shift, qr/\Q$filename\E$/;
+				$res;
+			});
 		}
 
 		sub expect_open_file
@@ -148,7 +152,7 @@ describe "command" => sub {
 
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size};
-				expect_file_mtime $file1->{mtime};
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
 				expect_open_file;
 				expect_treehash $file1->{treehash};
 
@@ -164,7 +168,7 @@ describe "command" => sub {
 
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size};
-				expect_file_mtime $file1->{mtime};
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
 				expect_open_file;
 				expect_treehash "not_a_treehash";
 
@@ -180,7 +184,7 @@ describe "command" => sub {
 
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size};
-				expect_file_mtime $file1->{mtime}+1;
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime}+1;
 				expect_open_file;
 				expect_treehash $file1->{treehash};
 
@@ -196,7 +200,7 @@ describe "command" => sub {
 
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size}+1;
-				expect_file_mtime $file1->{mtime};
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
 				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
 				App::MtAws::TreeHash->expects("new")->never;
 
@@ -212,7 +216,7 @@ describe "command" => sub {
 
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, 0;
-				expect_file_mtime $file1->{mtime};
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
 				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
 				App::MtAws::TreeHash->expects("new")->never;
 
