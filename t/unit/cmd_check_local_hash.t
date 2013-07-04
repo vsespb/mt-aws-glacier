@@ -133,9 +133,8 @@ describe "command" => sub {
 
 				expect_file_exists;
 				expect_file_size $file1->{size};
-				expect_open_file;
-
 				expect_file_mtime $file1->{mtime};
+				expect_open_file;
 				expect_treehash $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
@@ -152,9 +151,8 @@ describe "command" => sub {
 
 				expect_file_exists;
 				expect_file_size $file1->{size};
-				expect_open_file;
-
 				expect_file_mtime $file1->{mtime};
+				expect_open_file;
 				expect_treehash "not_a_treehash";
 
 				my ($res, $out) = run_command($options, $j);
@@ -171,9 +169,8 @@ describe "command" => sub {
 
 				expect_file_exists;
 				expect_file_size $file1->{size};
-				expect_open_file;
-
 				expect_file_mtime $file1->{mtime}+1;
+				expect_open_file;
 				expect_treehash $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
@@ -190,9 +187,8 @@ describe "command" => sub {
 
 				expect_file_exists;
 				expect_file_size ($file1->{size}+1);
-				expect_open_file;
-
 				expect_file_mtime $file1->{mtime};
+				expect_open_file;
 				App::MtAws::TreeHash->expects("new")->never;
 
 				my ($res, $out) = run_command($options, $j);

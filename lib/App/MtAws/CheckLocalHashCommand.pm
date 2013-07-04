@@ -52,15 +52,15 @@ sub run
 					++$error_size;
 					next;
 				}
+				if (defined($file->{mtime}) && (my $actual_mtime = file_mtime($absfilename)) != $file->{mtime}) {
+					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
+					++$error_mtime;
+				}
 				my $F;
 				unless (open_file($F, $absfilename, mode => '<', binary => 1)) {
 					print "CANNOT OPEN file $f: $!\n";
 					++$error_io;
 					next;
-				}
-				if (defined($file->{mtime}) && (my $actual_mtime = file_mtime($absfilename)) != $file->{mtime}) {
-					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
-					++$error_mtime;
 				}
 				if ($size == $file->{size}) {
 					my $th = App::MtAws::TreeHash->new();
