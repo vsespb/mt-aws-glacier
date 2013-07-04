@@ -58,9 +58,13 @@ my $build = Module::Build->new(
 		'File::Spec' => 0,
 		'File::stat' => 0,
 		'Getopt::Long' => '2.24',
+
+
+		# distribution 'IO' v 1.22 released with perl 5.8.8, however it does contains IO::{Hnadle|Pipe|Select} versions lower than 1.22
 		'IO::Handle' => 0,
 		'IO::Pipe' => 0,
 		'IO::Select' => 0,
+
 		'List::Util' => '1.11', # needed for Test::Spec, however 1.19 is released with perl 5.8.9
 		'POSIX' => 0,
 		'PerlIO::encoding' => 0,
