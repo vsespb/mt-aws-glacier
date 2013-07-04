@@ -45,17 +45,17 @@ warning_fatal();
 
 describe "command" => sub {
 	my $j;
-	
+
 	before each => sub {
 		$j = App::MtAws::Journal->new(journal_file => 'x', 'root_dir' => 'x' );
 	};
-		
+
 	describe "modified processing" => sub {
-		
+
 		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash/; # TODO: fetch from ConfigDefinition
 		my @detect_with_mtime = grep { /mtime/ } @all_detect;
 		my @detect_without_mtime = grep { ! /mtime/ } @all_detect;
-		
+
 		describe "is_mtime_differs" => sub {
 			it "should work when mtime same" => sub {
 				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 123;})->once;
@@ -86,23 +86,23 @@ describe "command" => sub {
 				}
 			};
 		};
-		
+
 		describe "should_upload" => sub {
-			
+
 			it "should define unique constants" => sub {
 				ok App::MtAws::SyncCommand::SHOULD_CREATE() != App::MtAws::SyncCommand::SHOULD_TREEHASH();
 				ok App::MtAws::SyncCommand::SHOULD_CREATE() != App::MtAws::SyncCommand::SHOULD_NOACTION();
-				
+
 				ok App::MtAws::SyncCommand::SHOULD_CREATE();
 				ok App::MtAws::SyncCommand::SHOULD_TREEHASH();
 				ok !App::MtAws::SyncCommand::SHOULD_NOACTION(); # one should be FALSE
-				
+
 				# numeric eq only
 				ok looks_like_number App::MtAws::SyncCommand::SHOULD_CREATE();
 				ok looks_like_number App::MtAws::SyncCommand::SHOULD_TREEHASH();
 				ok looks_like_number App::MtAws::SyncCommand::SHOULD_NOACTION();
 			};
-			
+
 			it "should always return create if file size differs" => sub {
 				for (@all_detect) {
 					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
@@ -150,7 +150,7 @@ describe "command" => sub {
 					test_should_upload('mtime-and-treehash', 0, 1, App::MtAws::SyncCommand::SHOULD_NOACTION());
 				};
 			};
-			
+
 			describe "detect=mtime-or-treehash" => sub {
 				it "should return 'create' when mtime differs" => sub {
 					test_should_upload('mtime-or-treehash', 1, 1, App::MtAws::SyncCommand::SHOULD_CREATE());
@@ -159,21 +159,21 @@ describe "command" => sub {
 					test_should_upload('mtime-or-treehash', 0, 1, App::MtAws::SyncCommand::SHOULD_TREEHASH());
 				};
 			};
-			
+
 			describe "detect is unknown" => sub {
 				my $file = {mtime => 123, size => 42};
 				App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
 				ok ! defined eval { App::MtAws::SyncCommand::should_upload({detect => 'xyz'}, $file, 'file1'); 1; };
 				ok $@ =~ /Invalid detect option in should_upload/;
-			} 
+			}
 		};
-		
+
 		describe "next_modified" => sub {
 			my $options;
 			before each => sub {
 				$options = { partsize => 2};
 			};
-			
+
 			sub expect_should_upload
 			{
 				my ($options, $j, $file, $toreturn) = @_;
@@ -185,7 +185,7 @@ describe "command" => sub {
 					return $toreturn;
 				})->once;
 			}
-			
+
 			sub verify_create_job
 			{
 				my ($options, $j, $file, $rec) = @_;
@@ -195,15 +195,15 @@ describe "command" => sub {
 				is $job->{partsize}, $options->{partsize}*1024*1024;
 				is $job->{relfilename}, $file->{relfilename};
 				is $job->{filename}, $j->absfilename($file->{relfilename});
-				
+
 				is ref $job->{finish_cb}, 'CODE';
-				
+
 				my $finish = $job->{finish_cb}->();
-				
+
 				ok $finish->isa('App::MtAws::FileListDeleteJob');
 				cmp_deeply $finish->{archives}, [{archive_id => $file->{archive_id}, relfilename => $file->{relfilename}}];
 			}
-			
+
 			sub verify_treehash_job
 			{
 				my ($options, $j, $file, $rec) = @_;
@@ -217,7 +217,7 @@ describe "command" => sub {
 				is $job->{treehash}, $file->{treehash};
 				is $job->{partsize}, $options->{partsize}*1024*1024;
 			}
-			
+
 
 			it "should work with zero files" => sub {
 				$j->{listing}{existing} = [];
@@ -233,7 +233,7 @@ describe "command" => sub {
 				verify_create_job($options, $j, $file, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 0;
-				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j)); 
+				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j));
 			};
 
 			it "should work with two files" => sub {
@@ -264,7 +264,7 @@ describe "command" => sub {
 				verify_treehash_job($options, $j, $r, $rec);
 				is scalar @{ $j->{listing}{existing} }, 0;
 			};
-			
+
 			it "should call latest() to get latest version of file" => sub {
 				my $file = {relfilename => 'file1', size => 123};
 				$j->{listing}{existing} = [$file];
@@ -285,7 +285,7 @@ describe "command" => sub {
 				verify_treehash_job($options, $j, $file, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 0;
-				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j)); 
+				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j));
 			};
 
 			it "should skip to next file when should_upload returns SHOULD_NOACTION" => sub {
@@ -294,14 +294,14 @@ describe "command" => sub {
 					push @{ $j->{listing}{existing} }, $file;
 					$j->_add_filename($file);
 				}
-				
+
 				my $file;
 				App::MtAws::SyncCommand->expects("should_upload")->returns(sub {
 					my ($opt, $f, $absfilename) = @_;
 					$file = $f;
 					return $f->{relfilename} eq 'file7' ? App::MtAws::SyncCommand::SHOULD_CREATE() : App::MtAws::SyncCommand::SHOULD_NOACTION();
 				})->exactly(10);
-				
+
 				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
 				verify_create_job($options, $j, $file, $rec);
 
@@ -318,9 +318,9 @@ describe "command" => sub {
 				ok $@ =~ /Unknown value returned by should_upload/;
 			};
 		};
-		
+
 	};
-		
+
 	describe "next_new" => sub {
 		my $options;
 		before each => sub {
@@ -336,7 +336,7 @@ describe "command" => sub {
 			is $job->{filename}, $j->absfilename('file1');
 			ok $job->isa('App::MtAws::FileCreateJob');
 			is scalar @{ $j->{listing}{new} }, 0;
-			ok !defined (App::MtAws::SyncCommand::next_new($options, $j)); 
+			ok !defined (App::MtAws::SyncCommand::next_new($options, $j));
 		};
 		it "should work with two files" => sub {
 			$j->{listing}{new} = [{relfilename => 'file1'}, {relfilename => 'file2'}];
@@ -344,7 +344,7 @@ describe "command" => sub {
 			my $job = $rec->{job};
 			is $job->{relfilename}, 'file1';
 			is scalar @{ $j->{listing}{new} }, 1;
-			$rec = App::MtAws::SyncCommand::next_new($options, $j); 
+			$rec = App::MtAws::SyncCommand::next_new($options, $j);
 			$job = $rec->{job};
 			is $job->{relfilename}, 'file2';
 		};
@@ -369,7 +369,7 @@ describe "command" => sub {
 			my $job = $rec->{archives}[0];
 			is $job->{relfilename}, 'file1';
 			is scalar @{ $j->{listing}{missing} }, 0;
-			ok !defined (App::MtAws::SyncCommand::next_missing($options, $j)); 
+			ok !defined (App::MtAws::SyncCommand::next_missing($options, $j));
 		};
 		it "should work with two files" => sub {
 			for ({relfilename => 'file1', size => 123}, {relfilename => 'file2', size => 456}) {
@@ -516,18 +516,18 @@ describe "command" => sub {
 				$cb->();
 			});
 		}
-		
+
 		sub expect_journal_init
 		{
-			my ($options, $read_files_mode) = @_;
-			App::MtAws::Journal->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
+			my ($options, $j, $read_files_mode) = @_;
+			$j->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
 			App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
 				shift;
 				cmp_deeply [@_], [$read_files_mode, $options->{'max-number-of-files'}];
 			})->once;
 			App::MtAws::Journal->expects("open_for_write")->returns_ordered->once;
 		}
-		
+
 		sub expect_fork_engine
 		{
 			App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
@@ -536,12 +536,12 @@ describe "command" => sub {
 				}, 'App::MtAws::ForkEngine';
 			})->once;
 		}
-		
+
 		sub expect_journal_close
 		{
 			App::MtAws::Journal->expects("close_for_write")->returns_ordered->once;
 		}
-		
+
 		sub expect_process_task
 		{
 			my ($j, $cb) = @_;
@@ -552,15 +552,15 @@ describe "command" => sub {
 				$cb->($job);
 			} )->once;
 		}
-		
+
 		it "should work with new" => sub {
 			my $options = { 'max-number-of-files' => 10, partsize => 2, new => 1 };
 			ordered_test sub {
 				expect_with_forks;
-				expect_journal_init($options, {new=>1});
+				expect_journal_init($options, $j, {new=>1});
 				expect_fork_engine;
 				my @files = qw/file1 file2 file3 file4/;
-	
+
 				expect_process_task($j, sub {
 					my ($job) = @_;
 					ok $job->isa('App::MtAws::JobListProxy');
@@ -575,20 +575,20 @@ describe "command" => sub {
 					}
 					return (1)
 				});
-	
+
 				expect_journal_close;
 				$j->{listing}{existing} = [];
 				$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
-				
+
 				App::MtAws::SyncCommand::run($options, $j);
 			};
 		};
-		
+
 		it "should work with replace-modified" => sub {
 			my $options = { 'max-number-of-files' => 10, partsize => 2, 'replace-modified' => 1, detect => 'mtime-and-treehash' };
 			ordered_test sub {
 				expect_with_forks;
-				expect_journal_init($options, {existing=>1});
+				expect_journal_init($options, $j, {existing=>1});
 				expect_fork_engine;
 				my %files = (
 					file1 => {size => 123},
@@ -596,7 +596,7 @@ describe "command" => sub {
 					file3 => {size => 789},
 					file4 => {size => 42}
 				);
-	
+
 				expect_process_task($j, sub {
 					my ($job) = @_;
 					ok $job->isa('App::MtAws::JobListProxy');
@@ -611,7 +611,7 @@ describe "command" => sub {
 					}
 					return (1)
 				});
-	
+
 				expect_journal_close;
 				$j->{listing}{new} = [];
 				for (sort keys %files) {
@@ -624,16 +624,16 @@ describe "command" => sub {
 					$file =~ m!([^/]+)$! or confess;
 					$files{$1}{size}+1 or confess;
 				})->exactly(scalar keys %files);
-				
+
 				App::MtAws::SyncCommand::run($options, $j);
 			};
 		};
-		
+
 		it "should work with delete-removed" => sub {
 			my $options = { 'max-number-of-files' => 10, partsize => 2, 'delete-removed' => 1 };
 			ordered_test sub {
 				expect_with_forks;
-				expect_journal_init($options, {missing=>1});
+				expect_journal_init($options, $j, {missing=>1});
 				expect_fork_engine;
 				my %files = (
 					file1 => {archive_id => 'z123'},
@@ -641,7 +641,7 @@ describe "command" => sub {
 					file3 => {archive_id => 'z789'},
 					file4 => {archive_id => 'z42'}
 				);
-	
+
 				expect_process_task($j, sub {
 					my ($job) = @_;
 					ok $job->isa('App::MtAws::JobListProxy');
@@ -657,7 +657,7 @@ describe "command" => sub {
 					}
 					return (1)
 				});
-	
+
 				expect_journal_close;
 				$j->{listing}{missing} = [];
 				for (sort keys %files) {
@@ -665,7 +665,7 @@ describe "command" => sub {
 					$j->_add_filename($r);
 					push @{ $j->{listing}{missing} }, $r;
 				}
-				
+
 				App::MtAws::SyncCommand::run($options, $j);
 			};
 		};
@@ -680,10 +680,10 @@ describe "command" => sub {
 				};
 				ordered_test sub {
 					expect_with_forks;
-					expect_journal_init($options, App::MtAws::SyncCommand::get_journal_opts($options));
-					
+					expect_journal_init($options, $j, App::MtAws::SyncCommand::get_journal_opts($options));
+
 					my @files = qw/file1 file2 file3 file4/;
-					
+
 					{
 						my $res = App::MtAws::SyncCommand->expects("next_new")->returns("sub_next_new");
 						$n ? $res->once : $res->never;
@@ -713,14 +713,14 @@ describe "command" => sub {
 						App::MtAws::ParentWorker->expects("process_task")->never;
 						ok 1; # test that we got there, just in case
 					}
-		
+
 					expect_journal_close;
-					
+
 					App::MtAws::SyncCommand::run($options, $j);
 				};
 			}}}
 		};
-		
+
 		it "should work with combination of options in dry-run mode" => sub {
 			for my $n (0, 1) { for my $r (0, 1) { for my $d (0, 1) {
 				my $options = {
@@ -731,8 +731,8 @@ describe "command" => sub {
 				};
 				ordered_test sub {
 					expect_with_forks;
-					expect_journal_init($options, App::MtAws::SyncCommand::get_journal_opts($options));
-					
+					expect_journal_init($options, $j, App::MtAws::SyncCommand::get_journal_opts($options));
+
 					{
 						my $res = App::MtAws::SyncCommand->expects("next_new")->returns("sub_next_new");
 						$n ? $res->once : $res->never;
@@ -745,19 +745,19 @@ describe "command" => sub {
 						my $res = App::MtAws::SyncCommand->expects("next_missing")->returns("sub_next_missing");
 						$d ? $res->once : $res->never;
 					}
-					
+
 					my @dry_run_args;
 					App::MtAws::SyncCommand->expects("print_dry_run")->returns(sub {
 						push @dry_run_args, shift;
 					})->any_number;
-					
+
 					App::MtAws::SyncCommand->expects("fork_engine")->never;
 					App::MtAws::ParentWorker->expects("process_task")->never;
-		
+
 					expect_journal_close;
-					
+
 					App::MtAws::SyncCommand::run($options, $j);
-					
+
 					cmp_deeply [ map { $_->() } @dry_run_args ], [
 						$n ? ('sub_next_new') : (),
 						$r ? ('sub_next_modified') : (),
