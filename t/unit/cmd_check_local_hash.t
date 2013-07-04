@@ -112,8 +112,13 @@ describe "command" => sub {
 
 		sub expect_open_file
 		{
+			my ($file, $filename, $res) = @_;
 			App::MtAws::CheckLocalHashCommand->expects("open_file")->returns_ordered(sub {
-				$_[0] = {};
+				$_[0] = $file;
+				my (undef, $fn, %o) = @_;
+				like $fn, qr/\Q$filename\E$/;
+				cmp_deeply { %o }, { mode => '<', binary => 1 };
+				$res;
 			});
 		}
 
@@ -153,7 +158,7 @@ describe "command" => sub {
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size};
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
-				expect_open_file;
+				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
 				expect_treehash $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
@@ -169,7 +174,7 @@ describe "command" => sub {
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size};
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
-				expect_open_file;
+				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
 				expect_treehash "not_a_treehash";
 
 				my ($res, $out) = run_command($options, $j);
@@ -185,7 +190,7 @@ describe "command" => sub {
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size};
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime}+1;
-				expect_open_file;
+				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 1;
 				expect_treehash $file1->{treehash};
 
 				my ($res, $out) = run_command($options, $j);
