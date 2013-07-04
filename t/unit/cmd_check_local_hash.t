@@ -77,7 +77,7 @@ describe "command" => sub {
 
 		sub expect_file_exists
 		{
-			App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns_ordered(1);
+			App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns_ordered(@_ ? shift : 1);
 		}
 
 		sub expect_file_size
@@ -214,6 +214,24 @@ describe "command" => sub {
 				ok !$res;
 				like $out, qr/^ZERO SIZE file1$/m;
 				check_ok($out, qw/zero/);
+			};
+		};
+		it "should work when everything matches" => sub {
+			ordered_test sub {
+				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
+				$j->{journal_h} = { file1 => $file1 };
+
+				expect_file_exists 0;
+				App::MtAws::CheckLocalHashCommand->expects("file_size")->never;
+				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
+				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::TreeHash->expects("new")->never;
+
+				my ($res, $out) = run_command($options, $j);
+				ok !$res;
+				like $out, qr/^MISSED file1$/m;
+				check_ok($out, qw/missed/);
 			};
 		};
 	};
