@@ -54,7 +54,7 @@ sub parse_out
 	my %res;
 	for (shift) {
 		($res{ok}) = /^(\d) OK$/m and
-		($res{modification_time}) = /^(\d) MODIFICATION TIME MISSMATCHES$/m and
+		($res{mtime}) = /^(\d) MODIFICATION TIME MISSMATCHES$/m and
 		($res{treehash}) = /^(\d) TREEHASH MISSMATCH$/m and
 		($res{size}) = /^(\d) SIZE MISSMATCH$/m and
 		($res{missed}) = /^(\d) MISSED$/m and
@@ -117,6 +117,13 @@ describe "command" => sub {
 			return ($res, $out);
 		}
 
+		sub check_ok
+		{
+			my ($out, @failures) = @_;
+			my %results = parse_out($out);
+			is delete $results{$_}, 1, "$_=1" for (@failures);
+			is $results{$_}, 0, "$_=0" for (keys %results);
+		}
 
 		it "should work when everything matches" => sub {
 			ordered_test sub {
@@ -134,9 +141,7 @@ describe "command" => sub {
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
 				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
-				my %results = parse_out($out);
-				is delete $results{ok}, 1, "ok=1";
-				is $results{$_}, 0, "$_=0" for (keys %results);
+				check_ok($out, qw/ok/);
 			};
 		};
 		it "should work when treehash does not match" => sub {
@@ -155,9 +160,26 @@ describe "command" => sub {
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
 				like $out, qr/^TREEHASH MISSMATCH file1$/m;
-				my %results = parse_out($out);
-				is delete $results{treehash}, 1, "treehash=1";
-				is $results{$_}, 0, "$_=0" for (keys %results);
+				check_ok($out, qw/treehash/);
+			};
+		};
+		it "should work when mtime does not match" => sub {
+			ordered_test sub {
+				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
+				$j->{journal_h} = { file1 => $file1 };
+
+				expect_file_exists;
+				expect_file_size $file1->{size};
+				expect_open_file;
+				expect_treehash $file1->{treehash};
+
+				expect_file_mtime $file1->{mtime}+1;
+
+				my ($res, $out) = run_command($options, $j);
+				ok $res;
+				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
+				check_ok($out, qw/ok mtime/);
 			};
 		};
 	};
