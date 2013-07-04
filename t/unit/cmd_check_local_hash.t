@@ -28,12 +28,10 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 
 use Carp;
-use List::Util qw/first/;
-use Scalar::Util qw/looks_like_number/;
 use POSIX;
 
 use Test::Spec 0.46;
-#use Test::More tests => 455;
+use Test::More tests => 179;
 use Test::Deep;
 
 use Data::Dumper;
@@ -79,9 +77,9 @@ describe "command" => sub {
 
 		sub expect_read_journal
 		{
-			my ($j, $file1) = @_;
+			my ($j, @files) = @_;
 			$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
-			$j->{journal_h} = { $file1->{relfilename} => $file1 };
+			$j->{journal_h} = { map { $_->{relfilename} => $_} @files };
 		}
 
 		sub expect_file_exists
@@ -323,6 +321,41 @@ describe "command" => sub {
 				like $out, qr/^Will check file file1$/m;
 				unlike $out, qr/TREEHASH/;
 				unlike $out, qr/OK/;
+			};
+		};
+		it "should work with several files" => sub {
+			ordered_test sub {
+				my @files = (
+					{size => 123, treehash => 'zz123', mtime => 456, relfilename => 'file1'},
+					{size => 1231, treehash => 'zz123', mtime => 4561, relfilename => 'file2'},
+					{size => 1232, treehash => 'zz123', mtime => 4562, relfilename => 'file3'},
+				);
+				my %files_h = map { $_->{relfilename} => $_ } @files;
+				expect_read_journal $j, @files;
+
+				App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns(1)->exactly(scalar @files);
+				App::MtAws::CheckLocalHashCommand->expects("file_size")->returns(sub {
+					shift =~ m!([^/]+)$!;
+					$files_h{$1}->{size}
+				})->exactly(scalar @files);
+				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->returns(sub {
+					shift =~ m!([^/]+)$!;
+					$files_h{$1}->{mtime}
+				})->exactly(scalar @files);
+				App::MtAws::CheckLocalHashCommand->expects("open_file")->returns(sub {
+					$_[1] =~ m!([^/]+)$!;
+					$_[0] = { mock => $files_h{$1}->{relfilename} };
+					1;
+				})->exactly(scalar @files);
+				my $treehash_mock = bless {}, 'App::MtAws::TreeHash';
+				App::MtAws::TreeHash->expects("new")->returns($treehash_mock)->exactly(scalar @files);
+				$treehash_mock->expects("eat_file")->exactly(scalar @files);
+				$treehash_mock->expects("calc_tree")->exactly(scalar @files);
+				$treehash_mock->expects("get_final_hash")->returns('zz123')->exactly(scalar @files);
+
+				my ($res, $out) = run_command($options, $j);
+				ok $res;
+				like $out, qr/^3 OK$/m;
 			};
 		};
 	};
