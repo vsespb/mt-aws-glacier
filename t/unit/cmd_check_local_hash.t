@@ -206,8 +206,8 @@ describe "command" => sub {
 
 				expect_file_exists;
 				expect_file_size 0;
-				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
-				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				expect_file_mtime $file1->{mtime};
+				expect_open_file;
 				App::MtAws::TreeHash->expects("new")->never;
 
 				my ($res, $out) = run_command($options, $j);

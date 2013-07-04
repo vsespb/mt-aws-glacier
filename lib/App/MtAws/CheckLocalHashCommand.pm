@@ -49,7 +49,6 @@ sub run
 				unless ($size) {
 					print "ZERO SIZE $f\n";
 					++$error_zero;
-					next;
 				}
 				if (defined($file->{mtime}) && (my $actual_mtime = file_mtime($absfilename)) != $file->{mtime}) {
 					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
@@ -61,22 +60,24 @@ sub run
 					++$error_io;
 					next;
 				}
-				if ($size == $file->{size}) {
-					my $th = App::MtAws::TreeHash->new();
-					$th->eat_file($F); # TODO: don't calc tree hash if size differs!
-					close $F or confess;
-					$th->calc_tree();
-					my $treehash = $th->get_final_hash();
-					if ($treehash eq $file->{treehash}) {
-						print "OK $f $file->{size} $file->{treehash}\n";
-						++$no_error;
+				if ($size) {
+					if ($size == $file->{size}) {
+						my $th = App::MtAws::TreeHash->new();
+						$th->eat_file($F); # TODO: don't calc tree hash if size differs!
+						close $F or confess;
+						$th->calc_tree();
+						my $treehash = $th->get_final_hash();
+						if ($treehash eq $file->{treehash}) {
+							print "OK $f $file->{size} $file->{treehash}\n";
+							++$no_error;
+						} else {
+							print "TREEHASH MISSMATCH $f\n";
+							++$error_hash;
+						}
 					} else {
-						print "TREEHASH MISSMATCH $f\n";
-						++$error_hash;
+							print "SIZE MISSMATCH $f\n";
+							++$error_size;
 					}
-				} else {
-						print "SIZE MISSMATCH $f\n";
-						++$error_size;
 				}
 			} else {
 					print "MISSED $f\n";
