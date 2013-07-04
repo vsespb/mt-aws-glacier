@@ -31,7 +31,7 @@ use Carp;
 use POSIX;
 
 use Test::Spec 0.46;
-use Test::More tests => 179;
+use Test::More tests => 228;
 use Test::Deep;
 
 use Data::Dumper;
@@ -168,6 +168,45 @@ describe "command" => sub {
 				ok $res;
 				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
 				check_ok($out, qw/ok/);
+			};
+		};
+		describe "latest()" => sub {
+			it "should work with latest file when everything matches" => sub {
+				ordered_test sub {
+					expect_read_journal $j;
+					$j->_add_filename({size => 1231, treehash => 'th001', mtime => 4000, relfilename => 'file1'});
+					$j->_add_filename(my $r = {size => 1232, treehash => 'th002', mtime => 4003, relfilename => 'file1'});
+					$j->_add_filename({size => 1233, treehash => 'th003', mtime => 4001, relfilename => 'file1'});
+					expect_file_exists $r->{relfilename};
+					expect_file_size $r->{relfilename}, $r->{size};
+					expect_file_mtime $r->{relfilename}, $r->{mtime};
+					expect_open_file my $fileobj = { mock => 1 }, $r->{relfilename}, 1;
+					expect_treehash $fileobj, $r->{treehash};
+
+					my ($res, $out) = run_command($options, $j);
+					ok $res;
+					like $out, qr/^OK file1 $r->{size} $r->{treehash}$/m;
+					check_ok($out, qw/ok/);
+				};
+			};
+			it "should work with latest file and call latest() when everything matches" => sub {
+				ordered_test sub {
+					expect_read_journal $j;
+					$j->_add_filename({size => 1231, treehash => 'th001', mtime => 4000, relfilename => 'file1'});
+					$j->_add_filename(my $r = {size => 1232, treehash => 'th002', mtime => 4003, relfilename => 'file1'});
+					$j->_add_filename({size => 1233, treehash => 'th003', mtime => 4001, relfilename => 'file1'});
+					App::MtAws::Journal->expects("latest")->with('file1')->returns_ordered($r)->once;
+					expect_file_exists $r->{relfilename};
+					expect_file_size $r->{relfilename}, $r->{size};
+					expect_file_mtime $r->{relfilename}, $r->{mtime};
+					expect_open_file my $fileobj = { mock => 1 }, $r->{relfilename}, 1;
+					expect_treehash $fileobj, $r->{treehash};
+
+					my ($res, $out) = run_command($options, $j);
+					ok $res;
+					like $out, qr/^OK file1 $r->{size} $r->{treehash}$/m;
+					check_ok($out, qw/ok/);
+				};
 			};
 		};
 		it "should work when treehash does not match" => sub {
