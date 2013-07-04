@@ -75,6 +75,11 @@ describe "command" => sub {
 
 	describe "check_local_hash" => sub {
 
+		sub expect_read_journal
+		{
+			shift->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+		}
+
 		sub expect_file_exists
 		{
 			App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns_ordered(@_ ? shift : 1);
@@ -128,7 +133,7 @@ describe "command" => sub {
 
 		it "should work when everything matches" => sub {
 			ordered_test sub {
-				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				expect_read_journal $j;
 				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
 				$j->{journal_h} = { file1 => $file1 };
 
@@ -146,7 +151,7 @@ describe "command" => sub {
 		};
 		it "should work when treehash does not match" => sub {
 			ordered_test sub {
-				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				expect_read_journal $j;
 				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
 				$j->{journal_h} = { file1 => $file1 };
 
@@ -164,7 +169,7 @@ describe "command" => sub {
 		};
 		it "should work when mtime does not match" => sub {
 			ordered_test sub {
-				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				expect_read_journal $j;
 				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
 				$j->{journal_h} = { file1 => $file1 };
 
@@ -182,7 +187,7 @@ describe "command" => sub {
 		};
 		it "should work when size does not match" => sub {
 			ordered_test sub {
-				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				expect_read_journal $j;
 				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
 				$j->{journal_h} = { file1 => $file1 };
 
@@ -200,7 +205,7 @@ describe "command" => sub {
 		};
 		it "should work when size is zero" => sub {
 			ordered_test sub {
-				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				expect_read_journal $j;
 				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
 				$j->{journal_h} = { file1 => $file1 };
 
@@ -218,7 +223,7 @@ describe "command" => sub {
 		};
 		it "should work when everything matches" => sub {
 			ordered_test sub {
-				$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+				expect_read_journal $j;
 				my $file1 = {size => 123, treehash => 'zz123', mtime => 456};
 				$j->{journal_h} = { file1 => $file1 };
 
