@@ -53,6 +53,7 @@ mtglacier.pl
 README.md
 t/gemu/gemu.pl
 t/integration/byteenc_journal.t
+t/integration/cmd_check_local_hash.t
 t/integration/config_engine_config_file.t
 t/integration/config_engine_definitions.t
 t/integration/config_engine_dryrun.t

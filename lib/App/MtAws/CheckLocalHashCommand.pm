@@ -35,19 +35,19 @@ sub run
 	my ($options, $j) = @_;
 	$j->read_journal(should_exist => 1);
 	my $files = $j->{journal_h};
-	
+
 	my ($error_hash, $error_size, $error_missed, $error_mtime, $no_error, $error_io) = (0,0,0,0,0,0);
 	for my $f (keys %$files) {
 		my $file=$j->latest($f);
 		my $absfilename = $j->absfilename($f);
-		
+
 		if ($options->{'dry-run'}) {
 			print "Will check hash file $f\n"
 		} else {
-			my $th = App::MtAws::TreeHash->new();
 			my $binaryfilename = binaryfilename $absfilename;
-			if (-f $binaryfilename ) {
-				unless (-s $binaryfilename) {
+			if (file_exists($absfilename)) {
+				my $size = file_size($absfilename);
+				unless ($size) {
 					print "ZERO SIZE $f\n";
 					++$error_size;
 					next;
@@ -58,16 +58,16 @@ sub run
 					++$error_io;
 					next;
 				}
+				my $th = App::MtAws::TreeHash->new();
 				$th->eat_file($F); # TODO: don't calc tree hash if size differs!
 				close $F or confess;
 				$th->calc_tree();
-				1;
 				my $treehash = $th->get_final_hash();
-				if (defined($file->{mtime}) && (my $actual_mtime = stat($binaryfilename)->mtime) != $file->{mtime}) {
+				if (defined($file->{mtime}) && (my $actual_mtime = file_mtime($absfilename)) != $file->{mtime}) {
 					print "MTIME missmatch $f $file->{mtime} != $actual_mtime\n";
 					++$error_mtime;
 				}
-				if (-s $binaryfilename == $file->{size}) {
+				if ($size == $file->{size}) {
 					if ($treehash eq $file->{treehash}) {
 						print "OK $f $file->{size} $file->{treehash}\n";
 						++$no_error;
