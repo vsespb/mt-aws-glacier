@@ -30,6 +30,7 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Carp;
 use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
+use POSIX;
 
 use Test::Spec 0.46;
 #use Test::More tests => 455;
@@ -112,12 +113,13 @@ describe "command" => sub {
 
 		sub expect_open_file
 		{
-			my ($file, $filename, $res) = @_;
+			my ($file, $filename, $res, $err) = @_;
 			App::MtAws::CheckLocalHashCommand->expects("open_file")->returns_ordered(sub {
 				$_[0] = $file;
 				my (undef, $fn, %o) = @_;
 				like $fn, qr/\Q$filename\E$/;
 				cmp_deeply { %o }, { mode => '<', binary => 1 };
+				$! = $err if ($err);
 				$res;
 			});
 		}
@@ -265,6 +267,23 @@ describe "command" => sub {
 				ok $res;
 				like $out, qr/^OK file2 $file2->{size} $file2->{treehash}$/m;
 				check_ok($out, qw/ok/);
+			};
+		};
+		it "should work when file open error happens" => sub {
+			ordered_test sub {
+				expect_read_journal $j, $file1;
+
+				expect_file_exists $file1->{relfilename};
+				expect_file_size $file1->{relfilename}, $file1->{size};
+				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
+				expect_open_file my $fileobj = { mock => 1 }, $file1->{relfilename}, 0, EACCES;
+				App::MtAws::TreeHash->expects("new")->never;
+
+				my ($res, $out) = run_command($options, $j);
+				ok !$res;
+				my $estr = strerror(EACCES);
+				like $out, qr/^CANNOT OPEN file file1: $estr$/m;
+				check_ok($out, qw/errors/);
 			};
 		};
 	};
