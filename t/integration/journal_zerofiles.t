@@ -72,65 +72,43 @@ my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
 my $filecount = scalar @filelist;
 
 
-for my $size (0, 1) {
-	for my $is_exist (0, 1) {
-		unlink $journal;
-		rmtree $rootdir;
-		mkpath($rootdir);
-
-		create_journal($is_exist ? @filelist : ());
-
-		my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
-		$J->read_journal(should_exist => 1);
-
-		touch("$rootdir/$_", $size) for (@filelist);
-		$J->read_files({new=>1, existing=>1, missing=>1});
-
-		if ($size) {
-			if ($is_exist) {
-				assert_listing($J, 0, $filecount, 0, "non-zero files which exist in journal");
-			} else {
-				assert_listing($J, $filecount, 0, 0, "non-zero files which are not in journal");
-			}
-		} else {
-			if ($is_exist) {
-				assert_listing($J, 0, 0, $filecount, "zero files which exist in journal");
-			} else {
-				assert_listing($J, 0, 0, 0, "zero files which are not in journal");
-			}
-
-		}
-
-	}
-
-}
-
 for my $included (0, 1) {
-	for my $is_exist (0, 1) {
-		unlink $journal;
-		rmtree $rootdir;
-		mkpath($rootdir);
+	for my $size (0, 1) {
+		for my $is_exist (0, 1) {
+			unlink $journal;
+			rmtree $rootdir;
+			mkpath($rootdir);
 
-		create_journal($is_exist ? @filelist : ());
+			create_journal($is_exist ? @filelist : ());
 
-		my $F = App::MtAws::Filter->new();
-		$F->parse_filters($included ? '+file? -' : '-file? +');
-		my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir, filter => $F);
-		$J->read_journal(should_exist => 1);
+			my $F = App::MtAws::Filter->new();
+			$F->parse_filters($included ? '+file? -' : '-file? +');
+			my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir, filter => $F);
+			$J->read_journal(should_exist => 1);
 
-		touch("$rootdir/$_", 1) for (@filelist);
-		$J->read_files({new=>1, existing=>1, missing=>1});
+			touch("$rootdir/$_", $size) for (@filelist);
+			$J->read_files({new=>1, existing=>1, missing=>1});
 
-		if ($included) {
-			if ($is_exist) {
-				assert_listing($J, 0, $filecount, 0, "files permited by filter, existing in journal");
+			if ($included) {
+				if ($size) {
+					if ($is_exist) {
+						assert_listing($J, 0, $filecount, 0, "non-zero files which exist in journal");
+					} else {
+						assert_listing($J, $filecount, 0, 0, "non-zero files which are not in journal");
+					}
+				} else {
+					if ($is_exist) {
+						assert_listing($J, 0, 0, $filecount, "zero files which exist in journal");
+					} else {
+						assert_listing($J, 0, 0, 0, "zero files which are not in journal");
+					}
+
+				}
 			} else {
-				assert_listing($J, $filecount, 0, 0, "files permited by filter, not existing in journal");
+				assert_listing($J, 0, 0, 0,  "files denied by filter size=$size is_exist=$is_exist");
 			}
-		} else {
-			assert_listing($J, 0, 0, 0,  "files denied by filter");
+
 		}
-
 	}
-
 }
+
