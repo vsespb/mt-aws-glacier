@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 122;
+use Test::More tests => 125;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -81,7 +81,7 @@ my $data = {
 		$J->read_files({new=>1, existing=>1}, $maxfiles);
 
 		my $expected = { missing => [], existing=>[], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist[0..$maxfiles-1]]};
-		is_deeply($J->{listing}, $expected);
+		cmp_deeply($J->{listing}, $expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
 }
@@ -105,7 +105,7 @@ my $data = {
 		$J->read_files({new=>1, existing=>1}, $maxfiles);
 
 		my $expected = { missing => [], existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist]};
-		is_deeply($J->{listing}, $expected);
+		cmp_deeply($J->{listing}, $expected);
 		ok($maxfiles >= scalar @filelist - 1);
 		ok($File::Find::prune == 0);
 }
@@ -128,7 +128,7 @@ my $data = {
 		$J->read_files({new=>1, existing=>1}, 0);
 
 		my $expected = { missing => [], existing => [], new => [map { { relfilename => File::Spec->abs2rel($_, $J->{root_dir}) } } map { "$rootdir/$_" }  @filelist] };
-		is_deeply($J->{listing}, $expected);
+		cmp_deeply($J->{listing}, $expected);
 		ok($File::Find::prune == 0);
 }
 
@@ -227,7 +227,7 @@ for my $missing_mode (qw/0 1/) { for my $new_mode (qw/0 1/) { for my $existing_m
 			});
 
 		$J->read_files({new=>1, existing=>1}, 0);
-		is_deeply($J->{listing}, {new=>[],existing=>[],missing=>[]});
+		cmp_deeply($J->{listing}, {new=>[],existing=>[],missing=>[]});
 }
 
 # should list file as missing if it does not exist
@@ -247,6 +247,27 @@ for my $missing_mode (qw/0 1/) { for my $new_mode (qw/0 1/) { for my $existing_m
 
 		$J->read_files({new=>1, existing=>1, missing=>1}, 0);
 		cmp_deeply([sort map { $_->{relfilename} } @{$J->{listing}{missing}}], [sort @filelist]);
+}
+
+# should not list file as missing if it exists
+{
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
+
+		my @filelist = qw{root_dir/file1 root_dir/file2 root_dir/file3 root_dir/file4 root_dir/file5 root_dir/file6 root_dir/file7};
+		$J->{journal_h} = { map { $_ => { relfilename => $_ } } (@filelist) };
+		(my $mock_journal = Test::MockModule->new('App::MtAws::Journal'))->
+			mock('_is_file_exists', sub { return 1 });
+
+		(my $mock_find = Test::MockModule->new('File::Find'))->
+			mock('find', sub {
+				my ($args) = @_;
+				$args->{wanted}->() for (@filelist);
+			});
+
+		$J->read_files({new=>1, existing=>1, missing=>1}, 0);
+		ok eq_deeply($J->{listing}{existing}, []);
+		ok !eq_deeply($J->{listing}{new}, []);
+		cmp_deeply($J->{listing}{missing}, []);
 }
 
 # should catch broken UTF-8 in filename
@@ -304,7 +325,7 @@ for my $brokenname ("ab\tc", "some\nfile", "some\rfile") {
 			});
 
 		$J->read_files({new=>1, existing=>1}, 0);
-		is_deeply($J->{listing}, {new=>[],existing=>[], missing => []});
+		cmp_deeply($J->{listing}, {new=>[],existing=>[], missing => []});
 }
 
 # should pass correct options to find
