@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 12;
+use Test::More tests => 24;
 use Carp;
 use Data::Dumper;
 use FindBin;
@@ -41,59 +41,12 @@ my $journal = "$mtroot/journal";
 my $rootdir = "$mtroot/root";
 mkpath($mtroot);
 
-my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
-my $filecount = scalar @filelist;
-
-
-for my $size (0, 1) {
-	for my $is_exist (0, 1) {
-		unlink $journal;
-		rmtree $rootdir;
-		mkpath($rootdir);
-
-		# create journal
-		{
-			my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
-			$J->read_journal(should_exist => 0);
-			$J->open_for_write;
-			if ($is_exist) {
-				$J->add_entry({type => 'CREATED', time => 123, archive_id => ('x' x 100).$_, size => 123, mtime => 123, treehash => 'abc', relfilename => $_})
-					for (@filelist)
-			}
-			$J->close_for_write;
-		}
-
-		my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
-		$J->read_journal(should_exist => 1);
-
-		touch("$rootdir/$_", $size) for (@filelist);
-		$J->read_files({new=>1, existing=>1, missing=>1});
-
-		if ($size) {
-			if ($is_exist) {
-				assert_listing($J, 0, $filecount, 0);
-			} else {
-				assert_listing($J, $filecount, 0, 0);
-			}
-		} else {
-			if ($is_exist) {
-				assert_listing($J, 0, 0, $filecount);
-			} else {
-				assert_listing($J, 0, 0, 0);
-			}
-
-		}
-
-	}
-
-}
-
 sub assert_listing
 {
-	my ($J, $new, $existing, $missing) = @_;
-	is @{ $J->{listing}{new} }, $new;
-	is @{ $J->{listing}{existing} }, $existing;
-	is @{ $J->{listing}{missing} }, $missing;
+	my ($J, $new, $existing, $missing, $message) = @_;
+	is @{ $J->{listing}{new} }, $new, $message;
+	is @{ $J->{listing}{existing} }, $existing, $message;
+	is @{ $J->{listing}{missing} }, $missing, $message;
 }
 
 sub touch
@@ -104,3 +57,80 @@ sub touch
 	close $f;
 }
 
+sub create_journal
+{
+	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
+	$J->read_journal(should_exist => 0);
+	$J->open_for_write;
+	$J->add_entry({type => 'CREATED', time => 123, archive_id => ('x' x 100).$_, size => 123, mtime => 123, treehash => 'abc', relfilename => $_})
+		for (@_);
+	$J->close_for_write;
+	$J;
+}
+
+my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
+my $filecount = scalar @filelist;
+
+
+for my $size (0, 1) {
+	for my $is_exist (0, 1) {
+		unlink $journal;
+		rmtree $rootdir;
+		mkpath($rootdir);
+
+		create_journal($is_exist ? @filelist : ());
+
+		my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
+		$J->read_journal(should_exist => 1);
+
+		touch("$rootdir/$_", $size) for (@filelist);
+		$J->read_files({new=>1, existing=>1, missing=>1});
+
+		if ($size) {
+			if ($is_exist) {
+				assert_listing($J, 0, $filecount, 0, "non-zero files which exist in journal");
+			} else {
+				assert_listing($J, $filecount, 0, 0, "non-zero files which are not in journal");
+			}
+		} else {
+			if ($is_exist) {
+				assert_listing($J, 0, 0, $filecount, "zero files which exist in journal");
+			} else {
+				assert_listing($J, 0, 0, 0, "zero files which are not in journal");
+			}
+
+		}
+
+	}
+
+}
+
+for my $included (0, 1) {
+	for my $is_exist (0, 1) {
+		unlink $journal;
+		rmtree $rootdir;
+		mkpath($rootdir);
+
+		create_journal($is_exist ? @filelist : ());
+
+		my $F = App::MtAws::Filter->new();
+		$F->parse_filters($included ? '+file? -' : '-file? +');
+		my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir, filter => $F);
+		$J->read_journal(should_exist => 1);
+
+		touch("$rootdir/$_", 1) for (@filelist);
+		$J->read_files({new=>1, existing=>1, missing=>1});
+
+		if ($included) {
+			if ($is_exist) {
+				assert_listing($J, 0, $filecount, 0, "files permited by filter, existing in journal");
+			} else {
+				assert_listing($J, $filecount, 0, 0, "files permited by filter, not existing in journal");
+			}
+		} else {
+			assert_listing($J, 0, 0, 0,  "files denied by filter");
+		}
+
+	}
+
+}
