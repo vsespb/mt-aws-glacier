@@ -1,3 +1,22 @@
+
+  * Enhancement: sync command now can synchronize modified files or propogate deletions (backward compatibility
+  with previous command line API preserved) - see documentation for sync command (--new, --replace-modified,
+  --delete-removed, --detect options)
+
+  * Compatibility: journal format modified. only backward compatibility preserved, no forward compatibility (i.e. if you
+  use this version once and modify journal, you can't downgrade)
+
+  * check-local-hash output minor changes
+
+  * Now compatible with ancient versions of LWP::UserAgent (5.803+ ) in HTTP mode, such versions shipped with
+  CentOS 5.x (or maybe even 6.x). Note that that does not mean that ancient versions of LWP are stable ;)
+
+  * Enhancement: mtglacier now raises error "Journal is from future version of mtglacier" if journal cant be parsed and
+  it seems that it's from future.
+
+  * Internal changes: prepare for implementing file versioning, prepare for publishing as CPAN distribution, improved
+  test suite
+
 ### 2013-06-26 v0.963 beta
 
   * Fixed - restore-completed sometimes restore existing files when filesystem-encoding is not UTF-8  and filename contains non-ASCII characters
@@ -14,7 +33,7 @@
   * Better handling of server closing connection, after headers sent, for all other types of requests
 
   * Finally defined in README and code minimum Perl version required - 5.8.8 (pretty old, AFAIK there are no
-  supported distributions with older Perls) 
+  supported distributions with older Perls)
 
   * Reading and parsing Journal file optimized (~ 2 times faster for UTF-8 filenames, and ~3 times faster
   for ASCII-only filenames)
@@ -54,7 +73,7 @@
 ### 2013-05-26 v0.956 beta
 
   * Fixed - 'Restore' command now skips retrieval of files, which were retrieved by mtglacier in last 24h (retrievals
-  tracked in Journal using system clock). Also existing files skipped. Previous behavior was: skip only existing files. 
+  tracked in Journal using system clock). Also existing files skipped. Previous behavior was: skip only existing files.
 
   * Some more error handling in HTTP processing
 
@@ -106,7 +125,7 @@
   Signal number has hardcoded, so on (some?) (non-linux?) systems that was a different signal, resulting in
   core dump after successful program termination (signal with default action core dump)
   Also previously, after termination mtglacier were sending much more signals to it child processes, than
-  required for communication, this could result in segfault it Perl (again, after successful termination) 
+  required for communication, this could result in segfault it Perl (again, after successful termination)
 
   * Reworked messages when mtglacier terminated (with Ctrl-C or exception)
 
@@ -151,9 +170,9 @@
 ### 2013-03-19 v0.936 beta
 
   * File selection implemented (see "File selection options" in README)
-  
+
   * --dry-run command implemented
-  
+
   * Bug fixed - it was impossible to use some options in config (like 'from-dir' 'to-vault'). Internally
   those were option aliases.
 
@@ -169,14 +188,14 @@
 ### 2013-03-13 v0.933 beta
 
   * Fix crash in 'help' command, bug was introduced a day ago.
-  
+
   * New version numbering for beta versions - 0.9XY. Where 'X' is a month number of year 2013. 'Y' is number a of
   a release in this month. So 0.933beta is 3rd release in April 2013
 
 ### 2013-03-12: v0.89 beta
 
   * Single-byte character encodings support for *BSD systems added (see "Configuring Character Encoding") in README.
-  
+
   * When uploading from STDIN and file is empty, don't create Amazon Glacier upload id before throwing error
 
 ### 2013-03-04: v0.88 beta
@@ -257,7 +276,7 @@
   * Error checking added for read/write availability of journal file
 
   * Internal: improvements to unit tests
-	
+
 ### 2013-01-02: v0.81 beta
 
   * Error handling when parsing command line implemented + --help command
@@ -345,7 +364,7 @@
 
   * More verbose output
 
-  * For certain commands like Sync read only not-yet-synced filenames into memory (saves memory when working 
+  * For certain commands like Sync read only not-yet-synced filenames into memory (saves memory when working
   with huge filesets)
 
   * Use Journal module to handle journals and file listings + unit test the module

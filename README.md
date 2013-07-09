@@ -352,6 +352,8 @@ NOTE: `sync` does not upload empty directories, there is no such thing as direct
 
 NOTE: With `--dry-run` option TreeHash will not be calculated, instead *Will VERIFY treehash and upload...* message will be displayed.
 
+NOTE: TreeHash calculation performed in parallel, so some of workers (defined with `--concurrency`) might be busy calculating treehash instead
+of network IO.
 
 ### `restore`
 
