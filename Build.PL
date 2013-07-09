@@ -98,6 +98,11 @@ my $build = Module::Build->new(
 
 		'Test::Deep' => '0.092',
 
+		# Test::Simple, Test::More, Test::Builder are part of Test-Simple disto, minimum version 0.88 required as it used by Test::Spec
+		# (and Test::Spec failed to declare minimim version)
+		'Test::Simple' => '0.88',
+		'Test::More' => '0.88',
+
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => '0.46', # we need with() new in 0.46
