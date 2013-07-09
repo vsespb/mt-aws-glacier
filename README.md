@@ -103,6 +103,12 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 [Amazon Glacier faq]:http://aws.amazon.com/glacier/faqs/#How_will_I_be_charged_when_retrieving_large_amounts_of_data_from_Amazon_Glacier
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
+## Help/contribute this project
+
+* If you like mt-aws-glacier, and registered on GitHub, please **Star** it on GitHUb, this way you'll help promote the project.
+* Please report any bugs or issues (using GitHub issues). Well, any feedback is welcomed.
+* If you want to contribute to the source code, please contact me first and describe what you want to do
+
 ## Usage
 
 1. Create a directory containing files to backup. Example `/data/backup`
@@ -690,12 +696,6 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
-
-## Help/contribute this project
-
-* If you are using it and like it, please "Star" it on GitHUb, this way you'll help promote the project
-* Please report any bugs or issues (using GitHub issues). Well, any feedback is welcomed.
-* If you want to contribute to the source code, please contact me first and describe what you want to do
 
 ## Minimum Amazon Glacier permissions:
 
