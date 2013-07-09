@@ -4,8 +4,4 @@ perl:
   - "5.14"
   - "5.12"
   - "5.10"
-before_install:
-  cpanm -n Devel::Cover::Report::Coveralls
-script:
-  MT_NO_HARNESS=1 perl Build.PL && ./Build build && cover -test -report coveralls
 
