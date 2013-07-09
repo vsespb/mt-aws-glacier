@@ -353,6 +353,8 @@ NOTE: files with zero sizes are not supported by Amazon Glacier API, thus consid
 
 NOTE: `sync` does not upload empty directories, there is no such thing as directory in Amazon Glacier.
 
+NOTE: With `--dry-run` option TreeHash will not be calculated, instead *Will VERIFY treehash and upload...* message will be displayed.
+
 
 ### `restore`
 
