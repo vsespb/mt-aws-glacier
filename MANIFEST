@@ -1,4 +1,5 @@
 .travis.yml
+bin/mtglacier
 Build.PL
 ChangeLog
 CONTRIBUTORS
