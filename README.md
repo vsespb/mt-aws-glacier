@@ -38,27 +38,13 @@ mt-aws-glacier is a client application for Glacier.
 * Vault creation and deletion
 * STS/IAM security tokens support
 
-## Coming-soon features
-
-* Checking integrity of remote files
-* Some integration with external world, ability to read SNS topics
-* Simplified distribution for Debian/RedHat
-* Split code to re-usable modules, publishing on CPAN (Currently there are great existing Glacier modules on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*)
-
-
 [Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier
 [mt-aws-glacier Amazon Glacier meta-data format specification]:https://github.com/vsespb/mt-aws-glacier/blob/master/lib/App/MtAws/MetaData.pm
 
-## Planned next version features
+## Important bugs/missing features
 
-* Amazon S3 support
-
-## Important bugs/missed features
-
-* Zero length files are ignored (as Amazon Glacier does not support it)
 * Only multipart upload implemented, no plain upload
 * Mac OS X filesystem treated as case-sensitive
-* `sync` only uploads new files to Amazon Glacier (synchronization of modified/deleted files will be implemented soon)
 
 ## Production readiness
 
@@ -92,7 +78,10 @@ Should NOT work under Windows. Minimum Perl version required is 5.8.8 (pretty ol
 * When playing with Glacier make sure you will be able to delete all your archives, it's impossible to delete archive
 or non-empty vault in amazon console now. Also make sure you have read _all_ Amazon Glacier pricing/faq.
 
-* Read their pricing [FAQ][Amazon Glacier faq] again, really. Beware of retrieval fee.
+* Read Amazon Glacier pricing [FAQ][Amazon Glacier faq] again, really. Beware of retrieval fee.
+
+* Before using this program, you should read Amazon Glacier documentation and understand, in general, Amazon Glacier workflows and entities. This documentation
+does not define any new layer of abstraction over Amazon Glacier entities.
 
 * With low "partsize" option you pay a bit more (Amazon charges for each upload request)
 
@@ -106,6 +95,8 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 
 * Please read [ChangeLog][mt-aws glacier changelog] when upgrading to new version, and especially when downgrading.
 (See "Compatibility" sections when downgrading)
+
+* Zero length files and empty directories are ignored (as Amazon Glacier does not support it)
 
 * See other [limitations](#limitations)
 
