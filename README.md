@@ -328,21 +328,20 @@ If none of three above mode options provided, `--new` is implied (basically for 
 
 	File is always considered modified if its size changed (but not zero)
 
-		1. `treehash` - calculates TreeHash checksum for file and compares with one in Journal. If checksum does not match - file is modified.
+	 1. `treehash` - calculates TreeHash checksum for file and compares with one in Journal. If checksum does not match - file is modified.
 
-		2. `mtime` - compares file last modification time in local filesystem and in journal, if it differs - file is modified.
+	 2. `mtime` - compares file last modification time in local filesystem and in journal, if it differs - file is modified.
 
-		3. `mtime-or-treehash` - compares file last modification time, if it differs - file is modified. If it matches - compares TreeHash.
+	 3. `mtime-or-treehash` - compares file last modification time, if it differs - file is modified. If it matches - compares TreeHash.
 
-		4. `mtime-and-treehash` - compares file last modification time, if it differs - compares TreeHash. If modification time is not changed, file
-		treated as not-modified, treehash not checked.
+	 4. `mtime-and-treehash` - compares file last modification time, if it differs - compares TreeHash. If modification time is not changed, file
+	 treated as not-modified, treehash not checked.
 
 	NOTE: default mode for detect is `mtime-and-treehash`, it's more performance wise (treehash checked only for files with modification time changed),
 	but `mtime-or-treehash` and `treehash` are more safe in case you're not sure which programs change your files and how.
 
 	NOTE: `mtime-or-treehash` is mnemonic for *File is modified if mtime differs OR treehash differs*
-	`mtime-and-treehash`  is mnemonic for  *File is modified if mtime differs AND treehash differs*
-
+	`mtime-and-treehash`  is mnemonic for  *File is modified if mtime differs AND treehash differs*. Words
 	*AND* and *OR* means here logical operators with [short-circuit evaluation](http://en.wikipedia.org/wiki/Short-circuit_evaluation)
 	i.e. with `mtime-and-treehash` treehash never checked if mtime not differs. And with `mtime-or-treehash` treehash never checked if mtime differs.
 
