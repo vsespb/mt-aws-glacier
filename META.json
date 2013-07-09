@@ -83,7 +83,7 @@
    "provides" : {
       "App::MtAws" : {
          "file" : "lib/App/MtAws.pm",
-         "version" : "0.963_2"
+         "version" : "0.971"
       },
       "App::MtAws::CheckLocalHashCommand" : {
          "file" : "lib/App/MtAws/CheckLocalHashCommand.pm"
@@ -215,7 +215,7 @@
          "file" : "lib/App/MtAws/Utils.pm"
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/vsespb/mt-aws-glacier/issues"
@@ -228,5 +228,5 @@
          "url" : "https://github.com/vsespb/mt-aws-glacier"
       }
    },
-   "version" : "0.963_2"
+   "version" : "0.971"
 }
