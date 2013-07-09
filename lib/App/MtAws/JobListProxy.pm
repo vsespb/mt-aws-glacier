@@ -31,7 +31,7 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     $self->{jobs}||die;
-    
+
     $self->{jobs_h} = {};
     $self->{jobs_a} = [];
     my $i = 1;
@@ -40,7 +40,7 @@ sub new
     	$self->{jobs_h}->{$i} = $job;
     	++$i;
     }
-    
+
     $self->{pending}={};
     $self->{uid}=0;
     $self->{all_raised} = 0;
@@ -54,25 +54,27 @@ sub get_task
 	my ($self) = @_;
 	if (scalar @{$self->{jobs_a}}) {
 		my $maxcnt = $self->{maxcnt}||30;
-		for my $job (@{$self->{jobs_a}}) {
-			my ($status, $task) = $job->{job}->get_task();
-			if ($status eq 'wait') {
-				if ($self->{one_by_one}) {
-					return ('wait');
+		OUTER: for (1) {
+			for my $job (@{$self->{jobs_a}}) {
+				my ($status, $task) = $job->{job}->get_task();
+				if ($status eq 'wait') {
+					if ($self->{one_by_one}) {
+						return ('wait');
+					} else {
+						return ('wait') unless --$maxcnt;
+					}
+				} elsif ($status eq 'done') {
+					my ($s, $t) = $self->do_finish($job->{jobid});
+					if ($s eq 'ok') {
+						redo OUTER; # TODO: can optimize here..
+					} else {
+						return ($s, $t); # if done
+					}
 				} else {
-					return ('wait') unless --$maxcnt;
+					my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
+					$self->{pending}->{$newtask->{id}} = $newtask;
+					return ($status, $newtask);
 				}
-			} elsif ($status eq 'done') {
-				my ($s, $t) = $self->do_finish($job->{jobid});
-				if ($s eq 'ok') {
-					redo; # TODO: can optimize here..
-				} else {
-					return ($s, $t); # if done
-				}
-			} else {
-				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
-				$self->{pending}->{$newtask->{id}} = $newtask;
-				return ($status, $newtask);
 			}
 		}
 		return ('wait');
@@ -87,12 +89,12 @@ sub finish_task
 	my ($self, $task) = @_;
 	my $jobid = $task->{jobid};
 	my $id = $task->{id};
-	
+
 	$task->pop;
-	
+
 	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task);
 	delete $self->{pending}->{$id};
-	
+
 	if ($status eq 'ok'){
 		return ("ok");
 	} elsif ($status eq 'done') {
