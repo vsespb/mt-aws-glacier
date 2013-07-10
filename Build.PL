@@ -35,7 +35,11 @@ my $build = Module::Build->new(
 	recursive_test_files=>1,
 	dist_abstract=>'mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier',
 	license     =>'gpl3',
-	script_files => ['bin/mtglacier'], # script_files since M::B 0.18
+
+	# this is a special version of 'mtglacier' script with different shebang and without FindBin
+	# http://blogs.perl.org/users/randy_stauner/2011/09/shebangs-with-perlbrew-aliases-and-eumm-and-without-locallib.html
+	script_files => ['bin/mtglacier'], # script_files directive since M::B 0.18
+	
 	meta_add => {
 		no_index => {
 			namespace => [ 'App::MtAws' ],
