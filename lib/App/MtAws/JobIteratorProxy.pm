@@ -95,10 +95,7 @@ sub finish_task
 	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task);
 	delete $self->{pending}->{$id};
 
-	if ($status eq 'ok'){
-	} elsif ($status eq 'done') {
-		$self->do_finish($jobid);
-	}
+	$self->do_finish($jobid) if ($status eq 'done');
 	return ("ok");
 }
 
