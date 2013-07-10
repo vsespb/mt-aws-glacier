@@ -282,7 +282,7 @@ Commands:
 	sync
 	  --new --replace-modified --delete-removed - Sync modes
 	  --leaf-optimization - Don't use directory hardlinks count when traverse.
-	  --detect treehash|mtime|mtime-or-treehash|mtime-and-treehash
+	  --detect treehash|mtime|mtime-or-treehash|mtime-and-treehash|always-positive
 	purge-vault
 	restore
 	restore-completed

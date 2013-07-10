@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 455;
+use Test::More tests => 459;
 use Test::Deep;
 
 use Data::Dumper;
@@ -52,7 +52,7 @@ describe "command" => sub {
 
 	describe "modified processing" => sub {
 
-		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash/; # TODO: fetch from ConfigDefinition
+		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive/; # TODO: fetch from ConfigDefinition
 		my @detect_with_mtime = grep { /mtime/ } @all_detect;
 		my @detect_without_mtime = grep { ! /mtime/ } @all_detect;
 
@@ -157,6 +157,12 @@ describe "command" => sub {
 				};
 				it "should return 'treehash' when mtime same" => sub {
 					test_should_upload('mtime-or-treehash', 0, 1, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+				};
+			};
+
+			describe "detect=always-positive" => sub {
+				it "should return 'create' always" => sub {
+					test_should_upload('always-positive', $_, 0, App::MtAws::SyncCommand::SHOULD_CREATE()) for (0,1);
 				};
 			};
 
