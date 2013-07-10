@@ -2,6 +2,8 @@
 
   * FSM potential bug fixed, can lead to possible instability
 
+  * FSM bug fixed - with --concurrency=1 it was not deleting old archives after upload replacements
+
   * Enhancement: --detect now accepts new value "always-positive"
 
 ### 2013-07-09 v0.971 beta

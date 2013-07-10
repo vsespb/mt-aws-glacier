@@ -58,7 +58,7 @@ sub get_task
 			my $part_th = App::MtAws::TreeHash->new(); #TODO: We calc sha twice for same data chunk here
 			$part_th->eat_data(\$data);
 			$part_th->calc_tree();
-			
+
 			my $part_final_hash = $part_th->get_final_hash();
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"upload_part", data => {
 				start => $self->{position},
@@ -77,7 +77,7 @@ sub get_task
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
 				# TODO: why do we have to have two FileFinishJob->new ??
-				return ("ok replace", App::MtAws::FileFinishJob->new(upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, th => $self->{th}));
+				return ("ok replace", App::MtAws::FileFinishJob->new(finish_cb => $self->{finish_cb}, upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, th => $self->{th}));
 			} else {
 				return ("wait");
 			}
@@ -96,5 +96,5 @@ sub finish_task
 		return ("ok");
 	}
 }
-	
+
 1;
