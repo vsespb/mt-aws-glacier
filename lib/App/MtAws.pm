@@ -280,22 +280,24 @@ Common options:
 	--timeout - socket timeout
 Commands:
 	sync
-		--leaf-optimization - Don't use directory hardlinks count when traverse.
+	  --new --replace-modified --delete-removed - Sync modes
+	  --leaf-optimization - Don't use directory hardlinks count when traverse.
+	  --detect treehash|mtime|mtime-or-treehash|mtime-and-treehash
 	purge-vault
 	restore
 	restore-completed
-		--segment-size - Size for multi-segment download, in megabytes
+	  --segment-size - Size for multi-segment download, in megabytes
 	check-local-hash
 	retrieve-inventory
 	download-inventory
-		--new-journal - Write inventory as new journal
+	  --new-journal - Write inventory as new journal
 	create-vault VAULT-NAME
 	delete-vault VAULT-NAME
 	upload-file
-		--filename - File to upload
-		--set-rel-filename - Relative filename to use in Journal (if dir not specified)
-		--stdin - Upload from STDIN
-		--check-max-file-size - Specify to ensure there will be less than 10 000 parts
+	  --filename - File to upload
+	  --set-rel-filename - Relative filename to use in Journal (if dir not specified)
+	  --stdin - Upload from STDIN
+	  --check-max-file-size - Specify to ensure there will be less than 10 000 parts
 Config format (text file):
 	key=YOURKEY
 	secret=YOURSECRET
