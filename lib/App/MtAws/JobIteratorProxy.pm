@@ -31,10 +31,10 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     $self->{iterator}||die;
-    
+
     $self->{jobs_h} = {};
     $self->{jobs_a} = [];
-  
+
     $self->{pending}={};
     $self->{task_autoincrement} = $self->{job_autoincrement} = $self->{iterator_end_of_data} =0;
     bless $self, $class;
@@ -48,21 +48,23 @@ sub get_task
 
 	while (1) {
 		my $maxcnt = $self->{maxcnt}||30;
-		for my $job (@{$self->{jobs_a}}) {
-			my ($status, $task) = $job->{job}->get_task();
-			if ($status eq 'wait') {
-				if ($self->{one_by_one}) {
-					return ('wait');
+		OUTER: for (1) {
+			for my $job (@{$self->{jobs_a}}) {
+				my ($status, $task) = $job->{job}->get_task();
+				if ($status eq 'wait') {
+					if ($self->{one_by_one}) {
+						return ('wait');
+					} else {
+						return ('wait') unless --$maxcnt;
+					}
+				} elsif ($status eq 'done') {
+					$self->do_finish($job->{jobid});
+					redo; # TODO: can optimize here..
 				} else {
-					return ('wait') unless --$maxcnt;
+					my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{task_autoincrement}, jobid => $job->{jobid}, task => $task);
+					$self->{pending}->{$newtask->{id}} = $newtask;
+					return ($status, $newtask);
 				}
-			} elsif ($status eq 'done') {
-				$self->do_finish($job->{jobid});
-				redo; # TODO: can optimize here..
-			} else {
-				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{task_autoincrement}, jobid => $job->{jobid}, task => $task);
-				$self->{pending}->{$newtask->{id}} = $newtask;
-				return ($status, $newtask);
 			}
 		}
 		my $next_job = $self->{iterator}->();
@@ -87,12 +89,12 @@ sub finish_task
 	my ($self, $task) = @_;
 	my $jobid = $task->{jobid};
 	my $id = $task->{id};
-	
+
 	$task->pop;
-	
+
 	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task);
 	delete $self->{pending}->{$id};
-	
+
 	if ($status eq 'ok'){
 	} elsif ($status eq 'done') {
 		$self->do_finish($jobid);
