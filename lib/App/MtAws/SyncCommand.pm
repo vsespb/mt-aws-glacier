@@ -69,6 +69,8 @@ sub should_upload
 		is_mtime_differs($options, $journal_file, $absfilename) ? SHOULD_TREEHASH : SHOULD_NOACTION;
 	} elsif ($options->{detect} eq 'mtime-or-treehash') {
 		is_mtime_differs($options, $journal_file, $absfilename) ? SHOULD_CREATE : SHOULD_TREEHASH;
+	} elsif ($options->{detect} eq 'always-positive') {
+		SHOULD_CREATE;
 	} else {
 		confess "Invalid detect option in should_upload";
 	}

@@ -337,6 +337,8 @@ If none of three above mode options provided, `--new` is implied (basically for 
 	 4. `mtime-and-treehash` - compares file last modification time, if it differs - compares TreeHash. If modification time is not changed, file
 	 treated as not-modified, treehash not checked.
 
+	 5. `always-positive` - always replace files, Modification time and TreeHash are ignored. Probably makes some sense only with `--filter` options.
+
 	NOTE: default mode for detect is `mtime-and-treehash`, it's more performance wise (treehash checked only for files with modification time changed),
 	but `mtime-or-treehash` and `treehash` are more safe in case you're not sure which programs change your files and how.
 

@@ -34,7 +34,7 @@ use LWP::UserAgent;
 
 sub filter_options
 {
-	my $filter_error = message 'filter_error', "Error in parsing filter %s a%"; 
+	my $filter_error = message 'filter_error', "Error in parsing filter %s a%";
 	scope 'filters', do {
 		my @l = optional(qw/include exclude filter/);
 		if (first { present } @l) {
@@ -84,7 +84,7 @@ sub mandatory_maxsize
 
 sub check_dir_or_relname
 {
-	
+
 	message 'mutual', "%option a% and %option b% are mutual exclusive";
 	message 'mandatory_with', "Need to use %option b% together with %option a%";
 	if (present('filename')) {
@@ -212,7 +212,7 @@ sub check_max_size
 
 sub detect_opts
 {
-	
+
 	seen('detect'), do { # TODO: movify configengine to somehow simplify this
 		explicit('detect') && (!present('replace-modified')) ?
 		error("option_for_command_can_be_used_only_with", a => 'detect', b => 'replace-modified', c => 'sync') :
@@ -234,15 +234,15 @@ sub sync_opts
 sub get_config
 {
 	my (%args) = @_;
-	
+
 	my $c  = App::MtAws::ConfigEngine->new(ConfigOption => 'config', CmdEncoding => 'terminal-encoding', ConfigEncoding => 'config-encoding', %args);
-	
+
 	$c->{preinitialize} = sub {
 		set_filename_encoding $c->{options}{'filenames-encoding'}{value};
 	};
-	
+
 	$c->define(sub {
-		
+
 		message 'no_command', 'Please specify command', allow_redefine=>1;
 		message 'already_specified_in_alias', '%option b% specified, while %option a% already defined', allow_redefine => 1;
 		message 'unexpected_argument', "Extra argument in command line: %a%", allow_redefine => 1;
@@ -250,34 +250,34 @@ sub get_config
 		message 'cannot_read_config', 'Cannot read config file "%config%"';
 		message 'deprecated_option', '%option% deprecated, use %main% instead';
 		message 'option_for_command_can_be_used_only_with', "Option %option a% for %command c% command can be used only together with %option b%";
-		
-		
+
+
 		for (option 'dir', deprecated => ['to-dir', 'from-dir']) {
 			validation $_, message('%option a% should be less than 512 characters'), stop => 1, sub { length($_) < 512 }; # TODO: check that dir is dir
 			validation $_, message('%option a% not a directory'), stop => 1, sub { -d binaryfilename };
 		}
-		
+
 		option 'base-dir';
 		validation option('leaf-optimization', default => 1), message('%option a% should be either "1" or "0"'), sub { /^[01]$/ };
-		
+
 		for (option 'filename') {
 			validation $_, message('%option a% not a file'), stop => 1, sub { -f binaryfilename };
 			validation $_, message('%option a% file not readable'), stop => 1, sub { -r binaryfilename };
 			validation $_, message('%option a% file size is zero'), stop => 1, sub { -s binaryfilename };
 		}
-		
-		
+
+
 		for (option 'set-rel-filename') {
 			validation $_, message('require_relative_filename', '%option a% should be canonical relative filename'),
 				stop => 1,
 				sub { is_relative_filename($_) };
 		}
 		option 'stdin', type=>'';
-		
+
 		option 'vault', deprecated => 'to-vault';
 		option 'config', binary => 1;
 		options 'journal', 'job-id', 'max-number-of-files', 'new-journal';
-		
+
 		my @encodings =
 			map { option($_, binary =>1, default => 'UTF-8') }
 			qw/terminal-encoding config-encoding filenames-encoding journal-encoding/;
@@ -285,21 +285,21 @@ sub get_config
 		for (@encodings) {
 			validation $_, 'unknown_encoding', sub { find_encoding($_) };
 		}
-		
-		
+
+
 		my @filters = map { option($_, type => 's', list => 1) } qw/include exclude filter/;
-		
+
 		option 'dry-run', type=>'';
-		
+
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
 
 
-		
+
 		option('new', type=>'');
 		option('replace-modified', type=>'');
 		option('delete-removed', type=>'');
-		
+
 
 		# treehash, mtime, mtime-and-treehash, mtime-or-treehash
 		# mtime-and-treehash := treat_as_modified if differs(mtime) && differs(treehash)
@@ -307,8 +307,8 @@ sub get_config
 		validation
 			option('detect', default => 'mtime-and-treehash'),
 			$invalid_format,
-			sub { my $v = $_; first { $_ eq $v } qw/treehash mtime mtime-and-treehash mtime-or-treehash/ }; 
-		
+			sub { my $v = $_; first { $_ eq $v } qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive/ };
+
 		my @config_opts = (
 			validation(option('key'), $invalid_format, sub { /^[A-Za-z0-9]{20}$/ }),
 			validation(option('secret'), $invalid_format, sub { /^[\x21-\x7e]{40}$/ }),
@@ -317,18 +317,18 @@ sub get_config
 			validation(option('timeout', default => 180), $invalid_format, sub { /^[0-9]{1,5}$/ }),
 			validation(option('protocol', default => 'http'), message('protocol must be "https" or "http"'), sub { /^https?$/ }),
 		);
-		
+
 		for (option('concurrency', type => 'i', default => 4)) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('Max concurrency is 30,  Min is 1'), sub { $_ >= 1 && $_ <= 30 };
 		}
-		
+
 		for (option('check-max-file-size', type => 'i')) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('check-max-file-size should be greater than 0'), stop => 1, sub { $_ > 0 }; # TODO: %option .. %
 			validation $_, message('check-max-file-size should be less than or equal to 40 000 000'), stop => 1, sub { $_ <= 40_000_000 };
 		}
-		
+
 		for (option('partsize', type => 'i', default => 16)) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('Part size must be power of two'), sub { ($_ != 0) && (($_ & ($_ - 1)) == 0) };
@@ -337,14 +337,14 @@ sub get_config
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('%option a% must be zero or power of two'), sub { (($_ & ($_ - 1)) == 0) }; # TODO: proper format
 		}
-		
+
 		validation positional('vault-name'), message('Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'), sub {
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
-		
+
 		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https),	};
 		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https),	};
-		
+
 		command 'sync' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, sync_opts, detect_opts, check_https,
@@ -353,13 +353,13 @@ sub get_config
 				filter_options, optional('dry-run')
 			))
 		};
-		
+
 		command 'upload-file' => sub {
 			validate(mandatory(  optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault concurrency/, writable_journal('journal'),
 				check_dir_or_relname, check_base_dir, mandatory('partsize'), check_max_size  ))
 		};
-				
-		
+
+
 		command 'purge-vault' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault concurrency/,
@@ -367,7 +367,7 @@ sub get_config
 				deprecated('dir'), filter_options, optional('dry-run')
 			))
 		};
-		
+
 		command 'restore' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault max-number-of-files concurrency/,
@@ -375,14 +375,14 @@ sub get_config
 				filter_options, optional('dry-run')
 			))
 		};
-		
+
 		command 'restore-completed' => sub {
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir vault concurrency/, existing_journal('journal'),
 				filter_options, optional('dry-run'), http_download_options
 			))
 		};
-		
+
 		command 'check-local-hash' => sub {
 			# TODO: deprecated option to-vault
 			validate(mandatory(
@@ -390,11 +390,11 @@ sub get_config
 				filter_options, optional('dry-run')
 			))
 		};
-		
+
 		command 'retrieve-inventory' => sub {
 			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault/))
 		};
-		
+
 		command 'download-inventory' => sub {
 			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, check_https, 'vault', empty_journal('new-journal')))
 		};
