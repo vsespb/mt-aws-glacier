@@ -40,18 +40,18 @@ sub new
 	my ($class, %args) = @_;
 	my $self = \%args;
 	bless $self, $class;
-	
+
 	$self->{journal_encoding} ||= 'UTF-8';
-	
+
 	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
 	$self->{archive_h} = {};
-	
+
 	$self->{used_versions} = {};
 	$self->{output_version} = 'B' unless defined($self->{output_version});
 	$self->{last_supported_version} = 'C';
 	$self->{first_unsupported_version} = chr(ord($self->{last_supported_version})+1);
-	
+
 	return $self;
 }
 
@@ -68,7 +68,7 @@ sub read_journal
 	confess unless length($self->{journal_file});
 	$self->{last_read_time} = time();
 	$self->{active_retrievals} = {} if $self->{use_active_retrievals};
-	
+
 	my $binary_filename = binaryfilename $self->{journal_file};
 	if ($args{should_exist} && !-e $binary_filename) {
 		confess;
@@ -78,11 +78,11 @@ sub read_journal
 				filename => $self->{journal_file}, errno => $!;
 		my $lineno = 0;
 		while (!eof($F)) {
-			defined( $_ = <$F> ) or confess;
+			defined( my $line = <$F> ) or confess;
 			++$lineno;
-			s/\r?\n$// or
+			$line =~ s/\r?\n$// or
 				die exception journal_format_error => "Invalid format of journal, line %lineno% not fully written", lineno => $lineno;
-			$self->process_line($_, $lineno);
+			$self->process_line($line, $lineno);
 		}
 		close $F or confess;
 	}
@@ -95,7 +95,7 @@ sub open_for_write
 	my ($self) = @_;
 	open_file($self->{append_file}, $self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding}) or
 		die exception journal_open_error => "Unable to open journal file %string filename% for writing, errno=%errno%",
-			filename => $self->{journal_file}, errno => $!;	
+			filename => $self->{journal_file}, errno => $!;
   	$self->{append_file}->autoflush();
 }
 
@@ -112,18 +112,18 @@ sub process_line
 	try_drop_utf8_flag $line;
 	my ($ver, $time, $archive_id, $size, $mtime, $treehash, $relfilename, $job_id);
 	# TODO: replace \S and \s, make tests for this
-	
+
 	# Journal version 'A', 'B', 'C'
 	# 'B' and 'C' two way compatible
 	# 'A' is not compatible, but share some common code
 	if (($ver, $time, $archive_id, $size, $mtime, $treehash, $relfilename) =
 		$line =~ /^([ABC])\t([0-9]{1,20})\tCREATED\t(\S+)\t([0-9]{1,20})\t([+-]?[0-9]{1,20}|NONE)\t(\S+)\t(.*?)$/) {
 		confess "invalid filename" unless is_relative_filename($relfilename);
-		
+
 		# here goes difference between 'A' and 'B','C'
 		if ($ver eq 'A') {
 			confess if $mtime eq 'NONE'; # this is not supported by format 'A'
-			
+
 			# version 'A' produce records with mtime set even when there is no mtime in Amazon metadata
 			# (this is possible when archive uploaded by 3rd party program, or mtglacier <= v0.7)
 			# we detect this as $archive_id eq $relfilename - this is practical impossible
@@ -132,8 +132,8 @@ sub process_line
 		} else {
 			$mtime = undef if $mtime eq 'NONE';
 		}
-		
-		
+
+
 		$self->_add_archive({
 			relfilename => $relfilename,
 			time => $time,
@@ -149,9 +149,9 @@ sub process_line
 	} elsif (($ver, $time, $archive_id, $job_id) = $line =~ /^([ABC])\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
 		$self->_retrieve_job($time, $archive_id, $job_id);
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
-		
+
 	# Journal version '0'
-	
+
 	} elsif (($time, $archive_id, $size, $treehash, $relfilename) =
 		$line =~ /^([0-9]{1,20}) CREATED (\S+) ([0-9]{1,20}) (\S+) (.*?)$/) {
 		confess "invalid filename" unless is_relative_filename($relfilename);
@@ -247,9 +247,9 @@ sub latest
 sub add_entry
 {
 	my ($self, $e) = @_;
-	
+
 	confess unless $self->{output_version} eq 'B';
-	
+
 	# TODO: time should be ascending?
 
 	if ($e->{type} eq 'CREATED') {
@@ -291,11 +291,11 @@ sub read_files
 	my %checkmode = %$mode;
 	defined $checkmode{$_} && delete $checkmode{$_} for qw/new existing missing/;
 	confess "Unknown mode: ".join(';', keys %checkmode) if %checkmode;
-	
+
 	confess unless defined($self->{root_dir});
-	
+
 	my %missing = $mode->{'missing'} ? %{$self->{journal_h}} : ();
-	
+
 	$self->{listing} = { new => [], existing => [], missing => [] };
 	my $i = 0;
 	# TODO: find better workaround than "-s"
@@ -306,15 +306,15 @@ sub read_files
 			$File::Find::prune = 1;
 			return;
 		}
-		
+
 		if (++$i % 1000 == 0) {
 			print "Found $i local files\n";
 		}
-		
+
 		# note that this exception is probably thrown even if a directory below transfer root contains invalid chars
 		die exception(invalid_chars_filename => "Not allowed characters in filename: %filename%", filename => hex_dump_string($_))
 			if /[\r\n\t]/;
-				
+
 		if (-d) {
 			my $dir = character_filename($_);
 			my $reldir = File::Spec->abs2rel($dir, $self->{root_dir});
@@ -322,7 +322,7 @@ sub read_files
 				my ($match, $matchsubdirs) = $self->{filter}->check_dir($reldir."/");
 				if (!$match && $matchsubdirs) {
 					$File::Find::prune = 1;
-				} 
+				}
 			}
 		} else {
 			my $filename = character_filename(my $binaryfilename = $_);
@@ -340,7 +340,7 @@ sub read_files
 			}
 		}
 	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
-	
+
 	if ($mode->{missing} && !$self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
 		for (keys %missing) {
 			unless ($self->_is_file_exists(binaryfilename $self->absfilename($_))) {
@@ -391,7 +391,7 @@ sub absfilename
 sub _can_read_filename_for_mode
 {
 	my ($self, $relfilename, $mode) = @_;
-	
+
 	if (defined($self->{journal_h}->{$relfilename})) {
 		if ($mode->{existing}) {
 			return 'existing';
