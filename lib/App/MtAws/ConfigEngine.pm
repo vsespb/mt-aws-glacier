@@ -102,7 +102,7 @@ sub error_to_message
 			$value;
 		}
 	};
-	
+
 	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge if %data; # in new perl versions \w also means unicode chars..
 	$spec;
 }
@@ -160,20 +160,20 @@ sub get_encoding
 	my ($name, $config, $options) = @_;
 	return undef unless defined $name;
 	my $res = undef;
-	
+
 	if (defined $config && defined($config->{$name})) {
 		my $new_enc_obj = find_encoding($config->{$name});
 		error('unknown_encoding', encoding => $config->{$name}, a => $name), return unless $new_enc_obj;
 		$res = $new_enc_obj;
 	}
-		
+
 	my $new_encoding = first { $_->{name} eq $name } @$options;
 	if (defined $new_encoding && defined $new_encoding->{value}) {
 		my $new_enc_obj = find_encoding($new_encoding->{value});
 		error('unknown_encoding', encoding => $new_encoding->{value}, a => $name), return unless $new_enc_obj;
 		$res = $new_enc_obj;
 	}
-	
+
 	$res
 }
 
@@ -192,13 +192,13 @@ sub get_option_ref
 sub parse_options
 {
 	(my $self, local @ARGV) = @_; # we override @ARGV here, cause GetOptionsFromArray is not exported on perl 5.8.8
-	
-	
-	return { command => 'help', map { $_ => undef } qw/errors error_texts warnings warning_texts options/} 
+
+
+	return { command => 'help', map { $_ => undef } qw/errors error_texts warnings warning_texts options/}
 		if (@ARGV && $ARGV[0] =~ /\b(help|h)\b/i);
-	
+
 	local $context = $self;
-	
+
 	my @results;
 	my @getopts = map {
 		($_ => sub {
@@ -211,25 +211,25 @@ sub parse_options
 		$type =  "=$type" unless $type eq '';
 		map { "$_$type" } $_->{name}, @{ $_->{alias} || [] }, @{ $_->{deprecated} || [] } # TODO: it's possible to implement aliasing using GetOpt itself
 	} grep { !$_->{positional} } values %{$self->{options}};
-	
+
 	error('getopts_error') unless GetOptions(@getopts);
-	
+
 	my $cfg = undef;
 	my $cfg_opt = undef;
-	
+
 	unless ($self->{errors}) {
 		if (defined(my $cmd_enc = $self->{CmdEncoding})) {
 			if (my $cmd_ref = $self->{options}->{$cmd_enc}) {
 				confess "CmdEncoding option should be declared as binary" unless $cmd_ref->{binary};
 			}
 		}
-		
+
 		if (defined(my $cfg_enc = $self->{ConfigEncoding})) {
 			if (my $cfg_ref = $self->{options}->{$cfg_enc}) {
 				confess "ConfigEncoding option should be declared as binary" unless $cfg_ref->{binary};
 			}
 		}
-		
+
 		if (defined($self->{ConfigOption}) and $cfg_opt = $self->{options}->{$self->{ConfigOption}}) {
 			confess "ConfigOption option should be declared as binary" unless $cfg_opt->{binary};
 			my $cfg_value = first { $_->{name} eq $self->{ConfigOption} } @results;
@@ -240,28 +240,28 @@ sub parse_options
 				error("cannot_read_config", config => $cfg_value) unless defined $cfg;
 			}
 		}
-		
+
 		my $cmd_encoding = get_encoding($self->{CmdEncoding}, $cfg, \@results);
 		my $cfg_encoding = get_encoding($self->{ConfigEncoding}, $cfg, \@results);
 		$self->{cmd_encoding} = defined($cmd_encoding) ? $cmd_encoding : 'UTF-8';
 		$self->{cfg_encoding} = defined($cfg_encoding) ? $cfg_encoding : 'UTF-8';
 	}
-	
-	
-	
+
+
+
 	unless ($self->{errors}) {
-		for (@results) { # sort needed here to define a/b order for already_specified_in_alias 
+		for (@results) { # sort needed here to define a/b order for already_specified_in_alias
 			my ($optref, $is_alias) = $self->get_option_ref($_->{name});
 			$optref||confess;
 			warning('deprecated_option', option => $_->{name}, main => $self->{optaliasmap}->{$_->{name}})
 				if $is_alias && $self->{deprecated_options}->{$_->{name}};
-			
+
 			error('already_specified_in_alias', ($optref->{original_option} lt $_->{name}) ?
 					(a => $optref->{original_option}, b => $_->{name}) :
 					(b => $optref->{original_option}, a => $_->{name})
 				)
 					if ((defined $optref->{value}) && !$optref->{list} && $optref->{source} eq 'option' );
-			
+
 			my $decoded;
 			if ($optref->{binary}) {
 				$decoded = $_->{value};
@@ -269,7 +269,7 @@ sub parse_options
 				$decoded = $self->decode_option_value($_->{value});
 				last unless defined $decoded;
 			}
-			
+
 			if ($optref->{list}) {
 				if (defined $optref->{value}) {
 					push @{ $optref->{value} }, $decoded;
@@ -284,19 +284,19 @@ sub parse_options
 		}
 	}
 	my $command = undef;
-	
+
 	unless ($self->{errors}) {
 		my $original_command = $command = shift @ARGV;
 		if (defined($command)) {
 			error("unknown_command", a => $original_command) unless
 				$self->{commands}->{$command} ||
-				(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command}); 
+				(defined($command = $self->{aliasmap}->{$command}) && $self->{commands}->{$command});
 			warning('deprecated_command', command => $original_command) if ($self->{deprecated_commands}->{$original_command});
 		} else {
 			error("no_command") unless defined $command;
 		}
 	}
-	
+
 	unless ($self->{errors}) {
 		if (defined $cfg) {
 			for (keys %$cfg) {
@@ -317,26 +317,26 @@ sub parse_options
 		}
 	}
 	unless ($self->{errors}) {
-		
+
 		for (values %{$self->{options}}) {
 			# fill from default values
-			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} && 
+			@{$_}{qw/value source/} = ($_->{default}, 'default') if (!defined($_->{value}) && defined($_->{default}));#$_->{seen} &&
 		}
-		
+
 		$self->{preinitialize}->() if $self->{preinitialize};
-		
+
 		$self->{positional_tail} = \@ARGV; #[map { decode($self->{cmd_encoding}, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @ARGV];
 
 		$self->{commands}->{$command}->{cb}->(); # the callback!
-		
+
 		for (qw/ConfigOption ConfigEncoding CmdEncoding/) {
 			confess "Special option '$_' must be seen" if $self->{$_} && !$self->{options}{$self->{$_}}{seen};
 		}
-		
+
 		for (values %{$self->{options}}) {
 			error('unexpected_option', option => _real_option_name($_)) if defined($_->{value}) && ($_->{source} eq 'option') && !$_->{seen}; # TODO: test validation same way
 		}
-		
+
 		unless ($self->{errors}) {
 			if (@ARGV) {
 				unless (defined eval {
@@ -346,15 +346,15 @@ sub parse_options
 				}
 			}
 		}
-		
+
 		unless ($self->{errors}) {
 			$self->unflatten_scope();
 		}
 	}
-		
+
 	$self->{error_texts} = [ $self->errors_or_warnings_to_messages($self->{errors}) ];
 	$self->{warning_texts} = [ $self->errors_or_warnings_to_messages($self->{warnings}) ];
-	
+
 	return {
 		errors => arrayref_or_undef $self->{errors},
 		error_texts => arrayref_or_undef $self->{error_texts},
@@ -390,21 +390,21 @@ sub option($;%) {
 	my ($name, %opts) = @_;
 	confess "option already declared" if $context->{options}->{$name};
 	if (%opts) {
-		
+
 		if (defined $opts{alias}) {
 			$opts{alias} = [$opts{alias}] if ref $opts{alias} eq ref ''; # TODO: common code for two subs, move out
 		}
-		
+
 		if (defined $opts{deprecated}) {
 			$opts{deprecated} = [$opts{deprecated}] if ref $opts{deprecated} eq ref '';
 		}
-		
+
 		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
 			confess "option $_ already declared" if defined $context->{options}->{$_};
 			confess "alias $_ already declared" if defined $context->{optaliasmap}->{$_};
 			$context->{optaliasmap}->{$_} = $name;
 		}
-		
+
 		$context->{deprecated_options}->{$_} = 1 for (@{$opts{deprecated}||[]});
 	}
 	$context->{options}->{$name} = { %opts, name => $name } unless $context->{options}->{$name};
@@ -442,9 +442,9 @@ sub command($@)
 	confess "alias $name already declared" if defined $context->{aliasmap}->{$name};
 	if (%opts) {
 		$opts{alias} = [$opts{alias}] if (defined $opts{alias}) && (ref $opts{alias} eq ref '');
-		
+
 		$opts{deprecated} = [$opts{deprecated}] if (defined $opts{deprecated}) && ref $opts{deprecated} eq ref '';
-		
+
 		for (@{$opts{alias}||[]}, @{$opts{deprecated}||[]}) {
 			confess "command $_ already declared" if defined $context->{commands}->{$_};
 			confess "alias $_ already declared" if defined $context->{aliasmap}->{$_};
@@ -544,7 +544,7 @@ sub validate(@)
 
 sub scope($@)
 {
-	my $scopename = shift; 
+	my $scopename = shift;
 	return map {
 		assert_option;
 		unshift @{$context->{options}->{$_}->{scope}}, $scopename;
@@ -616,7 +616,7 @@ sub custom($$)
 };
 
 
-sub error($;%) 
+sub error($;%)
 {
 	my ($name, %data) = @_;
 	push @{$context->{errors}},
@@ -625,7 +625,7 @@ sub error($;%)
 			(%data ? confess("message '$name' is undefined") : $name);
 	return;
 };
-	
+
 sub warning($;%)
 {
 	my ($name, %data) = @_;
@@ -635,13 +635,14 @@ sub warning($;%)
 			(%data ? confess("message '$name' is undefined") : $name);
 	return;
 };
-	
+
 sub read_config
 {
 	my ($self, $filename) = @_;
 	return unless -f $filename && -r $filename; #TODO test
 	open (my $F, "<:crlf", $filename) || return;
 	my %newconfig;
+	local $_;
 	while (<$F>) {
 		chomp;
 		next if /^\s*$/;
@@ -659,8 +660,3 @@ sub read_config
 }
 
 1;
-
-
-
-
-
