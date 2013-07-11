@@ -1,4 +1,6 @@
 
+  * mt-aws-glacier can now be installed using CPAN tool. Docs updated with installation instructions.
+
   * Enhancement: --detect now accepts new value "size-only"
 
 ### 2013-07-10 v0.972 beta

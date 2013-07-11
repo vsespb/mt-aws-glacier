@@ -53,8 +53,10 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Installation/System requirements
 
-Script is made for Linux OS. Tested under Ubuntu and Debian. Should work under other Linux distributions. Lightly tested under Mac OS X.
-Should NOT work under Windows. Minimum Perl version required is 5.8.8 (pretty old, AFAIK there are no supported distributions with older Perls)
+Script is made for Unix OS. Tested under Linux. Should work under other POSIX OSes (*BSD, Solaris). Lightly tested under Mac OS X.
+Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pretty old, AFAIK there are no supported distributions with older Perls)
+
+### Manual (universal) installation instructions.
 
 * Install the following CPAN modules:
 
@@ -63,7 +65,6 @@ Should NOT work under Windows. Minimum Perl version required is 5.8.8 (pretty ol
 
 	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
 	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::Protocol::https** via CPAN: `cpan -i LWP::Protocol::https`
-	or `cpanp -i LWP::Protocol::https`
 
 
 * Install mt-aws-glacier
@@ -72,7 +73,19 @@ Should NOT work under Windows. Minimum Perl version required is 5.8.8 (pretty ol
 
 	(or just download and unzip `https://github.com/vsespb/mt-aws-glacier/archive/master.zip` )
 
-	After that you can execute `mtglacier` command from any directory, or create a symlink to it - it will find other package files by itself.
+	After that you can execute `mtglacier` script (found in root of repository) from any directory, or create a symlink to it - it will find other package files by itself.
+
+### *OR* Installation via CPAN
+
+		cpan -i App::MtAws
+
+That's it.
+
+NOTE: CPAN distribution of *mt-aws-glacier* has a bit more dependencies than manual installation, as it requires additional modules for testsuite.
+
+NOTE: When installing CPAN modules, instead system `cpan` tool you might wan't to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's much easier to install and configure.
+
+NOTE: New releases of *mt-aws-glacier* usually appear on CPAN within a ~week after official release.
 
 ## Warnings ( *MUST READ* )
 
@@ -106,7 +119,7 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 
 ## Help/contribute this project
 
-* If you like mt-aws-glacier, and registered on GitHub, please **Star** it on GitHUb, this way you'll help promote the project.
+* If you like *mt-aws-glacier*, and registered on GitHub, please **Star** it on GitHUb, this way you'll help promote the project.
 * Please report any bugs or issues (using GitHub issues). Well, any feedback is welcomed.
 * If you want to contribute to the source code, please contact me first and describe what you want to do
 
