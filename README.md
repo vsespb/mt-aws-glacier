@@ -30,6 +30,7 @@ mt-aws-glacier is a client application for Glacier.
 * Checking integrity of local files using journal
 * Ability to limit number of archives to retrieve
 * File selection options for all commands (using flexible rules with wildcard support)
+* Full synchronization to Amazon Glacier - new file uploaded, modified files can be replaced, deletions can be propogated
 * File name and modification times are stored as Glacier metadata ([metadata format for developers][mt-aws-glacier Amazon Glacier meta-data format specification])
 * Ability to re-create journal file from Amazon Glacier metadata
 * Full UTF-8 support (and full single-byte encoding support for *BSD systems)
