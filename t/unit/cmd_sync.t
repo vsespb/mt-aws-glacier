@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 459;
+use Test::More tests => 458;
 use Test::Deep;
 
 use Data::Dumper;
@@ -103,8 +103,8 @@ describe "command" => sub {
 				ok looks_like_number App::MtAws::SyncCommand::SHOULD_NOACTION();
 			};
 
-			it "should always return create if file size differs" => sub {
-				for (@all_detect) {
+			it "should almost always return create if file size differs" => sub {
+				for (grep { $_ ne 'always-positive'} @all_detect) {
 					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
 					App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
 					is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'),
@@ -168,7 +168,7 @@ describe "command" => sub {
 
 			describe "detect=always-positive" => sub {
 				it "should return 'create' always" => sub {
-					test_should_upload('always-positive', $_, 0, 1, App::MtAws::SyncCommand::SHOULD_CREATE()) for (0,1);
+					test_should_upload('always-positive', $_, 0, 0, App::MtAws::SyncCommand::SHOULD_CREATE()) for (0,1);
 				};
 			};
 
