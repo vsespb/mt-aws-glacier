@@ -63,6 +63,8 @@ sub should_upload
 		SHOULD_CREATE;
 	} elsif ($journal_file->{size} != file_size($absfilename)) {
 		SHOULD_CREATE;
+	} elsif ($options->{detect} eq 'size-only') {
+		SHOULD_NOACTION; # we already checked size above, so NOACTION
 	} elsif ($options->{detect} eq 'mtime') {
 		is_mtime_differs($options, $journal_file, $absfilename) ? SHOULD_CREATE : SHOULD_NOACTION;
 	} elsif ($options->{detect} eq 'treehash') {

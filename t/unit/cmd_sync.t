@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec 0.46;
-use Test::More tests => 456;
+use Test::More tests => 469;
 use Test::Deep;
 
 use Data::Dumper;
@@ -52,7 +52,7 @@ describe "command" => sub {
 
 	describe "modified processing" => sub {
 
-		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive/; # TODO: fetch from ConfigDefinition
+		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/; # TODO: fetch from ConfigDefinition
 		my @detect_with_mtime = grep { /mtime/ } @all_detect;
 		my @detect_without_mtime = grep { ! /mtime/ } @all_detect;
 
@@ -126,7 +126,10 @@ describe "command" => sub {
 					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
 				}
 				if (defined $size_differs) {
-					App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
+					App::MtAws::SyncCommand->expects("file_size")->returns(sub {
+						cmp_deeply ['file1'], [@_];
+						return $size_differs ? 43 : 42;
+					})->once
 				} else {
 					App::MtAws::SyncCommand->expects("file_size")->never;
 				}
@@ -169,6 +172,15 @@ describe "command" => sub {
 			describe "detect=always-positive" => sub {
 				it "should return 'create' always" => sub {
 					test_should_upload('always-positive', undef, undef, App::MtAws::SyncCommand::SHOULD_CREATE());
+				};
+			};
+
+			describe "detect=size-only" => sub {
+				it "should return 'create' if size differs" => sub {
+					test_should_upload('size-only', undef, 1, App::MtAws::SyncCommand::SHOULD_CREATE());
+				};
+				it "should return 'no action' if size same" => sub {
+					test_should_upload('size-only', undef, 0, App::MtAws::SyncCommand::SHOULD_NOACTION());
 				};
 			};
 

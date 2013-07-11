@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 146;
+use Test::More tests => 173;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -79,7 +79,7 @@ for my $line (
 						{'format' => 'invalid_format', a => 'detect', value => 'xyz'}],
 						@$line, '--detect', 'xyz', @other_opts_a;
 
-				for (qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive/) {
+				for (qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/) {
 					assert_options "detect=$_ should work with replace-modified (while ".
 						(@other_opts_a ? join(',', @other_opts_a) : 'no other options').
 						" is active)",

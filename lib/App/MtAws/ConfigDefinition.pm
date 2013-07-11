@@ -307,7 +307,7 @@ sub get_config
 		validation
 			option('detect', default => 'mtime-and-treehash'),
 			$invalid_format,
-			sub { my $v = $_; first { $_ eq $v } qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive/ };
+			sub { my $v = $_; first { $_ eq $v } qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/ };
 
 		my @config_opts = (
 			validation(option('key'), $invalid_format, sub { /^[A-Za-z0-9]{20}$/ }),
