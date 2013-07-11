@@ -98,9 +98,13 @@ understant how to decode it back.
 
 =cut
 
-my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
-	JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) : # some additional abuse-protection
-	JSON::XS->new->utf8; # it's still protected by length checking below
+my $meta_coder = do {
+	if ($JSON::XS::VERSION >= 1.4) { # line with VERSION should start with "if" for EU::MM parsing
+	  JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) # some additional abuse-protection
+	} else {
+	  JSON::XS->new->utf8; # it's still protected by length checking below
+	}
+};
 
 sub meta_decode
 {
