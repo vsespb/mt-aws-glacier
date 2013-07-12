@@ -195,8 +195,8 @@ sub create_files
 sub create_journal
 {
 	my ($self, $mode) = @_;
-	if ($self->{create_journal_version} eq 'A') {
-		$self->create_journal_vA($mode);
+	if ($self->{create_journal_version} =~ /^[ABC]$/) {
+		$self->create_journal_vABC($self->{create_journal_version}, $mode);
 	} elsif ($self->{create_journal_version} eq '0') {
 		$self->create_journal_v0($mode);
 	} else {
@@ -228,10 +228,10 @@ sub create_journal_v0
 	close F;
 }
 
-# creating journal for v0.7beta
-sub create_journal_vA
+# creating journal v 'A'
+sub create_journal_vABC
 {
-	my ($self, $mode) = @_;
+	my ($self, $version, $mode) = @_;
 	open (F, ">:encoding($self->{journal_encoding})", encode($self->{filenames_encoding}, $self->{journal_file}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	my $t = time() - (scalar @{$self->{testfiles}})*2;
 	my $ft = $t - 1000;
@@ -242,13 +242,13 @@ sub create_journal_vA
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
-			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
+			print F "$version\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
 		} elsif (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created_and_deleted')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
-			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
-			print F "A\t$dt\tDELETED\t$testfile->{archive_id}\t$testfile->{filename}\n";
+			print F "$version\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
+			print F "$version\t$dt\tDELETED\t$testfile->{archive_id}\t$testfile->{filename}\n";
 		}
 		$t++;
 	}

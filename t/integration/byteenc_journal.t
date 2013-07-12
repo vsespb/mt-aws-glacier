@@ -40,7 +40,7 @@ use TestUtils;
 warning_fatal();
 
 if( $^O =~ /^(linux|.*bsd|solaris)$/i ) {
-      plan tests => 1350;
+      plan tests => 2700;
 } else {
       plan skip_all => 'Test cannot be performed on character-oriented filesystem';
 }
@@ -88,7 +88,7 @@ my $testfiles1 = [
 
 ];
 
-for my $jv (qw/0 A/) {
+for my $jv (qw/0 A B C/) {
 	for my $journal_encoding (qw/UTF-8 KOI8-R CP1251/) {#  # TODO: disable test on Unicode Filesystems (MacOSX)
 		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {# 
 			my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);

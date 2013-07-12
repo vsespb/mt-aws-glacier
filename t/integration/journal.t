@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 76;
+use Test::Simple tests => 152;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
@@ -62,7 +62,7 @@ my $testfiles1 = [
 ];
 
 
-for my $jv (qw/0 A/) {
+for my $jv (qw/0 A B C/) {
 	my $J = JournalTest->new(create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
 	$J->test_all();
 }
