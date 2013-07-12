@@ -118,7 +118,7 @@ sub process
 		die "Not a directory $options->{dir}" unless -d binaryfilename $options->{dir};
 
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir},
-			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'});
+			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'}, follow => $options->{'follow'});
 
 		require App::MtAws::SyncCommand;
 		App::MtAws::SyncCommand::run($options, $j);
@@ -282,6 +282,7 @@ Commands:
 	sync
 	  --new --replace-modified --delete-removed - Sync modes
 	  --leaf-optimization - Don't use directory hardlinks count when traverse.
+	  --follow - Follow symbolic links
 	  --detect treehash|mtime|mtime-or-treehash|mtime-and-treehash|always-positive|size-only
 	purge-vault
 	restore

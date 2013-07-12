@@ -644,6 +644,9 @@ For more information see [find][find] and [File::Find][File::Find] manuals.
 	on the connection to the server is observed for `timeout` seconds. This means that the time it takes for the complete whole
 	request might be longer.
 
+9. `follow` (only `sync` command)
+
+	Follow symbolic links during directory traversal. This option increases memory usage.
 
 ## Configuring Character Encodings
 
