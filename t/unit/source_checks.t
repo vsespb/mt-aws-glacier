@@ -47,9 +47,12 @@ for my $file (@all) {
 	local $_;
 	my $ok = 1;
 	while (<$fh>) {
-		# test with EU::MM Y2009 regexps for version definitions
+		# test with EU::MM prior to Y2009 regexps for version definitions
 		next unless /(?<!\\)([\$*])(([\w\:\']*)\bVERSION)\b.*\=/;
-		next if /^\s*(if|unless)/;
+
+		# Y2009 regexp
+		#next if /^\s*(if|unless)/;
+
 		print STDERR "Bad line $_\n";
 		$ok = 0;
 		last;

@@ -74,7 +74,7 @@ my $build = Module::Build->new(
 		'File::Path' => 0,
 
 
-		 # File::Temp - for tests we need 0.19, for code probably lower version is OK, perl 5.8.8 ships 0.16, 5.8.9 ships 0.20
+		 # File::Temp - for tests we need 0.19, for code probably lower version is OK, perl 5.8.8 ships 0.16, 5.8.9 ships 0.20, but 5.9.0 ships 0.14
 		 # TODO: decrease required version
 		'File::Temp' => '0.19',
 
@@ -88,7 +88,7 @@ my $build = Module::Build->new(
 		'IO::Pipe' => 0,
 		'IO::Select' => 0,
 
-		'List::Util' => '1.11', # needed for Test::Spec, however 1.19 is released with perl 5.8.9
+		'List::Util' => '1.11', # needed for Test::Spec, however 1.19 is released with perl 5.8.9 and 1.13 with perl 5.9
 		'POSIX' => 0,
 		'PerlIO::encoding' => 0,
 		'Time::Local' => 0,

@@ -99,7 +99,8 @@ understant how to decode it back.
 =cut
 
 my $meta_coder = do {
-	if ($JSON::XS::VERSION >= 1.4) { # line with VERSION should start with "if" for EU::MM parsing
+	if ($JSON::XS::VERSION # line with VERSION should start with "if" for EU::MM parsing
+		>= 1.4) { # or better does not contain '='
 	  JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) # some additional abuse-protection
 	} else {
 	  JSON::XS->new->utf8; # it's still protected by length checking below
