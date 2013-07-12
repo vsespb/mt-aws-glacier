@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 125;
+use Test::More tests => 127;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -84,6 +84,23 @@ my $data = {
 		cmp_deeply($J->{listing}, $expected);
 		ok($maxfiles < scalar @filelist - 1);
 		ok($File::Find::prune == 1);
+}
+
+# leaf optimization should work
+for my $leaf_opt (0, 1) {
+		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir, leaf_optimization => $leaf_opt);
+
+		my @filelist = qw{file1 file2 file3 file4 file5 file6 file7};
+
+		my $got_dont_use_nlink;
+		(my $mock_find = Test::MockModule->new('File::Find'))->
+			mock('find', sub {
+				$got_dont_use_nlink = $File::Find::dont_use_nlink;
+			});
+
+		$J->read_files({new=>1, existing=>1});
+
+		cmp_deeply $got_dont_use_nlink, bool(!$leaf_opt), "leaf_optimization should work";
 }
 
 # max_number_of_files should not be triggered
