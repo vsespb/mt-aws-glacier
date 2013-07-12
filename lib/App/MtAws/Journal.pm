@@ -325,6 +325,7 @@ sub read_files
 				}
 			}
 		} else {
+			# file can be not existing here (i.e. dangling symlink)
 			my $filename = character_filename(my $binaryfilename = $_);
 			my $orig_relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
 			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
@@ -339,7 +340,7 @@ sub read_files
 				}
 			}
 		}
-	}, no_chdir => 1 }, (binaryfilename($self->{root_dir})));
+	}, no_chdir => 1, $self->{follow} ? (follow => 1, follow_skip => 2) : () }, (binaryfilename($self->{root_dir})));
 
 	if ($mode->{missing} && !$self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
 		for (keys %missing) {
