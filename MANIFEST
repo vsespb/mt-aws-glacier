@@ -59,6 +59,7 @@ t/integration/config_engine_config_file.t
 t/integration/config_engine_definitions.t
 t/integration/config_engine_dryrun.t
 t/integration/config_engine_filters.t
+t/integration/config_engine_follow.t
 t/integration/config_engine_leaf.t
 t/integration/config_engine_lwp.t
 t/integration/config_engine_segment_size.t
@@ -71,6 +72,7 @@ t/integration/config_engine_v082.t
 t/integration/config_engine_v085.t
 t/integration/config_read_config.t
 t/integration/journal.t
+t/integration/journal_follow.t
 t/integration/journal_parselines.t
 t/integration/journal_readwrite.t
 t/integration/journal_zerofiles.t
@@ -107,6 +109,7 @@ t/unit/journal_sanity.t
 t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
+t/unit/source_checks.t
 t/unit/string_escape.t
 t/unit/test_test.t
 t/unit/u_treehash.t
