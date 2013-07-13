@@ -1,5 +1,10 @@
   * mt-aws-glacier can now be installed using CPAN tool. Docs updated with installation instructions.
 
+  * Config file now detect config syntax errors better and reports it together with file name and line number
+
+  * Config options without values (follow, dry-run, stdin, new, replace-modified, delete-removed) can now be used in
+  config file
+
   * Enhancement: sync now acception --follow - follow symbolic links, documentation updated.
 
   * Enhancement: --detect now accepts new value "size-only"

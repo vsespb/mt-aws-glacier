@@ -646,7 +646,7 @@ For more information see [find][find] and [File::Find][File::Find] manuals.
 
 9. `follow` (only `sync` command)
 
-	Follow symbolic links during directory traversal. This option increases memory usage.
+	Follow symbolic links during directory traversal. This option hits performance and increases memory usage.
 
 ## Configuring Character Encodings
 
