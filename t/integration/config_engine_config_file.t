@@ -54,11 +54,12 @@ SKIP: {
 	chmod 0000, $file;
 	disable_validations sub {
 		ok ! defined eval { config_create_and_parse(split(' ', $line)); 1; };
-		ok get_exception;
-		is get_exception->{code}, 'cannot_read_config';
-		is get_exception->{config}, hex_dump_string($file);
-		is get_exception->{errno}, strerror(EACCES);
-		is exception_message(get_exception), "Cannot read config file: ".hex_dump_string($file).", errno=".strerror(EACCES);
+		my $err = get_exception();
+		ok $err;
+		is $err->{code}, 'cannot_read_config';
+		is $err->{config}, hex_dump_string($file);
+		is $err->{errno}, strerror(EACCES);
+		is exception_message($err), "Cannot read config file: ".hex_dump_string($file).", errno=".strerror(EACCES);
 	};
 }
 
@@ -67,10 +68,11 @@ SKIP: {
 	mkpath($file);
 	disable_validations sub {
 		ok ! defined eval { config_create_and_parse(split(' ', $line)); 1; };
-		ok get_exception;
-		is get_exception->{code}, 'config_file_is_not_a_file';
-		is get_exception->{config}, hex_dump_string($file);
-		is exception_message(get_exception), "Config file is not a file: ".hex_dump_string($file);
+		my $err = get_exception();
+		ok $err;
+		is $err->{code}, 'config_file_is_not_a_file';
+		is $err->{config}, hex_dump_string($file);
+		is exception_message($err), "Config file is not a file: ".hex_dump_string($file);
 	}
 }
 
