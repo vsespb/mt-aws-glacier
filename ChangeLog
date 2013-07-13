@@ -1,3 +1,5 @@
+### 2013-07-13 v0.973 beta
+
   * mt-aws-glacier can now be installed using CPAN tool. Docs updated with installation instructions.
 
   * Config file now detect config syntax errors better and reports it together with file name and line number

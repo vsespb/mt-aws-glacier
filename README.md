@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.972 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 0.973 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -646,7 +646,7 @@ For more information see [find][find] and [File::Find][File::Find] manuals.
 
 9. `follow` (only `sync` command)
 
-	Follow symbolic links during directory traversal. This option hits performance and increases memory usage.
+	Follow symbolic links during directory traversal. This option hits performance and increases memory usage. Similar to `find -L`
 
 ## Configuring Character Encodings
 
