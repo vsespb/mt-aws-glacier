@@ -73,7 +73,6 @@ sub new
 	message 'getopts_error', 'Error parsing options', allow_redefine=>1;
 	message 'options_encoding_error', 'Invalid %encoding% character in command line', allow_redefine => 1;
 	message 'config_encoding_error', 'Invalid %encoding% character in config file', allow_redefine => 1;
-	message 'cannot_read_config', "Cannot read config file: %config%", allow_redefine => 1;
 	message 'mandatory', "Option %option a% is mandatory", allow_redefine => 1;
 	message 'positional_mandatory', 'Positional argument #%d n% (%a%) is mandatory', allow_redefine => 1;
 	message 'unexpected_argument', "Unexpected argument in command line: %a%", allow_redefine => 1;
@@ -239,7 +238,7 @@ sub parse_options
 			$cfg_value = $cfg_opt->{default} unless defined $cfg_value;
 			if (defined $cfg_value) { # we should also check that config is 'seen'. we can only check below (so it must be seen)
 				$cfg = $self->read_config($cfg_value);
-				error("cannot_read_config", config => $cfg_value) unless defined $cfg;
+				confess unless defined $cfg;
 			}
 		}
 
@@ -641,8 +640,12 @@ sub warning($;%)
 sub read_config
 {
 	my ($self, $filename) = @_;
-	return unless -f $filename && -r $filename; #TODO test
-	open (my $F, "<:crlf", $filename) || return;
+	-f $filename or
+		die exception 'config_file_is_not_a_file' => "Config file is not a file: %config%",
+		config => hex_dump_string($filename);
+	open (my $F, "<:crlf", $filename) or
+		die exception 'cannot_read_config' => "Cannot read config file: %config%, errno=%errno%",
+		config => hex_dump_string($filename), errno => $!;
 	my %newconfig;
 	local $_;
 	my $lineno = 0;
@@ -658,8 +661,8 @@ sub read_config
 		} elsif (($name) = /^[ \t]*([A-Za-z0-9][A-Za-z0-9-]*)[ \t]*$/) {
 			$newconfig{$name} = 1;
 		} else {
-			die exception 'invalid_config_line' => 'Cannot parse line in config file: %line% at line %lineno%',
-				lineno => $lineno, line => hex_dump_string($_);
+			die exception 'invalid_config_line' => 'Cannot parse line in config file: %line% at %config% line %lineno%',
+				lineno => $lineno, line => hex_dump_string($_), config => hex_dump_string($filename);
 		}
 	}
 	close $F;

@@ -26,7 +26,7 @@ use warnings FATAL => 'all';
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 382;
+use Test::More tests => 381;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -1471,9 +1471,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		option 'config', binary=>1;
 		command 'mycommand' => sub { optional('fromconfig', 'myoption', 'config') };
 	});
-	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'cx');
-	cmp_deeply $res->{error_texts}, ['Cannot read config file: cx'], "should broken config"; 
-	cmp_deeply $res->{errors}, [{ format => 'cannot_read_config', config => 'cx' }], "should broken config"; 
+	ok ! defined eval { $c->parse_options('mycommand', '-myoption', 31, '-config', 'cx') };
 }
 
 # encodings

@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 256;
+use Test::More tests => 276;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Data::Dumper;
@@ -32,6 +32,7 @@ use App::MtAws::Exceptions;
 use App::MtAws::Utils;
 use File::Path;
 use Encode;
+use POSIX;
 use TestUtils;
 use File::Temp ();
 
@@ -109,7 +110,9 @@ for my $badline ("x!=1", "тест=1", "test!1=тест") {
 		is get_exception->{code}, 'invalid_config_line', "should have valid exception code";
 		is get_exception->{lineno}, $append_lines + 1, "should report correct lineno";
 		is get_exception->{line}, hex_dump_string($utfbadline), "should report correct line";
-		is exception_message(get_exception), "Cannot parse line in config file: ".hex_dump_string($utfbadline	)." at line ".($append_lines + 1);
+		is get_exception->{config}, hex_dump_string($file), "should report filename";
+		is exception_message(get_exception),
+			"Cannot parse line in config file: ".hex_dump_string($utfbadline	)." at ".hex_dump_string($file)." line ".($append_lines + 1);
 	}
 }
 
@@ -143,7 +146,11 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	unlink $file if -e $file;
 	ok ! -e $file, "assert we deleted file";
 	my $C = App::MtAws::ConfigEngine->new();
-	ok !defined $C->read_config($file), "should return undef if file not found"
+	ok !defined eval { $C->read_config($file); 1 };
+	ok get_exception;
+	is get_exception->{code}, 'config_file_is_not_a_file';
+	is get_exception->{config}, hex_dump_string($file);
+	is exception_message(get_exception), "Config file is not a file: ".hex_dump_string($file);
 }
 
 {
@@ -152,7 +159,12 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	mkpath($file);
 	ok -d $file, "assert file is directory";
 	my $C = App::MtAws::ConfigEngine->new();
-	ok !defined $C->read_config($file), "should return undef if file is directory"
+	ok !defined eval { $C->read_config($file); 1;};
+	ok get_exception;
+	is get_exception->{code}, 'config_file_is_not_a_file';
+	is get_exception->{config}, hex_dump_string($file);
+	is exception_message(get_exception), "Config file is not a file: ".hex_dump_string($file);
+
 }
 
 sub read_as_config

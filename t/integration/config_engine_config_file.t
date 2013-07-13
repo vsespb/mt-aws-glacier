@@ -23,39 +23,54 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 7;
+use Test::More tests => 13;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use File::Path;
 use TestUtils;
+use App::MtAws::Exceptions;
+use App::MtAws::Utils;
 use File::Temp ();
+use POSIX;
 
 
 warning_fatal();
 
 my $TEMP = File::Temp->newdir();
 my $mtroot = $TEMP->dirname();
-my $file = "$mtroot/config_engine_v08_test.txt";
+my $file = "$mtroot/config_engine_config_file_test.txt";
+my $symlink = "$mtroot/config_engine_config_file_test.symlink";
 
 rmtree($file);
 
 
 my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to-vault=myvault --journal x";
-{
-	unlink $file;
+SKIP: {
+	skip "Cannot run under root", 6 unless $>;
+	rmtree($file);
+	open F, ">", $file;
+	print F " ";
+	close F;
+	chmod 0000, $file;
 	disable_validations sub {
-		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
-		ok( $errors && !$result, "should catch missed config file");
-		ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch missed config file error message");
+		ok ! defined eval { config_create_and_parse(split(' ', $line)); 1; };
+		ok get_exception;
+		is get_exception->{code}, 'cannot_read_config';
+		is get_exception->{config}, hex_dump_string($file);
+		is get_exception->{errno}, strerror(EACCES);
+		is exception_message(get_exception), "Cannot read config file: ".hex_dump_string($file).", errno=".strerror(EACCES);
 	};
 }
 
 {
+	rmtree($file);
 	mkpath($file);
 	disable_validations sub {
- 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
-		ok( $errors && !$result, "should catch missed config file");
-		ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch when config file is a directory");
+		ok ! defined eval { config_create_and_parse(split(' ', $line)); 1; };
+		ok get_exception;
+		is get_exception->{code}, 'config_file_is_not_a_file';
+		is get_exception->{config}, hex_dump_string($file);
+		is exception_message(get_exception), "Config file is not a file: ".hex_dump_string($file);
 	}
 }
 
@@ -69,17 +84,16 @@ my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to
 	}
 }
 
-SKIP: {
-	skip "Cannot run under root", 2 unless $>;
+{
 	rmtree($file);
 	open F, ">", $file;
-	print F " ";
+	print F "dry-run\n";
 	close F;
-	chmod 0000, $file;
+	symlink $file, $symlink or die $!;
 	disable_validations sub {
-		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
-		ok( $errors && !$result, "should catch permission problems with config file");
-		ok( $errors->[0] =~ "Cannot read config file \"$file\"", "should catch when config file is a directory");
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', "purge-vault --key=k --secret=s --region=myregion --config=$symlink --to-vault=myvault --journal x"));
+		ok( !$errors && $result, "should work with symlinked config file");
 	}
 }
+
 1;
