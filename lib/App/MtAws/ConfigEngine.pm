@@ -27,6 +27,8 @@ use List::Util qw/first/;
 use strict;
 use warnings;
 use utf8;
+use App::MtAws::Exceptions;
+use App::MtAws::Utils;
 
 require Exporter;
 use base qw/Exporter/;
@@ -643,17 +645,22 @@ sub read_config
 	open (my $F, "<:crlf", $filename) || return;
 	my %newconfig;
 	local $_;
+	my $lineno = 0;
 	while (<$F>) {
 		chomp;
+		++$lineno;
 		next if /^\s*$/;
 		next if /^\s*\#/;
-		/^([^=]+)=(.*)$/;
-		my ($name, $value) = ($1,$2); # TODO: test lines with wrong format
-		$name =~ s/^[ \t]*//;
-		$name =~ s/[ \t]*$//;
-		$value =~ s/^[ \t]*//;
-		$value =~ s/[ \t]*$//;
-		$newconfig{$name} = $value;
+		my ($name, $value);
+		 # we have there non-unicode data, so [ \t] can be replaced with \s. however i'll leave it for clarity
+		if (($name, $value) = /^[ \t]*([A-Za-z0-9][A-Za-z0-9-]*)[ \t]*=[ \t]*(.*?)[ \t]*$/) {
+			$newconfig{$name} = $value;
+		} elsif (($name) = /^[ \t]*([A-Za-z0-9][A-Za-z0-9-]*)[ \t]*$/) {
+			$newconfig{$name} = 1;
+		} else {
+			die exception 'invalid_config_line' => 'Cannot parse line in config file: %line% at line %lineno%',
+				lineno => $lineno, line => hex_dump_string($_);
+		}
 	}
 	close $F;
 	return \%newconfig;
