@@ -112,7 +112,7 @@ sub process
 		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
 	}
 
-	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
+	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'} );
 
 	if ($action eq 'sync') {
 		die "Not a directory $options->{dir}" unless -d binaryfilename $options->{dir};

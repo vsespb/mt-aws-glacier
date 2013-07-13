@@ -38,6 +38,12 @@ use App::MtAws::FileVersions;
 sub new
 {
 	my ($class, %args) = @_;
+
+	my %checkargs = %args;
+	exists $checkargs{$_} && delete $checkargs{$_}
+		for qw/root_dir journal_file journal_encoding output_version leaf_optimization use_active_retrievals filter follow/;
+	confess "Unknown argument(s) to Journal constructor: ".join(', ', keys %checkargs) if %checkargs; # TODO: test
+
 	my $self = \%args;
 	bless $self, $class;
 

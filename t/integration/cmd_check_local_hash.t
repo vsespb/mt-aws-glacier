@@ -79,11 +79,9 @@ SKIP: {
 		journal => $journal,
 		dir => $rootdir,
 		journal_encoding => 'UTF-8',
-		filenames_encoding => 'UTF-8',
 	};
 
 	my $j = App::MtAws::Journal->new(journal_encoding => $options->{'journal-encoding'},
-		filenames_encoding => $options->{'filenames-encoding'},
 		journal_file => $options->{journal},
 		root_dir => $options->{dir},
 		filter => $options->{filters}{parsed});
