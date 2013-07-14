@@ -85,7 +85,7 @@ if (fork()) {
    binmode $tochild;
    
 	confess unless (scalar <$tochild> eq "open\n");
-	open_file(my $fh, $filename, mode => '+<', binary => 1);
+	open_file(my $fh, $filename, mode => '+<', binary => 1) or confess;
 	confess unless (scalar <$tochild> eq "lock\n");
 	_flock $fh, LOCK_EX or confess;
 	$fh->flush();
