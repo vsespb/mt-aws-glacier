@@ -151,9 +151,10 @@ for (1..10) {
 # same "stresstest", but some elements have repeations
 {
 	for my $before (1..6) { for my $same (1..6) { for my $after (1..6) {
-		my @elements = ( (map { $_* 10 } 1..$before), (map { ($before + 1) * 10 } 1..$same), (map { ($before + 1) * 10 + $_* 10 } 1..$after) );
-		my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
+		my @elements = ( (map { $_* 10 } 1..$before), (($before + 1) * 10 ) x $same, (map { ($before + 1) * 10 + $_* 10 } 1..$after) );
 		my $ok = 1;
+		$ok &&= (scalar @elements) == $before + $same + $after;
+		my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
 		my %seen;
 		for (my $i = 0; $i <= $#elements; ++$i) {
 			next if $seen{$elements[$i]}++; # we have some repetions (array produced with $same)

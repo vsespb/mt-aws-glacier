@@ -143,7 +143,7 @@ describe "perform_lwp" => sub {
 			App::MtAws::GlacierRequest->expects('_sleep')->returns(sub { push @sleep_args, shift } )->exactly($retries);
 			App::MtAws::GlacierRequest::throttle($_) for (1..App::MtAws::GlacierRequest::_max_retries);
 			cmp_deeply [ @sleep_args ],
-				[ (map { 1 } (1..5)), (map { 5 } (1..5)), (map { 15 } (1..10)), (map { 60 } (1..30)), (map { 180 } (1..50)) ]
+				[ (1) x 5, (5) x 5, (15) x 10, (60) x 30, (180) x 50 ]
 		};
 	};
 	describe "throttling" => sub {
