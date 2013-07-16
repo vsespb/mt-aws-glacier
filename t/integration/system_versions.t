@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 3;
+use Test::More tests => 5;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -37,5 +37,11 @@ ok eval { App::MtAws::check_module_versions(); 1 };
    ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found 0.55/;
 }
 
+{
+   use App::MtAws::Filter;
+   local *App::MtAws::Filter::VERSION = sub { };
+   ok ! defined eval { App::MtAws::check_module_versions(); 1 };
+   ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found undef/;
+}
 
 1;

@@ -74,6 +74,7 @@ sub check_module_versions
 		if (/^App\/MtAws\/(.*)\.pmc?$/) {
 			my $module = "App::MtAws::$1";
 			my $got = $module->VERSION;
+			$got = 'undef' unless defined $got;
 			die "FATAL: wrong version of $module, expected $VERSION, found $got" unless $got eq $VERSION;
 		}
 	};
