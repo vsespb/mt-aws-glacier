@@ -273,6 +273,10 @@ END
 	} elsif ($action eq 'help') {
 
 		# we load here all dynamically loaded modules, to check that installation is correct.
+		require App::MtAws::SyncCommand;
+		require App::MtAws::RetrieveCommand;
+		require App::MtAws::CheckLocalHashCommand;
+		require App::MtAws::DownloadInventoryCommand;
 		require App::MtAws::CheckLocalHashCommand;
 		require App::MtAws::DownloadInventoryCommand;
 		require App::MtAws::RetrieveCommand;
