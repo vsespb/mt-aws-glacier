@@ -68,9 +68,20 @@ use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use PerlIO::encoding;
 
+sub check_module_versions
+{
+	for (keys %INC) {
+		if (/^App\/MtAws\/(.*)\.pmc?$/) {
+			my $module = "App::MtAws::$1";
+			my $got = $module->VERSION;
+			die "FATAL: wrong version of $module, expected $VERSION, found $got" unless $got eq $VERSION;
+		}
+	};
+}
 
 sub main
 {
+	check_module_versions();
 	unless (defined eval {process(); 1;}) {
 		dump_error(q{});
 		exit(1);
@@ -121,6 +132,7 @@ sub process
 			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'}, follow => $options->{'follow'});
 
 		require App::MtAws::SyncCommand;
+		check_module_versions;
 		App::MtAws::SyncCommand::run($options, $j);
 
 	} elsif ($action eq 'upload-file') {
@@ -192,6 +204,7 @@ END
 
 
 		require App::MtAws::RetrieveCommand;
+		check_module_versions;
 		App::MtAws::RetrieveCommand::run($options, $j);
 	} elsif ($action eq 'restore-completed') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
@@ -228,6 +241,7 @@ END
 	} elsif ($action eq 'check-local-hash') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 		require App::MtAws::CheckLocalHashCommand;
+		check_module_versions;
 		App::MtAws::CheckLocalHashCommand::run($options, $j);
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
@@ -240,6 +254,7 @@ END
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{'new-journal'});
 		require App::MtAws::DownloadInventoryCommand;
+		check_module_versions;
 		App::MtAws::DownloadInventoryCommand::run($options, $j);
 	} elsif ($action eq 'create-vault') {
 		$options->{concurrency} = 1;
@@ -261,6 +276,7 @@ END
 		require App::MtAws::CheckLocalHashCommand;
 		require App::MtAws::DownloadInventoryCommand;
 		require App::MtAws::RetrieveCommand;
+		check_module_versions;
 
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
