@@ -59,7 +59,7 @@ sub new
 sub eat_file
 {
 	my ($self, $fh) = @_;
-	while (1) {
+	while () {
 		my $r = read($fh, my $data, $self->{unit});
 		if (!defined($r)) {
 			die $!;

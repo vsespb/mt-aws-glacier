@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 5;
+use Test::More tests => 8;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -34,14 +34,33 @@ ok eval { App::MtAws::check_module_versions(); 1 };
    use App::MtAws::Filter;
    local *App::MtAws::Filter::VERSION = sub { '0.55' };
    ok ! defined eval { App::MtAws::check_module_versions(); 1 };
-   ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found 0.55/;
+   ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found 0.55/, "should work when version is wrong";
+}
+
+{
+   use App::MtAws::Filter;
+   local *App::MtAws::Filter::VERSION = sub { '999.999' };
+   ok ! defined eval { App::MtAws::check_module_versions(); 1 };
+   ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found 999.999/, "should work when version is too hight";
 }
 
 {
    use App::MtAws::Filter;
    local *App::MtAws::Filter::VERSION = sub { };
    ok ! defined eval { App::MtAws::check_module_versions(); 1 };
-   ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found undef/;
+   ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found undef/, "should work when version is undef";
+}
+
+##
+## not related to versions test.
+##
+
+{
+   my $i = 0;
+   while () {
+	  last if ++$i == 3;
+   }
+   is $i, 3, "while() should produce infinite loop";
 }
 
 1;

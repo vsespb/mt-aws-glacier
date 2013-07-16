@@ -48,7 +48,7 @@ sub get_task
 {
 	my ($self) = @_;
 
-	while (1) {
+	while () {
 		my $maxcnt = $self->{maxcnt}||30;
 		OUTER: for (1) {
 			for my $job (@{$self->{jobs_a}}) {
