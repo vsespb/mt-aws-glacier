@@ -20,6 +20,8 @@
 
 package App::MtAws::HttpWriter;
 
+our $VERSION = '0.973';
+
 use strict;
 use warnings;
 use utf8;
@@ -101,6 +103,8 @@ sub finish
 
 package App::MtAws::HttpSegmentWriter;
 
+our $VERSION = '0.973';
+
 use strict;
 use warnings;
 use utf8;
@@ -172,6 +176,8 @@ sub finish
 
 package App::MtAws::HttpFileWriter;
 
+our $VERSION = '0.973';
+
 use strict;
 use warnings;
 use utf8;
@@ -227,6 +233,8 @@ sub finish
 
 
 package App::MtAws::HttpMemoryWriter;
+
+our $VERSION = '0.973';
 
 use strict;
 use warnings;

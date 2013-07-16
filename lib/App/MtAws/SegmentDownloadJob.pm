@@ -20,6 +20,8 @@
 
 package App::MtAws::SegmentDownloadJob;
 
+our $VERSION = '0.973';
+
 use strict;
 use warnings;
 use utf8;

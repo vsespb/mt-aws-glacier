@@ -20,6 +20,8 @@
 
 package App::MtAws::RetrieveCommand;
 
+our $VERSION = '0.973';
+
 use strict;
 use warnings;
 use utf8;
