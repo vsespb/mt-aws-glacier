@@ -63,8 +63,13 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl** or MacPort **p5-libwww-perl**)
 	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS** or MacPort **p5-json-XS**)
 
-	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
-	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::Protocol::https** via CPAN: `cpan -i LWP::Protocol::https`
+	NOTE: for older Perl < 5.9.3 (i.e. *CentOS 5.x*), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
+
+	NOTE: on some old Linux installations (examples: *Ubuntu 10.04*, *CentOS 5.x*) to use HTTPS you need to install **LWP::Protocol::https** via CPAN: `cpan -i LWP::Protocol::https`
+
+	NOTE: *Fedora* decoupled ( [link1](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149747.html) [link2](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149891.html) ) Perl,
+	so package named `perl`, which is a part of default installation, is not actually real Perl, which is misleading.
+	`perl-core` is looks much more like a real Perl, but it is possible that it still misses some original parts of Perl.
 
 
 * Install mt-aws-glacier
@@ -86,6 +91,8 @@ NOTE: CPAN distribution of *mt-aws-glacier* has a bit more dependencies than man
 NOTE: When installing CPAN modules, instead system `cpan` tool you might wan't to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's much easier to install and configure.
 
 NOTE: New releases of *mt-aws-glacier* usually appear on CPAN within a ~week after official release.
+
+NOTE: On *Fedora* you need to install `perl-core` and `perl-CPAN` first, and see above notice about *Fedora*
 
 ## Warnings ( *MUST READ* )
 
