@@ -180,7 +180,7 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
-		./mtglacier check-local-hash --config=glacier.cfg --dir /data/backup --vault=myvault -journal=journal.log
+		./mtglacier check-local-hash --config=glacier.cfg --dir /data/backup --journal=journal.log
 
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
@@ -194,7 +194,7 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 
 12. Delete all your files from vault
 
-		./mtglacier purge-vault --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log
+		./mtglacier purge-vault --config=glacier.cfg --vault=myvault --journal=journal.log
 
 13. Wait ~ 24-48 hours and you can try deleting your vault
 

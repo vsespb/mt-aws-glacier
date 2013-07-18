@@ -109,7 +109,7 @@ sub process
 	if ($res->{warnings}) {
 		while (@{$res->{warnings}}) {
 			my ($warning, $warning_text) = (shift @{$res->{warnings}}, shift @{$res->{warning_texts}});
-			print STDERR "WARNING: $warning_text\n" unless $warning->{format} =~ /^(deprecated_option|deprecated_command|option_deprecated_for_command)$/; # TODO: temporary disable warning
+			print STDERR "WARNING: $warning_text\n"; # TODO: temporary disable warning
 		}
 	}
 	if ($res->{error_texts}) {

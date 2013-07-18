@@ -1,3 +1,11 @@
+  * Deprecations (deprecated options produce warning, and can start producing errors some day)
+  --to-dir, --from-dir deprecated in faviour of --dir
+  --from-vault, --to-vault deprecated in faviour of --vault
+  --dir for command purge-vault
+  --vault for command check-local-hash
+
+  * Documentation: Installation instructions polished (mostly for RHEL)
+
 ### 2013-07-13 v0.973 beta
 
   * mt-aws-glacier can now be installed using CPAN tool. Docs updated with installation instructions.
