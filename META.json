@@ -26,6 +26,7 @@
             "Test::More" : "0.88",
             "Test::Simple" : "0.88",
             "Test::Spec" : "0.46",
+            "Test::Tabs" : "0.003",
             "Time::HiRes" : "0",
             "URI" : "1.10",
             "open" : "0"

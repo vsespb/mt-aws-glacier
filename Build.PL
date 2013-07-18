@@ -126,6 +126,7 @@ my $build = Module::Build->new(
 		'Test::Spec' => '0.46', # we need with() new in 0.46
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
+		'Test::Tabs' => '0.003',
 
 		# CORE MODULES OR DUAL-LIFE MODULES
 		'Data::Dumper' => 0,

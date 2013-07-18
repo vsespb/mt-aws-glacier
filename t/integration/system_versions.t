@@ -38,7 +38,7 @@ ok eval { App::MtAws::check_module_versions(); 1 };
 }
 
 {
-	se App::MtAws::Filter;
+	use App::MtAws::Filter;
 	local *App::MtAws::Filter::VERSION = sub { '999.999' };
 	ok ! defined eval { App::MtAws::check_module_versions(); 1 };
 	ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found 999.999/, "should work when version is too hight";

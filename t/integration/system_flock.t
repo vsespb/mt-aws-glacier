@@ -76,10 +76,10 @@ if (fork()) {
 } else {
 	$fromchild->writer();
 	$fromchild->autoflush(1);
-	fromchild->blocking(1);
+	$fromchild->blocking(1);
 	binmode $fromchild;
 
-	tochild->reader();
+	$tochild->reader();
 	$tochild->autoflush(1);
 	$tochild->blocking(1);
 	binmode $tochild;
