@@ -164,6 +164,7 @@ sub retrieve_archive
 	$self->{method} = 'POST';
 
 	#  add "SNSTopic": "sometopic"
+	# no Test::Tabs
 	my $body = <<"END";
 {
   "Type": "archive-retrieval",
@@ -171,6 +172,7 @@ sub retrieve_archive
 }
 END
 
+	# use Test::Tabs
 	$self->{dataref} = \$body;
 	
 	my $resp = $self->perform_lwp();
@@ -186,13 +188,14 @@ sub retrieve_inventory
 	$self->{method} = 'POST';
 
 	#  add "SNSTopic": "sometopic"
+	# no Test::Tabs
 	my $body = <<"END";
 {
   "Type": "inventory-retrieval",
   "Format": "JSON"
 }
 END
-
+	# use Test::Tabs
 	$self->{dataref} = \$body;
 	
 	my $resp = $self->perform_lwp();

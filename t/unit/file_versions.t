@@ -37,7 +37,7 @@ warning_fatal();
 sub object
 {
 	my ($time, $mtime, $archive_id) = @_;
-	{ time => $time, mtime => $mtime, ($archive_id ? (archive_id => $archive_id) : () )}; 
+	{ time => $time, mtime => $mtime, ($archive_id ? (archive_id => $archive_id) : () )};
 }
 
 # _cmp tests

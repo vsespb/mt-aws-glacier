@@ -37,12 +37,12 @@ use Data::Dumper;
 warning_fatal();
 
 
-my $data = 	{
+my $data = {
 	archive_id => "HdGDbije6lWPT8Q8S3uOWJF6Ou9MWRlrfMGDr6TCrhXuDqJ1pzwKR6XV4l1IZ-VrDd2rlLxDFACqnuJouYTzsT5zd6s2ZEAHfRQFriVbjpFfJ1uWruHRRXIrFIma4PVuz-fp9_pBkA",
 	job_id => "HdGDbije6lWPT8Q8S3uOWJF6777MWRlrfMGDr688888888888zwKR6XV4l1IZ-VrDd2rlLxDFACqnuJouYTzsT5zd6s2ZEAHfRQFriVbjpFfJ1uWruHRRXIrFIma4PVuz-fp9_pBkA",
 	'time' => 1355666755,
 	mtime => 1355566755,
-	relfilename => 'def/abc_bije6lWPT8Q8S3uOWJF6777MWRlrfMGDr688', # unexistant for sure, just in case utime() will work 
+	relfilename => 'def/abc_bije6lWPT8Q8S3uOWJF6777MWRlrfMGDr688', # unexistant for sure, just in case utime() will work
 	treehash => '1368761bd826f76cae8b8a74b3aae210b476333484c2d612d061d52e36af631a',
 };
 
@@ -70,9 +70,9 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 		my ($code, $t) = $job->get_task();
 		if ($code eq 'ok') {
 			cmp_deeply $t->{data}, superhashof({
-					archive_id => $data->{archive_id}, relfilename => $data->{relfilename},
-					filename => $data->{relfilename}, mtime => $data->{mtime}, jobid => $data->{jobid},
-					position => $next_position
+				archive_id => $data->{archive_id}, relfilename => $data->{relfilename},
+				filename => $data->{relfilename}, mtime => $data->{mtime}, jobid => $data->{jobid},
+				position => $next_position
 			});
 			is $t->{id}, $next_position;
 			is $t->{action}, "segment_download_job";
@@ -83,7 +83,7 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 			$next_position = $t->{data}{position} + $t->{data}{download_size};
 		} elsif ($code eq 'wait') {
 			ok $is_last || $size % $segment_size*ONE_MB == 0;
-			is $next_position, $size; 
+			is $next_position, $size;
 			last;
 		} else {
 			confess;

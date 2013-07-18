@@ -394,39 +394,39 @@ check 'z/ex[1|2]mple',
 	my $F = App::MtAws::Filter->new();
 	$F->parse_filters('-abc -dir/ +*.gz', '-!*.txt');
 	cmp_deeply $F->{filters},
-	          [
-	            {
-	              'pattern' => 'abc',
-	              're' => qr/(^|\/)abc$/,
-	              'action' => '-',
-	              'match_subdirs' => '',
-	              'notmatch' => '',
-	            },
-	            {
-	              'pattern' => 'dir/',
+	[
+		{
+			'pattern' => 'abc',
+			're' => qr/(^|\/)abc$/,
+			'action' => '-',
+			'match_subdirs' => '',
+			'notmatch' => '',
+		},
+		{
+			'pattern' => 'dir/',
 
-	              # Test::Deep problem here https://rt.cpan.org/Ticket/Display.html?id=85785
-	              're' => $] > 5.01 ? qr!(^|/)dir\/! : ignore(),
-	              
-	              'action' => '-',
-	              'match_subdirs' => 1,
-	              'notmatch' => '',
-	            },
-	            {
-	              'pattern' => '*.gz',
-	              're' => qr/(^|\/)[^\/]*\.gz$/,
-	              'action' => '+',
-	              'match_subdirs' => '',
-	              'notmatch' => '',
-	            },
-	            {
-	              'pattern' => '!*.txt',
-	              're' => qr/(^|\/)[^\/]*\.txt$/,
-	              'action' => '-',
-	              'match_subdirs' => '',
-	              'notmatch' => '1',
-	            }
-	          ];
+			# Test::Deep problem here https://rt.cpan.org/Ticket/Display.html?id=85785
+			're' => $] > 5.01 ? qr!(^|/)dir\/! : ignore(),
+
+			'action' => '-',
+			'match_subdirs' => 1,
+			'notmatch' => '',
+		},
+		{
+			'pattern' => '*.gz',
+			're' => qr/(^|\/)[^\/]*\.gz$/,
+			'action' => '+',
+			'match_subdirs' => '',
+			'notmatch' => '',
+		},
+		{
+			'pattern' => '!*.txt',
+			're' => qr/(^|\/)[^\/]*\.txt$/,
+			'action' => '-',
+			'match_subdirs' => '',
+			'notmatch' => '1',
+		}
+	];
 }
 #
 # parse_include
@@ -435,49 +435,49 @@ check 'z/ex[1|2]mple',
 {
 	my $F = App::MtAws::Filter->new();
 	$F->parse_include('*.gz');
-	cmp_deeply	$F->{filters},[{
-	          'pattern' => '*.gz',
-	          'notmatch' => bool(0),
-	          're' => qr/(^|\/)[^\/]*\.gz$/,
-	          'action' => '+',
-	          'match_subdirs' => bool(0)
-	        }];
+	cmp_deeply $F->{filters},[{
+		'pattern' => '*.gz',
+		'notmatch' => bool(0),
+		're' => qr/(^|\/)[^\/]*\.gz$/,
+		'action' => '+',
+		'match_subdirs' => bool(0)
+	}];
 }
 
 {
 	my $F = App::MtAws::Filter->new();
 	$F->parse_include('!*.gz');
 	cmp_deeply $F->{filters}, [{
-          'pattern' => '!*.gz',
-          'notmatch' => bool(1),
-          're' => qr/(^|\/)[^\/]*\.gz$/,
-          'action' => '+',
-          'match_subdirs' => bool(0)
-    }];
+		'pattern' => '!*.gz',
+		'notmatch' => bool(1),
+		're' => qr/(^|\/)[^\/]*\.gz$/,
+		'action' => '+',
+		'match_subdirs' => bool(0)
+	}];
 }
 
 {
 	my $F = App::MtAws::Filter->new();
 	$F->parse_exclude('*.gz');
 	cmp_deeply $F->{filters},[{
-          'pattern' => '*.gz',
-          'notmatch' => bool(0),
-          're' => qr/(^|\/)[^\/]*\.gz$/,
-          'action' => '-',
-          'match_subdirs' => bool(0)
-     }];
+		'pattern' => '*.gz',
+		'notmatch' => bool(0),
+		're' => qr/(^|\/)[^\/]*\.gz$/,
+		'action' => '-',
+		'match_subdirs' => bool(0)
+	}];
 }
 
 {
 	my $F = App::MtAws::Filter->new();
 	$F->parse_exclude('!*.gz');
 	cmp_deeply $F->{filters}, [{
-          'pattern' => '!*.gz',
-          'notmatch' => bool(1),
-          're' => qr/(^|\/)[^\/]*\.gz$/,
-          'action' => '-',
-          'match_subdirs' => bool(0)
-    }];
+		'pattern' => '!*.gz',
+		'notmatch' => bool(1),
+		're' => qr/(^|\/)[^\/]*\.gz$/,
+		'action' => '-',
+		'match_subdirs' => bool(0)
+	}];
 }
 
 #
@@ -501,7 +501,7 @@ test_check_filenames '+*.gz -/data/', [qw{1.gz 1.txt data/1.txt data/z/1.txt dat
 	[qw{1.gz 1.txt data/2.gz f data/p/33.gz}], "default action - include";
 test_check_filenames '+*.gz +/data/ -', [qw{x/y x/y/z.gz /data/1 /data/d/2 abc}],  [qw{x/y/z.gz /data/1 /data/d/2}], "default action - exclude";
 test_check_filenames '-!/data/ +*.gz +/data/backup/ -',
-	[qw{data/1 dir/1.gz data/2 data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}], 
+	[qw{data/1 dir/1.gz data/2 data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}],
 	[qw{data/3.gz data/x/4.gz data/backup/5.gz data/backup/6/7.gz data/backup/z/1.txt}], "exclamation mark should work";
 test_check_filenames '-0.* -фexclude/a/ +*.gz -', [qw{fexclude/b фexclude/b.gz}], [qw{фexclude/b.gz}],  "exclamation mark should work";
 
@@ -523,7 +523,7 @@ test_check_dir '-/data/ +*.gz +', 'data/', 0, 1;
 test_check_dir '+*.gz -/data** +', 'datadir/', 0, 0;
 test_check_dir '-/data** +*.gz +', 'datadir/', 0, 1;
 test_check_dir '-*.gz -/data** +', 'datadir/', 0, 1;
-test_check_dir '-/data** -*.gz -/data** +', 'datadir/', 0, 1; 
+test_check_dir '-/data** -*.gz -/data** +', 'datadir/', 0, 1;
 test_check_dir '+1.txt -*.gz -/data** +', 'datadir/', 0, 0;
 test_check_dir '-1.txt -*.gz +/data** +', 'datadir/', 1, 0;
 test_check_dir '+/data/ -', 'data/', 1, 0;

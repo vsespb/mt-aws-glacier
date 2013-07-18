@@ -91,7 +91,7 @@ describe "command" => sub {
 				is Context->{aliasmap}->{'abc'}, 'mycommand';
 			};
 		};
-		it "should work with alias option when it's an array" => sub {	
+		it "should work with alias option when it's an array" => sub {
 			localize sub {
 				my $code = sub { $_*2 };
 				my @res = command 'mycommand', alias => [qw/abc def/],$code;
@@ -141,7 +141,7 @@ describe "command" => sub {
 				ok Context->{deprecated_commands}->{'abc'};
 			};
 		};
-		it "should work with alias option when it's an array" => sub {	
+		it "should work with alias option when it's an array" => sub {
 			localize sub {
 				message 'deprecated_command';
 				my $code = sub { $_*2 };
@@ -426,7 +426,7 @@ describe "validation" => sub {
 			ok $r eq 'myoption';
 			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
 			my $v = Context->{options}->{'myoption'}->{validations}->[0];
-			cmp_deeply [sort keys %$v], [sort qw/message cb/]; 
+			cmp_deeply [sort keys %$v], [sort qw/message cb/];
 			is $v->{message}, 'test message';
 			ok $v->{cb}->() for (11);
 			ok !$v->{cb}->() for (10);
@@ -440,8 +440,8 @@ describe "validation" => sub {
 			ok scalar @{Context->{options}->{'myoption'}->{validations}} == 1;
 			my $v = Context->{options}->{'myoption'}->{validations}->[0];
 			cmp_deeply [sort keys %$v], [sort qw/a b message cb/];
-			is $v->{a}, 1; 
-			is $v->{b}, 2; 
+			is $v->{a}, 1;
+			is $v->{b}, 2;
 			is $v->{message}, 'test message';
 			ok $v->{cb}->() for (11);
 			ok !$v->{cb}->() for (10);
@@ -1139,14 +1139,14 @@ describe "error" => sub {
 	it "should work" => sub {
 		localize sub {
 			error 'myerror';
-			cmp_deeply Context->{errors}, ['myerror']; 
+			cmp_deeply Context->{errors}, ['myerror'];
 		}
 	};
 	it "should push errors to stack" => sub {
 		localize sub {
 			error 'myerror';
 			error 'myerror2';
-			cmp_deeply Context->{errors}, ['myerror', 'myerror2']; 
+			cmp_deeply Context->{errors}, ['myerror', 'myerror2'];
 		}
 	};
 };
@@ -1155,14 +1155,14 @@ describe "warning" => sub {
 	it "should work" => sub {
 		localize sub {
 			warning 'myerror';
-			cmp_deeply Context->{warnings}, ['myerror']; 
+			cmp_deeply Context->{warnings}, ['myerror'];
 		}
 	};
 	it "should push warnings to stack" => sub {
 		localize sub {
 			warning 'mywarning';
 			warning 'mywarning2';
-			cmp_deeply Context->{warnings}, ['mywarning', 'mywarning2']; 
+			cmp_deeply Context->{warnings}, ['mywarning', 'mywarning2'];
 		}
 	};
 };
