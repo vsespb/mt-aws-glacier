@@ -100,8 +100,6 @@ NOTE: If you've used manuall installation before this, it's probably better to r
 
 NOTE: CPAN distribution of *mt-aws-glacier* has a bit more dependencies than manual installation, as it requires additional modules for testsuite.
 
-NOTE: When installing CPAN modules, instead system `cpan` tool you might wan't to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's much easier to install and configure.
-
 NOTE: New releases of *mt-aws-glacier* usually appear on CPAN within a ~week after official release.
 
 NOTE: On *Fedora*, *CentOS 6 minimal* you need to install `perl-core`, `perl-CPAN`, `perl-CGI` first, see above notice about *Fedora*
@@ -115,6 +113,9 @@ NOTE: CPAN asks too many questions during install (but ignores important errors)
 		o conf halt_on_failure on
 		o conf commit
 		exit
+
+NOTE: Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's a bit easier to install and configure.
+
 
 ## Warnings ( *MUST READ* )
 
