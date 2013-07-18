@@ -63,14 +63,16 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl** or MacPort **p5-libwww-perl**)
 	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS** or MacPort **p5-json-XS**)
 
-	NOTE: for older Perl < 5.9.3 (i.e. *CentOS 5.x*), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
+	NOTE: for old Perl < 5.9.3 (i.e. *CentOS 5.x*), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
 
-	NOTE: on some old Linux installations (examples: *Ubuntu 10.04*, *CentOS 5.x*) to use HTTPS you need to install **LWP::Protocol::https** via CPAN: `cpan -i LWP::Protocol::https`
+	NOTE: Some distributions with old Perl stuff (examples: *Ubuntu 10.04*, *CentOS 5/6*) to use HTTPS you need to install **LWP::Protocol::https** version 6 + via CPAN: `cpan -i LWP::Protocol::https`
+	(see CPAN prerequisites below)
 
-	NOTE: *Fedora* decoupled ( [link1](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149747.html) [link2](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149891.html) ) Perl,
-	so package named `perl`, which is a part of default installation, is not actually real Perl, which is misleading.
-	`perl-core` is looks much more like a real Perl, but it is possible that it still misses some original parts of Perl.
+	NOTE: *Fedora*, *CentOS 6* etc [decoupled](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149747.html) Perl,
+	so package named `perl`, which is a part of default installation, is not actually real, full Perl, which is misleading.
+	`perl-core` is looks much more like a real Perl (but I think it still misses some original parts of Perl.)
 
+	NOTE: For some RPM packages listed above you need enable [EPEL](http://fedoraproject.org/wiki/EPEL) repository
 
 * Install mt-aws-glacier
 
@@ -82,6 +84,14 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 
 ### *OR* Installation via CPAN
 
+* Prerequisites:
+
+	* OpenSSL dev library for HTTPS support (`openssl-devel` RPM or `libssl-dev` DEB)
+
+	* C compiller and header files: `yum groupinstall "Development Tools"` for RHEL or `build-essential` for Debian
+
+* How to install (or update in the future):
+
 		cpan -i App::MtAws
 
 That's it.
@@ -92,7 +102,17 @@ NOTE: When installing CPAN modules, instead system `cpan` tool you might wan't t
 
 NOTE: New releases of *mt-aws-glacier* usually appear on CPAN within a ~week after official release.
 
-NOTE: On *Fedora* you need to install `perl-core` and `perl-CPAN` first, and see above notice about *Fedora*
+NOTE: On *Fedora*, *CentOS 6 minimal* you need to install `perl-core`, `perl-CPAN`, `perl-CGI` first, see above notice about *Fedora*
+
+NOTE: For some distributions with old Perl stuff (examples: *CentOS 5/6*) you need to update CPAN and Module::Build first: `cpan -i CPAN`, `cpan -i Module::Build`
+
+NOTE: CPAN asks too many questions during install (but ignores important errors). You can avoid it by running `cpan` command and configuring it like this (note the command starts with "o" letter):
+
+		o conf build_requires_install_policy yes
+		o conf prerequisites_policy follow
+		o conf halt_on_failure on
+		o conf commit
+		exit
 
 ## Warnings ( *MUST READ* )
 
