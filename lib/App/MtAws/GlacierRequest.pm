@@ -610,14 +610,3 @@ sub trim
 
 1;
 __END__
-		} elsif ($resp->code =~ /^40[03]$/) {
-			if ($resp->content_type eq 'application/json') {
-				my $json = JSON::XS->new->allow_nonref;
-				my $scalar = eval { $json->decode( $resp->content ); }; # we assume content always in utf8
-				if (defined $scalar) {
-					my $code = $scalar->{code};
-					my $type = $scalar->{type};
-					my $message = $scalar->{message};
-				}
-			}
-			die;
