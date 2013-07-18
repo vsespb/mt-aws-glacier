@@ -96,7 +96,7 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 
 That's it.
 
-NOTE: If you used manuall installation before this, it's probably better to remove `mtglacier` executable from your path
+NOTE: If you've used manuall installation before this, it's probably better to remove `mtglacier` executable from your path
 
 NOTE: CPAN distribution of *mt-aws-glacier* has a bit more dependencies than manual installation, as it requires additional modules for testsuite.
 
