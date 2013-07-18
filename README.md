@@ -65,7 +65,7 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 
 	NOTE: for old Perl < 5.9.3 (i.e. *CentOS 5.x*), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
 
-	NOTE: Some distributions with old Perl stuff (examples: *Ubuntu 10.04*, *CentOS 5/6*) to use HTTPS you need to install **LWP::Protocol::https** version 6 + via CPAN: `cpan -i LWP::Protocol::https`
+	NOTE: Some distributions with old Perl stuff (examples: *Ubuntu 10.04*, *CentOS 5/6*) to use HTTPS you need to install **LWP::Protocol::https** version 6+ via CPAN: `cpan -i LWP::Protocol::https`
 	(see CPAN prerequisites below)
 
 	NOTE: *Fedora*, *CentOS 6* etc [decoupled](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149747.html) Perl,
@@ -108,11 +108,11 @@ NOTE: For some distributions with old Perl stuff (examples: *CentOS 5/6*) you ne
 
 NOTE: CPAN asks too many questions during install (but ignores important errors). You can avoid it by running `cpan` command and configuring it like this (note the command starts with "o" letter):
 
-		o conf build_requires_install_policy yes
-		o conf prerequisites_policy follow
-		o conf halt_on_failure on
-		o conf commit
-		exit
+	o conf build_requires_install_policy yes
+	o conf prerequisites_policy follow
+	o conf halt_on_failure on
+	o conf commit
+	exit
 
 NOTE: Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's a bit easier to install and configure.
 
