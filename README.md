@@ -106,7 +106,7 @@ NOTE: On *Fedora*, *CentOS 6 minimal* you need to install `perl-core`, `perl-CPA
 
 NOTE: For some distributions with old Perl stuff (examples: *CentOS 5/6*) you need to update CPAN and Module::Build first: `cpan -i CPAN`, `cpan -i Module::Build`
 
-NOTE: CPAN asks too many questions during install (but ignores important errors). You can avoid it by running `cpan` command and configuring it like this (note the command starts with "o" letter):
+NOTE: CPAN asks too many questions during install (but ignores important errors). You can avoid it by running `cpan` command and configuring it like this:
 
 	o conf build_requires_install_policy yes
 	o conf prerequisites_policy follow
