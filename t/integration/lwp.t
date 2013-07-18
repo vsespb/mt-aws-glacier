@@ -75,49 +75,49 @@ my ($base) = initialize_processes();
 	
 	sub httpd_content_length
 	{
-	    my($c, $req, $size, $header_size) = @_;
-	    $c->send_basic_header(200);
-	    
-	    my $s = 'x' x $size;
-	    print $c "Content-Length: $header_size\015\012";
-	    $c->send_crlf;
-	    print $c $s;
+		my($c, $req, $size, $header_size) = @_;
+		$c->send_basic_header(200);
+
+		my $s = 'x' x $size;
+		print $c "Content-Length: $header_size\015\012";
+		$c->send_crlf;
+		print $c $s;
 	}
 	
 	sub httpd_content_length_400
 	{
-	    my($c, $req) = @_;
-	    $c->send_basic_header(400);
-	    
-	    my $s = $throttling_exception;
-	    my $truncated = length($s) + 1;
-	    print $c "Content-Length: $truncated\015\012";
-	    print $c "Content-Type: application/json\015\012";
-	    $c->send_crlf;
-	    print $c $s;
+		my($c, $req) = @_;
+		$c->send_basic_header(400);
+
+		my $s = $throttling_exception;
+		my $truncated = length($s) + 1;
+		print $c "Content-Length: $truncated\015\012";
+		print $c "Content-Type: application/json\015\012";
+		$c->send_crlf;
+		print $c $s;
 	}
 	
 	sub httpd_check_user_agent
 	{
-	    my($c, $req) = @_;
-	    $c->send_basic_header(200);
-	    
-	    my $ua = $req->header('User-Agent');
-	    my $ua_len = length($ua);
-	    print $c "Content-Length: $ua_len\015\012";
-	    $c->send_crlf;
-	    print $c $ua;
+		my($c, $req) = @_;
+		$c->send_basic_header(200);
+
+		my $ua = $req->header('User-Agent');
+		my $ua_len = length($ua);
+		print $c "Content-Length: $ua_len\015\012";
+		$c->send_crlf;
+		print $c $ua;
 	}
 
 	sub httpd_empty_response
 	{
-	    my($c, $req, $size, $header_size) = @_;
-	    $c->send_basic_header(200);
+		my($c, $req, $size, $header_size) = @_;
+		$c->send_basic_header(200);
 	}
 	
 	sub httpd_without_content_length
 	{
-	    my($c, $req, $size) = @_;
+		my($c, $req, $size) = @_;
 		my $resp = HTTP::Response->new(200, 'Fine');
 		my $sent = 0;
 		# force chunked-response
@@ -145,10 +145,10 @@ my ($base) = initialize_processes();
 	
 	sub httpd_chunked_throttling_exception
 	{
-	    my($c, $req) = @_;
+		my($c, $req) = @_;
 		my $resp = HTTP::Response->new(400);
 		$resp->content_type('application/json');
-	    my $s = $throttling_exception;
+		my $s = $throttling_exception;
 		my $sent = 0;
 		# force chunked-response
 		$resp->content(sub {
@@ -164,13 +164,13 @@ my ($base) = initialize_processes();
 	
 	sub httpd_throttling_exception
 	{
-	    my($c, $req, $size, $header_size) = @_;
-	    $c->send_basic_header(400);
-	    my $s = $throttling_exception;
-	    print $c "Content-Length: ".length($s)."\015\012";
-	    print $c "Content-Type: application/json\015\012";
-	    $c->send_crlf;
-	    print $c $s;
+		my($c, $req, $size, $header_size) = @_;
+		$c->send_basic_header(400);
+		my $s = $throttling_exception;
+		print $c "Content-Length: ".length($s)."\015\012";
+		print $c "Content-Type: application/json\015\012";
+		$c->send_crlf;
+		print $c $s;
 	}
 	# correct request, but HTTP 400 with exception in JSON
 	{
@@ -301,9 +301,9 @@ my ($base) = initialize_processes();
 
 	sub httpd_quit
 	{
-	    my($c) = @_;
-	    $c->send_error(503, "Bye, bye");
-	    exit;  # terminate HTTP server
+		my($c) = @_;
+		$c->send_error(503, "Bye, bye");
+		exit;  # terminate HTTP server
 	}
 	
 	my $ua = new LWP::UserAgent;
@@ -330,7 +330,7 @@ sub initialize_processes
 			if (defined &$func) {
 				no strict 'refs';
 				&$func($c, $r, @p);
-		    } else {
+			} else {
 				$c->send_error(404);
 			}
 		}

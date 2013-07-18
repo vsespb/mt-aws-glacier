@@ -39,7 +39,7 @@ my $randomstring = 'TDvjTNoOZdYLHGJgmowQQPIANymiZabVUgL4toMOXtAxTVdAb3fHc7djq3CW
 
 my $check = {
 	200 => {
-		'TDvjTNoOZdYLHGJgmowQQPIANymiZabVUgL4toMOXtAxTVdAb3fHc7djq3CWvg47qp9e706QoGMA2PlhUyHkln9mw2G9Y1QynMS5zejFweL4Ll72P5eHSHXmzSBGZ4Xa' => 
+		'TDvjTNoOZdYLHGJgmowQQPIANymiZabVUgL4toMOXtAxTVdAb3fHc7djq3CWvg47qp9e706QoGMA2PlhUyHkln9mw2G9Y1QynMS5zejFweL4Ll72P5eHSHXmzSBGZ4Xa' =>
 		{
 197 => '8df4bd49b43151c67ffa840eab9ef3b41d2ab6b9b1ff1c814efc06ebfa2bf3d8',
 198 => '2c86c2274abfc6ad860a0a01f80a1b3e99783b822872af84289d3f67349a5e9f',
@@ -258,7 +258,7 @@ my $check = {
 6201 => 'e4cb2c5e5d955078c544508c42e9d9cf8c91ea71342cf56130317ed128fc222f',
 6202 => '593428efdd19206e475bfb5f2b43d9e3a3bc57b74117c5be105bbc88954295c9',
 6203 => '8973c1401e80e36f1fdd590dd83499f8fb9ceba938cae11e058d0e737a3a8968',
-		}
+	}
 	},
 	1048576 => {
 		'TDvjTNoOZdYLHGJgmowQQPIANymiZabVUgL4toMOXtAxTVdAb3fHc7djq3CWvg47qp9e706QoGMA2PlhUyHkln9mw2G9Y1QynMS5zejFweL4Ll72P5eHSHXmzSBGZ4Xa' => {
@@ -267,7 +267,7 @@ my $check = {
 3 => 'ed7e4853e7b5cb135218467b1a4410bd01c8fa3e632cbb92e806cdef5237b0e6',
 4 => '77ca901378d1769b7a2f9999874f0cfbdc1f63e056ed64e6edaf45fb2cd278cd',
 5 => '6296826f333685eed90b76edb44f0e585d14dcebbdcf5a0a2f3ccdea5e8da5ae',
-			
+
 1048573 => '42ce39ee2632722c3acad6dfd2a11dddac30adefdfeb13232b8ceaa10b62be3c',
 1048574 => '2970b04ecf247b14d66a1e1d4ac7b54260a15e1b32bae845cc1d26371293b898',
 1048575 => '1b4571c7df12150afa939c0a590785773e80b7bd207b7dd19b7fd3c2256b46bc',
@@ -485,7 +485,7 @@ my $check = {
 32505857 => '2d548018dc16c40f9ad3edcf08dd8657a4ea7eea8c12201114a6f6ddd762afcc',
 32505858 => '58b851ef5f150934b04fd941eb7aab57e768e6bef1cbcd6616ef3fdd36f81369',
 32505859 => 'c844f2f081a2b808b3bd80e02e17500277e04ec15c79a33c3857f2710c45593a',
-		}
+	}
 	}
 };
 
@@ -510,9 +510,9 @@ for my $i (1..31) {
 		my $dataref = get_pseudo_random_array($size);
 		my $th = App::MtAws::TreeHash->new(unit => $chunksize);
 		$th->eat_data($dataref);
-    	$th->calc_tree();
-    	my $hash = $th->get_final_hash();
-    	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
+		$th->calc_tree();
+		my $hash = $th->get_final_hash();
+		ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
 	}
 }
 }
@@ -525,15 +525,15 @@ for my $chunksize (qw/200/) {
 			
 			my $th = App::MtAws::TreeHash->new(unit => $chunksize);
 			$th->eat_data($dataref);
-	    	$th->calc_tree();
-	    	my $hash = $th->get_final_hash();
+			$th->calc_tree();
+			my $hash = $th->get_final_hash();
 
 			my $threc = App::MtAws::TreeHash->new(unit => $chunksize);
 			$threc->eat_data($dataref);
-	    	$threc->calc_tree_recursive();
-	    	my $hashrec = $th->get_final_hash();
-	    	
-	    	ok( $hash eq $hashrec, "comparing test recursive and normal" );
+			$threc->calc_tree_recursive();
+			my $hashrec = $th->get_final_hash();
+
+			ok( $hash eq $hashrec, "comparing test recursive and normal" );
 		}
 	}
 }
@@ -547,9 +547,9 @@ for my $i (qw/1 2 29/) {
 		my $data = $$dataref;
 		my $th = App::MtAws::TreeHash->new(unit => $chunksize);
 		$th->eat_data($data);
-    	$th->calc_tree();
-    	my $hash = $th->get_final_hash();
-    	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
+		$th->calc_tree();
+		my $hash = $th->get_final_hash();
+		ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
 	}
 }
 }
@@ -563,10 +563,10 @@ for my $i (1..4) {
 		my $dataref = get_pseudo_random_array($size);
 		my $th = $chunksize == 1048576 ? App::MtAws::TreeHash->new() : App::MtAws::TreeHash->new(unit => $chunksize);
 		$th->eat_data($dataref);
-    	$th->calc_tree();
-    	my $hash = $th->get_final_hash();
-#    	print "$size => '$hash',\n";
-    	ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
+		$th->calc_tree();
+		my $hash = $th->get_final_hash();
+#		print "$size => '$hash',\n";
+		ok( $hash eq $check->{$chunksize}->{$randomstring}->{$size} );
 	}
 }
 }

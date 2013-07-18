@@ -40,11 +40,11 @@ use TestUtils;
 warning_fatal();
 
 if( $^O =~ /^(linux|.*bsd|solaris)$/i ) {
-      plan tests => 2700;
+	plan tests => 2700;
 } else {
-      plan skip_all => 'Test cannot be performed on character-oriented filesystem';
+	plan skip_all => 'Test cannot be performed on character-oriented filesystem';
 }
-  
+
 
 binmode Test::More->builder->output, ":utf8";
 binmode Test::More->builder->failure_output, ":utf8";
@@ -90,7 +90,7 @@ my $testfiles1 = [
 
 for my $jv (qw/0 A B C/) {
 	for my $journal_encoding (qw/UTF-8 KOI8-R CP1251/) {#  # TODO: disable test on Unicode Filesystems (MacOSX)
-		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {# 
+		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {#
 			my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			my $dataroot_e = encode($filenames_encoding, $dataroot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			
@@ -99,7 +99,7 @@ for my $jv (qw/0 A B C/) {
 			
 			set_filename_encoding $filenames_encoding;
 
-			my $F = App::MtAws::Filter->new();			
+			my $F = App::MtAws::Filter->new();
 			$F->parse_filters('-0.* -фexclude/a/ +');
 			
 			#use Data::Dumper;

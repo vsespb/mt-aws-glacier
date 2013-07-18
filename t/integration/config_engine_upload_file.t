@@ -38,26 +38,26 @@ warning_fatal();
 
 # upload_file command parsing test
 
-my ($default_concurrency, $default_partsize) = (4, 16); 
+my ($default_concurrency, $default_partsize) = (4, 16);
 
 # upload-file
 
 
 my %common = (
-			journal => 'j',
-			partsize => $default_partsize,
-			concurrency => $default_concurrency,
-			key=>'mykey',
-			secret => 'mysecret',
-			region => 'myregion',
-			protocol => 'http',
-			vault =>'myvault',
-			config=>'glacier.cfg',
-			timeout => 180,
-			'journal-encoding' => 'UTF-8',
-			'filenames-encoding' => 'UTF-8',
-			'terminal-encoding' => 'UTF-8',
-			'config-encoding' => 'UTF-8'
+	journal => 'j',
+	partsize => $default_partsize,
+	concurrency => $default_concurrency,
+	key=>'mykey',
+	secret => 'mysecret',
+	region => 'myregion',
+	protocol => 'http',
+	vault =>'myvault',
+	config=>'glacier.cfg',
+	timeout => 180,
+	'journal-encoding' => 'UTF-8',
+	'filenames-encoding' => 'UTF-8',
+	'terminal-encoding' => 'UTF-8',
+	'config-encoding' => 'UTF-8'
 );
 
 #### PASS
@@ -165,7 +165,7 @@ sub assert_fails($$%)
 assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j!,
 	[],
-	'Please specify filename or stdin'; 
+	'Please specify filename or stdin';
 
 ###
 ### filename
@@ -175,14 +175,14 @@ assert_fails "filename, set-rel-filename should fail with dir",
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile!,
 	['filename'],
-	'either', a => 'set-rel-filename', b => 'dir'; 
+	'either', a => 'set-rel-filename', b => 'dir';
 
 ## set-rel-filename
 
 assert_fails "filename, set-rel-filename should fail with dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --set-rel-filename x/y/z --dir abc!,
 	['filename', 'dir'],
-	'mutual', a => 'set-rel-filename', b => 'dir'; 
+	'mutual', a => 'set-rel-filename', b => 'dir';
 
 for (qw!/x/y/z x/../y/z ../y x/./y!) {
 assert_fails "should check set-rel-filename to be relative filename for $_",
@@ -196,12 +196,12 @@ assert_fails "should check set-rel-filename to be relative filename for $_",
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir /tmp/notdir!,
 	['filename', 'dir'],
-	'filename_inside_dir', a => 'filename', b => 'dir'; 
+	'filename_inside_dir', a => 'filename', b => 'dir';
 
 assert_fails "filename with fail without set-rel-filename or dir",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir !.("x" x 2048),
 	['filename'],
-	'%option a% should be less than 512 characters', a => 'dir', value => ("x" x 2048); # TODO: test also for bad filename 
+	'%option a% should be less than 512 characters', a => 'dir', value => ("x" x 2048); # TODO: test also for bad filename
 
 ##
 ## stdin
@@ -210,7 +210,7 @@ assert_fails "filename with fail without set-rel-filename or dir",
 assert_fails "filename, set-rel-filename should be used with stdin",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin!,
 	[],
-	'mandatory_with', a => 'set-rel-filename', b => 'stdin'; 
+	'mandatory_with', a => 'set-rel-filename', b => 'stdin';
 
 assert_fails "check-max-file-size should be used with stdin",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z!,
@@ -229,7 +229,7 @@ for ([1, 10001], [2, 20001], [4, 40001], [8, 90000]) {
 assert_fails "set-rel-filename and dir as mutual exclusize",
 	qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --dir abc --check-max-file-size 100!,
 	['dir'],
-	'mutual', a => 'set-rel-filename', b => 'dir'; 
+	'mutual', a => 'set-rel-filename', b => 'dir';
 
 
 1;

@@ -48,12 +48,12 @@ for my $sample ("µ", "Ф", "Xµ", "XФ", "µФ", "XµФ") { # mix of ASCII, Uni
 	ok !is_wide_string(encode("UTF-8", $sample ));
 	try_drop_utf8_flag $sample;
 	ok utf8::is_utf8($sample);
-	
+
 	my ($ascii, undef) = split(';', "abcdef;$sample");
 	ok utf8::is_utf8($ascii);
 	ok !is_wide_string($ascii);
 	try_drop_utf8_flag $ascii;
 	ok !utf8::is_utf8($ascii);
-} 
+}
 
 1;

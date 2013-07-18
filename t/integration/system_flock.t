@@ -51,16 +51,16 @@ sub _flock { flock($_[0], $_[1]); }
 #sub _flock { 1 }
 
 if (fork()) {
-   $fromchild->reader();
-   $fromchild->autoflush(1);
-   $fromchild->blocking(1);
-   binmode $fromchild;
-   
-   $tochild->writer();
-   $tochild->autoflush(1);
-   $tochild->blocking(1);
-   binmode $tochild;
-	
+	$fromchild->reader();
+	$fromchild->autoflush(1);
+	$fromchild->blocking(1);
+	binmode $fromchild;
+
+	$tochild->writer();
+	$tochild->autoflush(1);
+	$tochild->blocking(1);
+	binmode $tochild;
+
 	open_file(my $fh, $filename, mode => '+<', binary => 1);
 	print $tochild "open\n";
 	_flock $fh, LOCK_EX or confess;
@@ -68,22 +68,22 @@ if (fork()) {
 	$fh->autoflush(1);
 	print $fh "1234\n";
 	print $tochild "lock\n";
-	usleep(300); 
+	usleep(300);
 	seek $fh, 0, SEEK_SET;
 	print $fh "ABCD\n";
 	flock $fh, LOCK_UN or confess;
 	is scalar <$fromchild>, "OK\n"
 } else {
-   $fromchild->writer();
-   $fromchild->autoflush(1);
-   $fromchild->blocking(1);
-   binmode $fromchild; 
+	$fromchild->writer();
+	$fromchild->autoflush(1);
+	fromchild->blocking(1);
+	binmode $fromchild;
 
-   $tochild->reader();
-   $tochild->autoflush(1);
-   $tochild->blocking(1);
-   binmode $tochild;
-   
+	tochild->reader();
+	$tochild->autoflush(1);
+	$tochild->blocking(1);
+	binmode $tochild;
+
 	confess unless (scalar <$tochild> eq "open\n");
 	open_file(my $fh, $filename, mode => '+<', binary => 1) or confess;
 	confess unless (scalar <$tochild> eq "lock\n");

@@ -112,7 +112,7 @@ for my $badline ("x!=1", "тест=1", "test!1=тест") {
 		is get_exception->{line}, hex_dump_string($utfbadline), "should report correct line";
 		is get_exception->{config}, hex_dump_string($file), "should report filename";
 		is exception_message(get_exception),
-			"Cannot parse line in config file: ".hex_dump_string($utfbadline	)." at ".hex_dump_string($file)." line ".($append_lines + 1);
+			"Cannot parse line in config file: ".hex_dump_string($utfbadline)." at ".hex_dump_string($file)." line ".($append_lines + 1);
 	}
 }
 
