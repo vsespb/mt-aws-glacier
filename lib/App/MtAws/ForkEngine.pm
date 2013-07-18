@@ -72,14 +72,14 @@ sub with_forks($$&)
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{options}||die;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{options}||die;
 	$self->{children} = {};
 #    $self->{disp_select}||die;
 #    @{$self->{freeworkers}} = keys %{$self->{children}};
-    bless $self, $class;
-    return $self;
+	bless $self, $class;
+	return $self;
 }
 
 sub start_children
@@ -101,7 +101,7 @@ sub start_children
 						$first_time = 0;
 						exit(1); # we need exit, it will call all destructors which will destroy tempfiles
 					}
-				}; 
+				};
 			}
 			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
 
@@ -132,55 +132,53 @@ sub start_children
 #
 sub create_child
 {
-  my ($self, $disp_select) = @_;
-  
-  my $fromchild = new IO::Pipe;
-  #log("created fromchild pipe $!", 10) if level(10);
-  my $tochild = new IO::Pipe;
-  #log("created tochild pipe $!", 10) if level(10);
-  my $pid;
-  my $parent_pid = $$;
-  
-  if($pid = fork()) { # Parent
-   $|=1;
-   STDERR->autoflush(1);
-   $fromchild->reader();
-   $fromchild->autoflush(1);
-   $fromchild->blocking(1);
-   binmode $fromchild;
-   
-   $tochild->writer();
-   $tochild->autoflush(1);
-   $tochild->blocking(1);
-   binmode $tochild;
-    
-   $disp_select->add($fromchild);
-   $self->{children}->{$pid} = { pid => $pid, fromchild => $fromchild, tochild => $tochild };
-   
-   print "PID $pid Started worker\n";
-   return (0, undef, undef);
-  } elsif (defined ($pid)) { # Child
-   $|=1;
-   STDERR->autoflush(1);
-   $fromchild->writer();
-   $fromchild->autoflush(1);
-   $fromchild->blocking(1);
-   binmode $fromchild; 
+	my ($self, $disp_select) = @_;
 
-   $tochild->reader();
-   $tochild->autoflush(1);
-   $tochild->blocking(1);
-   binmode $tochild;
+	my $fromchild = new IO::Pipe;
+	#log("created fromchild pipe $!", 10) if level(10);
+	my $tochild = new IO::Pipe;
+	#log("created tochild pipe $!", 10) if level(10);
+	my $pid;
+	my $parent_pid = $$;
 
-   
-   undef $disp_select; # we discard tonns of unneeded pipes !
-   undef $self->{children};
-   
-  
-   return (1, $fromchild, $tochild);
-  } else {
-  	die "Cannot fork()";
-  }
+	if($pid = fork()) { # Parent
+		$|=1;
+		STDERR->autoflush(1);
+		$fromchild->reader();
+		$fromchild->autoflush(1);
+		$fromchild->blocking(1);
+		binmode $fromchild;
+
+		$tochild->writer();
+		$tochild->autoflush(1);
+		$tochild->blocking(1);
+		binmode $tochild;
+
+		$disp_select->add($fromchild);
+		$self->{children}->{$pid} = { pid => $pid, fromchild => $fromchild, tochild => $tochild };
+
+		print "PID $pid Started worker\n";
+		return (0, undef, undef);
+	} elsif (defined ($pid)) { # Child
+		$|=1;
+		STDERR->autoflush(1);
+		$fromchild->writer();
+		$fromchild->autoflush(1);
+		$fromchild->blocking(1);
+		binmode $fromchild;
+
+		$tochild->reader();
+		$tochild->autoflush(1);
+		$tochild->blocking(1);
+		binmode $tochild;
+
+		undef $disp_select; # we discard tonns of unneeded pipes !
+		undef $self->{children};
+
+		return (1, $fromchild, $tochild);
+	} else {
+		die "Cannot fork()";
+	}
 }
 
 

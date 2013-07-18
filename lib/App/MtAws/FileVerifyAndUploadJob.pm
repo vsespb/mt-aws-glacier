@@ -34,16 +34,16 @@ use App::MtAws::TreeHash;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    defined($self->{filename})||die;
-    defined($self->{relfilename})||die;
-    defined($self->{delete_after_upload})||die;
-    $self->{treehash}||die;
-    $self->{partsize}||die;
-    $self->{raised} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	defined($self->{filename})||die;
+	defined($self->{relfilename})||die;
+	defined($self->{delete_after_upload})||die;
+	$self->{treehash}||die;
+	$self->{partsize}||die;
+	$self->{raised} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

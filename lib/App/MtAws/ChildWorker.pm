@@ -39,13 +39,13 @@ no bytes;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{fromchild}||die;
-    $self->{tochild}||die;
-    $self->{options}||die;
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{fromchild}||die;
+	$self->{tochild}||die;
+	$self->{options}||die;
+	bless $self, $class;
+	return $self;
 }
 
 sub process
@@ -57,7 +57,7 @@ sub process
 	my $disp_select = IO::Select->new();
 	$disp_select->add($tochild);
 	do { while (my @ready = $disp_select->can_read()) {
-	    for my $fh (@ready) {
+		for my $fh (@ready) {
 			#if (eof($fh)) {
 			#	$disp_select->remove($fh);
 			#	print "EOF\n";
@@ -203,7 +203,7 @@ sub process
 			}
 			$result->{console_out}=$console_out;
 			send_data($fromchild, 'response', $taskid, $result, $result_attachmentref) or comm_error();
-	    }
+		}
 	} } until $! != EINTR;
 }
 

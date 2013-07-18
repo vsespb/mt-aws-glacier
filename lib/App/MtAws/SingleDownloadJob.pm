@@ -33,12 +33,12 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{archive}||confess;
-    $self->{raised} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{archive}||confess;
+	$self->{raised} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
@@ -69,5 +69,5 @@ sub finish_task
 		confess;
 	}
 }
-	
+
 1;

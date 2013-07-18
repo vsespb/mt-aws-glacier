@@ -118,7 +118,7 @@ sub new
 	my $self = \%args;
 	bless $self, $class;
 	
-	$self->_init_substitutions( 
+	$self->_init_substitutions(
 		"\Q**\E" => '.*',
 		"\Q/**/\E" => '(/|/.*/)',
 		"\Q*\E" => '[^/]*',
@@ -181,13 +181,13 @@ sub _filters_to_pattern
 	my $self = shift;
 	map { # for each +/-PATTERN
 	 # this will return arrayref with two elements: first + or -, second: the PATTERN
-		 /^\s*([+-])\s*(\S*)\s*$/ or confess "[$_]";
-		 { action => $1, pattern => $2 }
+		/^\s*([+-])\s*(\S*)\s*$/ or confess "[$_]";
+		{ action => $1, pattern => $2 }
 	} map { # for each of filter arguments
 		my @parsed = /\G(\s*[+-]\s*\S*\s*)/g;
 		$self->{error} = $_, return unless @parsed; # regexp does not match
 		$self->{error} = $', return if length($') > 0; # not all of the string parsed
-		@parsed; # we can return multiple +/-PATTERNS for each filter argument 
+		@parsed; # we can return multiple +/-PATTERNS for each filter argument
 	} @_;
 }
 

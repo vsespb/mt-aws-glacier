@@ -29,24 +29,24 @@ use utf8;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
+	my ($class, %args) = @_;
+	my $self = \%args;
 
-    my $task = $self->{task}||die;
-    my $id = $self->{id}||die;
-    my $jobid = $self->{jobid}||die;
-   
-    $self = $task;
-    
-    $self->{_stack} ||= [];
-    push @{ $self->{_stack} }, { id => $self->{id}, jobid => $self->{jobid} };
-    
-    $self->{id} = $id;
-    $self->{jobid} = $jobid;
-    
-    bless $self, $class;
-    defined($self->{id})||die;
-    return $self;
+	my $task = $self->{task}||die;
+	my $id = $self->{id}||die;
+	my $jobid = $self->{jobid}||die;
+
+	$self = $task;
+
+	$self->{_stack} ||= [];
+	push @{ $self->{_stack} }, { id => $self->{id}, jobid => $self->{jobid} };
+
+	$self->{id} = $id;
+	$self->{jobid} = $jobid;
+
+	bless $self, $class;
+	defined($self->{id})||die;
+	return $self;
 }
 
 sub pop

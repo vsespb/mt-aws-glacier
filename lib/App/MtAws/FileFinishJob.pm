@@ -30,16 +30,16 @@ use base qw/App::MtAws::Job/;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{upload_id}||die;
-    $self->{filesize}||die;
-    defined($self->{mtime})||die;
-    defined($self->{relfilename})||die;
-    $self->{th}||die;
-    $self->{raised} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{upload_id}||die;
+	$self->{filesize}||die;
+	defined($self->{mtime})||die;
+	defined($self->{relfilename})||die;
+	$self->{th}||die;
+	$self->{raised} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

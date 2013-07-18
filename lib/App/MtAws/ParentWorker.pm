@@ -36,14 +36,14 @@ no bytes;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{children}||die;
-    $self->{disp_select}||die;
-    $self->{options}||die;
-    @{$self->{freeworkers}} = keys %{$self->{children}};
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{children}||die;
+	$self->{disp_select}||die;
+	$self->{options}||die;
+	@{$self->{freeworkers}} = keys %{$self->{children}};
+	bless $self, $class;
+	return $self;
 }
 
 sub process_task
@@ -100,7 +100,7 @@ sub wait_worker
 	
 		if ($result eq 'done') {
 			return ($task->{result}, $task->{attachmentref});
-		} 
+		}
 	}
 	return 0;
 }

@@ -30,17 +30,17 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{iterator}||die;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{iterator}||die;
 
-    $self->{jobs_h} = {};
-    $self->{jobs_a} = [];
+	$self->{jobs_h} = {};
+	$self->{jobs_a} = [];
 
-    $self->{pending}={};
-    $self->{task_autoincrement} = $self->{job_autoincrement} = $self->{iterator_end_of_data} =0;
-    bless $self, $class;
-    return $self;
+	$self->{pending}={};
+	$self->{task_autoincrement} = $self->{job_autoincrement} = $self->{iterator_end_of_data} =0;
+	bless $self, $class;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

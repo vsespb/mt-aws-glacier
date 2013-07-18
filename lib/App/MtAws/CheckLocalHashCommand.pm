@@ -79,13 +79,13 @@ sub run
 							++$error_hash;
 						}
 					} else {
-							print "SIZE MISSMATCH $f\n";
-							++$error_size;
+						print "SIZE MISSMATCH $f\n";
+						++$error_size;
 					}
 				}
 			} else {
-					print "MISSED $f\n";
-					++$error_missed;
+				print "MISSED $f\n";
+				++$error_missed;
 			}
 		}
 	}

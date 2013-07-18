@@ -35,15 +35,15 @@ use File::Temp ();
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{archive}||die;
-    $self->{pending}={};
-    $self->{all_raised} = 0;
-    $self->{position} = 0;
-    $self->{tempfile} = undef;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{archive}||die;
+	$self->{pending}={};
+	$self->{all_raised} = 0;
+	$self->{position} = 0;
+	$self->{tempfile} = undef;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

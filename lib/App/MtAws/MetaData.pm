@@ -106,17 +106,17 @@ my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
 
 sub meta_decode
 {
-  my ($str) = @_;
-  my ($marker, $b64) = split(' ', $str);
-  if ($marker eq 'mt1') {
-  	return (undef, undef) unless length($b64) <= MAX_SIZE;
-  	return _decode_json(_decode_utf8(_decode_b64($b64)));
-  } elsif ($marker eq 'mt2') {
-  	return (undef, undef) unless length($b64) <= MAX_SIZE;
-  	return _decode_json(_decode_b64($b64));
-  } else {
-  	return (undef, undef);
-  }
+	my ($str) = @_;
+	my ($marker, $b64) = split(' ', $str);
+	if ($marker eq 'mt1') {
+		return (undef, undef) unless length($b64) <= MAX_SIZE;
+		return _decode_json(_decode_utf8(_decode_b64($b64)));
+	} elsif ($marker eq 'mt2') {
+		return (undef, undef) unless length($b64) <= MAX_SIZE;
+		return _decode_json(_decode_b64($b64));
+	} else {
+		return (undef, undef);
+	}
 }
 
 sub _decode_b64
@@ -145,7 +145,7 @@ sub _decode_json
 {
 	my ($str) = @_;
 	return unless defined $str;
-	my $h = eval { 
+	my $h = eval {
 		$meta_coder->decode($str)
 	};
 	if ($@ ne '') {

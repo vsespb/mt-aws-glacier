@@ -29,14 +29,14 @@ use base qw/App::MtAws::Job/;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{archives}||die;
-    $self->{pending}={};
-    $self->{all_raised} = 0;
-    $self->{position} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{archives}||die;
+	$self->{pending}={};
+	$self->{all_raised} = 0;
+	$self->{position} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

@@ -147,12 +147,14 @@ sub process
 
 			$j->read_journal(should_exist => 0);
 
+			## no Test::Tabs
 			die <<"END"
 File with same name alredy exists in Journal.
 In the current version of mtglacier you are disallowed to store multiple versions of same file.
 Multiversion will be implemented in the future versions.
 END
 				if (defined $j->{journal_h}->{$relfilename});
+			## use Test::Tabs
 
 			if ($options->{'data-type'} ne 'filename') {
 				binmode STDIN;
@@ -184,9 +186,9 @@ END
 			my $archives = $j->{archive_h};
 			if (scalar keys %$archives) {
 				if ($options->{'dry-run'}) {
-						for (keys %$archives) {
-							print "Will DELETE archive $_ (filename $archives->{$_}{relfilename})\n"
-						}
+					for (keys %$archives) {
+						print "Will DELETE archive $_ (filename $archives->{$_}{relfilename})\n"
+					}
 				} else {
 					$j->open_for_write();
 					my @filelist = map { {archive_id => $_, relfilename =>$archives->{$_}->{relfilename} } } keys %{$archives};
@@ -215,7 +217,7 @@ END
 
 			my $files = $j->{journal_h};
 			# TODO: refactor
-			my %filelist =	map { $_->{archive_id} => $_ }
+			my %filelist = map { $_->{archive_id} => $_ }
 				grep { !-f binaryfilename $_->{filename} }
 				map {
 					my $entry = $j->latest($_);
@@ -283,6 +285,7 @@ END
 		require App::MtAws::RetrieveCommand;
 		check_module_versions;
 
+## no Test::Tabs
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
 
@@ -327,8 +330,9 @@ Config format (text file):
 	region=us-east-1
 	# protocol=http (default) or https
 	protocol=http
-
 END
+
+## use Test::Tabs
 
 	} else {
 		die "Wrong usage";

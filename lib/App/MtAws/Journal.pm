@@ -104,7 +104,7 @@ sub open_for_write
 	open_file($self->{append_file}, $self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding}) or
 		die exception journal_open_error => "Unable to open journal file %string filename% for writing, errno=%errno%",
 			filename => $self->{journal_file}, errno => $!;
-  	$self->{append_file}->autoflush();
+	$self->{append_file}->autoflush();
 }
 
 sub close_for_write
