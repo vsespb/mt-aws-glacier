@@ -80,6 +80,33 @@ sub check_module_versions
 	};
 }
 
+sub print_system_modules_version
+{
+	for my $module (sort keys %INC) {
+		if ($module !~ /^App\/MtAws/ && $module =~ /\.pmc?/) {
+			my $name = $module;
+			$name =~ s[/][::]g;
+			$name =~ s[\.pmc?$][];
+			my $ver = $name->VERSION;
+			$ver = 'undef' unless defined $ver;
+			print "$name\t$ver\t$INC{$module}\n";
+		}
+	}
+}
+
+sub load_all_dynamic_modules
+{
+	# we load here all dynamically loaded modules, to check that installation is correct.
+	require App::MtAws::SyncCommand;
+	require App::MtAws::RetrieveCommand;
+	require App::MtAws::CheckLocalHashCommand;
+	require App::MtAws::DownloadInventoryCommand;
+	require App::MtAws::CheckLocalHashCommand;
+	require App::MtAws::DownloadInventoryCommand;
+	require App::MtAws::RetrieveCommand;
+	check_module_versions;
+}
+
 sub main
 {
 	check_module_versions();
@@ -118,7 +145,7 @@ sub process
 		}
 		die exception cmd_error => 'Error in command line/config'
 	}
-	if ($action ne 'help') {
+	if ($action ne 'help' && $action ne 'version') {
 		$PerlIO::encoding::fallback = Encode::FB_QUIET;
 		binmode STDERR, ":encoding($options->{'terminal-encoding'})";
 		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
@@ -274,17 +301,6 @@ END
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {
-
-		# we load here all dynamically loaded modules, to check that installation is correct.
-		require App::MtAws::SyncCommand;
-		require App::MtAws::RetrieveCommand;
-		require App::MtAws::CheckLocalHashCommand;
-		require App::MtAws::DownloadInventoryCommand;
-		require App::MtAws::CheckLocalHashCommand;
-		require App::MtAws::DownloadInventoryCommand;
-		require App::MtAws::RetrieveCommand;
-		check_module_versions;
-
 ## no Test::Tabs
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
@@ -323,6 +339,7 @@ Commands:
 	  --set-rel-filename - Relative filename to use in Journal (if dir not specified)
 	  --stdin - Upload from STDIN
 	  --check-max-file-size - Specify to ensure there will be less than 10 000 parts
+	version - prints debug information about software installed
 Config format (text file):
 	key=YOURKEY
 	secret=YOURSECRET
@@ -334,6 +351,11 @@ END
 
 ## use Test::Tabs
 
+	} elsif ($action eq 'version') {
+		load_all_dynamic_modules();
+		print "mt-aws-glacier version: $VERSION $VERSION_MATURITY\n";
+		print "Perl Version: $]\n";
+		print_system_modules_version();
 	} else {
 		die "Wrong usage";
 	}

@@ -200,6 +200,9 @@ sub parse_options
 	return { command => 'help', map { $_ => undef } qw/errors error_texts warnings warning_texts options/}
 		if (@ARGV && $ARGV[0] =~ /\b(help|h)\b/i);
 
+	return { command => 'version', map { $_ => undef } qw/errors error_texts warnings warning_texts options/}
+		if (@ARGV && $ARGV[0] =~ /^\-?\-?version$/i);
+
 	local $context = $self;
 
 	my @results;

@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 48;
+use Test::More tests => 53;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -234,6 +234,17 @@ sub assert_config_throw_error($$$)
 			$_
 			));
 			ok( !$errors && !$warnings && !$result && $command eq 'help', "should catch help [[$_]]" );
+		}
+	}
+}
+
+{
+	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
+		for (qw! version -version --version!, qq!  --version !, qq! -version !) {
+			my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
+			$_
+			));
+			ok( !$errors && !$warnings && !$result && $command eq 'version', "should catch version [[$_]]" );
 		}
 	}
 }

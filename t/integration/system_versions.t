@@ -22,11 +22,22 @@
 
 use strict;
 use warnings;
-use Test::More tests => 8;
+use Test::More tests => 23;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 use App::MtAws;
+
+my @dynamic_modules = qw/
+	SyncCommand
+	RetrieveCommand
+	CheckLocalHashCommand
+	DownloadInventoryCommand
+	CheckLocalHashCommand
+	DownloadInventoryCommand
+	RetrieveCommand
+/;
+
 
 ok eval { App::MtAws::check_module_versions(); 1 };
 
@@ -50,6 +61,21 @@ ok eval { App::MtAws::check_module_versions(); 1 };
 	ok ! defined eval { App::MtAws::check_module_versions(); 1 };
 	ok $@ =~ /FATAL: wrong version of App::MtAws::Filter, expected $App::MtAws::VERSION, found undef/, "should work when version is undef";
 }
+
+{
+	use App::MtAws;
+	ok ! $INC{$_}, "module $_ is not loaded as dynamic" for map { "App/MtAws/${_}.pm" } @dynamic_modules;
+}
+
+{
+	App::MtAws::load_all_dynamic_modules();
+	ok $INC{$_}, "module $_ is loaded as dynamic" for map { "App/MtAws/${_}.pm" } @dynamic_modules;
+}
+
+{
+	ok defined eval { App::MtAws::print_system_modules_version(); 1 };
+}
+
 
 ##
 ## not related to versions test.
