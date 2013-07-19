@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 764;
+use Test::More tests => 781;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -36,6 +36,14 @@ use TestUtils;
 
 warning_fatal();
 
+# to make sure we're not affected by
+# http://perldoc.perl.org/perl5180delta.html#New-Restrictions-in-Multi-Character-Case-Insensitive-Matching-in-Regular-Expression-Bracketed-Character-Classes
+my %special_chars = ( # KEY should match KEY but should not match VALUE
+	'ss' => 'ß',
+	'ß' => 'ss',
+);
+
+is length('ß'), 1; # make sure we're running unicode
 
 #
 # _filters_to_pattern
@@ -171,6 +179,12 @@ check '*img*',
 check 'img*',
 	ismatch => ['img', 'img_01.jpeg', 'a/img_01.jpeg',  'b/c/img_01.jpeg'],
 	nomatch => ['im/g', 'b/c/the_img_01.jpeg'];
+
+for (sort keys %special_chars) {
+	check "x$_*",
+		ismatch => ["x$_", "x${_}01.jpeg", "a/x${_}_01.jpeg",  "b/c/x${_}_01.jpeg"],
+		nomatch => ["x$special_chars{$_}", "x$special_chars{$_}_01.jpeg", "a/x$special_chars{$_}_01.jpeg",  "b/c/x$special_chars{$_}_01.jpeg"];
+}
 
 # '?' wildcard
 
