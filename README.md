@@ -70,7 +70,7 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 
 	NOTE: *Fedora*, *CentOS 6* etc [decoupled](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149747.html) Perl,
 	so package named `perl`, which is a part of default installation, is not actually real, full Perl, which is misleading.
-	`perl-core` is looks much more like a real Perl (but I think it still misses some original parts of Perl.)
+	`perl-core` is looks much more like a real Perl (I [hope](https://bugzilla.redhat.com/show_bug.cgi?id=985791) so)
 
 	NOTE: For some RPM packages listed above you need enable [EPEL](http://fedoraproject.org/wiki/EPEL) repository
 
