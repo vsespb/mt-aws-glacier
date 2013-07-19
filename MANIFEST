@@ -2,6 +2,7 @@
 bin/mtglacier
 Build.PL
 ChangeLog
+CONTRIBUTING.md
 CONTRIBUTORS
 cycletest.sh
 lib/App/MtAws.pm
