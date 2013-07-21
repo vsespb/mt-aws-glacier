@@ -48,8 +48,8 @@ no warnings 'redefine';
 		command 'mycommand' => sub { validate(optional('myoption')), ok !valid('myoption'); };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
-	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 31}], "validation should work"; 
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work";
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 31}], "validation should work";
 }
 
 {
@@ -60,8 +60,8 @@ no warnings 'redefine';
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my $res = $c->parse_options('mycommand', '-old', 31);
-	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with alias"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old', value => 31}], "validation should work with alias"; 
+	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with alias";
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old', value => 31}], "validation should work with alias";
 }
 
 {
@@ -72,8 +72,8 @@ no warnings 'redefine';
 		command 'mycommand' => sub { validate optional('myoption') };
 	});
 	my $res = $c->parse_options('mycommand', '-old', 31);
-	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with deprecated"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old', value => 31}], "validation should work with deprecated"; 
+	cmp_deeply $res->{error_texts}, [q{"--old" should be less than 30}], "validation should work with deprecated";
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'old', value => 31}], "validation should work with deprecated";
 }
 
 {
@@ -83,8 +83,8 @@ no warnings 'redefine';
 		command 'mycommand' => sub { validate(optional('myoption')), ok !valid('myoption'); };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31);
-	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work with option inline"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 31}], "validation should work with option inline"; 
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "validation should work with option inline";
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 31}], "validation should work with option inline";
 }
 
 {
@@ -114,8 +114,8 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 200);
 
-	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should not perform two validations"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 200}], "should not perform two validations"; 
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should not perform two validations";
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 200}], "should not perform two validations";
 }
 
 {
@@ -128,9 +128,9 @@ no warnings 'redefine';
 	my $res = $c->parse_options('mycommand', '-myoption', 200);
 
 	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}, q{"--myoption" should be less than 100 for sure}],
-		"should perform two validations"; 
+		"should perform two validations";
 	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 200},
-		{format => 'way_too_high', a => 'myoption', value => 200}], "should perform two validations"; 
+		{format => 'way_too_high', a => 'myoption', value => 200}], "should perform two validations";
 }
 
 {
@@ -142,8 +142,8 @@ no warnings 'redefine';
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 42);
 
-	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should perform 2nd validation"; 
-	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 42}], "should perform 2nd validations"; 
+	cmp_deeply $res->{error_texts}, [q{"--myoption" should be less than 30}], "should perform 2nd validation";
+	cmp_deeply $res->{errors}, [{format => 'too_high', a => 'myoption', value => 42}], "should perform 2nd validations";
 }
 
 
@@ -157,7 +157,7 @@ no warnings 'redefine';
 		command 'mycommand' => sub { mandatory('myoption'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}], "mandatory should work"; 
+	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}], "mandatory should work";
 	cmp_deeply $res->{errors}, [{format => 'mandatory', a => 'myoption'}], "mandatory should work";
 }
 
@@ -169,7 +169,7 @@ no warnings 'redefine';
 		command 'mycommand' => sub { mandatory('myoption', 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "should perform first mandatory check out of two"; 
+	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "should perform first mandatory check out of two";
 	cmp_deeply $res->{errors}, [{format => 'mandatory', a => 'myoption'}, {format => 'mandatory', a => 'myoption3'}], "should perform first mandatory check out of two";
 }
 
@@ -181,7 +181,7 @@ no warnings 'redefine';
 		command 'mycommand' => sub { mandatory(optional('myoption'), 'myoption3'), optional 'myoption2' };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption3"}], "mandatory should work if inner optional() exists"; 
+	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption3"}], "mandatory should work if inner optional() exists";
 	cmp_deeply $res->{errors}, [{format => 'mandatory', a => 'myoption3'}], "mandatory should work if inner optional() exists";
 }
 
@@ -193,7 +193,7 @@ no warnings 'redefine';
 		command 'mycommand' => sub { mandatory(mandatory('myoption'), 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "nested mandatoy should work"; 
+	cmp_deeply $res->{error_texts}, [q{Please specify "--myoption"}, q{Please specify "--myoption3"}], "nested mandatoy should work";
 	cmp_deeply $res->{errors}, [{format => 'mandatory', a => 'myoption'}, {format => 'mandatory', a => 'myoption3'}], "nested mandatoy should work";
 }
 
@@ -242,7 +242,7 @@ no warnings 'redefine';
 		command 'mycommand' => sub { optional('myoption', 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	ok !defined $res->{errors}, 'should perform two optional checks'; 
+	ok !defined $res->{errors}, 'should perform two optional checks';
 }
 
 {
@@ -264,7 +264,7 @@ no warnings 'redefine';
 		command 'mycommand' => sub { optional(optional('myoption'), 'myoption3'), optional('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	ok ! defined $res->{errors}, 'nested optional should work'; 
+	ok ! defined $res->{errors}, 'nested optional should work';
 }
 
 # deprecated
@@ -310,7 +310,7 @@ no warnings 'redefine';
 	ok ! defined $res->{warnings}, "option should work - no warnings";
 	ok ! defined $res->{warning_texts}, "option should work - no warnings";
 	is $res->{command}, 'mycommand', "option should work - right command";
-	cmp_deeply($res->{options}, { myoption => 31 }, "option should work should work"); 
+	cmp_deeply($res->{options}, { myoption => 31 }, "option should work should work");
 }
 
 # positional
@@ -340,7 +340,7 @@ no warnings 'redefine';
 		local $SIG{__WARN__} = 'DEFAULT';
 		$c->parse_options(@my_args);
 	};
-	
+
 	cmp_deeply $res->{error_texts}, ['Error parsing options'],
 		"should not work if option with same name supplied as normal option";
 	cmp_deeply $res->{errors}, [{ format => "getopts_error"}],
@@ -504,8 +504,8 @@ no warnings 'redefine';
 		command 'mycommand' => sub { mandatory('myoption') };
 	});
 	my $res = $c->parse_options('mycommand', 'xx', "\xA0");
-	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8"; 
-	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8"; 
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8";
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8";
 }
 
 {
@@ -549,7 +549,7 @@ no warnings 'redefine';
 		positional 'o1';
 		command 'mycommand' => sub { optional('o1')};
 	});
-	
+
 	my $res = $c->parse_options('mycommand', encode("UTF-8", 'тест'));
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	cmp_deeply $res->{options}, { o1 => 'тест' }, "positional args should work with UTF-8";
@@ -614,7 +614,7 @@ no warnings 'redefine';
 	cmp_deeply($res->{options}, { o1 => '11' }, "options should work with one command");
 }
 
-# option alias 
+# option alias
 {
 	my $c  = create_engine();
 	$c->define(sub {
@@ -642,8 +642,8 @@ for (['-old', '11', '-o1', '42'], ['-o1', '42', '-old', '11']) {
 	ok ! defined ($res->{warnings}||$res->{warning_texts});
 	ok $res->{errors} && $res->{error_texts};
 	ok @{$res->{error_texts}} == 1;
-	cmp_deeply $res->{error_texts}, ['both options "--o1" and "--old" are specified. however they are aliases'], "should not be able to specify option twice using alias"; 
-	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o1', b => 'old'}], "should not be able to specify option twice using alias"; 
+	cmp_deeply $res->{error_texts}, ['both options "--o1" and "--old" are specified. however they are aliases'], "should not be able to specify option twice using alias";
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o1', b => 'old'}], "should not be able to specify option twice using alias";
 }
 
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
@@ -659,9 +659,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok $res->{errors} && $res->{error_texts};
 	ok @{$res->{error_texts}} == 1;
 	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
-		"should not be able to specify option twice using alias"; 
+		"should not be able to specify option twice using alias";
 	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
-		"should not be able to specify option twice using alias"; 
+		"should not be able to specify option twice using alias";
 }
 
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
@@ -677,9 +677,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok $res->{errors} && $res->{error_texts};
 	ok @{$res->{error_texts}} == 1;
 	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
-		"should not be able to specify option twice using two aliases"; 
+		"should not be able to specify option twice using two aliases";
 	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
-		"should not be able to specify option twice using two aliases"; 
+		"should not be able to specify option twice using two aliases";
 }
 
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
@@ -695,9 +695,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok $res->{errors} && $res->{error_texts} && $res->{warnings} && $res->{warning_texts};
 	ok @{$res->{error_texts}} == 1;
 	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
-		"should not be able to specify option twice using two deprecations"; 
+		"should not be able to specify option twice using two deprecations";
 	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
-		"should not be able to specify option twice using two deprecations"; 
+		"should not be able to specify option twice using two deprecations";
 }
 
 for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
@@ -713,12 +713,12 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok $res->{errors} && $res->{error_texts} && $res->{warnings} && $res->{warning_texts};
 	ok @{$res->{error_texts}} == 1;
 	cmp_deeply $res->{error_texts}, ['both options "--o0" and "--o1" are specified. however they are aliases'],
-		"should not be able to specify option twice using deprecation and alias"; 
-	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}], 
-		"should not be able to specify option twice using deprecation and alias"; 
+		"should not be able to specify option twice using deprecation and alias";
+	cmp_deeply $res->{errors}, [{format => 'already_specified_in_alias', a => 'o0', b => 'o1'}],
+		"should not be able to specify option twice using deprecation and alias";
 }
 
-# option deprecated 
+# option deprecated
 {
 	my $c  = create_engine();
 	$c->define(sub {
@@ -730,8 +730,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-old', '11');
 	ok ! defined ($res->{errors}||$res->{error_texts});
 	ok $res->{warnings} && $res->{warning_texts};
-	cmp_deeply $res->{warning_texts}, ['option "--old" is deprecated'], "deprecated options should work"; 
-	cmp_deeply $res->{warnings}, [{format => 'deprecated_option', option => 'old', main => 'o1'}], "deprecated options should work"; 
+	cmp_deeply $res->{warning_texts}, ['option "--old" is deprecated'], "deprecated options should work";
+	cmp_deeply $res->{warnings}, [{format => 'deprecated_option', option => 'old', main => 'o1'}], "deprecated options should work";
 	cmp_deeply($res->{options}, { o1 => '11' }, "deprecated options should work");
 	cmp_deeply($c->{options}->{o1},
 		{ value => '11', name => 'o1', seen => 1, deprecated => ['old'], source => 'option', original_option => 'old', is_alias => 1 },
@@ -820,7 +820,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
 	ok ! defined $res->{warnings}||$res->{warning_texts};
-	cmp_deeply $res->{error_texts}, [q{"--o1" and "--o2" are mutual exclusive}], "error should work"; 
+	cmp_deeply $res->{error_texts}, [q{"--o1" and "--o2" are mutual exclusive}], "error should work";
 	cmp_deeply $res->{errors}, [{format => 'mutual', a => 'o1', b => 'o2'}], "error should work";
 }
 
@@ -837,8 +837,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
 	ok ! defined $res->{warnings}||$res->{warning_texts};
-	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with undeclared message"; 
-	cmp_deeply $res->{errors}, ['mymessage'], "error should work with undeclared message"; 
+	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with undeclared message";
+	cmp_deeply $res->{errors}, ['mymessage'], "error should work with undeclared message";
 }
 
 {
@@ -855,8 +855,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
 	ok ! defined $res->{warnings}||$res->{warning_texts};
-	cmp_deeply $res->{error_texts}, [q{some text}], "error should work with declared message without variables"; 
-	cmp_deeply $res->{errors}, [{ format => 'mymessage'}], "error should work with declared message without variables"; 
+	cmp_deeply $res->{error_texts}, [q{some text}], "error should work with declared message without variables";
+	cmp_deeply $res->{errors}, [{ format => 'mymessage'}], "error should work with declared message without variables";
 }
 
 {
@@ -872,8 +872,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
 	ok ! defined $res->{warnings}||$res->{warning_texts};
-	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables"; 
-	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables"; 
+	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables";
+	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables";
 }
 
 {
@@ -889,8 +889,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', '11', '-o2', '21');
 	ok ! defined $res->{warnings}||$res->{warning_texts};
-	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables"; 
-	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables"; 
+	cmp_deeply $res->{error_texts}, [q{mymessage}], "error should work with declared message without variables";
+	cmp_deeply $res->{errors}, ['mymessage'], "error should work with declared message without variables";
 }
 
 # command
@@ -928,8 +928,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	is $res->{command}, 'mycommand', 'alias should work';
 	ok $res->{warnings};
 	ok $res->{warning_texts};
-	cmp_deeply $res->{warning_texts}, ['Command "commandofmine" is deprecated'], "deprecated commands should work"; 
-	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work"; 
+	cmp_deeply $res->{warning_texts}, ['Command "commandofmine" is deprecated'], "deprecated commands should work";
+	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work";
 }
 
 {
@@ -944,8 +944,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	is $res->{command}, 'mycommand', 'alias should work';
 	ok $res->{warnings};
 	ok $res->{warning_texts};
-	cmp_deeply $res->{warning_texts}, ["command commandofmine is deprecated"], "deprecated commands should work"; 
-	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work"; 
+	cmp_deeply $res->{warning_texts}, ["command commandofmine is deprecated"], "deprecated commands should work";
+	cmp_deeply $res->{warnings}, [{ format => 'deprecated_command', command => 'commandofmine'} ], "deprecated commands should work";
 }
 
 # parse options
@@ -962,9 +962,9 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined $res->{warnings};
 	ok ! defined $res->{warning_texts};
 	ok ! defined $res->{command}, "command should be undefined in case of errors";
-	cmp_deeply $res->{error_texts}, ['Unexpected option "--o2"'], "should catch unexpected options"; 
+	cmp_deeply $res->{error_texts}, ['Unexpected option "--o2"'], "should catch unexpected options";
 	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'o2' }], "should catch unexpected options";
-	ok ! defined $App::MtAws::ConfigEngine::context, "context should be always localized"; 
+	ok ! defined $App::MtAws::ConfigEngine::context, "context should be always localized";
 }
 
 
@@ -981,7 +981,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined $res->{warnings};
 	ok ! defined $res->{warning_texts};
 	ok ! defined $res->{command}, "command should be undefined in case of errors";
-	cmp_deeply $res->{error_texts}, ['Unexpected option "--old"'], "should catch unexpected options when alias"; 
+	cmp_deeply $res->{error_texts}, ['Unexpected option "--old"'], "should catch unexpected options when alias";
 	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'old' }], "should catch unexpected options when alias";
 }
 
@@ -998,7 +998,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok defined $res->{warnings};
 	ok defined $res->{warning_texts};
 	ok ! defined $res->{command}, "command should be undefined in case of errors";
-	cmp_deeply $res->{error_texts}, ['Unexpected option "--old"'], "should catch unexpected options when alias"; 
+	cmp_deeply $res->{error_texts}, ['Unexpected option "--old"'], "should catch unexpected options when alias";
 	cmp_deeply $res->{errors}, [{ format => 'unexpected_option', option => 'old' }], "should catch unexpected options when alias";
 }
 
@@ -1023,8 +1023,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', "\xA0");
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	ok ! defined $res->{command}, "command should be undefined";
-	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8"; 
-	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8"; 
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8";
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8";
 }
 
 {
@@ -1036,8 +1036,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', "\xA0", '-o2', "\xA1");
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	ok ! defined $res->{command}, "command should be undefined";
-	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8 just once"; 
-	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 just once"; 
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8 just once";
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 just once";
 }
 
 
@@ -1053,8 +1053,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c');
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	ok ! defined $res->{command}, "command should be undefined";
-	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in config file'], "should catch broken utf-8 in config just once"; 
-	cmp_deeply $res->{errors}, [{ format => 'config_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 in config just once"; 
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in config file'], "should catch broken utf-8 in config just once";
+	cmp_deeply $res->{errors}, [{ format => 'config_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 in config just once";
 }
 
 
@@ -1067,8 +1067,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', "ok", '-o2', "\xA1");
 	ok !defined( $res->{warnings}||$res->{warning_texts});
 	ok ! defined $res->{command}, "command should be undefined";
-	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8 even if option is not used"; 
-	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 even if option is not used"; 
+	cmp_deeply $res->{error_texts}, ['Invalid UTF-8 character in command line'], "should catch broken utf-8 even if option is not used";
+	cmp_deeply $res->{errors}, [{ format => 'options_encoding_error', encoding => 'UTF-8' }], "should catch broken utf-8 even if option is not used";
 }
 
 {
@@ -1093,7 +1093,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		$c->parse_options('mycommand', '-MYoption', 123);
 	};
 	ok $res->{errors} && $res->{error_texts};
-	cmp_deeply $res->{errors}, [{ format => 'getopts_error'}], "should not ignore options case"; 
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error'}], "should not ignore options case";
 }
 
 # parse options - array options
@@ -1106,7 +1106,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o1', 'a', '-o1', 'b');
 	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work"; 
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work";
 }
 
 {
@@ -1117,7 +1117,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o2', 'b');
 	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with aliases"; 
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with aliases";
 }
 
 {
@@ -1128,7 +1128,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o1', 'b');
 	ok !defined($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work when mixing aliases and options"; 
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work when mixing aliases and options";
 }
 
 {
@@ -1151,7 +1151,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o2', 'a', '-o2', 'b');
 	ok !defined($res->{errors}||$res->{error_texts});
 	ok $res->{warnings} && $res->{warning_texts};
-	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with deprecations"; 
+	cmp_deeply $res->{options}, { o1 => ['a', 'b']}, "array options should work with deprecations";
 }
 
 # option lists
@@ -1172,11 +1172,11 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		filter => [qw/3 4/],
 	}, "shared lists should work";
 	cmp_deeply $res->{option_list}, [
-			{ name => 'include', value => 1 },
-			{ name => 'exclude', value => 2 },
-			{ name => 'filter', value => 3 },
-			{ name => 'filter', value => 4 },
-			{ name => 'include', value => 5 }, 
+		{ name => 'include', value => 1 },
+		{ name => 'exclude', value => 2 },
+		{ name => 'filter', value => 3 },
+		{ name => 'filter', value => 4 },
+		{ name => 'include', value => 5 },
 	], "shared lists should work";
 }
 
@@ -1190,16 +1190,16 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub {
 			optional qw/o1 o2/;
 			cmp_deeply [lists optional qw/include exclude filter/], [
-					{ name => 'include', value => 1 },
-					{ name => 'exclude', value => 2 },
-					{ name => 'filter', value => 3 },
-					{ name => 'filter', value => 4 },
-					{ name => 'include', value => 5 }, 
-				], 'lists() should work';
+				{ name => 'include', value => 1 },
+				{ name => 'exclude', value => 2 },
+				{ name => 'filter', value => 3 },
+				{ name => 'filter', value => 4 },
+				{ name => 'include', value => 5 },
+			], 'lists() should work';
 			cmp_deeply [lists('include')], [
-					{ name => 'include', value => 1 },
-					{ name => 'include', value => 5 }, 
-				], 'lists() should work';
+				{ name => 'include', value => 1 },
+				{ name => 'include', value => 5 },
+			], 'lists() should work';
 		};
 	});
 	my $res = $c->parse_options('mycommand', qw/--include 1 --exclude 2 --o2 2 --filter 3 --filter 4 --include 5 --o1 1/);
@@ -1212,11 +1212,11 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		o2 => 2,
 	}, "shared lists should work";
 	cmp_deeply $res->{option_list}, [
-			{ name => 'include', value => 1 },
-			{ name => 'exclude', value => 2 },
-			{ name => 'filter', value => 3 },
-			{ name => 'filter', value => 4 },
-			{ name => 'include', value => 5 }, 
+		{ name => 'include', value => 1 },
+		{ name => 'exclude', value => 2 },
+		{ name => 'filter', value => 3 },
+		{ name => 'filter', value => 4 },
+		{ name => 'include', value => 5 },
 	], "option_list should contain only lists arguments";
 }
 
@@ -1231,8 +1231,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options();
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{error_texts}, ['No command specified'], "should catch no command"; 
-	cmp_deeply $res->{errors}, [{ format => 'no_command' }], "should catch no command"; 
+	cmp_deeply $res->{error_texts}, ['No command specified'], "should catch no command";
+	cmp_deeply $res->{errors}, [{ format => 'no_command' }], "should catch no command";
 }
 
 
@@ -1245,8 +1245,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options();
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{error_texts}, ['Command missing'], "should catch no command with custom message"; 
-	cmp_deeply $res->{errors}, [{ format => 'no_command' }], "should catch no command with custom message"; 
+	cmp_deeply $res->{error_texts}, ['Command missing'], "should catch no command with custom message";
+	cmp_deeply $res->{errors}, [{ format => 'no_command' }], "should catch no command with custom message";
 }
 
 {
@@ -1257,8 +1257,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('zz');
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{error_texts}, ['Unknown command "zz"'], "should catch unknown command"; 
-	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command"; 
+	cmp_deeply $res->{error_texts}, ['Unknown command "zz"'], "should catch unknown command";
+	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command";
 }
 
 {
@@ -1270,8 +1270,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('zz');
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{error_texts}, ['Command typo [zz]'], "should catch unknown command with custom message"; 
-	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command with custom message"; 
+	cmp_deeply $res->{error_texts}, ['Command typo [zz]'], "should catch unknown command with custom message";
+	cmp_deeply $res->{errors}, [{ format => 'unknown_command', a => 'zz' }], "should catch unknown command with custom message";
 }
 
 {
@@ -1285,8 +1285,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	};
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should catch error parsing options"; 
-	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should catch error parsing options"; 
+	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should catch error parsing options";
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should catch error parsing options";
 }
 
 {
@@ -1301,8 +1301,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	};
 	ok $res->{errors} && $res->{error_texts};
 	ok !defined( $res->{warnings}||$res->{warning_texts});
-	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should allow to define option types"; 
-	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should allow to define option types"; 
+	cmp_deeply $res->{error_texts}, ['Error parsing options'], "should allow to define option types";
+	cmp_deeply $res->{errors}, [{ format => 'getopts_error' }], "should allow to define option types";
 }
 
 {
@@ -1330,7 +1330,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "config should work - right command";
-	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should work"); 
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should work");
 }
 
 {
@@ -1344,7 +1344,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "config should work - right command";
-	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with aliases"); 
+	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with aliases");
 }
 
 {
@@ -1358,7 +1358,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "config should work - right command";
-	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with depracations"); 
+	cmp_deeply($res->{options}, { dir => 42 , config => 'c'}, "config should work with depracations");
 }
 
 {
@@ -1370,8 +1370,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub { optional('myoption', 'config') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
-	cmp_deeply $res->{error_texts}, ['Unknown option in config: "fromconfig"'], "should catch unknown option in config"; 
-	cmp_deeply $res->{errors}, [{ format => 'unknown_config_option', option => 'fromconfig' }], "should catch unknown option in config"; 
+	cmp_deeply $res->{error_texts}, ['Unknown option in config: "fromconfig"'], "should catch unknown option in config";
+	cmp_deeply $res->{errors}, [{ format => 'unknown_config_option', option => 'fromconfig' }], "should catch unknown option in config";
 }
 
 {
@@ -1384,8 +1384,8 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-config', 'c');
 	cmp_deeply $res->{error_texts}, ['"List" options (where order is important) like "include" cannot appear in config currently'],
-		"should catch list options in config"; 
-	cmp_deeply $res->{errors}, [{ format => 'list_options_in_config', option => 'include' }], "should catch list options in config"; 
+		"should catch list options in config";
+	cmp_deeply $res->{errors}, [{ format => 'list_options_in_config', option => 'include' }], "should catch list options in config";
 }
 
 
@@ -1400,7 +1400,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should override default"); 
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'c'}, "config should override default");
 }
 
 {
@@ -1417,7 +1417,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $fname, 'cx', "should read right config file";
 	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 42 , config => 'cx'},
-		"config should work even if there is  default for config"); 
+		"config should work even if there is  default for config");
 }
 
 {
@@ -1431,7 +1431,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43);
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 43 , config => 'c'}, "command line should override config"); 
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 43 , config => 'c'}, "command line should override config");
 }
 
 {
@@ -1445,7 +1445,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	});
 	my $res = $c->parse_options('mycommand', '-myoption', 31, '-config', 'c', '-fromconfig', 43);
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
-	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 43 , config => 'c'}, "command line should override config and default"); 
+	cmp_deeply($res->{options}, { myoption => 31, fromconfig => 43 , config => 'c'}, "command line should override config and default");
 }
 
 {
@@ -1486,7 +1486,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', encode('koi8-r', "тест"), '-encoding', 'koi8-r');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r'}, "cmd encoding should work"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r'}, "cmd encoding should work");
 }
 
 {
@@ -1499,7 +1499,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', encode('utf-8', "тест"), '-encoding', 'utf-8');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'utf-8'}, "cmd encoding should work with utf8"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'utf-8'}, "cmd encoding should work with utf8");
 }
 
 {
@@ -1514,7 +1514,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', encode('koi8-r', "тест"), '-config', 'c' );
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cmd encoding should work when specified in config"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cmd encoding should work when specified in config");
 }
 
 {
@@ -1529,7 +1529,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-o1', encode('koi8-r', "тест"), '-config', 'c', '-encoding', 'koi8-r' );
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cmd encoding should work when command line overrides"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cmd encoding should work when command line overrides");
 }
 
 {
@@ -1544,7 +1544,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c', '-encoding', 'koi8-r' );
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work");
 }
 
 {
@@ -1559,7 +1559,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c', '-encoding', 'utf-8' );
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'utf-8', config => 'c'}, "cfg encoding should work"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'utf-8', config => 'c'}, "cfg encoding should work");
 }
 
 {
@@ -1574,7 +1574,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work when specified in config"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work when specified in config");
 }
 
 {
@@ -1589,7 +1589,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	my $res = $c->parse_options('mycommand', '-config', 'c', '-encoding', 'koi8-r');
 	ok ! defined ($res->{errors}||$res->{error_texts}||$res->{warnings}||$res->{warning_texts});
 	is $res->{command}, 'mycommand', "encodings - right command";
-	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work when specified in config"); 
+	cmp_deeply($res->{options}, { o1 => 'тест' , encoding => 'koi8-r', config => 'c'}, "cfg encoding should work when specified in config");
 }
 
 {
@@ -1608,7 +1608,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	is $res->{command}, 'mycommand', "encodings - right command";
 	cmp_deeply($res->{options},
 		{ o1 => 'тест' , o2 => 'тест2', 'cmd-encoding' => 'cp1251', 'cfg-encoding' => 'koi8-r', config => 'c'},
-		"cfg and cmd encodings should work together"); 
+		"cfg and cmd encodings should work together");
 }
 
 {
@@ -1657,7 +1657,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	is $res->{command}, 'mycommand', "encodings - right command";
 	cmp_deeply($res->{options},
 		{ o1 => 1, config => encode('koi8-r', 'тест')},
-		"should not decode binary command line options"); 
+		"should not decode binary command line options");
 }
 
 {
@@ -1674,7 +1674,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 	is $res->{command}, 'mycommand', "encodings - right command";
 	cmp_deeply($res->{options},
 		{ o1 => 1, config => 'c', o1 => encode('koi8-r', 'тест1'), o2 => 'тест2'},
-		"should not decode binary command line options in config"); 
+		"should not decode binary command line options in config");
 }
 
 

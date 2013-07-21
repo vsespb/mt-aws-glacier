@@ -44,7 +44,7 @@ mkpath($localroot);
 mkpath($rootdir);
 
 
-my $data = 	{
+my $data = {
 	archive_id => "HdGDbije6lWPT8Q8S3uOWJF6Ou9MWRlrfMGDr6TCrhXuDqJ1pzwKR6XV4l1IZ-VrDd2rlLxDFACqnuJouYTzsT5zd6s2ZEAHfRQFriVbjpFfJ1uWruHRRXIrFIma4PVuz-fp9_pBkA",
 	job_id => "HdGDbije6lWPT8Q8S3uOWJF6777MWRlrfMGDr688888888888zwKR6XV4l1IZ-VrDd2rlLxDFACqnuJouYTzsT5zd6s2ZEAHfRQFriVbjpFfJ1uWruHRRXIrFIma4PVuz-fp9_pBkA",
 	size => 7684356,
@@ -79,11 +79,9 @@ SKIP: {
 		journal => $journal,
 		dir => $rootdir,
 		journal_encoding => 'UTF-8',
-		filenames_encoding => 'UTF-8',
 	};
 
 	my $j = App::MtAws::Journal->new(journal_encoding => $options->{'journal-encoding'},
-		filenames_encoding => $options->{'filenames-encoding'},
 		journal_file => $options->{journal},
 		root_dir => $options->{dir},
 		filter => $options->{filters}{parsed});

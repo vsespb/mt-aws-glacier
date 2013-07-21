@@ -40,11 +40,6 @@ my $build = Module::Build->new(
 	# http://blogs.perl.org/users/randy_stauner/2011/09/shebangs-with-perlbrew-aliases-and-eumm-and-without-locallib.html
 	script_files => ['bin/mtglacier'], # script_files directive since M::B 0.18
 	
-	meta_add => {
-		no_index => {
-			namespace => [ 'App::MtAws' ],
-		},
-	},
 	meta_merge => {
 		resources => {
 			repository => 'https://github.com/vsespb/mt-aws-glacier',
@@ -131,6 +126,7 @@ my $build = Module::Build->new(
 		'Test::Spec' => '0.46', # we need with() new in 0.46
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
+		'Test::Tabs' => '0.003',
 
 		# CORE MODULES OR DUAL-LIFE MODULES
 		'Data::Dumper' => 0,

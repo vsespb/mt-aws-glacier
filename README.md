@@ -13,7 +13,7 @@ mt-aws-glacier is a client application for Glacier.
 
 ## Version
 
-* Version 0.973 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 0.974 beta (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -63,9 +63,16 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 	* **LWP::UserAgent** (or Debian package **libwww-perl** or RPM package **perl-libwww-perl** or MacPort **p5-libwww-perl**)
 	* **JSON::XS** (or Debian package **libjson-xs-perl** or RPM package **perl-JSON-XS** or MacPort **p5-json-XS**)
 
-	* for older Perl < 5.9.3 (i.e. CentOS 5.x), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
-	* on some old Linux installations (examples: Ubuntu 10.04, CentOS 5.x) to use HTTPS you need to install **LWP::Protocol::https** via CPAN: `cpan -i LWP::Protocol::https`
+	NOTE: for old Perl < 5.9.3 (i.e. *CentOS 5.x*), install also **Digest::SHA** (or Debian package **libdigest-sha-perl** or RPM package **perl-Digest-SHA**)
 
+	NOTE: Some distributions with old Perl stuff (examples: *Ubuntu 10.04*, *CentOS 5/6*) to use HTTPS you need to install **LWP::Protocol::https** version 6+ via CPAN: `cpan -i LWP::Protocol::https`
+	(see CPAN prerequisites below)
+
+	NOTE: *Fedora*, *CentOS 6* etc [decoupled](http://www.nntp.perl.org/group/perl.perl5.porters/2009/08/msg149747.html) Perl,
+	so package named `perl`, which is a part of default installation, is not actually real, full Perl, which is misleading.
+	`perl-core` is looks much more like a real Perl (I [hope](https://bugzilla.redhat.com/show_bug.cgi?id=985791) so)
+
+	NOTE: For some RPM packages listed above you need enable [EPEL](http://fedoraproject.org/wiki/EPEL) repository
 
 * Install mt-aws-glacier
 
@@ -73,19 +80,43 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 
 	(or just download and unzip `https://github.com/vsespb/mt-aws-glacier/archive/master.zip` )
 
-	After that you can execute `mtglacier` script (found in root of repository) from any directory, or create a symlink to it - it will find other package files by itself.
+	After that you can execute `mtglacier` script (found in root of repository) from any directory, or create a symlink to it - it will find other package files by itself
+	(don't forget to remove it later, if you decide to switch to CPAN install)
 
 ### *OR* Installation via CPAN
+
+* Prerequisites:
+
+	* OpenSSL dev library for HTTPS support (`openssl-devel` RPM or `libssl-dev` DEB)
+
+	* C compiller and header files: `yum groupinstall "Development Tools"` for RHEL or `build-essential` for Debian
+
+* How to install (or update in the future):
 
 		cpan -i App::MtAws
 
 That's it.
 
+NOTE: If you've used manual installation before this, it's probably better to remove previously installed `mtglacier` executable from your path.
+
 NOTE: CPAN distribution of *mt-aws-glacier* has a bit more dependencies than manual installation, as it requires additional modules for testsuite.
 
-NOTE: When installing CPAN modules, instead system `cpan` tool you might wan't to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's much easier to install and configure.
-
 NOTE: New releases of *mt-aws-glacier* usually appear on CPAN within a ~week after official release.
+
+NOTE: On *Fedora*, *CentOS 6 minimal* you need to install `perl-core`, `perl-CPAN`, `perl-CGI` first, see above notice about *Fedora*
+
+NOTE: For some distributions with old Perl stuff (examples: *CentOS 5/6*) you need to update CPAN and Module::Build first: `cpan -i CPAN`, `cpan -i Module::Build`
+
+NOTE: CPAN asks too many questions during install (but ignores important errors). You can avoid it by running `cpan` command and configuring it like this:
+
+	o conf build_requires_install_policy yes
+	o conf prerequisites_policy follow
+	o conf halt_on_failure on
+	o conf commit
+	exit
+
+NOTE: Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's a bit easier to install and configure.
+
 
 ## Warnings ( *MUST READ* )
 
@@ -150,7 +181,7 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
-		./mtglacier check-local-hash --config=glacier.cfg --dir /data/backup --vault=myvault -journal=journal.log
+		./mtglacier check-local-hash --config=glacier.cfg --dir /data/backup --journal=journal.log
 
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
@@ -164,7 +195,7 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 
 12. Delete all your files from vault
 
-		./mtglacier purge-vault --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log
+		./mtglacier purge-vault --config=glacier.cfg --vault=myvault --journal=journal.log
 
 13. Wait ~ 24-48 hours and you can try deleting your vault
 

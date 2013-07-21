@@ -20,6 +20,8 @@
 
 package App::MtAws::Job;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -28,10 +30,10 @@ use App::MtAws::Task;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask" "ok replace"

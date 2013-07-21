@@ -33,7 +33,7 @@
 
 package App::MtAws::TreeHash;
 
-
+our $VERSION = '0.974';
 
 use strict;
 use warnings;
@@ -45,21 +45,21 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{tree} = [];
-    $self->{pending} = {};
-    $self->{unit} ||= 1048576;
-    $self->{processed_size} = 0; # MB
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{tree} = [];
+	$self->{pending} = {};
+	$self->{unit} ||= 1048576;
+	$self->{processed_size} = 0; # MB
+	bless $self, $class;
+	return $self;
 }
 
 
 sub eat_file
 {
 	my ($self, $fh) = @_;
-	while (1) {
+	while () {
 		my $r = read($fh, my $data, $self->{unit});
 		if (!defined($r)) {
 			die $!;
@@ -193,8 +193,8 @@ sub _treehash_recursive
 		if ($a == $b) {
 			return $self->{by_position}->{$a}->{hash};
 		} else {
-				my $middle = _maxpower($b-$a) + $a;
-				return sha256 ($self->_treehash_recursive($a, $middle - 1 ).$self->_treehash_recursive($middle, $b));
+			my $middle = _maxpower($b-$a) + $a;
+			return sha256 ($self->_treehash_recursive($a, $middle - 1 ).$self->_treehash_recursive($middle, $b));
 		}
 	} else {
 		return $self->_treehash_recursive(0,$self->{max});
@@ -205,14 +205,14 @@ sub _maxpower
 {
 	my ($x) = @_;
 	die if $x == 0;
-    $x |= $x >> 1;
-    $x |= $x >> 2;
-    $x |= $x >> 4;
-    $x |= $x >> 8;
-    $x |= $x >> 16;
-    $x >>= 1;
-    $x++;
-    return $x;
+	$x |= $x >> 1;
+	$x |= $x >> 2;
+	$x |= $x >> 4;
+	$x |= $x >> 8;
+	$x |= $x >> 16;
+	$x >>= 1;
+	$x++;
+	return $x;
 }
 
 

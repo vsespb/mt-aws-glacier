@@ -165,7 +165,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
-				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
+				ok $out =~ /^OK file1 $file1->{size} $file1->{treehash}$/m;
 				check_ok($out, qw/ok/);
 			};
 		};
@@ -184,7 +184,7 @@ describe "command" => sub {
 
 					my ($res, $out) = run_command($options, $j);
 					ok $res;
-					like $out, qr/^OK file1 $r->{size} $r->{treehash}$/m;
+					ok $out =~ /^OK file1 $r->{size} $r->{treehash}$/m;
 					check_ok($out, qw/ok/);
 				};
 			};
@@ -203,7 +203,7 @@ describe "command" => sub {
 
 					my ($res, $out) = run_command($options, $j);
 					ok $res;
-					like $out, qr/^OK file1 $r->{size} $r->{treehash}$/m;
+					ok $out =~ /^OK file1 $r->{size} $r->{treehash}$/m;
 					check_ok($out, qw/ok/);
 				};
 			};
@@ -220,7 +220,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
-				like $out, qr/^TREEHASH MISSMATCH file1$/m;
+				ok $out =~ /^TREEHASH MISSMATCH file1$/m;
 				check_ok($out, qw/treehash/);
 			};
 		};
@@ -236,7 +236,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
-				like $out, qr/^OK file1 $file1->{size} $file1->{treehash}$/m;
+				ok $out =~ /^OK file1 $file1->{size} $file1->{treehash}$/m;
 				check_ok($out, qw/ok mtime/);
 			};
 		};
@@ -252,7 +252,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
-				like $out, qr/^SIZE MISSMATCH file1$/m;
+				ok $out =~ /^SIZE MISSMATCH file1$/m;
 				check_ok($out, qw/size/);
 			};
 		};
@@ -268,7 +268,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
-				like $out, qr/^ZERO SIZE file1$/m;
+				ok $out =~ /^ZERO SIZE file1$/m;
 				check_ok($out, qw/zero/);
 			};
 		};
@@ -284,7 +284,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
-				like $out, qr/^MISSED file1$/m;
+				ok $out =~ /^MISSED file1$/m;
 				check_ok($out, qw/missed/);
 			};
 		};
@@ -301,7 +301,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
-				like $out, qr/^OK file2 $file2->{size} $file2->{treehash}$/m;
+				ok $out =~ /^OK file2 $file2->{size} $file2->{treehash}$/m;
 				check_ok($out, qw/ok/);
 			};
 		};
@@ -318,7 +318,7 @@ describe "command" => sub {
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
 				my $estr = strerror(EACCES);
-				like $out, qr/^CANNOT OPEN file file1: $estr$/m;
+				ok $out =~ /^CANNOT OPEN file file1: $estr$/m;
 				check_ok($out, qw/errors/);
 			};
 		};
@@ -356,7 +356,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
-				like $out, qr/^Will check file file1$/m;
+				ok $out =~ /^Will check file file1$/m;
 				unlike $out, qr/TREEHASH/;
 				unlike $out, qr/OK/;
 			};
@@ -393,7 +393,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok $res;
-				like $out, qr/^3 OK$/m;
+				ok $out =~ /^3 OK$/m;
 			};
 		};
 	};

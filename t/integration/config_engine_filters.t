@@ -171,19 +171,19 @@ for (
 	assert_fails "should catch parse error",
 		[@$_, '--filter', ' +z  p +a'],
 		[],
-		'filter_error', a => 'p +a'; 
+		'filter_error', a => 'p +a';
 		
 	assert_fails "should catch parse error",
 		[@$_, '--filter', '+z z'],
 		[],
-		'filter_error', a => 'z'; 
+		'filter_error', a => 'z';
 		
 	assert_fails "should not allow empty filter",
 		[@$_, '--filter', ''],
 		[],
-		'filter_error', a => ''; 
-		
-		
+		'filter_error', a => '';
+
+
 }
 
 fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', 'filter' => '+*.gz -', sub {

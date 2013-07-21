@@ -20,6 +20,8 @@
 
 package App::MtAws::FileUploadJob;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -30,18 +32,18 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    defined($self->{relfilename})||die;
-    $self->{partsize}||die;
-    defined($self->{mtime})||die;
-    $self->{upload_id}||confess;
-    $self->{fh}||die;
-    $self->{all_raised} = 0;
-    $self->{position} = 0;
-    $self->{th} = App::MtAws::TreeHash->new();
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	defined($self->{relfilename})||die;
+	$self->{partsize}||die;
+	defined($self->{mtime})||die;
+	$self->{upload_id}||confess;
+	$self->{fh}||die;
+	$self->{all_raised} = 0;
+	$self->{position} = 0;
+	$self->{th} = App::MtAws::TreeHash->new();
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

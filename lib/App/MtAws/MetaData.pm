@@ -20,6 +20,8 @@
 
 package App::MtAws::MetaData;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -98,28 +100,23 @@ understant how to decode it back.
 
 =cut
 
-my $meta_coder = do {
-	if ($JSON::XS::VERSION # line with VERSION should start with "if" for EU::MM parsing
-		>= 1.4) { # or better does not contain '='
-	  JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) # some additional abuse-protection
-	} else {
-	  JSON::XS->new->utf8; # it's still protected by length checking below
-	}
-};
+my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
+	JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) : # some additional abuse-protection
+	JSON::XS->new->utf8; # it's still protected by length checking below
 
 sub meta_decode
 {
-  my ($str) = @_;
-  my ($marker, $b64) = split(' ', $str);
-  if ($marker eq 'mt1') {
-  	return (undef, undef) unless length($b64) <= MAX_SIZE;
-  	return _decode_json(_decode_utf8(_decode_b64($b64)));
-  } elsif ($marker eq 'mt2') {
-  	return (undef, undef) unless length($b64) <= MAX_SIZE;
-  	return _decode_json(_decode_b64($b64));
-  } else {
-  	return (undef, undef);
-  }
+	my ($str) = @_;
+	my ($marker, $b64) = split(' ', $str);
+	if ($marker eq 'mt1') {
+		return (undef, undef) unless length($b64) <= MAX_SIZE;
+		return _decode_json(_decode_utf8(_decode_b64($b64)));
+	} elsif ($marker eq 'mt2') {
+		return (undef, undef) unless length($b64) <= MAX_SIZE;
+		return _decode_json(_decode_b64($b64));
+	} else {
+		return (undef, undef);
+	}
 }
 
 sub _decode_b64
@@ -148,7 +145,7 @@ sub _decode_json
 {
 	my ($str) = @_;
 	return unless defined $str;
-	my $h = eval { 
+	my $h = eval {
 		$meta_coder->decode($str)
 	};
 	if ($@ ne '') {

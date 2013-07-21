@@ -463,7 +463,7 @@ describe "command" => sub {
 			sub will_do {
 				my ($self) = @_;
 				if ($self->{toprint_a}) {
-				 	map { "Will ".$_ } @{ $self->{toprint_a} };
+					map { "Will ".$_ } @{ $self->{toprint_a} };
 				} elsif ($self->{toprint}) {
 					"Will ".$self->{toprint};
 				} elsif ($self->{empty}) {

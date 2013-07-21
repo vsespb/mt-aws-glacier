@@ -20,6 +20,8 @@
 
 package App::MtAws::JobIteratorProxy;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -28,17 +30,17 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{iterator}||die;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{iterator}||die;
 
-    $self->{jobs_h} = {};
-    $self->{jobs_a} = [];
+	$self->{jobs_h} = {};
+	$self->{jobs_a} = [];
 
-    $self->{pending}={};
-    $self->{task_autoincrement} = $self->{job_autoincrement} = $self->{iterator_end_of_data} =0;
-    bless $self, $class;
-    return $self;
+	$self->{pending}={};
+	$self->{task_autoincrement} = $self->{job_autoincrement} = $self->{iterator_end_of_data} =0;
+	bless $self, $class;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
@@ -46,7 +48,7 @@ sub get_task
 {
 	my ($self) = @_;
 
-	while (1) {
+	while () {
 		my $maxcnt = $self->{maxcnt}||30;
 		OUTER: for (1) {
 			for my $job (@{$self->{jobs_a}}) {

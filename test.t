@@ -31,17 +31,19 @@ use Config;
 # build requirements
 use JSON::XS ();
 use Test::Deep ();
+use Test::Simple ();
+use File::Temp ();
+use Test::More ();
 use Test::MockModule ();
 use LWP::UserAgent ();
 use DateTime ();
-use Test::Spec ();
-use LWP::Protocol::https ();
+use Test::Spec 0.46 ();
 use MIME::Base64;
 # for 5.8.x stock perl
 use Digest::SHA ();
 # /build requirements
 
-my $testplan = 57;
+my $testplan = 58;
 
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',

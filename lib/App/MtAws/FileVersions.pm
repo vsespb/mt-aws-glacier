@@ -20,6 +20,8 @@
 
 package App::MtAws::FileVersions;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;

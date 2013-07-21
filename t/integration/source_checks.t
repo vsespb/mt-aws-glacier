@@ -20,48 +20,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 use strict;
 use warnings;
-use utf8;
-use Test::More;
-use Carp;
+use Test::Tabs;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
-use TestUtils;
-use File::Find;
 
-warning_fatal();
-my @all;
-find ( { wanted => sub {
-	push @all, $_ if -f;
-}, no_chdir => 1 }, "$FindBin::RealBin/../../lib");
-
-ok scalar @all > 40;
-
-for my $file (@all) {
-	next unless $file =~ /\.pm$/;
-	next if $file =~ /\bMtAws\.pm$/;
-	open my $fh, "<", $file or confess;
-	local $_;
-	my $ok = 1;
-	while (<$fh>) {
-		# test with EU::MM prior to Y2009 regexps for version definitions
-		next unless /(?<!\\)([\$*])(([\w\:\']*)\bVERSION)\b.*\=/;
-
-		# Y2009 regexp
-		#next if /^\s*(if|unless)/;
-
-		print STDERR "Bad line $_\n";
-		$ok = 0;
-		last;
-
-	}
-	ok $ok, "EU::MM regexps ok: $file";
-}
-
-done_testing;
+my $basedir = "$FindBin::RealBin/../..";
+all_perl_files_ok( "$basedir/lib", "$basedir/t/unit", "$basedir/t/integration");
 
 1;
-

@@ -20,6 +20,8 @@
 
 package App::MtAws::ParentWorker;
 
+our $VERSION = '0.974';
+
 use lib 'lib';
 
 use strict;
@@ -34,21 +36,21 @@ no bytes;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{children}||die;
-    $self->{disp_select}||die;
-    $self->{options}||die;
-    @{$self->{freeworkers}} = keys %{$self->{children}};
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{children}||die;
+	$self->{disp_select}||die;
+	$self->{options}||die;
+	@{$self->{freeworkers}} = keys %{$self->{children}};
+	bless $self, $class;
+	return $self;
 }
 
 sub process_task
 {
 	my ($self, $ft, $journal) = @_;
 	my $task_list = {};
-	while (1) {
+	while () {
 		if ( @{$self->{freeworkers}} ) {
 			my ($result, $task) = $ft->get_task();
 			if ($result eq 'wait') {
@@ -98,7 +100,7 @@ sub wait_worker
 	
 		if ($result eq 'done') {
 			return ($task->{result}, $task->{attachmentref});
-		} 
+		}
 	}
 	return 0;
 }

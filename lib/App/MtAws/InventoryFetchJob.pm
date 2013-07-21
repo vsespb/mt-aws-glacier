@@ -20,6 +20,8 @@
 
 package App::MtAws::InventoryFetchJob;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -31,11 +33,11 @@ use JSON::XS;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{raised} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{raised} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

@@ -20,6 +20,8 @@
 
 package App::MtAws::DeleteVaultJob;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -29,12 +31,12 @@ use File::stat;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    $self->{name}||die;
-    $self->{raised} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{name}||die;
+	$self->{raised} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"

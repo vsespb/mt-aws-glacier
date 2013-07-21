@@ -20,6 +20,8 @@
 
 package App::MtAws::FileCreateJob;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -33,14 +35,14 @@ use App::MtAws::Utils;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    bless $self, $class;
-    defined($self->{filename}) || $self->{stdin} || confess "no filename nor stdin";
-    defined($self->{relfilename}) || confess "no relfilename";
-    $self->{partsize}||die;
-    $self->{raised} = 0;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	defined($self->{filename}) || $self->{stdin} || confess "no filename nor stdin";
+	defined($self->{relfilename}) || confess "no relfilename";
+	$self->{partsize}||die;
+	$self->{raised} = 0;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
@@ -54,7 +56,7 @@ sub get_task
 		
 		if ($self->{stdin}) {
 			$self->{mtime} = time();
-		    $self->{fh} = *STDIN;
+			$self->{fh} = *STDIN;
 		} else {
 			my $binaryfilename = binaryfilename $self->{filename};
 			my $filesize = -s $binaryfilename;

@@ -39,7 +39,7 @@ use warnings;
 use utf8;
 use 5.008008; # minumum perl version is 5.8.8
 
-our $VERSION = "0.973";
+our $VERSION = '0.974';
 our $VERSION_MATURITY = "beta";
 
 use constant ONE_MB => 1024*1024;
@@ -68,9 +68,48 @@ use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use PerlIO::encoding;
 
+sub check_module_versions
+{
+	for (keys %INC) {
+		if (/^App\/MtAws\/(.*)\.pmc?$/) {
+			my $module = "App::MtAws::$1";
+			my $got = $module->VERSION;
+			$got = 'undef' unless defined $got;
+			die "FATAL: wrong version of $module, expected $VERSION, found $got" unless $got eq $VERSION;
+		}
+	};
+}
+
+sub print_system_modules_version
+{
+	for my $module (sort keys %INC) {
+		if ($module !~ /^App\/MtAws/ && $module =~ /\.pmc?/) {
+			my $name = $module;
+			$name =~ s[/][::]g;
+			$name =~ s[\.pmc?$][];
+			my $ver = $name->VERSION;
+			$ver = 'undef' unless defined $ver;
+			print "$name\t$ver\t$INC{$module}\n";
+		}
+	}
+}
+
+sub load_all_dynamic_modules
+{
+	# we load here all dynamically loaded modules, to check that installation is correct.
+	require App::MtAws::SyncCommand;
+	require App::MtAws::RetrieveCommand;
+	require App::MtAws::CheckLocalHashCommand;
+	require App::MtAws::DownloadInventoryCommand;
+	require App::MtAws::CheckLocalHashCommand;
+	require App::MtAws::DownloadInventoryCommand;
+	require App::MtAws::RetrieveCommand;
+	check_module_versions;
+}
 
 sub main
 {
+	check_module_versions();
 	unless (defined eval {process(); 1;}) {
 		dump_error(q{});
 		exit(1);
@@ -97,7 +136,7 @@ sub process
 	if ($res->{warnings}) {
 		while (@{$res->{warnings}}) {
 			my ($warning, $warning_text) = (shift @{$res->{warnings}}, shift @{$res->{warning_texts}});
-			print STDERR "WARNING: $warning_text\n" unless $warning->{format} =~ /^(deprecated_option|deprecated_command|option_deprecated_for_command)$/; # TODO: temporary disable warning
+			print STDERR "WARNING: $warning_text\n"; # TODO: temporary disable warning
 		}
 	}
 	if ($res->{error_texts}) {
@@ -106,13 +145,13 @@ sub process
 		}
 		die exception cmd_error => 'Error in command line/config'
 	}
-	if ($action ne 'help') {
+	if ($action ne 'help' && $action ne 'version') {
 		$PerlIO::encoding::fallback = Encode::FB_QUIET;
 		binmode STDERR, ":encoding($options->{'terminal-encoding'})";
 		binmode STDOUT, ":encoding($options->{'terminal-encoding'})";
 	}
 
-	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'}, filenames_encoding => $options->{'filenames-encoding'} );
+	my %journal_opts = ( journal_encoding => $options->{'journal-encoding'} );
 
 	if ($action eq 'sync') {
 		die "Not a directory $options->{dir}" unless -d binaryfilename $options->{dir};
@@ -121,6 +160,7 @@ sub process
 			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'}, follow => $options->{'follow'});
 
 		require App::MtAws::SyncCommand;
+		check_module_versions;
 		App::MtAws::SyncCommand::run($options, $j);
 
 	} elsif ($action eq 'upload-file') {
@@ -134,12 +174,14 @@ sub process
 
 			$j->read_journal(should_exist => 0);
 
+			## no Test::Tabs
 			die <<"END"
 File with same name alredy exists in Journal.
 In the current version of mtglacier you are disallowed to store multiple versions of same file.
 Multiversion will be implemented in the future versions.
 END
 				if (defined $j->{journal_h}->{$relfilename});
+			## use Test::Tabs
 
 			if ($options->{'data-type'} ne 'filename') {
 				binmode STDIN;
@@ -171,9 +213,9 @@ END
 			my $archives = $j->{archive_h};
 			if (scalar keys %$archives) {
 				if ($options->{'dry-run'}) {
-						for (keys %$archives) {
-							print "Will DELETE archive $_ (filename $archives->{$_}{relfilename})\n"
-						}
+					for (keys %$archives) {
+						print "Will DELETE archive $_ (filename $archives->{$_}{relfilename})\n"
+					}
 				} else {
 					$j->open_for_write();
 					my @filelist = map { {archive_id => $_, relfilename =>$archives->{$_}->{relfilename} } } keys %{$archives};
@@ -192,6 +234,7 @@ END
 
 
 		require App::MtAws::RetrieveCommand;
+		check_module_versions;
 		App::MtAws::RetrieveCommand::run($options, $j);
 	} elsif ($action eq 'restore-completed') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
@@ -201,7 +244,7 @@ END
 
 			my $files = $j->{journal_h};
 			# TODO: refactor
-			my %filelist =	map { $_->{archive_id} => $_ }
+			my %filelist = map { $_->{archive_id} => $_ }
 				grep { !-f binaryfilename $_->{filename} }
 				map {
 					my $entry = $j->latest($_);
@@ -228,6 +271,7 @@ END
 	} elsif ($action eq 'check-local-hash') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 		require App::MtAws::CheckLocalHashCommand;
+		check_module_versions;
 		App::MtAws::CheckLocalHashCommand::run($options, $j);
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
@@ -240,6 +284,7 @@ END
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{'new-journal'});
 		require App::MtAws::DownloadInventoryCommand;
+		check_module_versions;
 		App::MtAws::DownloadInventoryCommand::run($options, $j);
 	} elsif ($action eq 'create-vault') {
 		$options->{concurrency} = 1;
@@ -256,12 +301,7 @@ END
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {
-
-		# we load here all dynamically loaded modules, to check that installation is correct.
-		require App::MtAws::CheckLocalHashCommand;
-		require App::MtAws::DownloadInventoryCommand;
-		require App::MtAws::RetrieveCommand;
-
+## no Test::Tabs
 		print <<"END";
 Usage: mtglacier.pl COMMAND [POSITIONAL ARGUMENTS] [OPTION]...
 
@@ -299,6 +339,7 @@ Commands:
 	  --set-rel-filename - Relative filename to use in Journal (if dir not specified)
 	  --stdin - Upload from STDIN
 	  --check-max-file-size - Specify to ensure there will be less than 10 000 parts
+	version - prints debug information about software installed
 Config format (text file):
 	key=YOURKEY
 	secret=YOURSECRET
@@ -306,9 +347,15 @@ Config format (text file):
 	region=us-east-1
 	# protocol=http (default) or https
 	protocol=http
-
 END
 
+## use Test::Tabs
+
+	} elsif ($action eq 'version') {
+		load_all_dynamic_modules();
+		print "mt-aws-glacier version: $VERSION $VERSION_MATURITY\n";
+		print "Perl Version: $]\n";
+		print_system_modules_version();
 	} else {
 		die "Wrong usage";
 	}

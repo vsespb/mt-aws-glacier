@@ -84,11 +84,11 @@ my $samples = [
 	[undef],
 	[undef, undef],
 	
-	{ 
+	{
 		'somekey1' => { 'keyA' => 'data1', 'keyB' => 'data2', 'keyC' => '99999' },
 		'somekey2' => { 'XkeyA' => '2734234', 'XkeyB' => "data2", 'XkeyC' => '76324' },
 	},
-	{ 
+	{
 	'somekey1' => { 'keyA' => [ 'data1', 'data2', '837'], 'keyB' => 'data2', 'keyC' => {'99999'=>undef}, 'z' => {undef => undef} },
 	'somekey2' => { 'XkeyA' => '2734234', 'XkeyB' => { '123' => "data1", "g1" => "x5", "c4" => "x4"}, 'XkeyC' => [undef] },
 },

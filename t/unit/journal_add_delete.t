@@ -38,7 +38,7 @@ warning_fatal();
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
 	$j->_add_filename({ relfilename => 'file1' });
 	cmp_deeply $j->{journal_h}, {file1 => { relfilename => 'file1' }}, "adding new file should work";
-} 
+}
 
 
 # _add_filename - working with FileVersions
@@ -52,7 +52,7 @@ warning_fatal();
 	ok $j->{journal_h}->{file1}, "should add second file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add second file - reference should be blessed into FileVersions';
 	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1], "should add second file - versions should be in right order";
-} 
+}
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
@@ -65,7 +65,7 @@ warning_fatal();
 	ok $j->{journal_h}->{file1}, "should add second file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add second file - reference should be blessed into FileVersions';
 	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1], "should add second file - versions should be in right order";
-} 
+}
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
@@ -79,7 +79,7 @@ warning_fatal();
 	ok $j->{journal_h}->{file1}, "should add third file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add third file - reference should be blessed into FileVersions';
 	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions should be in right order";
-} 
+}
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
@@ -94,7 +94,7 @@ warning_fatal();
 	ok $j->{journal_h}->{file1}, "should add third file - key is correct";
 	is ref $j->{journal_h}->{file1}, 'App::MtAws::FileVersions', 'should add third file - reference should be blessed into FileVersions';
 	cmp_deeply [$j->{journal_h}->{file1}->all()], [$obj2, $obj1, $obj3], "should add third file - versions should be in right order";
-} 
+}
 
 # latest()
 
@@ -112,7 +112,7 @@ warning_fatal();
 	is $j->latest('file2')->{archive_id}, 'a3', "latest should work with FileVersions when there are two elements";
 	$j->_add_filename($obj4);
 	is $j->latest('file4')->{archive_id}, 'a4', "latest should with multiple files";
-} 
+}
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
@@ -125,14 +125,14 @@ warning_fatal();
 	local *App::MtAws::FileVersions::latest = sub { $saved = shift; "TEST" };
 	is $j->latest('file2'), 'TEST', "latest call FileVersions latest()";
 	ok $saved->isa('App::MtAws::FileVersions'), 'latest call FileVersions latest() right';
-} 
+}
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
 	my $obj2 = { relfilename => 'file2', archive_id => 'a2', time => 42, mtime => undef };
 	$j->_add_filename($obj2);
 	ok ! defined eval { $j->latest('not-a-file'); 1 }, "should confess if file not found";
-} 
+}
 
 # _add_archive
 
@@ -199,7 +199,7 @@ warning_fatal();
 	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
 	cmp_deeply $j->{archive_h}, {'abc123' => { relfilename => 'file1', archive_id => 'abc123' }}, "adding file with filter should work";
 	is $called, 1, "should be called once";
-} 
+}
 
 {
 	my $filter= App::MtAws::Filter->new();
@@ -216,7 +216,7 @@ warning_fatal();
 	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
 	cmp_deeply $j->{archive_h}, {}, "should not add file if filter returned false";
 	is $called, 1, "should be called just once";
-} 
+}
 
 
 # _index_archives_as_files

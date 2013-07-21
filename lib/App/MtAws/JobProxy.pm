@@ -20,17 +20,19 @@
 
 package App::MtAws::JobProxy;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{job}||die;
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{job}||die;
+	bless $self, $class;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
@@ -41,7 +43,7 @@ sub get_task
 	
 	if ($r[0] eq 'ok replace'){
 		$self->{job} = $r[1];
-		 @r = $self->{job}->get_task(@a);
+		@r = $self->{job}->get_task(@a);
 	}
 	return @r;
 }

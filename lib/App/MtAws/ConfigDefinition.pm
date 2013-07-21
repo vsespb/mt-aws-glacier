@@ -20,6 +20,8 @@
 
 package App::MtAws::ConfigDefinition;
 
+our $VERSION = "0.974";
+
 use strict;
 use warnings;
 use utf8;
@@ -343,8 +345,8 @@ sub get_config
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
 
-		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https),	};
-		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https),	};
+		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https)};
+		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https)};
 
 		command 'sync' => sub {
 			validate(mandatory(

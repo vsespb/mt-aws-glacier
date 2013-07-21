@@ -29,7 +29,7 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::TreeHash;
 use Data::Dumper;
 
-$SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
+local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
 # eat_data_any_size
 

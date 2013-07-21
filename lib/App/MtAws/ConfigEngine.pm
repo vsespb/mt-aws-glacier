@@ -20,6 +20,8 @@
 
 package App::MtAws::ConfigEngine;
 
+our $VERSION = '0.974';
+
 use Getopt::Long 2.24 qw/:config no_ignore_case/ ;
 use Encode;
 use Carp;
@@ -34,8 +36,8 @@ require Exporter;
 use base qw/Exporter/;
 
 our @EXPORT = qw/option options positional command validation message
-				mandatory optional seen deprecated validate scope
-				present valid value lists raw_option custom error warning impose explicit/;
+	mandatory optional seen deprecated validate scope
+	present valid value lists raw_option custom error warning impose explicit/;
 
 our $context; # it's a not a global. always localized in code
 
@@ -198,6 +200,9 @@ sub parse_options
 	return { command => 'help', map { $_ => undef } qw/errors error_texts warnings warning_texts options/}
 		if (@ARGV && $ARGV[0] =~ /\b(help|h)\b/i);
 
+	return { command => 'version', map { $_ => undef } qw/errors error_texts warnings warning_texts options/}
+		if (@ARGV && $ARGV[0] =~ /^\-?\-?version$/i);
+
 	local $context = $self;
 
 	my @results;
@@ -258,10 +263,10 @@ sub parse_options
 				if $is_alias && $self->{deprecated_options}->{$_->{name}};
 
 			error('already_specified_in_alias', ($optref->{original_option} lt $_->{name}) ?
-					(a => $optref->{original_option}, b => $_->{name}) :
-					(b => $optref->{original_option}, a => $_->{name})
-				)
-					if ((defined $optref->{value}) && !$optref->{list} && $optref->{source} eq 'option' );
+				(a => $optref->{original_option}, b => $_->{name}) :
+				(b => $optref->{original_option}, a => $_->{name})
+			)
+				if ((defined $optref->{value}) && !$optref->{list} && $optref->{source} eq 'option' );
 
 			my $decoded;
 			if ($optref->{binary}) {
@@ -275,12 +280,12 @@ sub parse_options
 				if (defined $optref->{value}) {
 					push @{ $optref->{value} }, $decoded;
 				} else {
-					@{$optref}{qw/value source/} =	([ $decoded ], 'list');
+					@{$optref}{qw/value source/} = ([ $decoded ], 'list');
 				}
 				push @{$self->{option_list} ||= []}, { name => $optref->{name}, value => $decoded };
 			} else {
 				# fill from options from command line
-				@{$optref}{qw/value source original_option is_alias/} =	($decoded, 'option', $_->{name}, $is_alias);
+				@{$optref}{qw/value source original_option is_alias/} = ($decoded, 'option', $_->{name}, $is_alias);
 			}
 		}
 	}

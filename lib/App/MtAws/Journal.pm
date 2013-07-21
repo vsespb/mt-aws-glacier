@@ -20,6 +20,8 @@
 
 package App::MtAws::Journal;
 
+our $VERSION = '0.974';
+
 use strict;
 use warnings;
 use utf8;
@@ -38,6 +40,12 @@ use App::MtAws::FileVersions;
 sub new
 {
 	my ($class, %args) = @_;
+
+	my %checkargs = %args;
+	exists $checkargs{$_} && delete $checkargs{$_}
+		for qw/root_dir journal_file journal_encoding output_version leaf_optimization use_active_retrievals filter follow/;
+	confess "Unknown argument(s) to Journal constructor: ".join(', ', keys %checkargs) if %checkargs; # TODO: test
+
 	my $self = \%args;
 	bless $self, $class;
 
@@ -96,7 +104,7 @@ sub open_for_write
 	open_file($self->{append_file}, $self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding}) or
 		die exception journal_open_error => "Unable to open journal file %string filename% for writing, errno=%errno%",
 			filename => $self->{journal_file}, errno => $!;
-  	$self->{append_file}->autoflush();
+	$self->{append_file}->autoflush();
 }
 
 sub close_for_write
