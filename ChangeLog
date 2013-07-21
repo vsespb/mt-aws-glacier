@@ -1,10 +1,17 @@
+### 2013-07-21 v0.974 beta
+
   * Deprecations (deprecated options produce warning, and can start producing errors some day)
   --to-dir, --from-dir deprecated in faviour of --dir
   --from-vault, --to-vault deprecated in faviour of --vault
   --dir for command purge-vault
   --vault for command check-local-hash
 
-  * Documentation: Installation instructions polished (mostly for RHEL)
+  * Documentation: Installation instructions polished (for RHEL + warnings about manual installation)
+
+  * Enhancement: "version"/"--version" command, prints mtglacier version (probably useless, as it printed in any way),
+  and prints versions of all used modules. Useful to attach with bug-reports.
+
+  * Enhancement: mtglacier now checks versions of every loaded module runtime, in case of mess with install.
 
 ### 2013-07-13 v0.973 beta
 
