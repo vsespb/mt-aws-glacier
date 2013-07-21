@@ -20,7 +20,7 @@
 
 package App::MtAws::ParentWorker;
 
-our $VERSION = '0.973';
+our $VERSION = '0.974';
 
 use lib 'lib';
 
