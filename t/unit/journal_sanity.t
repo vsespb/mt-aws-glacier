@@ -229,7 +229,8 @@ ok ( App::MtAws::Utils::is_relative_filename('0/0'), "should allow last componen
 # again, stresstestingm just in case
 
 my @valid_components = (qw/ф 0 a abc µ µµ µФ/, "\\", "\\\\");
-my @spaces = map { ' ' x $_ } 1..4;
+my @spaces = map ' ' x $_, 1..4;
+
 my @dots = ('.', '..', '...', '....');
 for my $good (
 	@valid_components, @spaces,

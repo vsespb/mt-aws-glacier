@@ -238,7 +238,7 @@ warning_fatal();
 		push @saved, $args;
 	};
 	$j->_index_archives_as_files();
-	cmp_deeply [ sort map { $_->{archive_id} }@saved ], [sort qw/abc123 def123 xyz123/], "_index_archives_as_files should do right thing";
+	cmp_deeply [ sort map $_->{archive_id}, @saved ], [sort qw/abc123 def123 xyz123/], "_index_archives_as_files should do right thing";
 }
 
 {
@@ -255,7 +255,7 @@ warning_fatal();
 	is keys %{$j->{journal_h}}, 2, "should have two filenames";
 	cmp_deeply $j->{journal_h}{file2}, { relfilename => 'file2', archive_id => 'xyz123', time => 456  }, "should store file2 as hash";
 	is ref $j->{journal_h}{file1}, 'App::MtAws::FileVersions', "should store file1 versioned";
-	cmp_deeply [map { $_->{archive_id} } $j->{journal_h}->{file1}->all()], [qw/def123 abc123/], "should store file1 versioned";
+	cmp_deeply [map $_->{archive_id}, $j->{journal_h}->{file1}->all()], [qw/def123 abc123/], "should store file1 versioned";
 }
 
 

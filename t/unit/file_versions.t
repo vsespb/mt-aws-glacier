@@ -44,19 +44,19 @@ sub object
 
 {
 	my $cmp = \&App::MtAws::FileVersions::_cmp;
-	
+
 	for ([undef, undef], [777, 777]) {
 		is $cmp->(object(123, $_->[0]), object(456, $_->[1])), -1, "cmp should work when mtime is undef or equal and a.time < b.time";
 		is $cmp->(object(456, $_->[0]), object(123, $_->[1])), 1, "cmp should work when mtime is undef or equal and a.time > b.time";
 		is $cmp->(object(456, $_->[0]), object(456, $_->[1])), 0, "cmp should work when mtime is undef or equal and a.time == b.time";
 	}
-	
+
 	for ([123, 42], [42, 123]) {
 		is $cmp->(object(44, $_->[0]), object(44, $_->[1])), $_->[0] <=> $_->[1], "cmp should compare mtime if it's defined";
 		is $cmp->(object($_->[0], undef), object(44, $_->[1])), $_->[0] <=> $_->[1], "cmp should compare time if mtime missing in left operand";
 		is $cmp->(object(44, $_->[0]), object($_->[1]), undef), $_->[0] <=> $_->[1], "cmp should compare time if mtime missing in right operand";
 		is $cmp->(object($_->[0], undef), object($_->[1]), undef), $_->[0] <=> $_->[1], "cmp should compare time if mtime missing in both operands";
-		
+
 		is $cmp->(object($_->[0], undef), object($_->[1], $_->[0])), $_->[0] <=> $_->[1], "cmp should compare time with time if mtime match time";
 		is $cmp->(object($_->[1], $_->[0]), object($_->[0], undef)), $_->[1] <=> $_->[0], "cmp should compare time with time if mtime match time";
 	}
@@ -65,25 +65,25 @@ sub object
 		is $cmp->(object($_->[0], 123), object($_->[1], 456)), -1, "cmp should work when a.mtime < b.mtime and ignore time";
 		is $cmp->(object($_->[0], 456), object($_->[1], 123)), 1, "cmp should work when a.mtime > b.mtime and ignore time";
 	}
-	
+
 	# _cmp integration tests
-	
+
 	{
 		my @all = (-1,0,1,2);
 		for my $a (@all) { for my $b (@all, undef) { for my $c (@all) { for my $d (@all, undef) {
 			my $got = $cmp->(object($a, $b), object($c, $d));
-			
+
 			my $l = defined($b) ? $b : $a;
 			my $r = defined($d) ? $d : $c;
-			
+
 			my $expected;
 			if ($l == $r) {
 				$expected = $a <=> $c;
 			} else {
 				$expected = $l <=> $r;
 			}
-			
-			
+
+
 			my $bb = $b ? $b : 'undef';
 			my $dd = $d ? $d : 'undef';
 			is $got, $expected, "_cmp ($a, $bb), ($c, $dd) = $expected";
@@ -132,9 +132,9 @@ sub object
 
 # same tests as above, but for N elements
 for (1..10) {
-	my @elements = map { $_* 10 } 1..$_;
-	my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
-	
+	my @elements = map $_* 10, 1..$_;
+	my $v = bless [map object($_), @elements], 'App::MtAws::FileVersions';
+
 	for (my $i = 0; $i <= $#elements; ++$i) {
 		is $v->_find(object($elements[$i])), $i, "find $_ elements, should return after $i";
 		if ($i > 0) {
@@ -151,10 +151,10 @@ for (1..10) {
 # same "stresstest", but some elements have repeations
 {
 	for my $before (1..6) { for my $same (1..6) { for my $after (1..6) {
-		my @elements = ( (map { $_* 10 } 1..$before), (($before + 1) * 10 ) x $same, (map { ($before + 1) * 10 + $_* 10 } 1..$after) );
+		my @elements = ( (map $_* 10, 1..$before), (($before + 1) * 10 ) x $same, (map { ($before + 1) * 10 + $_* 10 } 1..$after) );
 		my $ok = 1;
 		$ok &&= (scalar @elements) == $before + $same + $after;
-		my $v = bless [map { object($_) } @elements], 'App::MtAws::FileVersions';
+		my $v = bless [map object($_), @elements], 'App::MtAws::FileVersions';
 		my %seen;
 		for (my $i = 0; $i <= $#elements; ++$i) {
 			next if $seen{$elements[$i]}++; # we have some repetions (array produced with $same)
@@ -254,14 +254,14 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 			my $aid = 'abc123';
 			$v->add(object(123, undef, 'anotherid'));
 			$v->add(object(456, undef, $aid));
-			
+
 			my @ids = create_objects($v, $_-2);
-			
+
 			is scalar @$v, $_, "should contain $_ elements";
-			cmp_deeply [map { $_->{archive_id} } @$v], ['anotherid', @ids, $aid];
+			cmp_deeply [map $_->{archive_id}, @$v], ['anotherid', @ids, $aid];
 			ok $v->delete_by_archive_id($aid);
 			is scalar @$v, $_ - 1, "deletion of last element should work in $_-items array";
-			cmp_deeply [map { $_->{archive_id} } @$v], ['anotherid', @ids];
+			cmp_deeply [map $_->{archive_id}, @$v], ['anotherid', @ids];
 			ok !$v->delete_by_archive_id('nonexistant');
 		}
 		{
@@ -269,14 +269,14 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 			my $aid = 'abc123';
 			$v->add(object(123, undef, $aid));
 			$v->add(object(456, undef, 'anotherid'));
-			
+
 			my @ids = create_objects($v, $_-2);
-			
+
 			is scalar @$v, $_, "should contain $_ elements";
-			cmp_deeply [map { $_->{archive_id} } @$v], [$aid, @ids, 'anotherid'];
+			cmp_deeply [map $_->{archive_id}, @$v], [$aid, @ids, 'anotherid'];
 			ok $v->delete_by_archive_id($aid);
 			is scalar @$v, $_ - 1, "deletion of first element should work in $_-items array";
-			cmp_deeply [map { $_->{archive_id} } @$v], [@ids, 'anotherid'];
+			cmp_deeply [map $_->{archive_id}, @$v], [@ids, 'anotherid'];
 			ok !$v->delete_by_archive_id('nonexistant');
 		}
 	}
@@ -305,17 +305,17 @@ for (100, 200, 201, 211, 300, 310, 311, 321, 330, 500) {
 	$v->add(object(7, undef, 'f1'));
 	$v->add(object(8, 5, 'f2')); # loaded later than f1, but we know mtime of f2 is before f1 is loaded
 	# anyway we ignore mtime and think who is later loaded is older
-	
-	cmp_deeply [map { $_->{archive_id} } @$v], [qw/f2 f1/];
-	
+
+	cmp_deeply [map $_->{archive_id}, @$v], [qw/f2 f1/];
+
 }
 
 {
 	my $v = App::MtAws::FileVersions->new();
 	$v->add(object(7, undef, 'f1'));
 	$v->add(object(7, 5, 'f2'));
-	
-	cmp_deeply [map { $_->{archive_id} } @$v], [qw/f2 f1/], "if at least one mtime missed, and time is same, we compare mtime with time"
+
+	cmp_deeply [map $_->{archive_id}, @$v], [qw/f2 f1/], "if at least one mtime missed, and time is same, we compare mtime with time"
 }
 1;
 

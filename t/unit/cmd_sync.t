@@ -53,8 +53,8 @@ describe "command" => sub {
 	describe "modified processing" => sub {
 
 		my @all_detect = qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/; # TODO: fetch from ConfigDefinition
-		my @detect_with_mtime = grep { /mtime/ } @all_detect;
-		my @detect_without_mtime = grep { ! /mtime/ } @all_detect;
+		my @detect_with_mtime = grep /mtime/, @all_detect;
+		my @detect_without_mtime = grep !/mtime/, @all_detect;
 
 		describe "is_mtime_differs" => sub {
 			it "should work when mtime same" => sub {
@@ -104,7 +104,7 @@ describe "command" => sub {
 			};
 
 			it "should almost always return create if file size differs" => sub {
-				for (grep { $_ ne 'always-positive'} @all_detect) {
+				for (grep $_ ne 'always-positive', @all_detect) {
 					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
 					App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
 					is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'),
@@ -463,7 +463,7 @@ describe "command" => sub {
 			sub will_do {
 				my ($self) = @_;
 				if ($self->{toprint_a}) {
-					map { "Will ".$_ } @{ $self->{toprint_a} };
+					map "Will ".$_ , @{ $self->{toprint_a} };
 				} elsif ($self->{toprint}) {
 					"Will ".$self->{toprint};
 				} elsif ($self->{empty}) {
@@ -595,7 +595,7 @@ describe "command" => sub {
 
 				expect_journal_close;
 				$j->{listing}{existing} = [];
-				$j->{listing}{new} = [ map { { relfilename => $_ }} @files ];
+				$j->{listing}{new} = [ map { relfilename => $_ }, @files ];
 
 				App::MtAws::SyncCommand::run($options, $j);
 			};
@@ -718,7 +718,7 @@ describe "command" => sub {
 						expect_process_task($j, sub {
 							my ($job) = @_;
 							ok $job->isa('App::MtAws::JobListProxy');
-							cmp_deeply [ map { $_->{iterator}->() } @{ $job->{jobs} } ], [
+							cmp_deeply [ map $_->{iterator}->(), @{ $job->{jobs} } ], [
 								$n ? ('sub_next_new') : (),
 								$r ? ('sub_next_modified') : (),
 								$d ? ('sub_next_missing') : (),
@@ -775,7 +775,7 @@ describe "command" => sub {
 
 					App::MtAws::SyncCommand::run($options, $j);
 
-					cmp_deeply [ map { $_->() } @dry_run_args ], [
+					cmp_deeply [ map $_->(), @dry_run_args ], [
 						$n ? ('sub_next_new') : (),
 						$r ? ('sub_next_modified') : (),
 						$d ? ('sub_next_missing') : (),
