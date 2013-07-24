@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 52;
+use Test::More tests => 53;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -76,6 +76,7 @@ sub test_read_write
 	ok $perms & 0200, "file should be writable";
 	ok $filename =~ /__mtglacier_temp/, 'file should have __mtglacier_temp in name';
 	ok $filename =~ /\.tmp$/, 'file should end with .tmp extension';
+	ok $filename =~ /$$/, 'file should contain PID';
 	ok $filename =~ /^\Q$rootdir\E\/__mtglacier_temp/, "file should be inside supplied directory";
 	ok open(my $f, ">", $filename), "open should work";
 	my $data_sample = "abcdef\n";

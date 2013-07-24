@@ -46,7 +46,7 @@ sub _init
 	my ($self) = @_;
 	my $binary_dirname = binaryfilename $self->{dir};
 	mkpath($binary_dirname);
-	$self->{tmp} = new File::Temp(TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
+	$self->{tmp} = File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
 	my $binary_tempfile = $self->{tmp}->filename;
 	$self->{character_tempfile} = characterfilename($binary_tempfile);
 	 # it's important to close file, it's filename can be passed to different process, and it can be locked
