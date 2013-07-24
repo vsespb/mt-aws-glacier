@@ -169,6 +169,10 @@
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
          "version" : "0.974"
       },
+      "App::MtAws::IntermediateFile" : {
+         "file" : "lib/App/MtAws/IntermediateFile.pm",
+         "version" : "0.974"
+      },
       "App::MtAws::InventoryDownloadJob" : {
          "file" : "lib/App/MtAws/InventoryDownloadJob.pm",
          "version" : "0.974"
