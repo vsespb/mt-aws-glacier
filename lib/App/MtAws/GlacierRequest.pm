@@ -47,10 +47,10 @@ sub new
 	my ($class, $options) = @_;
 	my $self = {};
 	bless $self, $class;
-	
+
 	defined($self->{$_} = $options->{$_})||confess $_ for (qw/region key secret protocol timeout/);
 	defined($options->{$_}) and $self->{$_} = $options->{$_} for (qw/vault token/); # TODO: validate vault later
-	
+
 	confess unless $self->{protocol} =~ /^https?$/; # we check external data here, even if it's verified in the beginning, especially if it's used to construct URL
 	$self->{service} ||= 'glacier';
 	$self->{account_id} = '-';
@@ -74,16 +74,16 @@ sub add_header
 sub create_multipart_upload
 {
 	my ($self, $partsize, $relfilename, $mtime) = @_;
-	
+
 	defined($relfilename)||confess;
 	defined($mtime)||confess;
 	$partsize||confess;
-	
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads";
 	$self->{method} = 'POST';
 
 	$self->add_header('x-amz-part-size', $partsize);
-	
+
 	# currently meat_encode only returns undef if filename is too big
 	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime)) or
 		die exception 'file_name_too_big' =>
@@ -91,7 +91,7 @@ sub create_multipart_upload
 		"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.",
 		filename => $relfilename;
 	$self->add_header('x-amz-archive-description', $self->{description});
-	
+
 	my $resp = $self->perform_lwp();
 	return $resp ? $resp->header('x-amz-multipart-upload-id') : undef;
 }
@@ -99,14 +99,14 @@ sub create_multipart_upload
 sub upload_part
 {
 	my ($self, $uploadid, $dataref, $offset, $part_final_hash) = @_;
-	
+
 	$uploadid||confess;
 	($self->{dataref} = $dataref)||confess;
 	defined($offset)||confess;
 	($self->{part_final_hash} = $part_final_hash)||confess;
-	
+
 	$self->_calc_data_hash;
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$uploadid";
 	$self->{method} = 'PUT';
 	$self->add_header('Content-Type', 'application/octet-stream');
@@ -115,7 +115,7 @@ sub upload_part
 	$self->add_header('x-amz-sha256-tree-hash', $self->{part_final_hash});
 	my ($start, $end) = ($offset, $offset+length(${$self->{dataref}})-1 );
 	$self->add_header('Content-Range', "bytes ${start}-${end}/*");
-	
+
 	my $resp = $self->perform_lwp();
 	return $resp ? 1 : undef;
 }
@@ -128,7 +128,7 @@ sub finish_multipart_upload
 	$uploadid||confess;
 	$size||confess;
 	$treehash||confess;
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/multipart-uploads/$uploadid";
 	$self->{method} = 'POST';
 	$self->add_header('x-amz-sha256-tree-hash', $treehash);
@@ -144,10 +144,10 @@ sub delete_archive
 	my ($self, $archive_id) = @_;
 
 	$archive_id||confess;
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/archives/$archive_id";
 	$self->{method} = 'DELETE';
-	
+
 	my $resp = $self->perform_lwp();
 	return $resp ? 1 : undef;
 }
@@ -156,9 +156,9 @@ sub delete_archive
 sub retrieve_archive
 {
 	my ($self, $archive_id) = @_;
-	
+
 	$archive_id||confess;
-   
+
 	$self->add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
 	$self->{method} = 'POST';
@@ -174,7 +174,7 @@ END
 
 	# use Test::Tabs
 	$self->{dataref} = \$body;
-	
+
 	my $resp = $self->perform_lwp();
 	return $resp ? $resp->header('x-amz-job-id') : undef;
 }
@@ -182,7 +182,7 @@ END
 sub retrieve_inventory
 {
 	my ($self) = @_;
-	
+
 	$self->add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
 	$self->{method} = 'POST';
@@ -197,7 +197,7 @@ sub retrieve_inventory
 END
 	# use Test::Tabs
 	$self->{dataref} = \$body;
-	
+
 	my $resp = $self->perform_lwp();
 	return $resp ? $resp->header('x-amz-job-id') : undef;
 }
@@ -205,12 +205,12 @@ END
 sub retrieval_fetch_job
 {
 	my ($self, $marker) = @_;
-	
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
 
 	$self->{params} = { completed => 'true' };
 	$self->{params}->{marker} = $marker if defined($marker);
-	
+
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
@@ -222,14 +222,14 @@ sub retrieval_fetch_job
 sub retrieval_download_job
 {
 	my ($self, $jobid, $filename, $size, $journal_treehash) = @_;
-	
+
 	$journal_treehash||confess;
 	$jobid||confess;
 	defined($filename)||confess;
 	$size or confess "no size";
 
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	
+
 	# TODO: move to ChildWorker?
 	my $dirname = dirname($filename);
 	my $binary_dirname = binaryfilename $dirname;
@@ -248,7 +248,7 @@ sub retrieval_download_job
 
 	$self->{writer}->treehash->calc_tree();
 	my $th = $self->{writer}->treehash->get_final_hash();
-	
+
 	$reported_th eq $th or
 		die exception 'treehash_mismatch_full' =>
 		'TreeHash for received file %string filename% (full file) does not match. '.
@@ -268,7 +268,7 @@ sub retrieval_download_job
 	undef $tmp;
 	rename $binary_tempfile, binaryfilename($filename) or confess "cannot rename file";
 	chmod((0666 & ~umask), binaryfilename($filename)) or confess;
-	
+
 	return $resp ? 1 : undef;
 }
 
@@ -280,9 +280,9 @@ sub segment_download_job
 	defined($position) or confess "no position";
 	$size or confess "no size";
 	defined($filename)||confess;
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	
+
 	$self->{expected_size} = $size;
 	$self->{writer} = App::MtAws::HttpSegmentWriter->new(tempfile => $tempfile, position => $position, filename => $filename);
 
@@ -292,25 +292,25 @@ sub segment_download_job
 
 	my $resp = $self->perform_lwp();
 	$resp && $resp->code == 206 or confess;
-	
+
 	my $reported_th = $resp->header('x-amz-sha256-tree-hash') or confess;
 	$self->{writer}->treehash->calc_tree();
 	my $th = $self->{writer}->treehash->get_final_hash();
-	
+
 	$reported_th eq $th or
 		die exception 'treehash_mismatch_segment' =>
 		'TreeHash for received segment of file %string filename% (position %position%, size %size%) does not match. '.
 		'TreeHash reported by server %reported%, Calculated TreeHash %calculated%',
 		calculated => $th, reported => $reported_th, filename => $filename, position => $position, size => $size;
 		# TODO: better report relative filename
-	
+
 	my ($start, $end, $len) = $resp->header('Content-Range') =~ m!bytes\s+(\d+)\-(\d+)\/(\d+)!;
 
 	confess unless defined($start) && defined($end) && $len;
 	confess unless $end >= $start;
 	confess unless $position == $start;
 	confess unless $end_position == $end;
-	
+
 	return $resp ? 1 : undef; # $resp->decoded_content is undefined here as content_file used
 }
 
@@ -319,12 +319,12 @@ sub retrieval_download_to_memory
 	my ($self, $jobid) = @_;
 
 	$jobid||confess;
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
-	
+
 	$resp or confess;
 	return $resp->content;
 }
@@ -335,7 +335,7 @@ sub download_inventory
 	my ($self, $jobid) = @_;
 
 	$jobid||confess;
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 	$self->{method} = 'GET';
 
@@ -349,7 +349,7 @@ sub create_vault
 	my ($self, $vault_name) = @_;
 
 	confess unless defined($vault_name);
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$vault_name";
 	$self->{method} = 'PUT';
 
@@ -362,7 +362,7 @@ sub delete_vault
 	my ($self, $vault_name) = @_;
 
 	confess unless defined($vault_name);
-   
+
 	$self->{url} = "/$self->{account_id}/vaults/$vault_name";
 	$self->{method} = 'DELETE';
 
@@ -387,50 +387,50 @@ sub _calc_data_hash
 sub _sign
 {
 	my ($self) = @_;
-	
+
 	my $now = time();
-	
+
 	$self->{last_request_time} = $now;
-	
+
 	my $date8601 = strftime("%Y%m%dT%H%M%SZ", gmtime($now)); # TODO: use same timestamp when writing to journal
 	my $datestr = strftime("%Y%m%d", gmtime($now));
-	 
-	
+
+
 	$self->{req_headers} = [
 		{ name => 'x-amz-date', value => $date8601 },
 	];
-	
-	
+
+
 	# getting canonical URL
-	
+
 	my @all_headers = sort { $a->{name} cmp $b->{name} } (@{$self->{headers}}, @{$self->{req_headers}});
-	
-	
+
+
 	my $canonical_headers = join ("\n", map { lc($_->{name}).":".trim($_->{value}) } @all_headers);
 	my $signed_headers = join (';', map { lc($_->{name}) } @all_headers);
-	
+
 	my $bodyhash = $self->{data_sha256} ?
 		$self->{data_sha256} :
 		( $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('') );
-	
+
 	$self->{params_s} = $self->{params} ? join ('&', map { "$_=$self->{params}->{$_}" } sort keys %{$self->{params}}) : ""; # TODO: proper URI encode
 	my $canonical_query_string = $self->{params_s};
-	
+
 	my $canonical_url = join("\n", $self->{method}, $self->{url}, $canonical_query_string, $canonical_headers, "", $signed_headers, $bodyhash);
 	my $canonical_url_hash = sha256_hex($canonical_url);
 
-	
+
 	# /getting canonical URL
-	
+
 	my $credentials = "$datestr/$self->{region}/$self->{service}/aws4_request";
 
 	my $string_to_sign = join("\n", "AWS4-HMAC-SHA256", $date8601, $credentials, $canonical_url_hash);
 
 	my ($kSigning, $kSigning_hex) = get_signature_key($self->{secret}, $datestr, $self->{region}, $self->{service});
 	my $signature = hmac_sha256_hex($string_to_sign, $kSigning);
-	
-	
-	
+
+
+
 	my $auth = "AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature";
 
 	push @{$self->{req_headers}}, { name => 'Authorization', value => $auth};
@@ -459,7 +459,7 @@ sub throttle
 sub perform_lwp
 {
 	my ($self) = @_;
-	
+
 	for my $i (1.._max_retries) {
 		undef $self->{last_retry_reason};
 		$self->_sign();
