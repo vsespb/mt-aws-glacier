@@ -24,8 +24,9 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 42;
+use Test::More tests => 52;
 use FindBin;
+use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Data::Dumper;
 use TestUtils;
@@ -36,6 +37,24 @@ my $TEMP = File::Temp->newdir();
 my $rootdir = $TEMP->dirname();
 
 warning_fatal();
+
+sub slurp
+{
+	open(my $f, "<", shift) or confess;
+	my $got_data = do { local $/; <$f> };
+	close $f;
+	return $got_data;
+}
+
+sub test_read_write
+{
+	my ($filename) = @_;
+	ok open(my $f, ">", $filename), "open should work";
+	my $data_sample = "abcdef\n";
+	print $f $data_sample;
+	ok close($f), "close should work";
+	is slurp($filename), $data_sample, "data should be readable";
+}
 
 {
 	ok ! defined eval { App::MtAws::IntermediateFile->new(); 1; }, "should confess without dir";
@@ -58,6 +77,11 @@ warning_fatal();
 	ok $filename =~ /__mtglacier_temp/, 'file should have __mtglacier_temp in name';
 	ok $filename =~ /\.tmp$/, 'file should end with .tmp extension';
 	ok $filename =~ /^\Q$rootdir\E\/__mtglacier_temp/, "file should be inside supplied directory";
+	ok open(my $f, ">", $filename), "open should work";
+	my $data_sample = "abcdef\n";
+	print $f $data_sample;
+	ok close($f), "close should work";
+	is slurp($filename), $data_sample, "data should be readable";
 }
 
 {
@@ -66,11 +90,30 @@ warning_fatal();
 	ok -f $filename, "should create temp file";
 	ok -e $filename, "file exists";
 
+	ok open(my $f, ">", $filename), "open should work";
+	my $data_sample = "abcdefxyz\n";
+	print $f $data_sample;
+	ok close($f), "close should work";
+
 	my $permanent_name = "$rootdir/permanent_file1";
 	ok ! -e $permanent_name, "assume permanent file not yet exists";
 	$I->make_permanent($permanent_name);
 
 	is ( (stat($permanent_name)->mode & 07777), (0666 & ~umask), "file should have default permissions");
+	is slurp($permanent_name), $data_sample, "data should be readable";
+}
+
+{
+	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
+	my $filename = $I->filename;
+	ok -f $filename, "should create temp file";
+
+	my $permanent_name = "$rootdir/permanent_file3";
+	ok ! -e $permanent_name, "assume permanent file not yet exists";
+	$I->make_permanent($permanent_name);
+	ok ! defined eval { $I->make_permanent($permanent_name."x"); 1; }, "should confess if make_permanent called twice";
+	like $@, qr/file already permanent or not initialized/, "should confess with right message if make_permanent called twice";
+
 }
 
 {
@@ -113,6 +156,10 @@ for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 
 }
 
+
+# TODO: test with fork (twice)
+# TODO: test it throws exceptions (like perms errors)
+# TODO: binaryfilenames stuff
 
 1;
 
