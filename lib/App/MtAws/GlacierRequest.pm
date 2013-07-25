@@ -221,19 +221,16 @@ sub retrieval_fetch_job
 # TODO: rename
 sub retrieval_download_job
 {
-	my ($self, $jobid, $filename, $size, $journal_treehash) = @_;
+	my ($self, $jobid, $relfilename, $tempfile, $size, $journal_treehash) = @_;
 
 	$journal_treehash||confess;
 	$jobid||confess;
-	defined($filename)||confess;
+	defined($tempfile)||confess;
+	defined($relfilename)||confess;
 	$size or confess "no size";
 
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
 
-	# TODO: move to ChildWorker?
-	my $dirname = dirname($filename);
-	my $i_tmp = App::MtAws::IntermediateFile->new(dir => $dirname);
-	my $tempfile = $i_tmp->filename;
 	$self->{expected_size} = $size;
 	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $tempfile);
 
@@ -249,18 +246,16 @@ sub retrieval_download_job
 		die exception 'treehash_mismatch_full' =>
 		'TreeHash for received file %string filename% (full file) does not match. '.
 		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
-		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $filename;
+		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $relfilename;
 		# TODO: better report relative filename
 
 	$reported_th eq $journal_treehash or
 		die exception 'treehash_mismatch_journal' =>
 		'TreeHash for received file %string filename% (full file) does not match TreeHash in journal. '.
 		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
-		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $filename;
+		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $relfilename;
 		# TODO: better report relative filename
 
-	# TODO: move to ChildWorker?
-	$i_tmp->make_permanent($filename);
 
 	return $resp ? 1 : undef;
 }

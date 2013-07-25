@@ -62,7 +62,8 @@ describe "retrieval_download_job" => sub {
 			$self->{writer}->finish();
 			return $response;
 		});
-		$C->process_task('retrieval_download_job', { jobid => 'myjobid', filename => $data_filename, size => $data_size, treehash => $data_treehash}, undef);
+		$C->process_task('retrieval_download_job', { jobid => 'myjobid', relfilename => 'targed_file.txt',
+			filename => $data_filename, size => $data_size, treehash => $data_treehash}, undef);
 
 		is ( (stat($data_filename)->mode & 07777), (0666 & ~umask), "file should have default permissions");
 		open(my $f, "<", $data_filename) or confess;
