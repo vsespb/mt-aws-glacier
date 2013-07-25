@@ -126,7 +126,7 @@ sub test_read_write
 	my $filename = $I->filename;
 	ok -f $filename, "should create temp file";
 	ok -e $filename, "file exists";
-	my $permanent_name = "$rootdir/permanent_file2	";
+	my $permanent_name = "$rootdir/permanent_file2";
 	ok ! -e $permanent_name, "assume permanent file not yet exists";
 	$I->make_permanent($permanent_name, mtime => 1234567);
 
