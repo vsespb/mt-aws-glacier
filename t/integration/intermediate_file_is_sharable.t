@@ -47,8 +47,6 @@ with_fork
 		ok -f $filename, "file is file";
 		ok -r $filename, "file is readable";
 
-		alarm 30; # protect from hang in case our test fail
-
 		ok open(my $f, ">", $filename), "file opened";
 		ok flock($f, LOCK_EX), "file locked";
 		ok ((print $f $data_sample), "data written");
@@ -59,8 +57,6 @@ with_fork
 		my $got_data = do { local $/; <$in> };
 		ok defined($got_data), "we got data";
 		ok close($in), "file closed";
-
-		alarm 0;
 
 		is $got_data, $data_sample, "file acts well";
 	},

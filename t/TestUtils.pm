@@ -40,6 +40,8 @@ capture_stdout capture_stderr assert_raises_exception ordered_test test_fast_ok 
 
 use Test::Deep; # should be last line, after EXPORT stuff, otherwise versions ^(0\.089|0\.09[0-9].*) do something nastly with exports
 
+use constant ALARM_FOR_FORK_TESTS => 30;
+
 sub warning_fatal
 {
 	$SIG{__WARN__} = sub {confess "Termination after a warning: $_[0]"};
@@ -194,7 +196,9 @@ sub with_fork(&&)
 		$tochild->blocking(1);
 		binmode $tochild;
 
+		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
 		$parent_cb->($tochild, $fromchild);
+		alarm 0;
 		kill 'USR1', $pid;
 		while(waitpid($pid, 0) != -1){ };
 	} else {
@@ -208,7 +212,9 @@ sub with_fork(&&)
 		$tochild->blocking(1);
 		binmode $tochild;
 
+		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
 		$child_cb->($tochild, $fromchild);
+		alarm 0;
 		exit(0);
 	}
 }
