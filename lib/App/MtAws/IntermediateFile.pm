@@ -73,7 +73,9 @@ sub make_permanent
 	my $binary_target_filename = binaryfilename($filename);
 	my $character_tempfile = delete $self->{character_tempfile} or confess "file already permanent or not initialized";
 	$self->{tmp}->unlink_on_destroy(0);
-	rename binaryfilename($character_tempfile), $binary_target_filename or confess "cannot rename file $character_tempfile to $filename";
+	rename binaryfilename($character_tempfile), $binary_target_filename or
+		die exception "cannot_rename_file" => "Cannot rename file %string from% to %string to%",
+		from => $character_tempfile, to => $filename;
 	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $filename";
 	undef $self->{tmp};
 }

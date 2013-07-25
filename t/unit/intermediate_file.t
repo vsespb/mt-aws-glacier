@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 83;
+use Test::More tests => 90;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -190,6 +190,22 @@ SKIP: {
 	is get_exception->{dir}, "$dir/b/c", "mkpath correct dir for exception";
 }
 
+SKIP: {
+	skip "Cannot run under root", 7 unless $>;
+	my $dir = "$rootdir/testpermanent";
+	ok ! -e $dir, "not yet exists";
+	ok mkpath($dir), "path is created";
+	ok -d $dir, "path is created";
+	my $dest = "$dir/dest";
+	mkdir "$dir/dest";
+	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
+	my $tmpfile = $I->filename;
+	ok ! defined eval { $I->make_permanent($dest); 1 }, "should throw exception if cant rename files";
+	is get_exception->{code}, 'cannot_rename_file', "correct exception code";
+	is get_exception->{from}, $tmpfile, "correct exception 'from'";
+	is get_exception->{to}, $dest, "correct exception 'to'";
+}
+
 {
 	is get_filename_encoding, 'UTF-8', "assume utf8 encoding is set";
 	my $dir = "$rootdir/тест2";
@@ -199,7 +215,7 @@ SKIP: {
 }
 
 SKIP: {
-	skip "Test cannot be performed on character-oriented filesyste", 5 unless can_work_with_non_utf8_files;
+	skip "Test cannot be performed on character-oriented filesystem", 5 unless can_work_with_non_utf8_files;
 	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
 	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
 	my $dir = "$rootdir/тест1";
