@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 107;
+use Test::More tests => 108;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -61,30 +61,36 @@ sub test_read_write
 }
 
 {
-	ok ! defined eval { App::MtAws::IntermediateFile->new(); 1; }, "should confess without dir";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(); 1; }, "should confess without target_file";
 }
 
 {
 	no warnings 'redefine';
 	local *App::MtAws::IntermediateFile::_init = sub {};
-	App::MtAws::IntermediateFile->new(dir => 0);
-	ok "should work when dir is FALSE";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(target_file => 123, dir => 456); 1; }, "should confess with extra arguments";
+}
+
+{
+	no warnings 'redefine';
+	local *App::MtAws::IntermediateFile::_init = sub {};
+	App::MtAws::IntermediateFile->new(target_file => 0);
+	ok "should work when target_file is FALSE";
 }
 
 {
 	my $I = bless {}, 'App::MtAws::IntermediateFile';
-	ok ! defined eval { $I->filename; 1 }, "should confess if filename missing";
+	ok ! defined eval { $I->tempfilename; 1 }, "should confess if filename missing";
 }
 
 {
 	my $I = bless {}, 'App::MtAws::IntermediateFile';
-	ok ! defined eval { $I->make_permanent("$rootdir/somefile", x => 1); 1 }, "should confess if extra args provided";
+	ok ! defined eval { $I->make_permanent(1); 1 }, "should confess if extra args provided";
 	like $@, qr/unknown arguments/, "should confess with right message";
 }
 
 {
-	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-	my $filename = $I->filename;
+	my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/target1");
+	my $filename = $I->tempfilename;
 	ok -f $filename, "should create temp file";
 	ok -e $filename, "file exists";
 	my $perms = stat($filename)->mode & 07777;
@@ -103,8 +109,9 @@ sub test_read_write
 }
 
 {
-	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-	my $filename = $I->filename;
+	my $permanent_name = "$rootdir/permanent_file1";
+	my $I = App::MtAws::IntermediateFile->new(target_file => $permanent_name);
+	my $filename = $I->tempfilename;
 	ok -f $filename, "should create temp file";
 	ok -e $filename, "file exists";
 
@@ -113,56 +120,55 @@ sub test_read_write
 	print $f $data_sample;
 	ok close($f), "close should work";
 
-	my $permanent_name = "$rootdir/permanent_file1";
 	ok ! -e $permanent_name, "assume permanent file not yet exists";
-	$I->make_permanent($permanent_name);
+	$I->make_permanent;
 
 	is ( (stat($permanent_name)->mode & 07777), (0666 & ~umask), "file should have default permissions");
 	is slurp($permanent_name), $data_sample, "data should be readable";
 }
 
 {
-	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-	my $filename = $I->filename;
+	my $permanent_name = "$rootdir/permanent_file2";
+	my $I = App::MtAws::IntermediateFile->new(target_file => $permanent_name, mtime => 1234567);
+	my $filename = $I->tempfilename;
 	ok -f $filename, "should create temp file";
 	ok -e $filename, "file exists";
-	my $permanent_name = "$rootdir/permanent_file2";
 	ok ! -e $permanent_name, "assume permanent file not yet exists";
-	$I->make_permanent($permanent_name, mtime => 1234567);
+	$I->make_permanent;
 
 	is stat($permanent_name)->mtime, 1234567, "it should set mtime";
 }
 
 {
-	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-	my $filename = $I->filename;
+	my $permanent_name = "$rootdir/permanent_file4";
+	my $I = App::MtAws::IntermediateFile->new(target_file => $permanent_name, mtime => undef);
+	my $filename = $I->tempfilename;
 	ok -f $filename, "should create temp file";
 	ok -e $filename, "file exists";
-	my $permanent_name = "$rootdir/permanent_file4";
 	ok ! -e $permanent_name, "assume permanent file not yet exists";
 	my $saved_mtime = stat($filename)->mtime;
-	$I->make_permanent($permanent_name, mtime => undef);
+	$I->make_permanent;
 
 	is stat($permanent_name)->mtime, $saved_mtime, "it should work with mtime=undef";
 }
 
 {
-	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-	my $filename = $I->filename;
+	my $permanent_name = "$rootdir/permanent_file3";
+	my $I = App::MtAws::IntermediateFile->new(target_file => $permanent_name);
+	my $filename = $I->tempfilename;
 	ok -f $filename, "should create temp file";
 
-	my $permanent_name = "$rootdir/permanent_file3";
 	ok ! -e $permanent_name, "assume permanent file not yet exists";
-	$I->make_permanent($permanent_name);
-	ok ! defined eval { $I->make_permanent($permanent_name."x"); 1; }, "should confess if make_permanent called twice";
+	$I->make_permanent;
+	ok ! defined eval { $I->make_permanent; 1; }, "should confess if make_permanent called twice";
 	like $@, qr/file already permanent or not initialized/, "should confess with right message if make_permanent called twice";
 
 }
 
 {
 	ok ! -e do {
-		my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-		my $filename = $I->filename;
+		my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/something_not_existant");
+		my $filename = $I->tempfilename;
 		ok -f $filename, "should create temp file";
 		$filename;
 	}, "file auto-removed";
@@ -171,8 +177,9 @@ sub test_read_write
 for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 	my $subdir = join('/', @$_);
 	my $fulldir = "$rootdir/$subdir";
-	my $I = App::MtAws::IntermediateFile->new(dir => $fulldir);
-	my $filename = $I->filename;
+	my $perm_file = "$fulldir/permfile";
+	my $I = App::MtAws::IntermediateFile->new(target_file => $perm_file);
+	my $filename = $I->tempfilename;
 	ok -f $filename, "should create temp file and several subdirs: $subdir";
 	ok -d $fulldir, "just checking that directory is directory";
 
@@ -186,12 +193,12 @@ for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 
 {
 	ok -f do {
-		my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-		my $filename = $I->filename;
-		ok -f $filename, "should create temp file";
 		my $permanent_name = "$rootdir/permanent_file";
+		my $I = App::MtAws::IntermediateFile->new(target_file => $permanent_name);
+		my $filename = $I->tempfilename;
+		ok -f $filename, "should create temp file";
 		ok ! -e $permanent_name, "assume permanent file not yet exists";
-		$I->make_permanent($permanent_name);
+		$I->make_permanent;
 		ok ! -e $filename, "temp file is gone";
 		ok -f $permanent_name, "file moved to permanent location";
 		$permanent_name;
@@ -205,7 +212,7 @@ SKIP: {
 	ok mkpath($dir), "path is created";
 	ok -d $dir, "path is created";;
 	chmod 0444, $dir;
-	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $dir); 1 }, "File::Temp should throw exception";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(target_file => "$dir/somefile"); 1 }, "File::Temp should throw exception";
 	is get_exception->{code}, 'cannot_create_tempfile', "File::Temp correct code for exception";
 	is get_exception->{dir}, $dir, "File::Temp correct dir for exception";
 }
@@ -216,7 +223,7 @@ SKIP: {
 	ok mkpath($dir), "path is created";
 	ok -d $dir, "path is created";;
 	chmod 0444, $dir;
-	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => "$dir/b/c"); 1 }, "mkpath() should throw exception";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(target_file => "$dir/b/c/somefile"); 1 }, "mkpath() should throw exception";
 	is get_exception->{code}, 'cannot_create_directory', "mkpath correct code for exception";
 	is get_exception->{dir}, "$dir/b/c", "mkpath correct dir for exception";
 }
@@ -229,9 +236,9 @@ SKIP: {
 	ok -d $dir, "path is created";
 	my $dest = "$dir/dest";
 	mkdir "$dir/dest";
-	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
-	my $tmpfile = $I->filename;
-	ok ! defined eval { $I->make_permanent($dest); 1 }, "should throw exception if cant rename files";
+	my $I = App::MtAws::IntermediateFile->new(target_file => $dest);
+	my $tmpfile = $I->tempfilename;
+	ok ! defined eval { $I->make_permanent; 1 }, "should throw exception if cant rename files";
 	is get_exception->{code}, 'cannot_rename_file', "correct exception code";
 	is get_exception->{from}, $tmpfile, "correct exception 'from'";
 	is get_exception->{to}, $dest, "correct exception 'to'";
@@ -240,8 +247,8 @@ SKIP: {
 {
 	is get_filename_encoding, 'UTF-8', "assume utf8 encoding is set";
 	my $dir = "$rootdir/тест2";
-	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
-	like $I->filename, qr/\Q$dir\E/, "filename should contain directory name, thus be in UTF8";
+	my $I = App::MtAws::IntermediateFile->new(target_file => "$dir/somefile");
+	like $I->tempfilename, qr/\Q$dir\E/, "filename should contain directory name, thus be in UTF8";
 	ok -d $dir, "dir in UTF-8 should not exist";
 }
 
@@ -251,9 +258,9 @@ SKIP: {
 	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
 	my $dir = "$rootdir/тест1";
 	my $koidir = encode("KOI8-R", $dir);
-	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
-	like $I->filename, qr/\Q$dir\E/, "filename should contain directory name, thus be in UTF8";
-	unlike $I->filename, qr/\Q$koidir\E/, "filename should not contain KOI8-R directory name";
+	my $I = App::MtAws::IntermediateFile->new(target_file => "$dir/somefile");
+	like $I->tempfilename, qr/\Q$dir\E/, "filename should contain directory name, thus be in UTF8";
+	unlike $I->tempfilename, qr/\Q$koidir\E/, "filename should not contain KOI8-R directory name";
 	ok ! -d $dir, "dir in UTF-8 should not exist";
 	ok -d $koidir, "dir in KOI8-R should exist";
 }
@@ -268,8 +275,8 @@ SKIP: {
 	ok ! -e $dir, "dir does not exist";
 	ok ! -e $perm_file, "perm_file in UTF8 does not exist";
 	ok ! -e $koi_perm_file, "perm_file in KOI8-R does not exist";
-	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
-	$I->make_permanent($perm_file, mtime => 1234567);
+	my $I = App::MtAws::IntermediateFile->new(target_file => $perm_file, mtime => 1234567);
+	$I->make_permanent;
 	ok ! -e $perm_file, "perm_file in UTF8 does not exist";
 	ok -e $koi_perm_file, "perm_file in KOI8-R exists";
 	is stat($koi_perm_file)->mtime, 1234567, "it should set mtime";
@@ -288,7 +295,7 @@ SKIP: {
 	chmod 0444, $basedir;
 	my $dir = "$basedir/тест1";
 	my $koidir = encode("KOI8-R", $dir);
-	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $dir); 1 }, "should fail with exception";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(target_file => "$dir/somefile"); 1 }, "should fail with exception";
 	my $msg = exception_message(get_exception);
 	$msg =~ s/[[:ascii:]]//g;
 	like $msg, qr/^(тест)+$/, "the only non-ascii characters should be utf name";
@@ -306,7 +313,7 @@ SKIP: {
 	ok ! -e $koidir, "basedir not yet exists";
 	ok mkpath($koidir), "basedir created";
 	ok chmod(0444, $koidir), "permissions 0444 ok";
-	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $basedir); 1 }, "should fail with exception";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(target_file => "$basedir/somefile"); 1 }, "should fail with exception";
 	my $msg = exception_message(get_exception);
 	$msg =~ s/[[:ascii:]]//g;
 	like $msg, qr/^(тест)+$/, "the only non-ascii characters should be utf name";

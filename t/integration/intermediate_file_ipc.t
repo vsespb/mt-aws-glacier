@@ -61,8 +61,8 @@ with_fork
 	},
 	sub {
 		my ($tochild, $fromchild) = @_;
-		my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-		print $fromchild $I->filename."\n";
+		my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile");
+		print $fromchild $I->tempfilename."\n";
 		<$tochild>;
 	};
 
@@ -79,8 +79,8 @@ with_fork
 		},
 		sub {
 			my ($tochild, $fromchild) = @_;
-			my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-			print $fromchild $I->filename."\n";
+			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile2");
+			print $fromchild $I->tempfilename."\n";
 			<$tochild>;
 			die "diying from child\n";
 		};
@@ -100,8 +100,8 @@ with_fork
 		},
 		sub {
 			my ($tochild, $fromchild) = @_;
-			my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
-			print $fromchild $I->filename."\n";
+			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile3");
+			print $fromchild $I->tempfilename."\n";
 			<$tochild>;
 			exit(0);
 		};

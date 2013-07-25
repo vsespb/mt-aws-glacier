@@ -29,7 +29,6 @@ use App::MtAws::Exceptions;
 use strict;
 use warnings;
 use utf8;
-use File::Basename;
 use Carp;
 use IO::Select;
 use POSIX;
@@ -120,15 +119,14 @@ sub process_task
 	} elsif ($action eq 'retrieval_download_job') {
 		my $req = App::MtAws::GlacierRequest->new($self->{options});
 
-		my $dirname = dirname($data->{filename});
-		my $i_tmp = App::MtAws::IntermediateFile->new(dir => $dirname);
-		my $tempfile = $i_tmp->filename;
+		my $i_tmp = App::MtAws::IntermediateFile->new(target_file => $data->{filename}, mtime => $data->{mtime});
+		my $tempfile = $i_tmp->tempfilename;
 
 		my $r = $req->retrieval_download_job($data->{jobid}, $data->{relfilename}, $tempfile, $data->{size}, $data->{treehash});
 
 		confess "retrieval_download_job failed" unless $r;
 
-		$i_tmp->make_permanent($data->{filename}, mtime => $data->{mtime});
+		$i_tmp->make_permanent;
 
 		$result = { response => $r };
 		$console_out = "Downloaded archive $data->{filename}";

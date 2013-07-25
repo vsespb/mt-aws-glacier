@@ -34,7 +34,6 @@ use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
-use App::MtAws::IntermediateFile;
 use Carp;
 
 

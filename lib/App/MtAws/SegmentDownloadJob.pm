@@ -26,7 +26,6 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use File::Basename;
 use App::MtAws::Utils;
 use App::MtAws::IntermediateFile;
 use Carp;
@@ -59,13 +58,13 @@ sub get_task
 			my $archive = $self->{archive};
 
 
-			$self->{i_tmp} = App::MtAws::IntermediateFile->new(dir => dirname($archive->{filename}))
+			$self->{i_tmp} = App::MtAws::IntermediateFile->new(target_file => $archive->{filename}, $archive->{mtime})
 				unless defined($self->{i_tmp});
 
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},
-				filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid},
-				position => $self->{position}, download_size => $download_size, tempfile => $self->{i_tmp}->filename
+				filename => $archive->{filename}, jobid => $archive->{jobid},
+				position => $self->{position}, download_size => $download_size, tempfile => $self->{i_tmp}->tempfilename
 			});
 			$self->{position} += $download_size;
 			$self->{uploadparts} ||= {};
@@ -105,7 +104,7 @@ sub do_finish
 {
 	my ($self) = @_;
 	confess unless defined($self->{i_tmp});
-	$self->{i_tmp}->make_permanent($self->{archive}{filename}, mtime => $self->{archive}{mtime});
+	$self->{i_tmp}->make_permanent;
 	undef $self->{i_tmp};
 	return ("done");
 }

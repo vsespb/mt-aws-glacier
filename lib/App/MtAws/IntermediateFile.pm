@@ -28,6 +28,7 @@ use utf8;
 use Carp;
 use File::Temp ();
 use File::Path;
+use File::Basename;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 
@@ -36,8 +37,9 @@ sub new
 {
 	my ($class, %args) = @_;
 	my $self = {};
-	defined ($self->{dir} = delete $args{dir}) or confess "dir expected";
-	# TODO: accept also plain file filename, extract dir from it
+	defined ($self->{target_file} = delete $args{target_file}) or confess "target_file expected";
+	$self->{mtime} = delete $args{mtime};
+	confess "unknown arguments" if %args;
 	bless $self, $class;
 	$self->_init();
 	return $self;
@@ -46,42 +48,42 @@ sub new
 sub _init
 {
 	my ($self) = @_;
-	my $binary_dirname = binaryfilename $self->{dir};
+	my $dir  = dirname($self->{target_file});
+	my $binary_dirname = binaryfilename $dir;
 	eval { mkpath($binary_dirname); 1 } or do {
 		die exception 'cannot_create_directory' =>
 		'Cannot create directory %string dir%, errors: %error%',
-		dir => $self->{dir}, error => hex_dump_string($@);
+		dir => $dir, error => hex_dump_string($@);
 	};
 	$self->{tmp} = eval { File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname) } or do {
 		die exception 'cannot_create_tempfile' =>
 		'Cannot create temporary file in directory %string dir%, errors: %error%',
-		dir => $self->{dir}, error => hex_dump_string($@);
+		dir => $dir, error => hex_dump_string($@);
 	};
 	my $binary_tempfile = $self->{tmp}->filename;
-	$self->{character_tempfile} = characterfilename($binary_tempfile);
+	$self->{tempfile} = characterfilename($binary_tempfile);
 	 # it's important to close file, it's filename can be passed to different process, and it can be locked
 	close $self->{tmp} or confess;
 }
 
-sub filename
+sub tempfilename
 {
-	shift->{character_tempfile} or confess;
+	shift->{tempfile} or confess;
 }
 
 sub make_permanent
 {
-	my ($self, $filename, %args) = @_;
-	my $mtime = delete $args{mtime};
-	confess "unknown arguments" if %args;
-	my $binary_target_filename = binaryfilename($filename);
-	my $character_tempfile = delete $self->{character_tempfile} or confess "file already permanent or not initialized";
+	my $self = shift;
+	confess "unknown arguments" if @_;
+	my $binary_target_filename = binaryfilename($self->{target_file});
+	my $character_tempfile = delete $self->{tempfile} or confess "file already permanent or not initialized";
 	$self->{tmp}->unlink_on_destroy(0);
 	rename binaryfilename($character_tempfile), $binary_target_filename or
 		die exception "cannot_rename_file" => "Cannot rename file %string from% to %string to%",
-		from => $character_tempfile, to => $filename;
+		from => $character_tempfile, to => $self->{target_file};
 	undef $self->{tmp};
-	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $filename";
-	utime $mtime, $mtime, $binary_target_filename or confess "cannot change mtime" if defined $mtime;
+	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $self->{target_file}";
+	utime $self->{mtime}, $self->{mtime}, $binary_target_filename or confess "cannot change mtime" if defined $self->{mtime};
 }
 
 1;
