@@ -39,7 +39,7 @@ use TestUtils;
 
 warning_fatal();
 
-if( $^O =~ /^(linux|.*bsd|solaris)$/i ) {
+if(can_work_with_non_utf8_files) {
 	plan tests => 2700;
 } else {
 	plan skip_all => 'Test cannot be performed on character-oriented filesystem';
@@ -93,24 +93,24 @@ for my $jv (qw/0 A B C/) {
 		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {#
 			my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			my $dataroot_e = encode($filenames_encoding, $dataroot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
-			
+
 			rmtree($tmproot_e) if ($tmproot_e) && (-d $tmproot_e);
 			mkpath($dataroot_e);
-			
+
 			set_filename_encoding $filenames_encoding;
 
 			my $F = App::MtAws::Filter->new();
 			$F->parse_filters('-0.* -фexclude/a/ +');
-			
+
 			#use Data::Dumper;
 			#print Dumper $filter;
-			
-			
+
+
 			my $J = JournalTest->new(journal_encoding => $journal_encoding, filenames_encoding => $filenames_encoding,
 				create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot,
 				journal_file => $journal_file, testfiles => $testfiles1, filter => $F);
 			$J->test_all();
-			
+
 			rmtree($tmproot_e) if ($tmproot_e) && (-d $tmproot_e);
 		}
 	}

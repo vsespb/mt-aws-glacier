@@ -178,7 +178,8 @@ SKIP: {
 	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => "$dir/b/c"); 1 }, "mkpath() should throw exception";
 }
 
-{
+SKIP: {
+	skip "Test cannot be performed on character-oriented filesyste", 5 unless can_work_with_non_utf8_files;
 	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
 	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
 	my $dir = "$rootdir/тест1";
