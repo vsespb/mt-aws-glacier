@@ -73,9 +73,9 @@ with_fork
 			my ($tochild, $fromchild) = @_;
 			$filename = <$fromchild>;
 			chomp $filename;
-			my $data_sample = "abcdefz\n";
 			ok -f $filename, "file is file";
 			print $tochild "ok\n";
+			<$fromchild>;
 		},
 		sub {
 			my ($tochild, $fromchild) = @_;
@@ -94,9 +94,9 @@ with_fork
 			my ($tochild, $fromchild) = @_;
 			$filename = <$fromchild>;
 			chomp $filename;
-			my $data_sample = "abcdefz\n";
 			ok -f $filename, "file is file";
 			print $tochild "ok\n";
+			<$fromchild>;
 		},
 		sub {
 			my ($tochild, $fromchild) = @_;

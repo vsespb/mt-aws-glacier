@@ -208,7 +208,6 @@ sub with_fork(&&)
 			while(waitpid($pid, 0) != -1){ };
 		}
 	} else {
-		local $SIG{USR1} = sub { exit(1); };
 		$fromchild->writer();
 		$fromchild->autoflush(1);
 		$fromchild->blocking(1);
