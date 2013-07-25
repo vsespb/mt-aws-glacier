@@ -48,7 +48,7 @@ my $data = {
 
 {
 	package MockIntermediateFile;
-	sub filename { 1 };
+	sub filename { "mytmpfile" };
 }
 my $segment_size = 16;
 
@@ -74,7 +74,7 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 		my ($code, $t) = $job->get_task();
 		if ($code eq 'ok') {
 			cmp_deeply $t->{data}, superhashof({
-				archive_id => $data->{archive_id}, relfilename => $data->{relfilename},
+				archive_id => $data->{archive_id}, relfilename => $data->{relfilename}, tempfile => "mytmpfile",
 				filename => $data->{relfilename}, mtime => $data->{mtime}, jobid => $data->{jobid},
 				position => $next_position
 			});
