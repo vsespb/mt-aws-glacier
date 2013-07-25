@@ -29,6 +29,7 @@ use Carp;
 use File::Temp ();
 use File::Path;
 use App::MtAws::Utils;
+use App::MtAws::Exceptions;
 
 
 sub new
@@ -45,8 +46,16 @@ sub _init
 {
 	my ($self) = @_;
 	my $binary_dirname = binaryfilename $self->{dir};
-	mkpath($binary_dirname);
-	$self->{tmp} = File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
+	eval { mkpath($binary_dirname); 1 } or do {
+		die exception 'cannot_create_directory' =>
+		'Cannot create directory %string dir%, errors: %error%',
+		dir => $self->{dir}, error => hex_dump_string($@);
+	};
+	$self->{tmp} = eval { File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname) } or do {
+		die exception 'cannot_create_tempfile' =>
+		'Cannot create temporary file in directory %string dir%, errors: %error%',
+		dir => $self->{dir}, error => hex_dump_string($@);
+	};
 	my $binary_tempfile = $self->{tmp}->filename;
 	$self->{character_tempfile} = characterfilename($binary_tempfile);
 	 # it's important to close file, it's filename can be passed to different process, and it can be locked

@@ -24,13 +24,14 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 67;
+use Test::More tests => 83;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Data::Dumper;
 use TestUtils;
 use App::MtAws::IntermediateFile;
+use App::MtAws::Exceptions;
 use File::stat;
 use File::Path;
 use Encode;
@@ -61,6 +62,13 @@ sub test_read_write
 
 {
 	ok ! defined eval { App::MtAws::IntermediateFile->new(); 1; }, "should confess without dir";
+}
+
+{
+	no warnings 'redefine';
+	local *App::MtAws::IntermediateFile::_init = sub {};
+	App::MtAws::IntermediateFile->new(dir => 0);
+	ok "should work when dir is FALSE";
 }
 
 {
@@ -161,21 +169,25 @@ for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 }
 
 SKIP: {
-	skip "Cannot run under root", 3 unless $>;
+	skip "Cannot run under root", 5 unless $>;
 	my $dir = "$rootdir/denied1";
 	ok mkpath($dir), "path is created";
 	ok -d $dir, "path is created";;
 	chmod 0444, $dir;
 	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $dir); 1 }, "File::Temp should throw exception";
+	is get_exception->{code}, 'cannot_create_tempfile', "File::Temp correct code for exception";
+	is get_exception->{dir}, $dir, "File::Temp correct dir for exception";
 }
 
 SKIP: {
-	skip "Cannot run under root", 3 unless $>;
+	skip "Cannot run under root", 5 unless $>;
 	my $dir = "$rootdir/denied2";
 	ok mkpath($dir), "path is created";
 	ok -d $dir, "path is created";;
 	chmod 0444, $dir;
 	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => "$dir/b/c"); 1 }, "mkpath() should throw exception";
+	is get_exception->{code}, 'cannot_create_directory', "mkpath correct code for exception";
+	is get_exception->{dir}, "$dir/b/c", "mkpath correct dir for exception";
 }
 
 {
@@ -198,7 +210,44 @@ SKIP: {
 	ok ! -d $dir, "dir in UTF-8 should not exist";
 	ok -d $koidir, "dir in KOI8-R should exist";
 }
-# TODO: binaryfilenames stuff
+
+SKIP: {
+	for (5) {
+		skip "Test cannot be performed on character-oriented filesyste", $_ unless can_work_with_non_utf8_files;
+		skip "Cannot run under root", $_ unless $>;
+	}
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
+	my $basedir = "$rootdir/base1";
+	ok ! -e $basedir, "basedir not yet exists";
+	ok mkpath($basedir), "basedir created";
+	chmod 0444, $basedir;
+	my $dir = "$basedir/тест1";
+	my $koidir = encode("KOI8-R", $dir);
+	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $dir); 1 }, "should fail with exception";
+	my $msg = exception_message(get_exception);
+	$msg =~ s/[[:ascii:]]//g;
+	like $msg, qr/^(тест)+$/, "the only non-ascii characters should be utf name";
+}
+
+SKIP: {
+	for (6) {
+		skip "Test cannot be performed on character-oriented filesyste", $_ unless can_work_with_non_utf8_files;
+		skip "Cannot run under root", $_ unless $>;
+	}
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
+	my $basedir = "$rootdir/тест42";
+	my $koidir = encode("KOI8-R", $basedir);
+	ok ! -e $koidir, "basedir not yet exists";
+	ok mkpath($koidir), "basedir created";
+	ok chmod(0444, $koidir), "permissions 0444 ok";
+	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $basedir); 1 }, "should fail with exception";
+	my $msg = exception_message(get_exception);
+	$msg =~ s/[[:ascii:]]//g;
+	like $msg, qr/^(тест)+$/, "the only non-ascii characters should be utf name";
+}
+
 
 1;
 
