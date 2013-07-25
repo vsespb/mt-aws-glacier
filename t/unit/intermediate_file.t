@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 64;
+use Test::More tests => 67;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -176,6 +176,14 @@ SKIP: {
 	ok -d $dir, "path is created";;
 	chmod 0444, $dir;
 	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => "$dir/b/c"); 1 }, "mkpath() should throw exception";
+}
+
+{
+	is get_filename_encoding, 'UTF-8', "assume utf8 encoding is set";
+	my $dir = "$rootdir/тест2";
+	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
+	like $I->filename, qr/\Q$dir\E/, "filename should contain directory name, thus be in UTF8";
+	ok -d $dir, "dir in UTF-8 should not exist";
 }
 
 SKIP: {
