@@ -34,7 +34,7 @@ use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
-use Fcntl qw/O_CREAT O_RDWR LOCK_EX LOCK_UN/;
+use App::MtAws::IntermediateFile;
 use File::Temp ();
 use File::Basename;
 use File::Path;
@@ -232,14 +232,10 @@ sub retrieval_download_job
 
 	# TODO: move to ChildWorker?
 	my $dirname = dirname($filename);
-	my $binary_dirname = binaryfilename $dirname;
-	mkpath($binary_dirname);
-	my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
-	my $binary_tempfile = $tmp->filename;
-	my $character_tempfile = characterfilename($binary_tempfile);
-	close $tmp;
+	my $i_tmp = App::MtAws::IntermediateFile->new(dir => $dirname);
+	my $tempfile = $i_tmp->filename;
 	$self->{expected_size} = $size;
-	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $character_tempfile);
+	$self->{writer} = App::MtAws::HttpFileWriter->new(tempfile => $tempfile);
 
 	$self->{method} = 'GET';
 
@@ -264,10 +260,7 @@ sub retrieval_download_job
 		# TODO: better report relative filename
 
 	# TODO: move to ChildWorker?
-	$tmp->unlink_on_destroy(0);
-	undef $tmp;
-	rename $binary_tempfile, binaryfilename($filename) or confess "cannot rename file";
-	chmod((0666 & ~umask), binaryfilename($filename)) or confess;
+	$i_tmp->make_permanent($filename);
 
 	return $resp ? 1 : undef;
 }
