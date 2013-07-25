@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 103;
+use Test::More tests => 107;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -131,6 +131,19 @@ sub test_read_write
 	$I->make_permanent($permanent_name, mtime => 1234567);
 
 	is stat($permanent_name)->mtime, 1234567, "it should set mtime";
+}
+
+{
+	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
+	my $filename = $I->filename;
+	ok -f $filename, "should create temp file";
+	ok -e $filename, "file exists";
+	my $permanent_name = "$rootdir/permanent_file4";
+	ok ! -e $permanent_name, "assume permanent file not yet exists";
+	my $saved_mtime = stat($filename)->mtime;
+	$I->make_permanent($permanent_name, mtime => undef);
+
+	is stat($permanent_name)->mtime, $saved_mtime, "it should work with mtime=undef";
 }
 
 {
