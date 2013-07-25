@@ -63,7 +63,6 @@ sub finish_task
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
 		my $mtime = $task->{data}{mtime};
-		utime $mtime, $mtime, binaryfilename($task->{data}{filename}) or confess if defined $mtime;
 		return ("done");
 	} else {
 		confess;
