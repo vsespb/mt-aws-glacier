@@ -158,7 +158,6 @@ for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 }
 
 
-# TODO: test with fork (twice)
 # TODO: test it throws exceptions (like perms errors)
 # TODO: binaryfilenames stuff
 

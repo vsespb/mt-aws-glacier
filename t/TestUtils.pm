@@ -32,10 +32,11 @@ use Test::More;
 require Exporter;
 use base qw/Exporter/;
 use Carp;
+use IO::Pipe;
 
 our %disable_validations;
 our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal
-capture_stdout capture_stderr assert_raises_exception ordered_test test_fast_ok fast_ok/;
+capture_stdout capture_stderr assert_raises_exception ordered_test test_fast_ok fast_ok with_fork/;
 
 use Test::Deep; # should be last line, after EXPORT stuff, otherwise versions ^(0\.089|0\.09[0-9].*) do something nastly with exports
 
@@ -176,5 +177,40 @@ sub test_fast_ok
 	}
 }
 
+sub with_fork(&&)
+{
+	my ($parent_cb, $child_cb) = @_;
+	my $fromchild = new IO::Pipe;
+	my $tochild = new IO::Pipe;
+
+	if (my $pid = fork()) {
+		$fromchild->reader();
+		$fromchild->autoflush(1);
+		$fromchild->blocking(1);
+		binmode $fromchild;
+
+		$tochild->writer();
+		$tochild->autoflush(1);
+		$tochild->blocking(1);
+		binmode $tochild;
+
+		$parent_cb->($tochild, $fromchild);
+		kill 'USR1', $pid;
+		while(waitpid($pid, 0) != -1){ };
+	} else {
+		$fromchild->writer();
+		$fromchild->autoflush(1);
+		$fromchild->blocking(1);
+		binmode $fromchild;
+
+		$tochild->reader();
+		$tochild->autoflush(1);
+		$tochild->blocking(1);
+		binmode $tochild;
+
+		$child_cb->($tochild, $fromchild);
+		exit(0);
+	}
+}
 
 1;
