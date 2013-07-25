@@ -30,6 +30,7 @@ use File::stat;
 use File::Path;
 use File::Basename;
 use App::MtAws::Utils;
+use App::MtAws::IntermediateFile;
 use Carp;
 use File::Temp ();
 
@@ -59,20 +60,15 @@ sub get_task
 			my $segment_size = $self->{file_downloads}{'segment-size'}*1048576 or confess;
 			$download_size = $segment_size if $download_size > $segment_size;
 			my $archive = $self->{archive};
-			
-			if (!defined($self->{tempfile})) {
-				my $dirname = dirname($archive->{filename});
-				my $binary_dirname = binaryfilename $dirname;
-				mkpath($binary_dirname);
-				my $tmp = new File::Temp( TEMPLATE => '__mtglacier_temp_XXXXXX', UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname);
-				close $tmp;
-				$self->{tmp_obj} = $tmp;
-				$self->{tempfile} = characterfilename $tmp->filename;
-			}
+
+
+			$self->{i_tmp} = App::MtAws::IntermediateFile->new(dir => dirname($archive->{filename}))
+				unless defined($self->{i_tmp});
+
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {
 				archive_id => $archive->{archive_id}, relfilename => $archive->{relfilename},
 				filename => $archive->{filename}, mtime => $archive->{mtime}, jobid => $archive->{jobid},
-				position => $self->{position}, download_size => $download_size, tempfile => $self->{tempfile}
+				position => $self->{position}, download_size => $download_size, tempfile => $self->{i_tmp}->filename
 			});
 			$self->{position} += $download_size;
 			$self->{uploadparts} ||= {};
@@ -111,13 +107,9 @@ sub finish_task
 sub do_finish
 {
 	my ($self) = @_;
-	confess unless defined($self->{tempfile});
-	my $mtime = $self->{archive}{mtime};
-	$self->{tmp_obj}->unlink_on_destroy(0);
-	undef $self->{tmp_obj};
-	rename binaryfilename($self->{tempfile}), binaryfilename($self->{archive}{filename}) or confess "cannot rename file $self->{tempfile} $self->{archive}{filename}";
-	chmod((0666 & ~umask), binaryfilename($self->{archive}{filename})) or confess;
-	utime $mtime, $mtime, binaryfilename($self->{archive}{filename}) or confess if defined $mtime; # TODO: is that good that one process writes file and another one change it's mtime?
+	confess unless defined($self->{i_tmp});
+	$self->{i_tmp}->make_permanent($self->{archive}{filename}, mtime => $self->{archive}{mtime});
+	undef $self->{i_tmp};
 	return ("done");
 }
 
