@@ -196,10 +196,13 @@ sub with_fork(&&)
 		$tochild->blocking(1);
 		binmode $tochild;
 
-		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
-		$parent_cb->($tochild, $fromchild);
-		alarm 0;
-		kill 'USR1', $pid;
+		{
+			alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
+			local $SIG{CHLD} = sub { print STDERR "Unexpected child exit"; die; };
+			$parent_cb->($tochild, $fromchild);
+			alarm 0;
+		}
+		kill 'USR1', $pid; # this PID is exists and it's our child, otherwise we'd exit in SIG CHLD above
 		while(waitpid($pid, 0) != -1){ };
 	} else {
 		$fromchild->writer();
