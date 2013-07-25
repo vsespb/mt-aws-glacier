@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -38,7 +38,7 @@ my $rootdir = $TEMP->dirname();
 
 with_fork
 	sub {
-		my (undef, $fromchild) = @_;
+		my ($tochild, $fromchild) = @_;
 		my $filename = <$fromchild>;
 		chomp $filename;
 		my $data_sample = "abcdefz\n";
@@ -58,6 +58,7 @@ with_fork
 		ok close($in), "file closed";
 
 		is $got_data, $data_sample, "file acts well";
+		print $tochild "ok\n";
 	},
 	sub {
 		my ($tochild, $fromchild) = @_;
@@ -107,5 +108,7 @@ with_fork
 		};
 	ok ! -e $filename, "temporary file discarded when child exits";
 }
+
+ok 1, "test flow finished";
 
 1;
