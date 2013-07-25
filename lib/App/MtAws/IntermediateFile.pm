@@ -69,15 +69,18 @@ sub filename
 
 sub make_permanent
 {
-	my ($self, $filename) = @_;
+	my ($self, $filename, %args) = @_;
+	my $mtime = delete $args{mtime};
+	confess "unknown arguments" if %args;
 	my $binary_target_filename = binaryfilename($filename);
 	my $character_tempfile = delete $self->{character_tempfile} or confess "file already permanent or not initialized";
 	$self->{tmp}->unlink_on_destroy(0);
 	rename binaryfilename($character_tempfile), $binary_target_filename or
 		die exception "cannot_rename_file" => "Cannot rename file %string from% to %string to%",
 		from => $character_tempfile, to => $filename;
-	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $filename";
 	undef $self->{tmp};
+	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $filename";
+	utime $mtime, $mtime, $binary_target_filename or confess "cannot change mtime" if defined $mtime;
 }
 
 1;

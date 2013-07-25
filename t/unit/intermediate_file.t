@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 90;
+use Test::More tests => 103;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -77,6 +77,12 @@ sub test_read_write
 }
 
 {
+	my $I = bless {}, 'App::MtAws::IntermediateFile';
+	ok ! defined eval { $I->make_permanent("$rootdir/somefile", x => 1); 1 }, "should confess if extra args provided";
+	like $@, qr/unknown arguments/, "should confess with right message";
+}
+
+{
 	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
 	my $filename = $I->filename;
 	ok -f $filename, "should create temp file";
@@ -113,6 +119,18 @@ sub test_read_write
 
 	is ( (stat($permanent_name)->mode & 07777), (0666 & ~umask), "file should have default permissions");
 	is slurp($permanent_name), $data_sample, "data should be readable";
+}
+
+{
+	my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
+	my $filename = $I->filename;
+	ok -f $filename, "should create temp file";
+	ok -e $filename, "file exists";
+	my $permanent_name = "$rootdir/permanent_file2	";
+	ok ! -e $permanent_name, "assume permanent file not yet exists";
+	$I->make_permanent($permanent_name, mtime => 1234567);
+
+	is stat($permanent_name)->mtime, 1234567, "it should set mtime";
 }
 
 {
@@ -225,6 +243,23 @@ SKIP: {
 	unlike $I->filename, qr/\Q$koidir\E/, "filename should not contain KOI8-R directory name";
 	ok ! -d $dir, "dir in UTF-8 should not exist";
 	ok -d $koidir, "dir in KOI8-R should exist";
+}
+
+SKIP: {
+	skip "Test cannot be performed on character-oriented filesystem", 7 unless can_work_with_non_utf8_files;
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
+	my $dir = "$rootdir/test_permanent_and_encoding";
+	my $perm_file = "$rootdir/test_permanent_and_encoding_файл";
+	my $koi_perm_file = encode("KOI8-R", $perm_file);
+	ok ! -e $dir, "dir does not exist";
+	ok ! -e $perm_file, "perm_file in UTF8 does not exist";
+	ok ! -e $koi_perm_file, "perm_file in KOI8-R does not exist";
+	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
+	$I->make_permanent($perm_file, mtime => 1234567);
+	ok ! -e $perm_file, "perm_file in UTF8 does not exist";
+	ok -e $koi_perm_file, "perm_file in KOI8-R exists";
+	is stat($koi_perm_file)->mtime, 1234567, "it should set mtime";
 }
 
 SKIP: {
