@@ -195,7 +195,7 @@ new_stack {
 };
 
 new_stack {
-	$App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
 	is get_filename_encoding, 'KOI8-R';
 	my $utfname = $mtroot."/тест";
 	eval { open_file(my $f, $utfname, mode => '>', binary => 1, use_filename_encoding => 1); };
