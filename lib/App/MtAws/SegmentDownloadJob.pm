@@ -32,7 +32,6 @@ use File::Basename;
 use App::MtAws::Utils;
 use App::MtAws::IntermediateFile;
 use Carp;
-use File::Temp ();
 
 sub new
 {

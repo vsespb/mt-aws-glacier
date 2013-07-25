@@ -27,7 +27,6 @@ use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
 use App::MtAws::Utils;
-use File::stat;
 use Carp;
 
 

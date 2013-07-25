@@ -35,7 +35,6 @@ use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
 use App::MtAws::IntermediateFile;
-use File::Temp ();
 use File::Basename;
 use File::Path;
 use Carp;
