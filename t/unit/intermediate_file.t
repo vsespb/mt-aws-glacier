@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 59;
+use Test::More tests => 64;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -33,6 +33,8 @@ use TestUtils;
 use App::MtAws::IntermediateFile;
 use File::stat;
 use File::Path;
+use Encode;
+use App::MtAws::Utils;
 
 my $TEMP = File::Temp->newdir();
 my $rootdir = $TEMP->dirname();
@@ -176,6 +178,17 @@ SKIP: {
 	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => "$dir/b/c"); 1 }, "mkpath() should throw exception";
 }
 
+{
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
+	my $dir = "$rootdir/тест1";
+	my $koidir = encode("KOI8-R", $dir);
+	my $I = App::MtAws::IntermediateFile->new(dir => $dir);
+	like $I->filename, qr/\Q$dir\E/, "filename should contain directory name, thus be in UTF8";
+	unlike $I->filename, qr/\Q$koidir\E/, "filename should not contain KOI8-R directory name";
+	ok ! -d $dir, "dir in UTF-8 should not exist";
+	ok -d $koidir, "dir in KOI8-R should exist";
+}
 # TODO: binaryfilenames stuff
 
 1;
