@@ -198,7 +198,7 @@ sub with_fork(&&)
 		binmode $tochild;
 
 		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
-		$parent_cb->($tochild, $fromchild);
+		$parent_cb->($fromchild, $tochild);
 		alarm 0;
 
 		while(wait() != -1){};
@@ -216,7 +216,7 @@ sub with_fork(&&)
 		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
 		$child_cb->($tochild, $fromchild);
 		alarm 0;
-		
+
 		exit(0);
 	}
 }

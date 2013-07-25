@@ -38,8 +38,8 @@ my $rootdir = $TEMP->dirname();
 
 with_fork
 	sub {
-		my ($tochild, $fromchild) = @_;
-		my $filename = <$fromchild>;
+		my ($in, $out) = @_;
+		my $filename = <$in>;
 		chomp $filename;
 		my $data_sample = "abcdefz\n";
 
@@ -52,37 +52,37 @@ with_fork
 		ok (flock($f, LOCK_UN ), "file unlocked");
 		ok (close($f), "file closed");
 
-		ok (open(my $in, "<", $filename), "file opened for reading");
-		my $got_data = do { local $/; <$in> };
+		ok (open(my $infile, "<", $filename), "file opened for reading");
+		my $got_data = do { local $/; <$infile> };
 		ok defined($got_data), "we got data";
-		ok close($in), "file closed";
+		ok close($infile), "file closed";
 
 		is $got_data, $data_sample, "file acts well";
-		print $tochild "ok\n";
+		print $out "ok\n";
 	},
 	sub {
-		my ($tochild, $fromchild) = @_;
+		my ($in, $out) = @_;
 		my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile");
-		print $fromchild $I->tempfilename."\n";
-		<$tochild>;
+		print $out $I->tempfilename."\n";
+		<$in>;
 	};
 
 {
 	my $filename;
 	with_fork
 		sub {
-			my ($tochild, $fromchild) = @_;
-			$filename = <$fromchild>;
+			my ($in, $out) = @_;
+			$filename = <$in>;
 			chomp $filename;
 			ok -f $filename, "file is file";
-			print $tochild "ok\n";
-			<$fromchild>;
+			print $out "ok\n";
+			<$in>;
 		},
 		sub {
-			my ($tochild, $fromchild) = @_;
+			my ($in, $out) = @_;
 			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile2");
-			print $fromchild $I->tempfilename."\n";
-			<$tochild>;
+			print $out $I->tempfilename."\n";
+			<$in>;
 			die "diying from child\n";
 		};
 	ok ! -e $filename, "temporary file discarded when child dies";
@@ -92,18 +92,18 @@ with_fork
 	my $filename;
 	with_fork
 		sub {
-			my ($tochild, $fromchild) = @_;
-			$filename = <$fromchild>;
+			my ($in, $out) = @_;
+			$filename = <$in>;
 			chomp $filename;
 			ok -f $filename, "file is file";
-			print $tochild "ok\n";
-			<$fromchild>;
+			print $out "ok\n";
+			<$in>;
 		},
 		sub {
-			my ($tochild, $fromchild) = @_;
+			my ($in, $out) = @_;
 			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile3");
-			print $fromchild $I->tempfilename."\n";
-			<$tochild>;
+			print $out $I->tempfilename."\n";
+			<$in>;
 			exit(0);
 		};
 	ok ! -e $filename, "temporary file discarded when child exits";
