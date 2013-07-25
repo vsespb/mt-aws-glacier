@@ -62,10 +62,11 @@ describe "retrieval_download_job" => sub {
 			$self->{writer}->finish();
 			return $response;
 		});
-		$C->process_task('retrieval_download_job', { jobid => 'myjobid', relfilename => 'targed_file.txt',
+		$C->process_task('retrieval_download_job', { jobid => 'myjobid', relfilename => 'targed_file.txt', mtime => 1234567,
 			filename => $data_filename, size => $data_size, treehash => $data_treehash}, undef);
 
 		is ( (stat($data_filename)->mode & 07777), (0666 & ~umask), "file should have default permissions");
+		is stat($data_filename)->mtime, 1234567, "should set mtime";
 		open(my $f, "<", $data_filename) or confess;
 		my $got_data = do { local $/; <$f> };
 		close $f;
