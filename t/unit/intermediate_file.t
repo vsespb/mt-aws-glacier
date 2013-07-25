@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 53;
+use Test::More tests => 59;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -32,6 +32,7 @@ use Data::Dumper;
 use TestUtils;
 use App::MtAws::IntermediateFile;
 use File::stat;
+use File::Path;
 
 my $TEMP = File::Temp->newdir();
 my $rootdir = $TEMP->dirname();
@@ -157,8 +158,24 @@ for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 
 }
 
+SKIP: {
+	skip "Cannot run under root", 3 unless $>;
+	my $dir = "$rootdir/denied1";
+	ok mkpath($dir), "path is created";
+	ok -d $dir, "path is created";;
+	chmod 0444, $dir;
+	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => $dir); 1 }, "File::Temp should throw exception";
+}
 
-# TODO: test it throws exceptions (like perms errors)
+SKIP: {
+	skip "Cannot run under root", 3 unless $>;
+	my $dir = "$rootdir/denied2";
+	ok mkpath($dir), "path is created";
+	ok -d $dir, "path is created";;
+	chmod 0444, $dir;
+	ok ! defined eval { App::MtAws::IntermediateFile->new(dir => "$dir/b/c"); 1 }, "mkpath() should throw exception";
+}
+
 # TODO: binaryfilenames stuff
 
 1;
