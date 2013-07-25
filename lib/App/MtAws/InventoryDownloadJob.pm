@@ -26,7 +26,6 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use File::stat;
 
 
 sub new
@@ -61,5 +60,5 @@ sub finish_task
 		die;
 	}
 }
-	
+
 1;

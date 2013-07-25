@@ -28,7 +28,6 @@ use utf8;
 use base qw/App::MtAws::Job/;
 use Carp;
 use App::MtAws::Utils;
-use File::stat;
 
 
 sub new
@@ -72,7 +71,7 @@ sub finish_task
 	my ($self, $task) = @_;
 	my $mtime = $task->{data}{mtime};
 	utime $mtime, $mtime, binaryfilename($task->{data}{filename}) or confess if defined $mtime;
-	
+
 	delete $self->{pending}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{pending}} == 0) {
 		return ("done");
@@ -80,5 +79,5 @@ sub finish_task
 		return ("ok");
 	}
 }
-	
+
 1;

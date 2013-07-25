@@ -37,6 +37,7 @@ sub new
 	my ($class, %args) = @_;
 	my $self = {};
 	defined ($self->{dir} = delete $args{dir}) or confess "dir expected";
+	# TODO: accept also plain file filename, extract dir from it
 	bless $self, $class;
 	$self->_init();
 	return $self;

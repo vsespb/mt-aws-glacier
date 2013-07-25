@@ -31,22 +31,21 @@ use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::Journal;
-#use File::stat;
 
 sub run
 {
 	my ($options, $j) = @_;
 	with_forks 1, $options, sub {
-		
+
 		my $ft = App::MtAws::JobProxy->new(job => App::MtAws::InventoryFetchJob->new());
 		my ($R, $attachmentref) = fork_engine->{parent_worker}->process_task($ft, undef);
 		# here we can have response from both JobList or Inventory output..
 		# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
 		# Inventory retriebal has key 'ArchiveList'
 		# TODO: implement it more clear way on level of Job/Tasks object
-		
+
 		croak if -s binaryfilename $options->{'new-journal'}; # TODO: fix race condition between this and opening file
-		
+
 		if ($R && $attachmentref) {
 			$j->open_for_write();
 			parse_and_write_journal($j, $attachmentref);
@@ -62,7 +61,7 @@ sub parse_and_write_journal
 	for my $item (@{$data->{'ArchiveList'}}) {
 		my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
 		$relfilename = $item->{ArchiveId} unless defined $relfilename;
-		
+
 		my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
 		#time archive_id size mtime treehash relfilename
 		$j->add_entry({

@@ -26,8 +26,6 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use File::stat;
-use File::Path;
 use File::Basename;
 use App::MtAws::Utils;
 use App::MtAws::IntermediateFile;

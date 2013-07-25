@@ -60,7 +60,6 @@ use App::MtAws::Journal;
 use App::MtAws::ConfigDefinition;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use Carp;
-use File::stat;
 use IO::Handle;
 use App::MtAws::CreateVaultJob;
 use App::MtAws::DeleteVaultJob;

@@ -30,7 +30,6 @@ use strict;
 use warnings;
 use utf8;
 use File::Basename;
-use File::Path;
 use Carp;
 use IO::Select;
 use POSIX;
