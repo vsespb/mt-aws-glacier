@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 11;
+use Test::More tests => 15;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -35,7 +35,6 @@ warning_fatal();
 
 my $TEMP = File::Temp->newdir();
 my $rootdir = $TEMP->dirname();
-
 
 with_fork
 	sub {
@@ -65,7 +64,48 @@ with_fork
 		my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
 		print $fromchild $I->filename."\n";
 		<$tochild>;
-		print "EXIT\n";
 	};
+
+{
+	my $filename;
+	with_fork
+		sub {
+			my ($tochild, $fromchild) = @_;
+			$filename = <$fromchild>;
+			chomp $filename;
+			my $data_sample = "abcdefz\n";
+			ok -f $filename, "file is file";
+			print $tochild "ok\n";
+		},
+		sub {
+			my ($tochild, $fromchild) = @_;
+			my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
+			print $fromchild $I->filename."\n";
+			<$tochild>;
+			die "diying from child\n";
+		};
+	ok ! -e $filename, "temporary file discarded when child dies";
+}
+
+{
+	my $filename;
+	with_fork
+		sub {
+			my ($tochild, $fromchild) = @_;
+			$filename = <$fromchild>;
+			chomp $filename;
+			my $data_sample = "abcdefz\n";
+			ok -f $filename, "file is file";
+			print $tochild "ok\n";
+		},
+		sub {
+			my ($tochild, $fromchild) = @_;
+			my $I = App::MtAws::IntermediateFile->new(dir => $rootdir);
+			print $fromchild $I->filename."\n";
+			<$tochild>;
+			exit(0);
+		};
+	ok ! -e $filename, "temporary file discarded when child exits";
+}
 
 1;
