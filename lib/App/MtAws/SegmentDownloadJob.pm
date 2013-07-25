@@ -58,7 +58,7 @@ sub get_task
 			my $archive = $self->{archive};
 
 
-			$self->{i_tmp} = App::MtAws::IntermediateFile->new(target_file => $archive->{filename}, $archive->{mtime})
+			$self->{i_tmp} = App::MtAws::IntermediateFile->new(target_file => $archive->{filename}, mtime => $archive->{mtime})
 				unless defined($self->{i_tmp});
 
 			my $task = App::MtAws::Task->new(id => $self->{position}, action=>"segment_download_job", data => {
