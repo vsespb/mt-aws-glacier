@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use Carp;
-use File::Temp ();
+use File::Temp 0.16 ();
 use File::Path;
 use File::Basename;
 use App::MtAws::Utils;
