@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 108;
+use Test::More tests => 109;
 use FindBin;
 use Carp;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -72,8 +72,9 @@ sub test_read_write
 {
 	no warnings 'redefine';
 	local *App::MtAws::IntermediateFile::_init = sub {};
-	App::MtAws::IntermediateFile->new(target_file => 0);
+	my $r = App::MtAws::IntermediateFile->new(target_file => 0);
 	ok "should work when target_file is FALSE";
+	is $r->{_init_pid}, $$, "should init init_pid";
 }
 
 {

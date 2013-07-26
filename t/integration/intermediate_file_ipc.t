@@ -108,11 +108,6 @@ with_fork
 }
 
 
-#
-# this test actually fail with File::Temp 0.16, but we cant get to this point as
-# other testsuite prereqs in 0.19 and we can ignore such failure, as should
-# not use IntermediateFile during fork()
-#
 {
 	my $filename;
 	{

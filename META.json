@@ -50,7 +50,7 @@
             "File::Find" : "0",
             "File::Path" : "0",
             "File::Spec" : "0",
-            "File::Temp" : "0.19",
+            "File::Temp" : "0.16",
             "File::stat" : "0",
             "FindBin" : "0",
             "Getopt::Long" : "2.24",

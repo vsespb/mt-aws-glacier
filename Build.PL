@@ -72,9 +72,8 @@ my $build = Module::Build->new(
 		 # for EXLOCK need 0.19
 		 # for compatibility with forking 0.19
 		 # perl 5.8.8 ships 0.16, 5.8.9 ships 0.20, but 5.9.0 ships 0.14
-		 # seems 0.16 actually ok now
-		 # intermediate_file_ipc fails for < 0.19
-		'File::Temp' => '0.19',
+		 # use 0.16 as we have workarounds for above problems
+		'File::Temp' => '0.16',
 
 		'File::Spec' => 0,
 		'File::stat' => 0,

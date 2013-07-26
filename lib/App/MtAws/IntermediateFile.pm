@@ -42,6 +42,7 @@ sub new
 	confess "unknown arguments" if %args;
 	bless $self, $class;
 	$self->_init();
+	$self->{_init_pid} = $$;
 	return $self;
 }
 
@@ -84,6 +85,17 @@ sub make_permanent
 	undef $self->{tmp};
 	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $self->{target_file}";
 	utime $self->{mtime}, $self->{mtime}, $binary_target_filename or confess "cannot change mtime" if defined $self->{mtime};
+}
+
+# File::Temp < 0.19 does not have protection from calling destructor in fork'ed child
+# and forking can happen any moments, some code in File::Spec/Cwd etc call it to exec external commands
+# this workaround prevents this, however destruction order is not defined so that might just fail
+sub DESTROY
+{
+	my ($self) = @_;
+	local ($!, $@);
+	$self->{tmp}->unlink_on_destroy(0)
+		if ($self->{_init_pid} && $self->{_init_pid} != $$ && $self->{tmp});
 }
 
 1;
