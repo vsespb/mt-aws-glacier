@@ -31,13 +31,11 @@ use File::Path;
 use JournalTest;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 use TestUtils;
-use File::Temp ();
 
 warning_fatal();
 
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $tmproot = "$mtroot/journal-plain";
 my $dataroot = "$tmproot/dataL1/dataL2";
 my $journal_file = "$tmproot/journal";

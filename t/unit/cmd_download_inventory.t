@@ -36,12 +36,10 @@ use Time::Local;
 use Carp;
 use App::MtAws::MetaData;
 use App::MtAws::DownloadInventoryCommand;
-use File::Temp ();
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $localroot = "$mtroot/download_inventory";
 my $journal = "$localroot/journal";
 my $rootdir = "$localroot/root";

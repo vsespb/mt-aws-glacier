@@ -30,13 +30,11 @@ use File::Path;
 use TestUtils;
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
-use File::Temp ();
 use POSIX;
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $file = "$mtroot/config_engine_config_file_test.txt";
 my $symlink = "$mtroot/config_engine_config_file_test.symlink";
 

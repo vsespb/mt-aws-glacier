@@ -31,13 +31,11 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
 use TestUtils;
-use File::Temp ();
 use File::Path;
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $journal = "$mtroot/journal";
 my $rootdir = "$mtroot/root";
 my $hiddendir = "$mtroot/hidden";

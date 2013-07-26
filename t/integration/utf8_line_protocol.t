@@ -32,7 +32,6 @@ use Encode;
 use bytes;
 no bytes;
 use TestUtils;
-use File::Temp ();
 
 warning_fatal();
 
@@ -50,8 +49,7 @@ my $recorded = decode_data(encode_data($str_binary));
 ok ($recorded eq $str_binary);
 ok (utf8::is_utf8($recorded) && !utf8::is_utf8($str_binary));
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $tmp_file = "$mtroot/line_proto_test";
 our $file = undef;
 

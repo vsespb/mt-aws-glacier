@@ -27,7 +27,6 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 use App::MtAws::Utils;
-use File::Temp;
 use Carp;
 use Fcntl qw/SEEK_SET LOCK_EX LOCK_UN SEEK_SET/;
 use IO::Pipe;
@@ -35,8 +34,7 @@ use Time::HiRes qw/usleep/;
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 
 my $filename = "$mtroot/testlock";
 

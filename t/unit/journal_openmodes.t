@@ -34,13 +34,11 @@ use Test::MockModule;
 use POSIX;
 use Carp;
 use TestUtils;
-use File::Temp ();
 
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $rootdir = 'def';
 my $file = "$mtroot/journal_open_mode";
 my $fixture = "A\t123\tCREATED\tasfaf\t1123\t1223\tahdsgBd\tabc/def";

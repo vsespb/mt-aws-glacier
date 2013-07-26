@@ -33,11 +33,9 @@ use App::MtAws::TreeHash;
 use App::MtAws;
 use Data::Dumper;
 use TestUtils;
-use File::Temp ();
 use File::stat;
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 
 warning_fatal();
 

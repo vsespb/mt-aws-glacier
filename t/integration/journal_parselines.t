@@ -30,13 +30,11 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
 use App::MtAws::Exceptions;
 use TestUtils;
-use File::Temp ();
 use File::Path;
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $localroot = "$mtroot/cmd_check_local_hash";
 my $journal = "$localroot/journal";
 my $rootdir = "$localroot/root";

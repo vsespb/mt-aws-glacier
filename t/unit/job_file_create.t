@@ -32,12 +32,10 @@ use File::Path;
 use Data::Dumper;
 use POSIX;
 use TestUtils;
-use File::Temp ();
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $file = "$mtroot/job_file_create";
 
 chmod 0744, $file;

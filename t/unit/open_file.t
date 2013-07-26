@@ -31,7 +31,6 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Data::Dumper;
 use File::Path;
-use File::Temp ();
 
 our $OpenStack = undef;
 our $BinmodeStack = undef;
@@ -48,8 +47,7 @@ use TestUtils;
 warning_fatal();
 
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 my $tmp_file = "$mtroot/open_file_test";
 
 unlink $tmp_file;

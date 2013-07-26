@@ -27,14 +27,12 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 use App::MtAws::IntermediateFile;
-use File::Temp;
 use Carp;
 use Fcntl qw/SEEK_SET LOCK_EX LOCK_UN SEEK_SET/;
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $rootdir = $TEMP->dirname();
+my $rootdir = get_temp_dir();
 
 with_fork
 	sub {

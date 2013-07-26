@@ -29,12 +29,10 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
-use File::Temp;
 use Carp;
 use URI;
 use TestUtils;
 use Test::More;
-use File::Temp ();
 use HTTP::Daemon;
 use App::MtAws;
 #use HTTP::Daemon::SSL;
@@ -53,8 +51,7 @@ my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $pro
 my ($base) = initialize_processes();
 	plan tests => 42;
 
-	my $TEMP = File::Temp->newdir();
-	my $mtroot = $TEMP->dirname();
+	my $mtroot = get_temp_dir();
 
 	my $tmpfile = "$mtroot/lwp.tmp";
 	

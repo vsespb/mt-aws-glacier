@@ -34,12 +34,10 @@ use File::Path;
 use Encode;
 use POSIX;
 use TestUtils;
-use File::Temp ();
 
 warning_fatal();
 
-my $TEMP = File::Temp->newdir();
-my $mtroot = $TEMP->dirname();
+my $mtroot = get_temp_dir();
 mkpath($mtroot);
 my $file = "$mtroot/read-config-test.txt";
 rmtree($file);

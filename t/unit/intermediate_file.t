@@ -37,8 +37,7 @@ use File::Path;
 use Encode;
 use App::MtAws::Utils;
 
-my $TEMP = File::Temp->newdir();
-my $rootdir = $TEMP->dirname();
+my $rootdir = get_temp_dir();
 
 warning_fatal();
 
