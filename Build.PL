@@ -73,7 +73,8 @@ my $build = Module::Build->new(
 		 # for compatibility with forking 0.19
 		 # perl 5.8.8 ships 0.16, 5.8.9 ships 0.20, but 5.9.0 ships 0.14
 		 # seems 0.16 actually ok now
-		'File::Temp' => '0.16',
+		 # intermediate_file_ipc fails for < 0.19
+		'File::Temp' => '0.19',
 
 		'File::Spec' => 0,
 		'File::stat' => 0,
