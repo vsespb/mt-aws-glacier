@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 16;
+use Test::More tests => 19;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -107,6 +107,33 @@ with_fork
 			exit(0);
 		};
 	ok ! -e $filename, "temporary file discarded when child exits";
+}
+
+
+#
+# this test actually fail with File::Temp 0.16, but we cant get to this point as
+# other testsuite prereqs in 0.19 and we can ignore such failure, as should
+# not use IntermediateFile during fork()
+#
+{
+	my $filename;
+	{
+		my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile4");
+		$filename = $I->tempfilename;
+		with_fork
+			sub {
+				my ($in, $out) = @_;
+				ok -e $filename, "file is file";
+				print $out "ok\n";
+			},
+			sub {
+				my ($in, $out) = @_;
+				<$in>;
+				exit(0);
+			};
+		ok -e $filename, "file is still exists after child existed";
+	}
+	ok !-e $filename, "file is discarded";
 }
 
 ok 1, "test flow finished";

@@ -39,7 +39,7 @@ my $build = Module::Build->new(
 	# this is a special version of 'mtglacier' script with different shebang and without FindBin
 	# http://blogs.perl.org/users/randy_stauner/2011/09/shebangs-with-perlbrew-aliases-and-eumm-and-without-locallib.html
 	script_files => ['bin/mtglacier'], # script_files directive since M::B 0.18
-	
+
 	meta_merge => {
 		resources => {
 			repository => 'https://github.com/vsespb/mt-aws-glacier',
@@ -69,8 +69,10 @@ my $build = Module::Build->new(
 		'File::Path' => 0,
 
 
-		 # File::Temp - for tests we need 0.19, for code probably lower version is OK, perl 5.8.8 ships 0.16, 5.8.9 ships 0.20, but 5.9.0 ships 0.14
-		 # TODO: decrease required version
+		 # File::Temp - for tests we need 0.19 (OO interface)
+		 # for EXLOCK 0.19 too
+		 # for compatibility with forking 0.19 too
+		 # perl 5.8.8 ships 0.16, 5.8.9 ships 0.20, but 5.9.0 ships 0.14
 		'File::Temp' => '0.19',
 
 		'File::Spec' => 0,
