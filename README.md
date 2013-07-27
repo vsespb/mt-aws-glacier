@@ -39,7 +39,6 @@ mt-aws-glacier is a client application for Glacier.
 * Vault creation and deletion
 * STS/IAM security tokens support
 
-[Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier
 [mt-aws-glacier Amazon Glacier meta-data format specification]:https://github.com/vsespb/mt-aws-glacier/blob/master/lib/App/MtAws/MetaData.pm
 
 ## Important bugs/missing features
@@ -115,7 +114,7 @@ NOTE: CPAN asks too many questions during install (but ignores important errors)
 	o conf commit
 	exit
 
-NOTE: Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) - it's a bit easier to install and configure.
+NOTE: Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/perldoc?App%3A%3Acpanminus) - it's a bit easier to install and configure.
 
 
 ## Warnings ( *MUST READ* )
@@ -749,6 +748,17 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 
 		./cycletest.sh init MYDIR
 		./cycletest.sh purge MYDIR
+
+## See also
+
+* Amazon Glacier Perl library on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*
+* Amazon Glacier TreeHash CPAN module [Net::Amazon::TreeHash][Amazon Glacier TreeHash CPAN module - Net::Amazon::TreeHash] (copied from `mtglacier` code)
+* [Amazon Glacier development forum][Amazon Glacier Glacier development forum]
+
+[Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier
+[Amazon Glacier TreeHash CPAN module - Net::Amazon::TreeHash]:https://metacpan.org/module/Net::Amazon::TreeHash
+[Amazon Glacier Glacier development forum]:https://forums.aws.amazon.com/forum.jspa?forumID=140
+
 
 ## Minimum Amazon Glacier permissions:
 
