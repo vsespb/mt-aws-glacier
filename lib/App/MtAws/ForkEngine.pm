@@ -109,7 +109,7 @@ sub start_children
 			exit(1);
 		}
 	}
-	
+
 	my $first_time = 1;
 	for my $sig (qw/INT TERM CHLD USR1 HUP/) {
 		$SIG{$sig} = sub {
@@ -117,13 +117,13 @@ sub start_children
 			if ($first_time) {
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
-				while((my $w = wait()) != -1){};
+				while( not (wait() == -1 and $!{ECHILD} ) ){};
 				print STDERR "EXIT on SIG$sig\n";
 				exit(1);
 			}
 		};
 	}
-	
+
 	return $self->{parent_worker} = App::MtAws::ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
 }
 
@@ -187,6 +187,6 @@ sub terminate_children
 	my ($self) = @_;
 	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
 	kill (POSIX::SIGUSR2, keys %{$self->{children}}); # TODO: we terminate all children with SIGUSR2 even on normal exit
-	while(wait() != -1) { print STDERR "wait\n";};
+	while( not (wait() == -1 and $!{ECHILD} ) ){ print STDERR "wait\n"};
 }
 1;
