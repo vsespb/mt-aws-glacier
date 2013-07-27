@@ -56,7 +56,10 @@ sub _init
 		'Cannot create directory %string dir%, errors: %error%',
 		dir => $dir, error => hex_dump_string($@);
 	};
-	$self->{tmp} = eval { File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname) } or do {
+	$self->{tmp} = eval {
+		# PID is needed cause child processes re-use random number generators, improves performance only, no risk of race cond.
+		File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname)
+	} or do {
 		die exception 'cannot_create_tempfile' =>
 		'Cannot create temporary file in directory %string dir%, errors: %error%',
 		dir => $dir, error => hex_dump_string($@);
@@ -89,12 +92,15 @@ sub make_permanent
 
 # File::Temp < 0.19 does not have protection from calling destructor in fork'ed child
 # and forking can happen any moments, some code in File::Spec/Cwd etc call it to exec external commands
-# this workaround prevents this, however destruction order is not defined so that might just fail
+# this workaround prevents this, however destruction order is undefined so that might just fail
+
+# we can try use File::Temp::tempfile() but it destroys temp files only on program exit
+# (can workaround with DESTROY) + when handle is closed! (thats bad)
 sub DESTROY
 {
 	my ($self) = @_;
 	local ($!, $@);
-	$self->{tmp}->unlink_on_destroy(0)
+	eval { $self->{tmp}->unlink_on_destroy(0) }
 		if ($self->{_init_pid} && $self->{_init_pid} != $$ && $self->{tmp});
 }
 
