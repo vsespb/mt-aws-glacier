@@ -753,11 +753,11 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 
 * Amazon Glacier Perl library on CPAN - see [Net::Amazon::Glacier][Amazon Glacier API CPAN module - Net::Amazon::Glacier] by *Tim Nordenfur*
 * Amazon Glacier TreeHash CPAN module [Net::Amazon::TreeHash][Amazon Glacier TreeHash CPAN module - Net::Amazon::TreeHash] (copied from `mtglacier` code)
-* [Amazon Glacier development forum][Amazon Glacier Glacier development forum]
+* [Amazon Glacier development forum][Amazon Glacier development forum]
 
 [Amazon Glacier API CPAN module - Net::Amazon::Glacier]:https://metacpan.org/module/Net::Amazon::Glacier
 [Amazon Glacier TreeHash CPAN module - Net::Amazon::TreeHash]:https://metacpan.org/module/Net::Amazon::TreeHash
-[Amazon Glacier Glacier development forum]:https://forums.aws.amazon.com/forum.jspa?forumID=140
+[Amazon Glacier development forum]:https://forums.aws.amazon.com/forum.jspa?forumID=140
 
 
 ## Minimum Amazon Glacier permissions:
