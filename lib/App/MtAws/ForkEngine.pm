@@ -114,11 +114,17 @@ sub start_children
 	for my $sig (qw/INT TERM CHLD USR1 HUP/) {
 		$SIG{$sig} = sub {
 			local ($!,$^E,$@);
+			if ($sig eq 'CHLD') {
+				my $pid = waitpid(-1, WNOHANG);
+				# make sure we caugth signal from our children, not from external command executionin 3rd party module
+				# easy to test by adding `whoami` to parent after-fork-code
+				return unless $pid > 0 and defined $self->{children}{$pid};
+			}
 			if ($first_time) {
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
 				while( not (wait() == -1 and $!{ECHILD} ) ){};
-				print STDERR "EXIT on SIG$sig\n";
+				print STDERR "\nEXIT on SIG$sig\n";
 				exit(1);
 			}
 		};
