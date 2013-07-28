@@ -37,49 +37,48 @@ my $rootdir = get_temp_dir();
 
 my @TRUE_CMD = ($Config{'perlpath'}, '-e', '0');
 
-sub fork_engine_test(&&&&)
+sub fork_engine_test($%)
 {
-	my ($parent_init, $parent_each, $parent_done, $child_cb) = @_;
+	my ($cnt, %cb) = @_;
 
 	no warnings 'redefine';
 	local *App::MtAws::ForkEngine::run_children = sub {
 		my ($self, $out, $in) = @_;
-		$child_cb->($in, $out);
+		$cb{child}->($in, $out) if $cb{child};
 	};
 	local *App::MtAws::ForkEngine::run_parent = sub {
 		my ($self, $disp_select) = @_;
-		$parent_init->();
+		$cb{parent_init}->($self->{children}) if $cb{parent_init};
 		my @ready;
 		do { @ready = $disp_select->can_read(); } until @ready || !$!{EINTR};
 		for my $fh (@ready) {
-			$parent_each->($fh);
+			$cb{parent_each}->($fh, $self->{children}) if $cb{parent_each};
 		}
+		$cb{parent_before_terminate}->($self->{children}) if $cb{parent_before_terminate};
 		$self->terminate_children();
-		$parent_done->();
+		$cb{parent_after_terminate}->() if $cb{parent_after_terminate};
 	};
-	my $FE = App::MtAws::ForkEngine->new(options => { concurrency => 1});
+	my $FE = App::MtAws::ForkEngine->new(options => { concurrency => $cnt});
 	$FE->start_children();
 }
 
-fork_engine_test
-	sub {
+fork_engine_test 1,
+	parent_init => sub {
 		system @TRUE_CMD;
 		usleep(300_000);
 	},
-	sub {
+	parent_each => sub {
 		my ($fh) = @_;
 		is <$fh>, "ready\n";
 	},
-	sub {
+	parent_after_terminate => sub {
 		ok 1, "should not die if parent code executed system command";
 	},
-	sub {
+	child => sub {
 		my ($in, $out) = @_;
 		print $out "ready\n";
 		<$in>;
 	};
-
-
 
 
 1;
