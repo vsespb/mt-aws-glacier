@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 20;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -45,10 +45,14 @@ sub fork_engine_test($%)
 	no warnings 'redefine';
 	local ($SIG{INT}, $SIG{USR1}, $SIG{USR2}, $SIG{TERM}, $SIG{HUP}, $SIG{CHLD});
 	local *App::MtAws::ForkEngine::run_children = sub {
+		alarm 5;
 		my ($self, $out, $in) = @_;
-		$cb{child}->($in, $out) if $cb{child};
+		confess unless $self->{parent_pid};
+		$cb{child}->($in, $out, $self->{parent_pid}) if $cb{child};
+		alarm 0;
 	};
 	local *App::MtAws::ForkEngine::run_parent = sub {
+		alarm 5;
 		my ($self, $disp_select) = @_;
 		$cb{parent_init}->($self->{children}) if $cb{parent_init};
 		my @ready;
@@ -59,10 +63,11 @@ sub fork_engine_test($%)
 		$cb{parent_before_terminate}->($self->{children}) if $cb{parent_before_terminate};
 		$self->terminate_children();
 		$cb{parent_after_terminate}->() if $cb{parent_after_terminate};
+		alarm 0;
 	};
 	local *App::MtAws::ForkEngine::parent_exit_on_signal = sub {
 		my ($self, $sig) = @_;
-		$cb{parent_exit_on_signal}->($sig);
+		$cb{parent_exit_on_signal}->($sig, $self->{children});
 	} if ($cb{parent_exit_on_signal});
 
 	my $FE = App::MtAws::ForkEngine->new(options => { concurrency => $cnt});
@@ -86,11 +91,10 @@ fork_engine_test 1,
 	};
 
 
-my @child_signals = (POSIX::SIGINT, POSIX::SIGHUP, , POSIX::SIGTERM, POSIX::SIGUSR2);
+my @child_signals = (POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM, POSIX::SIGUSR2);
 my %child_signals = map { $_ => 1} @child_signals;
 
 for my $sig (@child_signals) {
-	ok $sig, "testing $sig";
 	fork_engine_test 1,
 		parent_each => sub {
 			my ($fh, $children) = @_;
@@ -110,5 +114,42 @@ for my $sig (@child_signals) {
 }
 
 ok scalar keys %child_signals == 0, "all child signals tested";
+
+
+my @parent_signals = (POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM, POSIX::SIGUSR1);
+my %parent_signals = map { $_ => 1} @parent_signals;
+
+
+for my $sig (@parent_signals) { # we dont test SIGCHLD here , this test does not make sense for sighup
+	my $exit_flag = 0;
+	fork_engine_test 1,
+		parent_each => sub { # parent main code - we just wait for exit_flag
+			my ($fh, $children) = @_;
+			my $childpid = <$fh>;
+			chomp $childpid;
+			my $out = $children->{$childpid}{tochild};
+			print $out "ok\n";
+
+			while (!$exit_flag) {
+				usleep 300_000;
+			}
+		},
+		parent_exit_on_signal => sub { # parent signal handler
+			my (undef, $children) = @_;
+			is(wait(), -1, "children should be terminated before parent exit due to signal, for signal $sig");
+			delete $parent_signals{$sig};
+			$exit_flag = 1;
+		},
+		child => sub {
+			my ($in, $out, $parent_pid) = @_;
+			print $out "$$\n";
+			<$in>; # make sure parent already running in main loop
+			kill($sig, $parent_pid); # child is killing parent
+			while (waitpid($parent_pid, 0) != -1) {};
+			sleep 10;
+		};
+}
+
+ok scalar keys %parent_signals == 0, "all parent signals tested";
 
 1;

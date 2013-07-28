@@ -97,7 +97,7 @@ sub run_parent
 
 sub parent_exit_on_signal
 {
-	my ($self, $sig) = @_;
+	my ($self, $sig, $children) = @_;
 	print STDERR "\nEXIT on SIG$sig\n";
 	exit(1);
 }
@@ -107,7 +107,7 @@ sub start_children
 	my ($self) = @_;
 	# parent's data
 	my $disp_select = IO::Select->new();
-	my $parent_pid = $$;
+	$self->{parent_pid} = $$;
 	# child/parent code
 	for my $n (1..$self->{options}->{concurrency}) {
 		my ($ischild, $child_fromchild, $child_tochild) = $self->create_child($disp_select);
@@ -142,7 +142,7 @@ sub start_children
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
 				while( wait() != -1 ){};
-				$self->parent_exit_on_signal($sig);
+				$self->parent_exit_on_signal($sig, $self->{children});
 			}
 		};
 	}
