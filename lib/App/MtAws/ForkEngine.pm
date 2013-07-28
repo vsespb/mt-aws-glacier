@@ -89,6 +89,12 @@ sub run_children
 	dump_error("child $$") unless (defined eval {$C->process(); 1;});
 }
 
+sub run_parent
+{
+	my ($self, $disp_select) = @_;
+	return $self->{parent_worker} = App::MtAws::ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
+}
+
 sub start_children
 {
 	my ($self) = @_;
@@ -135,7 +141,7 @@ sub start_children
 		};
 	}
 
-	return $self->{parent_worker} = App::MtAws::ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
+	return $self->run_parent($disp_select);
 }
 
 #
