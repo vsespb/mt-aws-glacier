@@ -38,6 +38,9 @@ my $rootdir = get_temp_dir();
 
 my @TRUE_CMD = ($Config{'perlpath'}, '-e', '0');
 
+print STDERR "STARTED $$ ".time()."\n";
+$SIG{ALRM} = sub { print STDERR "ALARM $$ ".time()."\n"; exit(1) };
+
 sub fork_engine_test($%)
 {
 	my ($cnt, %cb) = @_;
@@ -45,14 +48,14 @@ sub fork_engine_test($%)
 	no warnings 'redefine';
 	local ($SIG{INT}, $SIG{USR1}, $SIG{USR2}, $SIG{TERM}, $SIG{HUP}, $SIG{CHLD});
 	local *App::MtAws::ForkEngine::run_children = sub {
-		alarm 5;
+		alarm 20;
 		my ($self, $out, $in) = @_;
 		confess unless $self->{parent_pid};
 		$cb{child}->($in, $out, $self->{parent_pid}) if $cb{child};
 		alarm 0;
 	};
 	local *App::MtAws::ForkEngine::run_parent = sub {
-		alarm 5;
+		alarm 20;
 		my ($self, $disp_select) = @_;
 		$cb{parent_init}->($self->{children}) if $cb{parent_init};
 		my @ready;
@@ -74,12 +77,14 @@ sub fork_engine_test($%)
 	$FE->start_children();
 }
 
+
+
 fork_engine_test 1,
 	parent_each => sub {
 		my ($fh) = @_;
 		is <$fh>, "ready\n";
 		system @TRUE_CMD;
-		usleep 300_000;
+		usleep 30_000 for (1..10);
 	},
 	parent_after_terminate => sub {
 		ok 1, "should not die if parent code executed system command";
@@ -87,33 +92,42 @@ fork_engine_test 1,
 	child => sub {
 		my ($in, $out) = @_;
 		print $out "ready\n";
-		<$in>;
+		<$in>; # TODO: signal can be blocked here.. better hack something with select+timeout
 	};
 
 
-my @child_signals = (POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM, POSIX::SIGUSR2);
+
+
+my @child_signals = (POSIX::SIGUSR2, POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM);
 my %child_signals = map { $_ => 1} @child_signals;
 
 for my $sig (@child_signals) {
+	my $exited = 0;
 	fork_engine_test 1,
 		parent_each => sub {
 			my ($fh, $children) = @_;
 			is <$fh>, "ready\n";
 			is kill($sig, keys %$children), 1;
-			sleep 10;
+			while (!$exited) {
+				usleep 30_000;
+			}
 		},
 		parent_exit_on_signal => sub {
-			ok 1, "parent should exit if child receive signal $sig";
+			$exited = 1;
 			delete $child_signals{$sig};
 		},
 		child => sub {
 			my ($in, $out) = @_;
 			print $out "ready\n";
-			<$in>;
+			while (!$exited) {
+				usleep 30_000;
+			}
 		};
+	ok $exited, "parent should exit if child receive signal $sig";
 }
 
 ok scalar keys %child_signals == 0, "all child signals tested";
+
 
 
 my @parent_signals = (POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM, POSIX::SIGUSR1);
@@ -121,6 +135,7 @@ my %parent_signals = map { $_ => 1} @parent_signals;
 
 
 for my $sig (@parent_signals) { # we dont test SIGCHLD here , this test does not make sense for sighup
+	my $wait_test = 0;
 	my $exit_flag = 0;
 	fork_engine_test 1,
 		parent_each => sub { # parent main code - we just wait for exit_flag
@@ -136,7 +151,7 @@ for my $sig (@parent_signals) { # we dont test SIGCHLD here , this test does not
 		},
 		parent_exit_on_signal => sub { # parent signal handler
 			my (undef, $children) = @_;
-			is(wait(), -1, "children should be terminated before parent exit due to signal, for signal $sig");
+			$wait_test = 1 if wait() == -1;
 			delete $parent_signals{$sig};
 			$exit_flag = 1;
 		},
@@ -146,8 +161,9 @@ for my $sig (@parent_signals) { # we dont test SIGCHLD here , this test does not
 			<$in>; # make sure parent already running in main loop
 			kill($sig, $parent_pid); # child is killing parent
 			while (waitpid($parent_pid, 0) != -1) {};
-			sleep 10;
+			usleep 300_000 for (1..30);
 		};
+	ok($wait_test, "children should be terminated before parent exit due to signal, for signal $sig");
 }
 
 ok scalar keys %parent_signals == 0, "all parent signals tested";
