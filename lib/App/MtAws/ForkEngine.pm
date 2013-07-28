@@ -123,7 +123,7 @@ sub start_children
 			if ($first_time) {
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
-				while( not (wait() == -1 and $!{ECHILD} ) ){};
+				while( wait() != -1 ){};
 				print STDERR "\nEXIT on SIG$sig\n";
 				exit(1);
 			}
@@ -193,6 +193,6 @@ sub terminate_children
 	my ($self) = @_;
 	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
 	kill (POSIX::SIGUSR2, keys %{$self->{children}}); # TODO: we terminate all children with SIGUSR2 even on normal exit
-	while( not (wait() == -1 and $!{ECHILD} ) ){ print STDERR "wait\n"};
+	while( wait() != -1 ){ print STDERR "wait\n"};
 }
 1;

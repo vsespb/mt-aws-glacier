@@ -208,7 +208,7 @@ sub with_fork(&&)
 		$parent_cb->($fromchild, $tochild);
 		alarm 0;
 
-		while( not (wait() == -1 and $!{ECHILD} ) ){};
+		while(wait() != -1 ){};
 	} else {
 		$fromchild->writer();
 		$fromchild->autoflush(1);
