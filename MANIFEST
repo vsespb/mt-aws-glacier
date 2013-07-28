@@ -73,6 +73,7 @@ t/integration/config_engine_v078.t
 t/integration/config_engine_v082.t
 t/integration/config_engine_v085.t
 t/integration/config_read_config.t
+t/integration/fork_engine.t
 t/integration/intermediate_file_ipc.t
 t/integration/journal.t
 t/integration/journal_follow.t
