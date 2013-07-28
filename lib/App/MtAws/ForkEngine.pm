@@ -82,6 +82,13 @@ sub new
 	return $self;
 }
 
+sub run_children
+{
+	my ($self, $child_fromchild, $child_tochild) = @_;
+	my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
+	dump_error("child $$") unless (defined eval {$C->process(); 1;});
+}
+
 sub start_children
 {
 	my ($self) = @_;
@@ -103,9 +110,7 @@ sub start_children
 					}
 				};
 			}
-			my $C = App::MtAws::ChildWorker->new(options => $self->{options}, fromchild => $child_fromchild, tochild => $child_tochild);
-
-			dump_error("child $$") unless (defined eval {$C->process(); 1;});
+			$self->run_children($child_fromchild, $child_tochild);
 			exit(1);
 		}
 	}
