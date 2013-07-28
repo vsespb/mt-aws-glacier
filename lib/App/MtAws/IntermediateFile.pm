@@ -99,7 +99,7 @@ sub make_permanent
 sub DESTROY
 {
 	my ($self) = @_;
-	local ($!, $@);
+	local ($!, $@, $?);
 	eval { $self->{tmp}->unlink_on_destroy(0) }
 		if ($self->{_init_pid} && $self->{_init_pid} != $$ && $self->{tmp});
 }
