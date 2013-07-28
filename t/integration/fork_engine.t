@@ -22,10 +22,11 @@
 
 use strict;
 use warnings;
-use Test::More tests => 2;
+use Test::More tests => 19;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
+use POSIX;
 use App::MtAws::ForkEngine;
 use Carp;
 use Config;
@@ -42,6 +43,7 @@ sub fork_engine_test($%)
 	my ($cnt, %cb) = @_;
 
 	no warnings 'redefine';
+	local ($SIG{INT}, $SIG{USR1}, $SIG{USR2}, $SIG{TERM}, $SIG{HUP}, $SIG{CHLD});
 	local *App::MtAws::ForkEngine::run_children = sub {
 		my ($self, $out, $in) = @_;
 		$cb{child}->($in, $out) if $cb{child};
@@ -58,18 +60,21 @@ sub fork_engine_test($%)
 		$self->terminate_children();
 		$cb{parent_after_terminate}->() if $cb{parent_after_terminate};
 	};
+	local *App::MtAws::ForkEngine::parent_exit_on_signal = sub {
+		my ($self, $sig) = @_;
+		$cb{parent_exit_on_signal}->($sig);
+	} if ($cb{parent_exit_on_signal});
+
 	my $FE = App::MtAws::ForkEngine->new(options => { concurrency => $cnt});
 	$FE->start_children();
 }
 
 fork_engine_test 1,
-	parent_init => sub {
-		system @TRUE_CMD;
-		usleep(300_000);
-	},
 	parent_each => sub {
 		my ($fh) = @_;
 		is <$fh>, "ready\n";
+		system @TRUE_CMD;
+		usleep 300_000;
 	},
 	parent_after_terminate => sub {
 		ok 1, "should not die if parent code executed system command";
@@ -80,5 +85,30 @@ fork_engine_test 1,
 		<$in>;
 	};
 
+
+my @child_signals = (POSIX::SIGINT, POSIX::SIGHUP, , POSIX::SIGTERM, POSIX::SIGUSR2);
+my %child_signals = map { $_ => 1} @child_signals;
+
+for my $sig (@child_signals) {
+	ok $sig, "testing $sig";
+	fork_engine_test 1,
+		parent_each => sub {
+			my ($fh, $children) = @_;
+			is <$fh>, "ready\n";
+			is kill($sig, keys %$children), 1;
+			sleep 10;
+		},
+		parent_exit_on_signal => sub {
+			ok 1, "parent should exit if child receive signal $sig";
+			delete $child_signals{$sig};
+		},
+		child => sub {
+			my ($in, $out) = @_;
+			print $out "ready\n";
+			<$in>;
+		};
+}
+
+ok scalar keys %child_signals == 0, "all child signals tested";
 
 1;

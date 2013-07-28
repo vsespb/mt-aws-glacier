@@ -95,6 +95,13 @@ sub run_parent
 	return $self->{parent_worker} = App::MtAws::ParentWorker->new(children => $self->{children}, disp_select => $disp_select, options=>$self->{options});
 }
 
+sub parent_exit_on_signal
+{
+	my ($self, $sig) = @_;
+	print STDERR "\nEXIT on SIG$sig\n";
+	exit(1);
+}
+
 sub start_children
 {
 	my ($self) = @_;
@@ -135,8 +142,7 @@ sub start_children
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
 				while( wait() != -1 ){};
-				print STDERR "\nEXIT on SIG$sig\n";
-				exit(1);
+				$self->parent_exit_on_signal($sig);
 			}
 		};
 	}
