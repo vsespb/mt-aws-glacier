@@ -33,6 +33,12 @@ use Carp;
 use Config;
 use Time::HiRes qw/usleep/;
 
+# tip for testing this for race conditions:
+#
+# ( seq 1000 |xargs -P 100 -n 1 ./fork_engine.t  ) && echo ALL_FINE
+# test on different Unixes: Linux, FreeBSD and OpenBSD can be different
+# under some BSD there is no "seq" but you can use "jot" instead
+
 warning_fatal();
 
 my $rootdir = get_temp_dir();
