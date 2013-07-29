@@ -119,9 +119,7 @@ for my $sig (@child_signals) {
 		child => sub {
 			my ($in, $out) = @_;
 			print $out "ready\n";
-			while (!$exited) {
-				usleep 30_000;
-			}
+			usleep 30_000 while ();
 		};
 	ok $exited, "parent should exit if child receive signal $sig";
 }
