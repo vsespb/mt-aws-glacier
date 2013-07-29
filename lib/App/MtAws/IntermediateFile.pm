@@ -80,14 +80,17 @@ sub make_permanent
 	my $self = shift;
 	confess "unknown arguments" if @_;
 	my $binary_target_filename = binaryfilename($self->{target_file});
+
 	my $character_tempfile = delete $self->{tempfile} or confess "file already permanent or not initialized";
 	$self->{tmp}->unlink_on_destroy(0);
-	rename binaryfilename($character_tempfile), $binary_target_filename or
+	undef $self->{tmp};
+	my $binary_tempfile = binaryfilename($character_tempfile);
+
+	chmod((0666 & ~umask), $binary_tempfile) or confess "cannot chmod file $character_tempfile";
+	utime $self->{mtime}, $self->{mtime}, $binary_tempfile or confess "cannot change mtime for $character_tempfile" if defined $self->{mtime};
+	rename $binary_tempfile, $binary_target_filename or
 		die exception "cannot_rename_file" => "Cannot rename file %string from% to %string to%",
 		from => $character_tempfile, to => $self->{target_file};
-	undef $self->{tmp};
-	chmod((0666 & ~umask), $binary_target_filename) or confess "cannot chmod file $self->{target_file}";
-	utime $self->{mtime}, $self->{mtime}, $binary_target_filename or confess "cannot change mtime" if defined $self->{mtime};
 }
 
 # File::Temp < 0.19 does not have protection from calling destructor in fork'ed child
