@@ -22,12 +22,13 @@
 
 use strict;
 use warnings;
-use Test::More tests => 20;
+use Test::More tests => 24;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 use POSIX;
 use App::MtAws::ForkEngine;
+use App::MtAws::IntermediateFile;
 use Carp;
 use Config;
 use Time::HiRes qw/usleep/;
@@ -103,11 +104,14 @@ my %child_signals = map { $_ => 1} @child_signals;
 
 for my $sig (@child_signals) {
 	my $exited = 0;
+	my $filename;
 	fork_engine_test 1,
 		parent_each => sub {
 			my ($fh, $children) = @_;
-			is <$fh>, "ready\n";
-			is kill($sig, keys %$children), 1;
+			$filename = <$fh>;
+			chomp $filename;
+			ok -f $filename, "child should create temporary file";
+			is kill($sig, keys %$children), 1, "kill should work";
 			while (!$exited) {
 				usleep 30_000;
 			}
@@ -118,10 +122,13 @@ for my $sig (@child_signals) {
 		},
 		child => sub {
 			my ($in, $out) = @_;
-			print $out "ready\n";
-			usleep 30_000 while ();
+			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/child_$$");
+			my $filename = $I->tempfilename;
+			print $out "$filename\n";
+			usleep 30_000 while (1);
 		};
 	ok $exited, "parent should exit if child receive signal $sig";
+	ok !-e $filename, "child should remove temporary files";
 }
 
 ok scalar keys %child_signals == 0, "all child signals tested";
