@@ -26,7 +26,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
-use Test::More tests => 162;
+use Test::More tests => 168;
 use Test::Deep;
 use Encode;
 use bytes;
@@ -186,6 +186,22 @@ sub receiving
 		is $action, 'testaction';
 		is $taskid, 'sometaskid';
 		is $$att, $attachment;
+		cmp_deeply($data, $src);
+	}
+}
+
+# should work with attachmentref == undef
+{
+	my $src = { var => 'test' };
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src, undef);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data, $att) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		is $$att, undef;
 		cmp_deeply($data, $src);
 	}
 }
