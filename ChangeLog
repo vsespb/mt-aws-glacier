@@ -1,3 +1,15 @@
+### 2013-07-30 v0.975 beta
+
+  * Fixed: files with content "0" caused crash (unexpected error), issue #42
+
+  * When downloading from glacier, temporary files were created, download performed, then temp files were renamed to
+  target filename (this is atomic), then target file attributes were adjusted and file modification time changed.
+  Now chmod/mtime performed before file is renamed. So more atomic now.
+
+  * Fixed: File::Temp required version decreased, so can work on perl-5.8.8 without upgrading this module
+
+  * Internal: Code to work with temporary files reworked, testsuite added. IPC small refactoring + testsuite added.
+
 ### 2013-07-21 v0.974 beta
 
   * Deprecations (deprecated options produce warning, and can start producing errors some day)
