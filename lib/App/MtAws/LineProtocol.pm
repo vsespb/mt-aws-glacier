@@ -80,7 +80,10 @@ sub send_data
 	my ($fh, $action, $taskid, $data, $attachmentref) = @_;
 	my $data_e = encode_data($data);
 	confess if is_wide_string($data_e);
-	confess "Attachment should be a binary string" if $attachmentref && is_wide_string($$attachmentref);
+	if ($attachmentref) {
+		confess "Attachment should be a binary string" if is_wide_string($$attachmentref);
+		confess "Attachment should not be empty" unless defined($$attachmentref) && length($$attachmentref);
+	}
 	my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
 	my $datasize = length($data_e);
 	my $line = "$$\t$action\t$taskid\t$datasize\t$attachmentsize\n"; # encode_data returns ASCII-7bit data, so ok here

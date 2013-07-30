@@ -26,7 +26,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
-use Test::More tests => 158;
+use Test::More tests => 162;
 use Test::Deep;
 use Encode;
 use bytes;
@@ -188,6 +188,17 @@ sub receiving
 		is $$att, $attachment;
 		cmp_deeply($data, $src);
 	}
+}
+
+# should not work with attachment of zero length
+
+for ('', undef) {
+	my $src = { var => 'test' };
+	my $attachment = $_;
+	sending sub {
+		ok ! defined eval { send_data($file, 'testaction', 'sometaskid', $src, \$attachment); 1 };
+		like $@, qr/Attachment should not be empty/;
+	};
 }
 
 # should work with attachment and utf-8 data, above Latin-1
