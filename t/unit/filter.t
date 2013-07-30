@@ -420,7 +420,7 @@ check 'z/ex[1|2]mple',
 			'pattern' => 'dir/',
 
 			# Test::Deep problem here https://rt.cpan.org/Ticket/Display.html?id=85785
-			're' => $] > 5.01 ? qr!(^|/)dir\/! : ignore(),
+			're' => $] - 5.01 > 1e-6 ? qr!(^|/)dir\/! : ignore(), # actually any version > 5.8.9, but we test only 5.10.x
 
 			'action' => '-',
 			'match_subdirs' => 1,
