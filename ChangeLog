@@ -2,6 +2,8 @@
 
   * Fixed: files with content "0" caused crash (unexpected error), issue #42
 
+  * Documentation: small update for Fedora install instructions
+
   * When downloading from glacier, temporary files were created, download performed, then temp files were renamed to
   target filename (this is atomic), then target file attributes were adjusted and file modification time changed.
   Now chmod/mtime performed before file is renamed. So more atomic now.
