@@ -71,6 +71,8 @@ Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pr
 	so package named `perl`, which is a part of default installation, is not actually real, full Perl, which is misleading.
 	`perl-core` is looks much more like a real Perl (I [hope](https://bugzilla.redhat.com/show_bug.cgi?id=985791) so)
 
+	NOTE: On newer RHEL distributions (some *Fedora* versions) you need install **perl-LWP-Protocol-https** to use HTTPS.
+
 	NOTE: For some RPM packages listed above you need enable [EPEL](http://fedoraproject.org/wiki/EPEL) repository
 
 * Install mt-aws-glacier
