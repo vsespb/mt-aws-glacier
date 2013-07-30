@@ -26,7 +26,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
-use Test::More tests => 152;
+use Test::More tests => 158;
 use Test::Deep;
 use Encode;
 use bytes;
@@ -70,7 +70,7 @@ my $samples = [
 	{ 1.2 => 1.3 },
 	[1.5],
 
-			# is not compat with YAML        	
+			# is not compat with YAML
 	{ a => 0 },
 	{ 0 => 0 },
 	[0],
@@ -81,7 +81,7 @@ my $samples = [
 	[],
 	[undef],
 	[undef, undef],
-	
+
 	{
 		'somekey1' => { 'keyA' => 'data1', 'keyB' => 'data2', 'keyC' => '99999' },
 		'somekey2' => { 'XkeyA' => '2734234', 'XkeyB' => "data2", 'XkeyC' => '76324' },
@@ -160,6 +160,23 @@ sub receiving
 {
 	my $src = { var => 'test' };
 	my $attachment = 'xyz' x 500;
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src, \$attachment);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data, $att) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		is $$att, $attachment;
+		cmp_deeply($data, $src);
+	}
+}
+
+# should work with attachment when it's "0"
+{
+	my $src = { var => 'test' };
+	my $attachment = "0";
 	sending sub {
 		ok send_data($file, 'testaction', 'sometaskid', $src, \$attachment);
 	};
@@ -252,8 +269,8 @@ sub receiving
 			cmp_deeply($data, $src);
 		}
 	}
-	
-	
+
+
 	# should work with attachment and utf-8, above Latin-1 data
 	{
 		my $c = 'Ф';

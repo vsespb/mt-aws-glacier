@@ -55,13 +55,13 @@ sub encode_data
 sub get_data
 {
 	my ($fh) = @_;
-	
+
 	my ($len, $line);
 
 	sysreadfull($fh, $len, 8) &&
 	sysreadfull($fh, $line, $len+0) or
 	return;
-	
+
 	chomp $line;
 	my ($pid, $action, $taskid, $datasize, $attachmentsize) = split /\t/, $line;
 	sysreadfull($fh, my $data_e, $datasize) or
@@ -72,7 +72,7 @@ sub get_data
 			return;
 	}
 	my $data = decode_data($data_e);
-	return ($pid, $action, $taskid, $data, $attachment ? \$attachment : ());
+	return ($pid, $action, $taskid, $data, defined($attachment) ? \$attachment : ());
 }
 
 sub send_data
