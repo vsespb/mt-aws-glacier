@@ -33,6 +33,7 @@ use App::MtAws::Utils;
 use Encode;
 use POSIX;
 use TestUtils;
+use Carp;
 use Time::HiRes qw/usleep ualarm/;
 
 warning_fatal();
@@ -47,7 +48,7 @@ for my $redef (0, 1) {
 
 	local *syswritefull = sub {
 		my $f = $_[0];
-		print $f $_[1];
+		print ($f $_[1]) or confess "Error $! in print";
 		length $_[1];
 	} if $redef;
 
@@ -107,7 +108,8 @@ for my $redef (0, 1) {
 	}
 
 
-	{
+	SKIP: {
+		skip "Cannot test due to this perl bug http://www.perlmonks.org/?node_id=1026542", 20 unless (!$redef or $] < 5.013 or $] > 5.0159 );
 		local $SIG{ALRM} = sub { print STDERR "SIG $$\n" };
 		my $sample = 'abxhrtf6';
 		my $full_sample = 'abxhrtf6' x (8192-7);
