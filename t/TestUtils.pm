@@ -189,6 +189,7 @@ sub test_fast_ok
 sub with_fork(&&)
 {
 	my ($parent_cb, $child_cb) = @_;
+	my $ppid = $$;
 	my $fromchild = new IO::Pipe;
 	my $tochild = new IO::Pipe;
 
@@ -205,7 +206,7 @@ sub with_fork(&&)
 		binmode $tochild;
 
 		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
-		$parent_cb->($fromchild, $tochild);
+		$parent_cb->($fromchild, $tochild, $pid);
 		alarm 0;
 
 		while(wait() != -1 ){};
@@ -221,7 +222,7 @@ sub with_fork(&&)
 		binmode $tochild;
 
 		alarm ALARM_FOR_FORK_TESTS; # protect from hang in case our test fail
-		$child_cb->($tochild, $fromchild);
+		$child_cb->($tochild, $fromchild, $ppid);
 		alarm 0;
 
 		exit(0);
