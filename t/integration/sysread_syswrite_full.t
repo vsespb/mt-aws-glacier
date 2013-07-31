@@ -34,11 +34,12 @@ use Encode;
 use POSIX;
 use TestUtils;
 use Carp;
-use Time::HiRes qw/usleep ualarm/;
+use Time::HiRes qw/usleep/;
 
 warning_fatal();
 
 my $redef = 1;
+my $is_ualarm = Time::HiRes::d_ualarm();
 
 for my $redef (0, 1) {
 	no warnings 'redefine';
@@ -114,11 +115,15 @@ for my $redef (0, 1) {
 		my $sample = 'abxhrtf6';
 		my $full_sample = 'abxhrtf6' x (8192-7);
 		my $sample_l = length $full_sample;
+		my $n = 10;
+		my $small_delay = 1;
+		my $uratio = 100_000 / 10;
+
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				usleep 100_000;
-				for (1..10) {
+				$is_ualarm ? usleep($small_delay*2*$uratio) : sleep($small_delay*2);
+				for (1..$n) {
 					my $n = sysreadfull($in, my $x, $sample_l);
 					is $n, $sample_l, "should handle EINTR in syswrite";
 					ok $x eq $full_sample
@@ -126,10 +131,10 @@ for my $redef (0, 1) {
 			},
 			sub {
 				my ($in, $out, $ppid) = @_;
-				for (1..10) {
-					ualarm(10_000);
+				for (1..$n) {
+					$is_ualarm ? Time::HiRes::ualarm($small_delay*$uratio) : alarm($small_delay);
 					syswritefull($out, $full_sample) == $sample_l or die "$$ bad syswrite";
-					ualarm(0);
+					$is_ualarm ? Time::HiRes::ualarm(0) : alarm(0);
 				}
 
 			};
