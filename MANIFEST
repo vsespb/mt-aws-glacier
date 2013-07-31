@@ -84,6 +84,7 @@ t/integration/lwp.t
 t/integration/metadata.t
 t/integration/metadata_mt1.t
 t/integration/source_checks.t
+t/integration/sysread_syswrite_full.t
 t/integration/system_flock.t
 t/integration/system_versions.t
 t/integration/t_treehash.t
