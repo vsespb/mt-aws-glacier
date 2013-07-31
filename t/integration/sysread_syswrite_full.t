@@ -110,7 +110,7 @@ for my $redef (0, 1) {
 
 	my $e = 1e-6;
 	SKIP: {
-		skip "Cannot test due to this perl bugs", 20 if $redef && ( ($] < 5.01-$e) or ( ($] > 5.014-$e) && ($] < 5.016-$e) ) );
+		skip "Cannot test due to some perl bugs", 20 if $redef && ( ($] < 5.01-$e) or ( ($] > 5.014-$e) && ($] < 5.016-$e) ) );
 		local $SIG{ALRM} = sub { print STDERR "SIG $$\n" };
 		my $sample = 'abxhrtf6';
 		my $full_sample = 'abxhrtf6' x (8192-7);
