@@ -200,7 +200,7 @@ sub sysreadfull($$$)
 		my $i = sysread($file, $_[1], $len - $n, $n);
 		if (defined($i)) {
 			if ($i == 0) {
-				return 0;
+				return $n;
 			} else {
 				$n += $i;
 			}
