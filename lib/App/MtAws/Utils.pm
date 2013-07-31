@@ -29,7 +29,6 @@ use File::Spec;
 use File::stat;
 use Carp;
 use Encode;
-use POSIX;
 use App::MtAws::Exceptions;
 use LWP::UserAgent;
 use bytes;
@@ -204,7 +203,7 @@ sub sysreadfull($$$)
 			} else {
 				$n += $i;
 			}
-		} elsif ($! == EINTR) {
+		} elsif ($!{EINTR}) {
 			redo;
 		} else {
 			return undef;
@@ -222,7 +221,7 @@ sub syswritefull($$)
 		my $i = syswrite($file, $_[1], $len - $n, $n);
 		if (defined($i)) {
 			$n += $i;
-		} elsif ($! == EINTR) {
+		} elsif ($!{EINTR}) {
 			redo;
 		} else {
 			return undef;

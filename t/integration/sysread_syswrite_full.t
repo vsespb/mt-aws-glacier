@@ -33,7 +33,7 @@ use App::MtAws::Utils;
 use Encode;
 use POSIX;
 use TestUtils;
-use Time::HiRes qw/usleep/;
+use Time::HiRes qw/usleep ualarm/;
 
 warning_fatal();
 
@@ -108,27 +108,27 @@ for my $redef (0, 1) {
 
 
 	{
-		local $SIG{USR1} = sub { print STDERR "SIG $$\n" };
+		local $SIG{ALRM} = sub { print STDERR "SIG $$\n" };
 		my $sample = 'abxhrtf6';
 		my $full_sample = 'abxhrtf6' x (8192-7);
 		my $sample_l = length $full_sample;
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				usleep 500_000;
-				kill(POSIX::SIGUSR1, $childpid);
+				usleep 100_000;
 				for (1..10) {
 					my $n = sysreadfull($in, my $x, $sample_l);
 					is $n, $sample_l, "should handle EINTR in syswrite";
 					ok $x eq $full_sample
 				}
-				sleep 1;
-				kill(POSIX::SIGUSR2, $childpid);
 			},
 			sub {
 				my ($in, $out, $ppid) = @_;
-				syswritefull($out, $full_sample) == $sample_l or die "$$ bad syswrite" for (1..10);
-				usleep 10_000 while(1);
+				for (1..10) {
+					ualarm(10_000);
+					syswritefull($out, $full_sample) == $sample_l or die "$$ bad syswrite";
+					ualarm(0);
+				}
 
 			};
 	}
