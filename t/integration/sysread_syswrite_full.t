@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 52;
+use Test::More tests => 54;
 use Encode;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -56,7 +56,6 @@ for my $redef (0, 1) {
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				usleep 300_000;
 				my $n = sysreadfull($in, my $x, 2);
 				is $n, 2, "should merge two reads";
 				is $x, 'zx', "should merge two reads";
@@ -65,29 +64,26 @@ for my $redef (0, 1) {
 			sub {
 				my ($in, $out) = @_;
 				syswritefull($out, 'z') == 1 or die "$$ bad syswrite";
-				usleep 500_000;
+				usleep 5_000;
 				syswritefull($out, 'x') == 1  or die "$$ bad syswrite";
 				usleep 10_000 while(1);
 			};
 	}
 
 	{
+		local $SIG{USR1} = sub { print STDERR "SIG $$\n" };
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				usleep 300_000;
-				kill(POSIX::SIGUSR1, $childpid);
 				my $n = sysreadfull($in, my $x, 2);
-				is $n, 1, "should return only first read";
-				is $x, 'z', "should return only first read";
-				kill(POSIX::SIGUSR2, $childpid);
+				is $n, 1, "should return first data chunk";
+				is $x, 'z', "should return first data chunk correct";
+				$n = sysreadfull($in, $x, 1);
+				is $n, 0, "should return EOF";
 			},
 			sub {
-				my ($in, $out) = @_;
+				my ($in, $out, $ppid) = @_;
 				syswritefull($out, 'z') == 1 or die "$$ bad syswrite";
-				usleep 400_000;
-				syswritefull($out, 'x') == 1  or die "$$ bad syswrite";
-				usleep 10_000 while(1);
 			};
 	}
 
