@@ -99,11 +99,10 @@ for my $redef (0, 1) {
 			},
 			sub {
 				my ($in, $out, $ppid) = @_;
-				usleep 500_000;
+				usleep 30_000;
 				kill(POSIX::SIGUSR1, $ppid);
 				syswritefull($out, 'zx') == 2 or die "$$ bad syswrite";
 				usleep 10_000 while(1);
-
 			};
 	}
 
