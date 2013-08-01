@@ -74,7 +74,6 @@ with_fork
 			chomp $filename;
 			ok -f $filename, "file is file";
 			print $out "ok\n";
-			<$in>;
 		},
 		sub {
 			my ($in, $out) = @_;
@@ -95,7 +94,6 @@ with_fork
 			chomp $filename;
 			ok -f $filename, "file is file";
 			print $out "ok\n";
-			<$in>;
 		},
 		sub {
 			my ($in, $out) = @_;
