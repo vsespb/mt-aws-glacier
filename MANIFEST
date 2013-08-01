@@ -118,6 +118,7 @@ t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
 t/unit/string_escape.t
+t/unit/sysread_syswrite_unit.t
 t/unit/test_test.t
 t/unit/u_treehash.t
 test.t
