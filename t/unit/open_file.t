@@ -38,7 +38,7 @@ our $BinmodeStack = undef;
 # before 'use xxx Utils'
 sub _open { CORE::open($_[0], $_[1], $_[2]) };
 BEGIN { *CORE::GLOBAL::open = sub(*;$@) { push @$OpenStack, \@_; _open(@_) }; };
-BEGIN { *CORE::GLOBAL::binmode = sub(*;$@) { push @$BinmodeStack, \@_; CORE::binmode($_[0]) }; };
+BEGIN { *CORE::GLOBAL::binmode = sub(*;$) { push @$BinmodeStack, \@_; CORE::binmode($_[0]) }; };
 
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
@@ -255,7 +255,7 @@ sub create_tmp_file
 	binmode F;
 	print F @_ ? shift : "1\n";
 	close F;
-	
+
 }
 
 1;
