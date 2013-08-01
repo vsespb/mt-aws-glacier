@@ -60,6 +60,9 @@ warning_fatal();
 		my $pos = $_[3]||0;
 		${$_[1]} = '' unless defined ${$_[1]};
 		my $q = shift @queue;
+		my $expected_size = shift @queue;
+		confess unless $expected_size;
+		confess "$expected_size == $_[2]" unless $expected_size == $_[2];
 		$! = 0;
 		return 0 if $q eq 'EOF';
 		return undef if $q eq 'ERR';
@@ -71,7 +74,6 @@ warning_fatal();
 		${$_[1]} .= "0" x ( $pos - $len ) if $len < $pos; # original syswrite uses 0x00
 
 		substr(${$_[1]}, $pos) = $q;
-		confess if length $q > $_[2];
 		length $q;
 	};
 
@@ -81,37 +83,37 @@ warning_fatal();
 		ok ! defined eval { _sysread($in, my $x, 1); 1 };
 	}
 	{
-		local @queue = qw/EOF/;
+		local @queue = (EOF => 1);
 		is _sysread($in, my $x, 1), 0;
 		is $x, '';
 		ok !$!;
 	}
 	{
-		local @queue = qw/ERR/;
-		is _sysread($in, my $x, 1), undef;
+		local @queue = (ERR => 2);
+		is _sysread($in, my $x, 2), undef;
 		is $x, '';
 		ok !$!;
 	}
 	{
-		local @queue = qw/EINTR/;
-		is _sysread($in, my $x, 1), undef;
+		local @queue = (EINTR => 3);
+		is _sysread($in, my $x, 3), undef;
 		is $x, '';
 		ok $!{EINTR};
 	}
 	{
-		local @queue = qw/a/;
+		local @queue = (a => 1);
 		is _sysread($in, my $x, 1), 1;
 		is $x, 'a';
 		ok !$!;
 	}
 	{
-		local @queue = qw/a/;
+		local @queue = (a => 1);
 		is _sysread($in, my $x, 1, 1), 1;
 		is $x, '0a';
 		ok !$!;
 	}
 	{
-		local @queue = qw/d/;
+		local @queue = (d => 1);
 		my $x = 'abc';
 		is _sysread($in, $x, 1, 3), 1;
 		is $x, 'abcd';
@@ -120,68 +122,68 @@ warning_fatal();
 
 	# actual test
 	{
-		local @queue = ('ab');
+		local @queue = (ab => 2);
 		is sysreadfull($in, my $x, 2), 2;
 		is $x, 'ab', "should work in simple case";
 	}
 	{
-		local @queue = ('a', 'bc');
+		local @queue = (a => 3, bc => 2);
 		is sysreadfull($in, my $x, 3), 3;
 		is $x, 'abc', "should work with two reads";
 	}
 	{
-		local @queue = ('ab', 'c', 'de');
+		local @queue = (ab => 5, c => 3, de => 2);
 		is sysreadfull($in, my $x, 5), 5;
 		is $x, 'abcde', "should work with three reads";
 	}
 	{
-		local @queue = ('ab', 'c', 'de');
+		local @queue = (ab => 5, c => 3, de => 2);
 		is sysreadfull($in, my $x, 5), 5;
 		is $x, 'abcde', "should work with three reads";
 	}
 	{
-		local @queue = ('ab', 'c', 'EOF');
+		local @queue = (ab => 5, c => 3, EOF => 2);
 		is sysreadfull($in, my $x, 5), 3;
 		is $x, 'abc', "should work with eof in the middle";
 	}
 	{
-		local @queue = ('EOF');
+		local @queue = (EOF => 5);
 		is sysreadfull($in, my $x, 5), 0;
 		is $x, '', "should work with eof in the beginning";
 	}
 	{
-		local @queue = ('ERR');
+		local @queue = (ERR => 5);
 		is sysreadfull($in, my $x, 5), undef;
 		is $x, '', "should work with ERROR in the beginning";
 	}
 	{
-		local @queue = ('ab', 'c', 'ERR', 'ERR');
+		local @queue = (ab => 5, c => 3, ERR => 2, ERR => 7);
 		is sysreadfull($in, my $x, 5), 3;
 		is $x, 'abc', "should work with ERROR in the middle";
-		is sysreadfull($in, my $y, 5), undef;
+		is sysreadfull($in, my $y, 7), undef;
 	}
 	{
-		local @queue = ('ab', 'c', 'EINTR', 'de');
+		local @queue = (ab => 5, c => 3, EINTR => 2, de => 2);
 		is sysreadfull($in, my $x, 5), 5;
 		is $x, 'abcde', "should work with EINTR in the middle";
 	}
 	{
-		local @queue = ('ab', 'c', 'EINTR', 'd', 'EOF');
+		local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, EOF => 1);
 		is sysreadfull($in, my $x, 5), 4;
 		is $x, 'abcd', "should work with EINTR in the middle, when there will be eof";
 	}
 	{
-		local @queue = ('ab', 'c', 'EINTR', 'd', 'ERR');
+		local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, ERR => 1);
 		is sysreadfull($in, my $x, 5), 4;
 		is $x, 'abcd', "should work with EINTR in the middle, when there will be ERROR";
 	}
 	{
-		local @queue = ('EINTR', 'ab', 'c', 'EINTR', 'EINTR', 'd', 'EINTR', 'ERR');
+		local @queue = (EINTR => 5, ab => 5, c => 3, EINTR => 2, EINTR => 2, d => 2, EINTR => 1, ERR => 1);
 		is sysreadfull($in, my $x, 5), 4;
 		is $x, 'abcd', "should work with several EINTR";
 	}
 	{
-		local @queue = ('ab', 'EINTR', 'EINTR', 'c', 'd', 'EINTR', 'EOF');
+		local @queue = (ab => 5, EINTR => 3, EINTR => 3, c => 3, d => 2, EINTR => 1, EOF => 1);
 		is sysreadfull($in, my $x, 5), 4;
 		is $x, 'abcd', "should work with several EINTR";
 	}
@@ -193,9 +195,9 @@ warning_fatal();
 		my $code = shift @queue;
 		confess unless defined $code;
 		my ($len, $offset) = ($_[2], $_[3]);
-		confess if $offset + $len > length $_[1];
+		confess "$offset + $len > ".length($_[1]) if $offset + $len > length $_[1];
 		my $data = substr $_[1], $offset, $len;
-		confess unless $data eq $q;
+		confess "$data eq $q" unless $data eq $q;
 		$!=0;
 		return length $data if $code eq 'OK';
 		if ($code eq 'ERR') {
