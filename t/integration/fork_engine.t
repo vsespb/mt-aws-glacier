@@ -99,7 +99,12 @@ fork_engine_test 1,
 	child => sub {
 		my ($in, $out) = @_;
 		print $out "ready\n";
-		<$in>; # TODO: signal can be blocked here.. better hack something with select+timeout
+
+		# trying to fix this http://www.cpantesters.org/cpan/report/cd835eb8-faa9-11e2-8c80-50d7c5c10595
+		# strange, but OpenBSD sometimes fails to terminate after <$in> when in is broken..
+		alarm 10;
+
+		<$in>; # waiting for parent to close that pipe
 	};
 
 
