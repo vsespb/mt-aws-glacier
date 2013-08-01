@@ -224,7 +224,7 @@ sub syswritefull($$)
 		} elsif ($!{EINTR}) {
 			redo;
 		} else {
-			return undef;
+			return $n ? $n : undef;
 		}
 	}
 	return $n;

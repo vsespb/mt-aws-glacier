@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 46;
+use Test::More tests => 60;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -54,7 +54,8 @@ warning_fatal();
 
 	our @queue;
 	local $!;
-	sub _sysread(*\$$;$) {
+	sub _sysread(*\$$;$)
+	{
 		confess unless @queue;
 		my $pos = $_[3]||0;
 		${$_[1]} = '' unless defined ${$_[1]};
@@ -70,6 +71,7 @@ warning_fatal();
 		${$_[1]} .= "0" x ( $pos - $len ) if $len < $pos; # original syswrite uses 0x00
 
 		substr(${$_[1]}, $pos) = $q;
+		confess if length $q > $_[2];
 		length $q;
 	};
 
@@ -183,6 +185,83 @@ warning_fatal();
 		is sysreadfull($in, my $x, 5), 4;
 		is $x, 'abcd', "should work with several EINTR";
 	}
+
+	sub _syswrite(*$;$$)
+	{
+		confess unless @queue;
+		my $q = shift @queue;
+		my $code = shift @queue;
+		confess unless defined $code;
+		my ($len, $offset) = ($_[2], $_[3]);
+		confess if $offset + $len > length $_[1];
+		my $data = substr $_[1], $offset, $len;
+		confess unless $data eq $q;
+		$!=0;
+		return length $data if $code eq 'OK';
+		if ($code eq 'ERR') {
+			return undef;
+		}
+		if ($code eq 'EINTR') {
+			$! = EINTR;
+			return undef;
+		}
+		return $code; # a number
+
+	}
+
+	{
+		local @queue = (abcd => 4);
+		is syswritefull($in, "abcd"), 4, "should work";
+	}
+	{
+		local @queue = (abcd => 3, d => 1);
+		is syswritefull($in, "abcd"), 4, "should work when partial write";
+	}
+	{
+		local @queue = (abcd => 2, cd => 1, d => 1);
+		is syswritefull($in, "abcd"), 4, "should work when many partial writes";
+	}
+	{
+		local @queue = (abcd => 0, abcd => 0, abcd => 4);
+		is syswritefull($in, "abcd"), 4, "should work with zero-writes";
+	}
+	{
+		local @queue = (abcd => 'ERR');
+		is syswritefull($in, "abcd"), undef, "should work with ERR";
+	}
+	{
+		local @queue = (abcd => 2, cd => 'ERR');
+		# I am not enterelly sure if real syswrite acts like this!
+		is syswritefull($in, "abcd"), 2, "should work with ERR after data";
+	}
+	{
+		local @queue = (abcd => 2, cd => 0, cd => 'ERR');
+		is syswritefull($in, "abcd"), 2, "should work with ERR after data";
+	}
+	{
+		local @queue = (abcd => 'EINTR', abcd => 'ERR');
+		is syswritefull($in, "abcd"), undef, "should work with ERR after EINTR";
+	}
+	{
+		local @queue = (abcd => 'EINTR', abcd => 0, abcd => 'ERR');
+		is syswritefull($in, "abcd"), undef, "should work with ERR after EINTR";
+	}
+	{
+		local @queue = ('тест' => 1);
+		ok ! defined eval { syswritefull($in, "abcd"); 1 }, "should confess if wide chars";
+	}
+	{
+		local @queue = ('µµµµ' => 1);
+		ok ! defined eval { syswritefull($in, "abcd"); 1 }, "should confess if Latin-1 chars";
+	}
+	{
+		my ($str, undef) = split ' ', "some тест";
+		is $str, "some";
+		ok utf8::is_utf8($str);
+		local @queue = ($str => length $str);
+		is syswritefull($in, $str), length($str), "should work with ASCII with utf-8 bit set";
+	}
+
 }
 
 
