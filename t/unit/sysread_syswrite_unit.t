@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 60;
+use Test::More tests => 62;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -261,7 +261,12 @@ warning_fatal();
 		local @queue = ($str => length $str);
 		is syswritefull($in, $str), length($str), "should work with ASCII with utf-8 bit set";
 	}
-
+	{
+		my $str = encode("UTF-8", "тест");
+		ok !utf8::is_utf8($str);
+		local @queue = ($str => length $str);
+		is syswritefull($in, $str), length($str), "should work with ASCII with utf-8 bit set";
+	}
 }
 
 
