@@ -100,14 +100,8 @@ fork_engine_test 1,
 		my ($in, $out) = @_;
 		print $out "ready\n";
 
-		# trying to fix this http://www.cpantesters.org/cpan/report/cd835eb8-faa9-11e2-8c80-50d7c5c10595
-		# strange, but OpenBSD sometimes fails to terminate after <$in> when in is broken..
-		alarm 10;
-
-		<$in>; # waiting for parent to close that pipe
+		usleep 10_000 while(1); # waiting for signal to arrive from terminate_children
 	};
-
-
 
 
 my @child_signals = (POSIX::SIGUSR2, POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM);
