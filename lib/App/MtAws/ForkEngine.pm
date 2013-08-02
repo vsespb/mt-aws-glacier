@@ -208,8 +208,10 @@ sub create_child
 sub terminate_children
 {
 	my ($self) = @_;
-	$SIG{INT} = $SIG{TERM} = $SIG{CHLD} = $SIG{USR2}='IGNORE';
+	$SIG{CHLD} = 'DEFAULT'; # don't set SIGCHLD to IGNORE, prevents wait() from working under 5.12.2,3 undef OpenBSD
+	$SIG{INT} = $SIG{USR2}='IGNORE';
 	kill (POSIX::SIGUSR2, keys %{$self->{children}}); # TODO: we terminate all children with SIGUSR2 even on normal exit
+	$SIG{TERM} = 'DEFAULT';
 	while( wait() != -1 ){ print STDERR "wait\n"};
 }
 1;
