@@ -139,7 +139,11 @@ my $build = Module::Build->new(
 	recommends => {
 		'LWP::Protocol::https' => 6,
 	},
-	$ENV{MT_NO_HARNESS} ? () : (use_tap_harness    => 1, tap_harness_args   => { jobs => 8 }),
+	$ENV{MT_NO_HARNESS} ?
+		() :
+		(use_tap_harness    => 1, tap_harness_args   => {
+			jobs => ($^O eq 'openbsd' ? 2 : 8) # openBSD has low default ulimits
+		}),
 );
 
 $build->create_build_script();
