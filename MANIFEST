@@ -7,6 +7,7 @@ cycletest.sh
 lib/App/MtAws.pm
 lib/App/MtAws/ChildWorker.pm
 lib/App/MtAws/Command/CheckLocalHash.pm
+lib/App/MtAws/Command/Sync.pm
 lib/App/MtAws/ConfigDefinition.pm
 lib/App/MtAws/ConfigEngine.pm
 lib/App/MtAws/CreateVaultJob.pm
@@ -42,7 +43,6 @@ lib/App/MtAws/RetrieveCommand.pm
 lib/App/MtAws/RetrieveInventoryJob.pm
 lib/App/MtAws/SegmentDownloadJob.pm
 lib/App/MtAws/SingleDownloadJob.pm
-lib/App/MtAws/SyncCommand.pm
 lib/App/MtAws/Task.pm
 lib/App/MtAws/TreeHash.pm
 lib/App/MtAws/Utils.pm
