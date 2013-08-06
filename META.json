@@ -89,6 +89,10 @@
          "file" : "lib/App/MtAws/Command/CheckLocalHash.pm",
          "version" : "0.981"
       },
+      "App::MtAws::Command::DownloadInventory" : {
+         "file" : "lib/App/MtAws/Command/DownloadInventory.pm",
+         "version" : "0.981"
+      },
       "App::MtAws::Command::Sync" : {
          "file" : "lib/App/MtAws/Command/Sync.pm",
          "version" : "0.981"
@@ -107,10 +111,6 @@
       },
       "App::MtAws::DeleteVaultJob" : {
          "file" : "lib/App/MtAws/DeleteVaultJob.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::DownloadInventoryCommand" : {
-         "file" : "lib/App/MtAws/DownloadInventoryCommand.pm",
          "version" : "0.981"
       },
       "App::MtAws::Exceptions" : {

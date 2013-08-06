@@ -35,7 +35,7 @@ use POSIX;
 use Time::Local;
 use Carp;
 use App::MtAws::MetaData;
-use App::MtAws::DownloadInventoryCommand;
+use App::MtAws::Command::DownloadInventory;
 
 warning_fatal();
 
@@ -118,7 +118,7 @@ sub assert_entry
 		my (undef, $e) = @_;
 		ok cmp_deeply $e, $out;
 	};
-	App::MtAws::DownloadInventoryCommand::parse_and_write_journal($J, \$json);
+	App::MtAws::Command::DownloadInventory::parse_and_write_journal($J, \$json);
 }
 
 unlink $journal;

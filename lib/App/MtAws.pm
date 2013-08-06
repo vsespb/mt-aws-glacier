@@ -100,10 +100,7 @@ sub load_all_dynamic_modules
 	require App::MtAws::Command::Sync;
 	require App::MtAws::RetrieveCommand;
 	require App::MtAws::Command::CheckLocalHash;
-	require App::MtAws::DownloadInventoryCommand;
-	require App::MtAws::Command::CheckLocalHash;
-	require App::MtAws::DownloadInventoryCommand;
-	require App::MtAws::RetrieveCommand;
+	require App::MtAws::Command::DownloadInventory;
 	check_module_versions;
 }
 
@@ -283,9 +280,9 @@ END
 	} elsif ($action eq 'download-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{'new-journal'});
-		require App::MtAws::DownloadInventoryCommand;
+		require App::MtAws::Command::DownloadInventory;
 		check_module_versions;
-		App::MtAws::DownloadInventoryCommand::run($options, $j);
+		App::MtAws::Command::DownloadInventory::run($options, $j);
 	} elsif ($action eq 'create-vault') {
 		$options->{concurrency} = 1;
 

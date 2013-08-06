@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 22;
+use Test::More tests => 18;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -31,10 +31,8 @@ use App::MtAws;
 my @dynamic_modules = map { my $a = $_;  $a =~ s!::!/!g; $a; } qw/
 	Command::Sync
 	RetrieveCommand
-	DownloadInventoryCommand
 	Command::CheckLocalHash
-	DownloadInventoryCommand
-	RetrieveCommand
+	Command::DownloadInventory
 /;
 
 
