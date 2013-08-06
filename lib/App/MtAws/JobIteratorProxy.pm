@@ -20,7 +20,7 @@
 
 package App::MtAws::JobIteratorProxy;
 
-our $VERSION = '0.975';
+our $VERSION = '0.981';
 
 use strict;
 use warnings;

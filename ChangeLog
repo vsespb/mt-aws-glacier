@@ -1,3 +1,8 @@
+### 2013-08-06 v0.981 beta
+
+  * Fixed possible problems with mtglacier process termination under OpenBSD 5.1. Fixed possible install problem (test
+  suite failure) under OpenBSD 5.1
+
 ### 2013-07-30 v0.975 beta
 
   * Fixed: files with content "0" caused crash (unexpected error), issue #42
