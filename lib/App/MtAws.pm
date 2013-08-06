@@ -70,8 +70,9 @@ use PerlIO::encoding;
 sub check_module_versions
 {
 	for (keys %INC) {
-		if (/^App\/MtAws\/(.*)\.pmc?$/) {
-			my $module = "App::MtAws::$1";
+		if (my ($mod) = /^App\/MtAws\/(.*)\.pmc?$/) {
+			$mod =~ s!/!::!g;
+			my $module = "App::MtAws::$mod";
 			my $got = $module->VERSION;
 			$got = 'undef' unless defined $got;
 			die "FATAL: wrong version of $module, expected $VERSION, found $got" unless $got eq $VERSION;
