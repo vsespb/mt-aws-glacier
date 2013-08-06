@@ -81,12 +81,16 @@
          "file" : "lib/App/MtAws.pm",
          "version" : "0.981"
       },
-      "App::MtAws::CheckLocalHashCommand" : {
-         "file" : "lib/App/MtAws/CheckLocalHashCommand.pm",
-         "version" : "0.981"
-      },
       "App::MtAws::ChildWorker" : {
          "file" : "lib/App/MtAws/ChildWorker.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Command::CheckLocalHash" : {
+         "file" : "lib/App/MtAws/Command/CheckLocalHash.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Command::Sync" : {
+         "file" : "lib/App/MtAws/Command/Sync.pm",
          "version" : "0.981"
       },
       "App::MtAws::ConfigDefinition" : {
@@ -239,10 +243,6 @@
       },
       "App::MtAws::SingleDownloadJob" : {
          "file" : "lib/App/MtAws/SingleDownloadJob.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::SyncCommand" : {
-         "file" : "lib/App/MtAws/SyncCommand.pm",
          "version" : "0.981"
       },
       "App::MtAws::Task" : {

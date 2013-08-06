@@ -29,7 +29,7 @@ use TestUtils;
 use App::MtAws;
 
 my @dynamic_modules = map { my $a = $_;  $a =~ s!::!/!g; $a; } qw/
-	SyncCommand
+	Command::Sync
 	RetrieveCommand
 	DownloadInventoryCommand
 	Command::CheckLocalHash

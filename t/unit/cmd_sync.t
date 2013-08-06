@@ -39,7 +39,7 @@ use Data::Dumper;
 use TestUtils;
 
 use App::MtAws::Journal;
-require App::MtAws::SyncCommand;
+require App::MtAws::Command::Sync;
 
 warning_fatal();
 
@@ -58,31 +58,31 @@ describe "command" => sub {
 
 		describe "is_mtime_differs" => sub {
 			it "should work when mtime same" => sub {
-				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 123;})->once;
-				ok !App::MtAws::SyncCommand::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
+				App::MtAws::Command::Sync->expects("file_mtime")->returns(sub{ is shift, 'file1'; 123;})->once;
+				ok !App::MtAws::Command::Sync::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
 			};
 			it "should work when mtime greater than" => sub {
-				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 456;})->once;
-				ok App::MtAws::SyncCommand::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
+				App::MtAws::Command::Sync->expects("file_mtime")->returns(sub{ is shift, 'file1'; 456;})->once;
+				ok App::MtAws::Command::Sync::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
 			};
 			it "should work when mtime less than" => sub {
-				App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
-				ok App::MtAws::SyncCommand::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
+				App::MtAws::Command::Sync->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
+				ok App::MtAws::Command::Sync::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => 123}, 'file1');
 			};
 			it "should work when mtime is undefined in journal" => sub {
-				App::MtAws::SyncCommand->expects("file_mtime")->never;
-				ok !App::MtAws::SyncCommand::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => undef}, 'file1');
+				App::MtAws::Command::Sync->expects("file_mtime")->never;
+				ok !App::MtAws::Command::Sync::is_mtime_differs({detect => 'mtime-and-treehash'},{mtime => undef}, 'file1');
 			};
 			it "should work when detect contains mtime" => sub {
 				for (@detect_with_mtime) {
-					App::MtAws::SyncCommand->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
-					ok App::MtAws::SyncCommand::is_mtime_differs({detect => $_},{mtime => 123}, 'file1');
+					App::MtAws::Command::Sync->expects("file_mtime")->returns(sub{ is shift, 'file1'; 42;})->once;
+					ok App::MtAws::Command::Sync::is_mtime_differs({detect => $_},{mtime => 123}, 'file1');
 				}
 			};
 			it "should work when detect does not contain mtime" => sub {
 				for (@detect_without_mtime) {
-					App::MtAws::SyncCommand->expects("file_mtime")->never;
-					ok ! defined App::MtAws::SyncCommand::is_mtime_differs({detect => $_},{mtime => 123}, 'file1');
+					App::MtAws::Command::Sync->expects("file_mtime")->never;
+					ok ! defined App::MtAws::Command::Sync::is_mtime_differs({detect => $_},{mtime => 123}, 'file1');
 				}
 			};
 		};
@@ -90,25 +90,25 @@ describe "command" => sub {
 		describe "should_upload" => sub {
 
 			it "should define unique constants" => sub {
-				ok App::MtAws::SyncCommand::SHOULD_CREATE() != App::MtAws::SyncCommand::SHOULD_TREEHASH();
-				ok App::MtAws::SyncCommand::SHOULD_CREATE() != App::MtAws::SyncCommand::SHOULD_NOACTION();
+				ok App::MtAws::Command::Sync::SHOULD_CREATE() != App::MtAws::Command::Sync::SHOULD_TREEHASH();
+				ok App::MtAws::Command::Sync::SHOULD_CREATE() != App::MtAws::Command::Sync::SHOULD_NOACTION();
 
-				ok App::MtAws::SyncCommand::SHOULD_CREATE();
-				ok App::MtAws::SyncCommand::SHOULD_TREEHASH();
-				ok !App::MtAws::SyncCommand::SHOULD_NOACTION(); # one should be FALSE
+				ok App::MtAws::Command::Sync::SHOULD_CREATE();
+				ok App::MtAws::Command::Sync::SHOULD_TREEHASH();
+				ok !App::MtAws::Command::Sync::SHOULD_NOACTION(); # one should be FALSE
 
 				# numeric eq only
-				ok looks_like_number App::MtAws::SyncCommand::SHOULD_CREATE();
-				ok looks_like_number App::MtAws::SyncCommand::SHOULD_TREEHASH();
-				ok looks_like_number App::MtAws::SyncCommand::SHOULD_NOACTION();
+				ok looks_like_number App::MtAws::Command::Sync::SHOULD_CREATE();
+				ok looks_like_number App::MtAws::Command::Sync::SHOULD_TREEHASH();
+				ok looks_like_number App::MtAws::Command::Sync::SHOULD_NOACTION();
 			};
 
 			it "should almost always return create if file size differs" => sub {
 				for (grep $_ ne 'always-positive', @all_detect) {
-					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
-					App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
-					is  App::MtAws::SyncCommand::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'),
-						App::MtAws::SyncCommand::SHOULD_CREATE();
+					App::MtAws::Command::Sync->expects("is_mtime_differs")->never;
+					App::MtAws::Command::Sync->expects("file_size")->returns(42)->once;
+					is  App::MtAws::Command::Sync::should_upload({detect => $_},{mtime => 123, size => 43}, 'file1'),
+						App::MtAws::Command::Sync::SHOULD_CREATE();
 				}
 			};
 
@@ -118,76 +118,76 @@ describe "command" => sub {
 				my $opts = {detect => $detect};
 				my $file = {mtime => 123, size => 42};
 				if (defined $mtime_differs) {
-					App::MtAws::SyncCommand->expects("is_mtime_differs")->returns(sub {
+					App::MtAws::Command::Sync->expects("is_mtime_differs")->returns(sub {
 						cmp_deeply [$opts, $file, 'file1'], [@_];
 						return $mtime_differs;
 					})->once
 				} else {
-					App::MtAws::SyncCommand->expects("is_mtime_differs")->never;
+					App::MtAws::Command::Sync->expects("is_mtime_differs")->never;
 				}
 				if (defined $size_differs) {
-					App::MtAws::SyncCommand->expects("file_size")->returns(sub {
+					App::MtAws::Command::Sync->expects("file_size")->returns(sub {
 						cmp_deeply ['file1'], [@_];
 						return $size_differs ? 43 : 42;
 					})->once
 				} else {
-					App::MtAws::SyncCommand->expects("file_size")->never;
+					App::MtAws::Command::Sync->expects("file_size")->never;
 				}
-				cmp_deeply App::MtAws::SyncCommand::should_upload($opts, $file, 'file1'), $expected;
+				cmp_deeply App::MtAws::Command::Sync::should_upload($opts, $file, 'file1'), $expected;
 			}
 
 			describe "detect=mtime" => sub {
 				it "should return 'create' when mtime differs" => sub {
-					test_should_upload('mtime', 1, 0, App::MtAws::SyncCommand::SHOULD_CREATE());
+					test_should_upload('mtime', 1, 0, App::MtAws::Command::Sync::SHOULD_CREATE());
 				};
 				it "should return FALSE when mtime same" => sub {
-					test_should_upload('mtime', 0, 0, App::MtAws::SyncCommand::SHOULD_NOACTION());
+					test_should_upload('mtime', 0, 0, App::MtAws::Command::Sync::SHOULD_NOACTION());
 				};
 			};
 
 			describe "detect=treehash" => sub {
 				it "should return 'treehash' mtime is irrelevant" => sub {
-					test_should_upload('treehash', undef, 0, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+					test_should_upload('treehash', undef, 0, App::MtAws::Command::Sync::SHOULD_TREEHASH());
 				};
 			};
 
 			describe "detect=mtime-and-treehash" => sub {
 				it "should return 'treehash' when mtime differs" => sub {
-					test_should_upload('mtime-and-treehash', 1, 0, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+					test_should_upload('mtime-and-treehash', 1, 0, App::MtAws::Command::Sync::SHOULD_TREEHASH());
 				};
 				it "should return FALSE when mtime same" => sub {
-					test_should_upload('mtime-and-treehash', 0, 0, App::MtAws::SyncCommand::SHOULD_NOACTION());
+					test_should_upload('mtime-and-treehash', 0, 0, App::MtAws::Command::Sync::SHOULD_NOACTION());
 				};
 			};
 
 			describe "detect=mtime-or-treehash" => sub {
 				it "should return 'create' when mtime differs" => sub {
-					test_should_upload('mtime-or-treehash', 1, 0, App::MtAws::SyncCommand::SHOULD_CREATE());
+					test_should_upload('mtime-or-treehash', 1, 0, App::MtAws::Command::Sync::SHOULD_CREATE());
 				};
 				it "should return 'treehash' when mtime same" => sub {
-					test_should_upload('mtime-or-treehash', 0, 0, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+					test_should_upload('mtime-or-treehash', 0, 0, App::MtAws::Command::Sync::SHOULD_TREEHASH());
 				};
 			};
 
 			describe "detect=always-positive" => sub {
 				it "should return 'create' always" => sub {
-					test_should_upload('always-positive', undef, undef, App::MtAws::SyncCommand::SHOULD_CREATE());
+					test_should_upload('always-positive', undef, undef, App::MtAws::Command::Sync::SHOULD_CREATE());
 				};
 			};
 
 			describe "detect=size-only" => sub {
 				it "should return 'create' if size differs" => sub {
-					test_should_upload('size-only', undef, 1, App::MtAws::SyncCommand::SHOULD_CREATE());
+					test_should_upload('size-only', undef, 1, App::MtAws::Command::Sync::SHOULD_CREATE());
 				};
 				it "should return 'no action' if size same" => sub {
-					test_should_upload('size-only', undef, 0, App::MtAws::SyncCommand::SHOULD_NOACTION());
+					test_should_upload('size-only', undef, 0, App::MtAws::Command::Sync::SHOULD_NOACTION());
 				};
 			};
 
 			describe "detect is unknown" => sub {
 				my $file = {mtime => 123, size => 42};
-				App::MtAws::SyncCommand->expects("file_size")->returns(42)->once;
-				ok ! defined eval { App::MtAws::SyncCommand::should_upload({detect => 'xyz'}, $file, 'file1'); 1; };
+				App::MtAws::Command::Sync->expects("file_size")->returns(42)->once;
+				ok ! defined eval { App::MtAws::Command::Sync::should_upload({detect => 'xyz'}, $file, 'file1'); 1; };
 				ok $@ =~ /Invalid detect option in should_upload/;
 			}
 		};
@@ -201,7 +201,7 @@ describe "command" => sub {
 			sub expect_should_upload
 			{
 				my ($options, $j, $file, $toreturn) = @_;
-				App::MtAws::SyncCommand->expects("should_upload")->returns(sub {
+				App::MtAws::Command::Sync->expects("should_upload")->returns(sub {
 					my ($opt, $f, $absfilename) = @_;
 					cmp_deeply $opt, $options;
 					cmp_deeply $f, $file;
@@ -245,19 +245,19 @@ describe "command" => sub {
 
 			it "should work with zero files" => sub {
 				$j->{listing}{existing} = [];
-				ok !defined App::MtAws::SyncCommand::next_modified($options, $j);
+				ok !defined App::MtAws::Command::Sync::next_modified($options, $j);
 			};
 
 			it "should work when should_upload returns SHOULD_CREATE" => sub {
 				my $file = {relfilename => 'file1', archive_id => 'zz1'};
 				$j->{listing}{existing} = [$file];
 				$j->_add_filename($file);
-				expect_should_upload($options, $j, $file, App::MtAws::SyncCommand::SHOULD_CREATE());
-				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				expect_should_upload($options, $j, $file, App::MtAws::Command::Sync::SHOULD_CREATE());
+				my $rec = App::MtAws::Command::Sync::next_modified($options, $j);
 				verify_create_job($options, $j, $file, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 0;
-				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j));
+				ok !defined (App::MtAws::Command::Sync::next_modified($options, $j));
 			};
 
 			it "should work with two files" => sub {
@@ -266,14 +266,14 @@ describe "command" => sub {
 				$j->{listing}{existing} = [$file1, $file2];
 				$j->_add_filename($file1);
 				$j->_add_filename($file2);
-				expect_should_upload($options, $j, $file1, App::MtAws::SyncCommand::SHOULD_CREATE());
-				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				expect_should_upload($options, $j, $file1, App::MtAws::Command::Sync::SHOULD_CREATE());
+				my $rec = App::MtAws::Command::Sync::next_modified($options, $j);
 				verify_create_job($options, $j, $file1, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 1;
 
-				expect_should_upload($options, $j, $file2, App::MtAws::SyncCommand::SHOULD_CREATE());
-				$rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				expect_should_upload($options, $j, $file2, App::MtAws::Command::Sync::SHOULD_CREATE());
+				$rec = App::MtAws::Command::Sync::next_modified($options, $j);
 				verify_create_job($options, $j, $file2, $rec);
 			};
 
@@ -283,8 +283,8 @@ describe "command" => sub {
 				$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111, , treehash => 'abc0'});
 				$j->_add_filename(my $r = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113, treehash => 'abc'});
 				$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112, , treehash => 'abc2'});
-				expect_should_upload($options, $j, $r, App::MtAws::SyncCommand::SHOULD_TREEHASH());
-				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				expect_should_upload($options, $j, $r, App::MtAws::Command::Sync::SHOULD_TREEHASH());
+				my $rec = App::MtAws::Command::Sync::next_modified($options, $j);
 				verify_treehash_job($options, $j, $r, $rec);
 				is scalar @{ $j->{listing}{existing} }, 0;
 			};
@@ -295,21 +295,21 @@ describe "command" => sub {
 				$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111, , treehash => 'abc0'});
 				$j->_add_filename(my $r = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113, treehash => 'abc'});
 				$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112, , treehash => 'abc2'});
-				expect_should_upload($options, $j, $r, App::MtAws::SyncCommand::SHOULD_TREEHASH());
+				expect_should_upload($options, $j, $r, App::MtAws::Command::Sync::SHOULD_TREEHASH());
 				App::MtAws::Journal->expects("latest")->with('file1')->returns($r)->once;
-				App::MtAws::SyncCommand::next_modified($options, $j);
+				App::MtAws::Command::Sync::next_modified($options, $j);
 			};
 
 			it "should work when should_upload returns SHOULD_TREEHASH" => sub {
 				my $file = {relfilename => 'file1', archive_id => 'zz1', treehash => 'abcdef'};
 				$j->{listing}{existing} = [$file];
 				$j->_add_filename($file);
-				expect_should_upload($options, $j, $file, App::MtAws::SyncCommand::SHOULD_TREEHASH());
-				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				expect_should_upload($options, $j, $file, App::MtAws::Command::Sync::SHOULD_TREEHASH());
+				my $rec = App::MtAws::Command::Sync::next_modified($options, $j);
 				verify_treehash_job($options, $j, $file, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 0;
-				ok !defined (App::MtAws::SyncCommand::next_modified($options, $j));
+				ok !defined (App::MtAws::Command::Sync::next_modified($options, $j));
 			};
 
 			it "should skip to next file when should_upload returns SHOULD_NOACTION" => sub {
@@ -320,17 +320,17 @@ describe "command" => sub {
 				}
 
 				my $file;
-				App::MtAws::SyncCommand->expects("should_upload")->returns(sub {
+				App::MtAws::Command::Sync->expects("should_upload")->returns(sub {
 					my ($opt, $f, $absfilename) = @_;
 					$file = $f;
-					return $f->{relfilename} eq 'file7' ? App::MtAws::SyncCommand::SHOULD_CREATE() : App::MtAws::SyncCommand::SHOULD_NOACTION();
+					return $f->{relfilename} eq 'file7' ? App::MtAws::Command::Sync::SHOULD_CREATE() : App::MtAws::Command::Sync::SHOULD_NOACTION();
 				})->exactly(10);
 
-				my $rec = App::MtAws::SyncCommand::next_modified($options, $j);
+				my $rec = App::MtAws::Command::Sync::next_modified($options, $j);
 				verify_create_job($options, $j, $file, $rec);
 
 				is scalar @{ $j->{listing}{existing} }, 3;
-				ok !defined App::MtAws::SyncCommand::next_modified($options, $j);
+				ok !defined App::MtAws::Command::Sync::next_modified($options, $j);
 			};
 
 			it "should confess when should_upload returns something else" => sub {
@@ -338,7 +338,7 @@ describe "command" => sub {
 				$j->{listing}{existing} = [$file];
 				$j->_add_filename($file);
 				expect_should_upload($options, $j, $file, 7656348);
-				ok !defined eval{ App::MtAws::SyncCommand::next_modified($options, $j); 1};
+				ok !defined eval{ App::MtAws::Command::Sync::next_modified($options, $j); 1};
 				ok $@ =~ /Unknown value returned by should_upload/;
 			};
 		};
@@ -352,7 +352,7 @@ describe "command" => sub {
 		};
 		it "should work with one file" => sub {
 			$j->{listing}{new} = [{relfilename => 'file1'}];
-			my $rec = App::MtAws::SyncCommand::next_new($options, $j);
+			my $rec = App::MtAws::Command::Sync::next_new($options, $j);
 			ok $rec->isa('App::MtAws::JobProxy');
 			my $job = $rec->{job};
 			is $job->{partsize}, $options->{partsize}*1024*1024;
@@ -360,21 +360,21 @@ describe "command" => sub {
 			is $job->{filename}, $j->absfilename('file1');
 			ok $job->isa('App::MtAws::FileCreateJob');
 			is scalar @{ $j->{listing}{new} }, 0;
-			ok !defined (App::MtAws::SyncCommand::next_new($options, $j));
+			ok !defined (App::MtAws::Command::Sync::next_new($options, $j));
 		};
 		it "should work with two files" => sub {
 			$j->{listing}{new} = [{relfilename => 'file1'}, {relfilename => 'file2'}];
-			my $rec = App::MtAws::SyncCommand::next_new($options, $j);
+			my $rec = App::MtAws::Command::Sync::next_new($options, $j);
 			my $job = $rec->{job};
 			is $job->{relfilename}, 'file1';
 			is scalar @{ $j->{listing}{new} }, 1;
-			$rec = App::MtAws::SyncCommand::next_new($options, $j);
+			$rec = App::MtAws::Command::Sync::next_new($options, $j);
 			$job = $rec->{job};
 			is $job->{relfilename}, 'file2';
 		};
 		it "should work with zero files" => sub {
 			$j->{listing}{new} = [];
-			ok ! defined( App::MtAws::SyncCommand::next_new($options, $j) );
+			ok ! defined( App::MtAws::Command::Sync::next_new($options, $j) );
 		};
 	};
 
@@ -387,32 +387,32 @@ describe "command" => sub {
 			my $r = {relfilename => 'file1', size => 123};
 			$j->{listing}{missing} = [$r];
 			$j->_add_filename($r);
-			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
 			ok $rec->isa('App::MtAws::FileListDeleteJob');
 			is scalar @{ $rec->{archives} }, 1;
 			my $job = $rec->{archives}[0];
 			is $job->{relfilename}, 'file1';
 			is scalar @{ $j->{listing}{missing} }, 0;
-			ok !defined (App::MtAws::SyncCommand::next_missing($options, $j));
+			ok !defined (App::MtAws::Command::Sync::next_missing($options, $j));
 		};
 		it "should work with two files" => sub {
 			for ({relfilename => 'file1', size => 123}, {relfilename => 'file2', size => 456}) {
 				push @{ $j->{listing}{missing} }, $_;
 				$j->_add_filename($_);
 			}
-			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
 			ok $rec->isa('App::MtAws::FileListDeleteJob');
 			is scalar @{ $rec->{archives} }, 1;
 			my $job = $rec->{archives}[0];
 			is $job->{relfilename}, 'file1';
 			is scalar @{ $j->{listing}{missing} }, 1;
-			$rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			$rec = App::MtAws::Command::Sync::next_missing($options, $j);
 			$job = $rec->{archives}[0];
 			is $job->{relfilename}, 'file2';
 		};
 		it "should work with zero files" => sub {
 			$j->{listing}{missing} = [];
-			ok ! defined( App::MtAws::SyncCommand::next_missing($options, $j) );
+			ok ! defined( App::MtAws::Command::Sync::next_missing($options, $j) );
 		};
 		it "should work with latest version of file" => sub {
 			my $r = {relfilename => 'file1', size => 123};
@@ -420,7 +420,7 @@ describe "command" => sub {
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111});
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112});
-			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
 			ok $rec->isa('App::MtAws::FileListDeleteJob');
 			is scalar @{ $rec->{archives} }, 1;
 			my $job = $rec->{archives}[0];
@@ -432,7 +432,7 @@ describe "command" => sub {
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111});
 			$j->_add_filename(my $r2 = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
 			App::MtAws::Journal->expects("latest")->with('file1')->returns($r2)->once;
-			my $rec = App::MtAws::SyncCommand::next_missing($options, $j);
+			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
 		};
 	};
 
@@ -445,7 +445,7 @@ describe "command" => sub {
 						$options->{new} = 1 if $n;
 						$options->{'replace-modified'} = 1 if $r;
 						$options->{'delete-removed'} = 1 if $d;
-						my $res = App::MtAws::SyncCommand::get_journal_opts($options);
+						my $res = App::MtAws::Command::Sync::get_journal_opts($options);
 						ok ! first { !/^(new|existing|missing)$/ } keys %$res; # make sure we don't have other keys here
 						cmp_deeply $res->{new}, bool $n; # can be 0, undef, not existant etc
 						cmp_deeply $res->{existing}, bool $r;
@@ -475,49 +475,49 @@ describe "command" => sub {
 		}
 		it "should work with zero elements" => sub {
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub {});
+				App::MtAws::Command::Sync::print_dry_run(sub {});
 			};
 			is $out, "";
 		};
 		it "should work with one element when it returns empty list" => sub {
 			my @a = bless {}, "WillDoTest";
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+				App::MtAws::Command::Sync::print_dry_run(sub { shift @a });
 			};
 			is $out, "";
 		};
 		it "should work with one element when it returns empty string" => sub {
 			my @a = bless {empty=>'1'}, "WillDoTest";
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+				App::MtAws::Command::Sync::print_dry_run(sub { shift @a });
 			};
 			is $out, "\n";
 		};
 		it "should work with one element" => sub {
 			my @a = bless { toprint => 42}, "WillDoTest";
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+				App::MtAws::Command::Sync::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\n";
 		};
 		it "should work with two elements" => sub {
 			my @a = (bless({ toprint => 42}, "WillDoTest"),bless({ toprint => 123}, "WillDoTest"));
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+				App::MtAws::Command::Sync::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\nWill 123\n";
 		};
 		it "should work with list elements" => sub {
 			my @a = bless { toprint_a => [42, 'zz']}, "WillDoTest";
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+				App::MtAws::Command::Sync::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\nWill zz\n";
 		};
 		it "should work with two list elements" => sub {
 			my @a = ( bless({ toprint_a => [42, 'zz']}, "WillDoTest"),  bless({ toprint_a => [123, 'ff']}, "WillDoTest"));
 			capture_stdout my $out => sub {
-				App::MtAws::SyncCommand::print_dry_run(sub { shift @a });
+				App::MtAws::Command::Sync::print_dry_run(sub { shift @a });
 			};
 			is $out, "Will 42\nWill zz\nWill 123\nWill ff\n";
 		};
@@ -526,7 +526,7 @@ describe "command" => sub {
 	describe "run" => sub {
 		sub expect_with_forks
 		{
-			App::MtAws::SyncCommand->expects("with_forks")->returns_ordered(sub{
+			App::MtAws::Command::Sync->expects("with_forks")->returns_ordered(sub{
 				my ($flag, $options, $cb) = @_;
 				is $flag, !$options->{'dry-run'};
 				is $options, $options;
@@ -547,7 +547,7 @@ describe "command" => sub {
 
 		sub expect_fork_engine
 		{
-			App::MtAws::SyncCommand->expects("fork_engine")->returns_ordered(sub {
+			App::MtAws::Command::Sync->expects("fork_engine")->returns_ordered(sub {
 				bless { parent_worker =>
 					bless {}, 'App::MtAws::ParentWorker'
 				}, 'App::MtAws::ForkEngine';
@@ -597,7 +597,7 @@ describe "command" => sub {
 				$j->{listing}{existing} = [];
 				$j->{listing}{new} = [ map { relfilename => $_ }, @files ];
 
-				App::MtAws::SyncCommand::run($options, $j);
+				App::MtAws::Command::Sync::run($options, $j);
 			};
 		};
 
@@ -636,13 +636,13 @@ describe "command" => sub {
 					$j->_add_filename($r);
 					push @{ $j->{listing}{existing} }, $r;
 				}
-				App::MtAws::SyncCommand->expects("file_size")->returns(sub {
+				App::MtAws::Command::Sync->expects("file_size")->returns(sub {
 					my ($file) = @_;
 					$file =~ m!([^/]+)$! or confess;
 					$files{$1}{size}+1 or confess;
 				})->exactly(scalar keys %files);
 
-				App::MtAws::SyncCommand::run($options, $j);
+				App::MtAws::Command::Sync::run($options, $j);
 			};
 		};
 
@@ -683,7 +683,7 @@ describe "command" => sub {
 					push @{ $j->{listing}{missing} }, $r;
 				}
 
-				App::MtAws::SyncCommand::run($options, $j);
+				App::MtAws::Command::Sync::run($options, $j);
 			};
 		};
 
@@ -697,20 +697,20 @@ describe "command" => sub {
 				};
 				ordered_test sub {
 					expect_with_forks;
-					expect_journal_init($options, $j, App::MtAws::SyncCommand::get_journal_opts($options));
+					expect_journal_init($options, $j, App::MtAws::Command::Sync::get_journal_opts($options));
 
 					my @files = qw/file1 file2 file3 file4/;
 
 					{
-						my $res = App::MtAws::SyncCommand->expects("next_new")->returns("sub_next_new");
+						my $res = App::MtAws::Command::Sync->expects("next_new")->returns("sub_next_new");
 						$n ? $res->once : $res->never;
 					}
 					{
-						my $res = App::MtAws::SyncCommand->expects("next_modified")->returns("sub_next_modified");
+						my $res = App::MtAws::Command::Sync->expects("next_modified")->returns("sub_next_modified");
 						$r ? $res->once : $res->never;
 					}
 					{
-						my $res = App::MtAws::SyncCommand->expects("next_missing")->returns("sub_next_missing");
+						my $res = App::MtAws::Command::Sync->expects("next_missing")->returns("sub_next_missing");
 						$d ? $res->once : $res->never;
 					}
 					if ($n || $r || $d) {
@@ -726,14 +726,14 @@ describe "command" => sub {
 							return (1);
 						});
 					} else {
-						App::MtAws::SyncCommand->expects("fork_engine")->never;
+						App::MtAws::Command::Sync->expects("fork_engine")->never;
 						App::MtAws::ParentWorker->expects("process_task")->never;
 						ok 1; # test that we got there, just in case
 					}
 
 					expect_journal_close;
 
-					App::MtAws::SyncCommand::run($options, $j);
+					App::MtAws::Command::Sync::run($options, $j);
 				};
 			}}}
 		};
@@ -748,32 +748,32 @@ describe "command" => sub {
 				};
 				ordered_test sub {
 					expect_with_forks;
-					expect_journal_init($options, $j, App::MtAws::SyncCommand::get_journal_opts($options));
+					expect_journal_init($options, $j, App::MtAws::Command::Sync::get_journal_opts($options));
 
 					{
-						my $res = App::MtAws::SyncCommand->expects("next_new")->returns("sub_next_new");
+						my $res = App::MtAws::Command::Sync->expects("next_new")->returns("sub_next_new");
 						$n ? $res->once : $res->never;
 					}
 					{
-						my $res = App::MtAws::SyncCommand->expects("next_modified")->returns("sub_next_modified");
+						my $res = App::MtAws::Command::Sync->expects("next_modified")->returns("sub_next_modified");
 						$r ? $res->once : $res->never;
 					}
 					{
-						my $res = App::MtAws::SyncCommand->expects("next_missing")->returns("sub_next_missing");
+						my $res = App::MtAws::Command::Sync->expects("next_missing")->returns("sub_next_missing");
 						$d ? $res->once : $res->never;
 					}
 
 					my @dry_run_args;
-					App::MtAws::SyncCommand->expects("print_dry_run")->returns(sub {
+					App::MtAws::Command::Sync->expects("print_dry_run")->returns(sub {
 						push @dry_run_args, shift;
 					})->any_number;
 
-					App::MtAws::SyncCommand->expects("fork_engine")->never;
+					App::MtAws::Command::Sync->expects("fork_engine")->never;
 					App::MtAws::ParentWorker->expects("process_task")->never;
 
 					expect_journal_close;
 
-					App::MtAws::SyncCommand::run($options, $j);
+					App::MtAws::Command::Sync::run($options, $j);
 
 					cmp_deeply [ map $_->(), @dry_run_args ], [
 						$n ? ('sub_next_new') : (),

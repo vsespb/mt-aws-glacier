@@ -97,7 +97,7 @@ sub print_system_modules_version
 sub load_all_dynamic_modules
 {
 	# we load here all dynamically loaded modules, to check that installation is correct.
-	require App::MtAws::SyncCommand;
+	require App::MtAws::Command::Sync;
 	require App::MtAws::RetrieveCommand;
 	require App::MtAws::Command::CheckLocalHash;
 	require App::MtAws::DownloadInventoryCommand;
@@ -159,9 +159,9 @@ sub process
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir},
 			filter => $options->{filters}{parsed}, leaf_optimization => $options->{'leaf-optimization'}, follow => $options->{'follow'});
 
-		require App::MtAws::SyncCommand;
+		require App::MtAws::Command::Sync;
 		check_module_versions;
-		App::MtAws::SyncCommand::run($options, $j);
+		App::MtAws::Command::Sync::run($options, $j);
 
 	} elsif ($action eq 'upload-file') {
 
