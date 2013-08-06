@@ -5,8 +5,8 @@ ChangeLog
 CONTRIBUTORS
 cycletest.sh
 lib/App/MtAws.pm
-lib/App/MtAws/CheckLocalHashCommand.pm
 lib/App/MtAws/ChildWorker.pm
+lib/App/MtAws/Command/CheckLocalHash.pm
 lib/App/MtAws/ConfigDefinition.pm
 lib/App/MtAws/ConfigEngine.pm
 lib/App/MtAws/CreateVaultJob.pm
