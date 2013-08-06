@@ -98,9 +98,9 @@ sub load_all_dynamic_modules
 	# we load here all dynamically loaded modules, to check that installation is correct.
 	require App::MtAws::SyncCommand;
 	require App::MtAws::RetrieveCommand;
-	require App::MtAws::CheckLocalHashCommand;
+	require App::MtAws::Command::CheckLocalHash;
 	require App::MtAws::DownloadInventoryCommand;
-	require App::MtAws::CheckLocalHashCommand;
+	require App::MtAws::Command::CheckLocalHash;
 	require App::MtAws::DownloadInventoryCommand;
 	require App::MtAws::RetrieveCommand;
 	check_module_versions;
@@ -269,9 +269,9 @@ END
 		}
 	} elsif ($action eq 'check-local-hash') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
-		require App::MtAws::CheckLocalHashCommand;
+		require App::MtAws::Command::CheckLocalHash;
 		check_module_versions;
-		App::MtAws::CheckLocalHashCommand::run($options, $j);
+		App::MtAws::Command::CheckLocalHash::run($options, $j);
 	} elsif ($action eq 'retrieve-inventory') {
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 

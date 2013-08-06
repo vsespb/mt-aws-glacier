@@ -43,7 +43,7 @@ sub _close { CORE::close($_[0]) };
 BEGIN { *CORE::GLOBAL::close = sub(;*) { _close($_[0]) }; };
 
 
-require App::MtAws::CheckLocalHashCommand;
+require App::MtAws::Command::CheckLocalHash;
 
 
 warning_fatal();
@@ -85,7 +85,7 @@ describe "command" => sub {
 		sub expect_file_exists
 		{
 			my ($filename, $res) = (@_, 1);
-			App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns_ordered(sub {
+			App::MtAws::Command::CheckLocalHash->expects("file_exists")->returns_ordered(sub {
 				like shift, qr/\Q$filename\E$/;
 				$res;
 			});
@@ -94,7 +94,7 @@ describe "command" => sub {
 		sub expect_file_size
 		{
 			my ($filename, $res) = @_;
-			App::MtAws::CheckLocalHashCommand->expects("file_size")->returns_ordered(sub {
+			App::MtAws::Command::CheckLocalHash->expects("file_size")->returns_ordered(sub {
 				like shift, qr/\Q$filename\E$/;
 				$res;
 			});
@@ -103,7 +103,7 @@ describe "command" => sub {
 		sub expect_file_mtime
 		{
 			my ($filename, $res) = @_;
-			App::MtAws::CheckLocalHashCommand->expects("file_mtime")->returns_ordered(sub {
+			App::MtAws::Command::CheckLocalHash->expects("file_mtime")->returns_ordered(sub {
 				like shift, qr/\Q$filename\E$/;
 				$res;
 			});
@@ -112,7 +112,7 @@ describe "command" => sub {
 		sub expect_open_file
 		{
 			my ($file, $filename, $res, $err) = @_;
-			App::MtAws::CheckLocalHashCommand->expects("open_file")->returns_ordered(sub {
+			App::MtAws::Command::CheckLocalHash->expects("open_file")->returns_ordered(sub {
 				$_[0] = $file;
 				my (undef, $fn, %o) = @_;
 				like $fn, qr/\Q$filename\E$/;
@@ -140,7 +140,7 @@ describe "command" => sub {
 			my $res = capture_stdout my $out => sub {
 				no warnings 'redefine';
 				local *_close = sub { $close_res };
-				return eval { App::MtAws::CheckLocalHashCommand::run($options, $j); 1 };
+				return eval { App::MtAws::Command::CheckLocalHash::run($options, $j); 1 };
 			};
 			return ($res, $out);
 		}
@@ -247,7 +247,7 @@ describe "command" => sub {
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, $file1->{size}+1;
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
-				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::Command::CheckLocalHash->expects("open_file")->never;
 				App::MtAws::TreeHash->expects("new")->never;
 
 				my ($res, $out) = run_command($options, $j);
@@ -263,7 +263,7 @@ describe "command" => sub {
 				expect_file_exists $file1->{relfilename};
 				expect_file_size $file1->{relfilename}, 0;
 				expect_file_mtime $file1->{relfilename}, $file1->{mtime};
-				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::Command::CheckLocalHash->expects("open_file")->never;
 				App::MtAws::TreeHash->expects("new")->never;
 
 				my ($res, $out) = run_command($options, $j);
@@ -277,9 +277,9 @@ describe "command" => sub {
 				expect_read_journal $j, $file1;
 
 				expect_file_exists $file1->{relfilename}, 0;
-				App::MtAws::CheckLocalHashCommand->expects("file_size")->never;
-				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
-				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::Command::CheckLocalHash->expects("file_size")->never;
+				App::MtAws::Command::CheckLocalHash->expects("file_mtime")->never;
+				App::MtAws::Command::CheckLocalHash->expects("open_file")->never;
 				App::MtAws::TreeHash->expects("new")->never;
 
 				my ($res, $out) = run_command($options, $j);
@@ -295,7 +295,7 @@ describe "command" => sub {
 
 				expect_file_exists $file2->{relfilename};
 				expect_file_size $file2->{relfilename}, $file2->{size};
-				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
+				App::MtAws::Command::CheckLocalHash->expects("file_mtime")->never;
 				expect_open_file my $fileobj = { mock => 1 }, $file2->{relfilename}, 1;
 				expect_treehash $fileobj, $file2->{treehash};
 
@@ -348,10 +348,10 @@ describe "command" => sub {
 				$options->{'dry-run'} = 1;
 				expect_read_journal $j, $file1;
 
-				App::MtAws::CheckLocalHashCommand->expects("file_exists")->never;
-				App::MtAws::CheckLocalHashCommand->expects("file_size")->never;
-				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->never;
-				App::MtAws::CheckLocalHashCommand->expects("open_file")->never;
+				App::MtAws::Command::CheckLocalHash->expects("file_exists")->never;
+				App::MtAws::Command::CheckLocalHash->expects("file_size")->never;
+				App::MtAws::Command::CheckLocalHash->expects("file_mtime")->never;
+				App::MtAws::Command::CheckLocalHash->expects("open_file")->never;
 				App::MtAws::TreeHash->expects("new")->never;
 
 				my ($res, $out) = run_command($options, $j);
@@ -371,16 +371,16 @@ describe "command" => sub {
 				my %files_h = map { $_->{relfilename} => $_ } @files;
 				expect_read_journal $j, @files;
 
-				App::MtAws::CheckLocalHashCommand->expects("file_exists")->returns(1)->exactly(scalar @files);
-				App::MtAws::CheckLocalHashCommand->expects("file_size")->returns(sub {
+				App::MtAws::Command::CheckLocalHash->expects("file_exists")->returns(1)->exactly(scalar @files);
+				App::MtAws::Command::CheckLocalHash->expects("file_size")->returns(sub {
 					shift =~ m!([^/]+)$!;
 					$files_h{$1}->{size}
 				})->exactly(scalar @files);
-				App::MtAws::CheckLocalHashCommand->expects("file_mtime")->returns(sub {
+				App::MtAws::Command::CheckLocalHash->expects("file_mtime")->returns(sub {
 					shift =~ m!([^/]+)$!;
 					$files_h{$1}->{mtime}
 				})->exactly(scalar @files);
-				App::MtAws::CheckLocalHashCommand->expects("open_file")->returns(sub {
+				App::MtAws::Command::CheckLocalHash->expects("open_file")->returns(sub {
 					$_[1] =~ m!([^/]+)$!;
 					$_[0] = { mock => $files_h{$1}->{relfilename} };
 					1;
