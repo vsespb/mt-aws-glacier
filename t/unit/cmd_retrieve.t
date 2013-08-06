@@ -57,7 +57,7 @@ my $data = {
 
 
 
-require App::MtAws::RetrieveCommand;
+require App::MtAws::Command::Retrieve;
 
 
 {
@@ -83,7 +83,7 @@ require App::MtAws::RetrieveCommand;
 		$J->_add_archive($d);
 		$J->_index_archives_as_files();
 		
-		cmp_deeply [App::MtAws::RetrieveCommand::get_file_list($options, $J)],
+		cmp_deeply [App::MtAws::Command::Retrieve::get_file_list($options, $J)],
 			[{archive_id => $data->{archive_id}, relfilename => $relfilename, filename => "${rootdir}/$relfilename"}], 'should work';
 	}
 
@@ -105,7 +105,7 @@ require App::MtAws::RetrieveCommand;
 		
 		open F, ">", "${rootdir}/$relfilename";
 		close F;
-		is scalar App::MtAws::RetrieveCommand::get_file_list($options, $J), 0, "should skip existing files";
+		is scalar App::MtAws::Command::Retrieve::get_file_list($options, $J), 0, "should skip existing files";
 	}
 	
 	{
@@ -126,7 +126,7 @@ require App::MtAws::RetrieveCommand;
 		$J->_index_archives_as_files();
 		$J->_retrieve_job($data->{'time'} - 10, $data->{archive_id}, $data->{job_id});
 		
-		is scalar App::MtAws::RetrieveCommand::get_file_list($options, $J), 0, "should skip already retrieved files";
+		is scalar App::MtAws::Command::Retrieve::get_file_list($options, $J), 0, "should skip already retrieved files";
 	}
 }
 
@@ -156,7 +156,7 @@ require App::MtAws::RetrieveCommand;
 		}
 		$J->_index_archives_as_files();
 		
-		is scalar App::MtAws::RetrieveCommand::get_file_list($options, $J), $max, "should respect max-number-of-files for $max";
+		is scalar App::MtAws::Command::Retrieve::get_file_list($options, $J), $max, "should respect max-number-of-files for $max";
 	}
 }
 
@@ -190,7 +190,7 @@ require App::MtAws::RetrieveCommand;
 	}
 	$J->_index_archives_as_files();
 	
-	for (App::MtAws::RetrieveCommand::get_file_list($options, $J)) {
+	for (App::MtAws::Command::Retrieve::get_file_list($options, $J)) {
 		my ($n) = $_->{relfilename} =~ /(\d)$/;
 		ok $n && ($n % 2 == 0), "should skip exsiting retrieved files";
 	}
@@ -222,7 +222,7 @@ require App::MtAws::RetrieveCommand;
 	}
 	$J->_index_archives_as_files();
 	
-	for (App::MtAws::RetrieveCommand::get_file_list($options, $J)) {
+	for (App::MtAws::Command::Retrieve::get_file_list($options, $J)) {
 		my ($n) = $_->{archive_id} =~ /(\d)$/;
 		ok $n && ($n % 2 == 0), "should skip already retrieved files";
 	}

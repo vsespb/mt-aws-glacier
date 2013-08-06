@@ -30,7 +30,7 @@ use App::MtAws;
 
 my @dynamic_modules = map { my $a = $_;  $a =~ s!::!/!g; $a; } qw/
 	Command::Sync
-	RetrieveCommand
+	Command::Retrieve
 	Command::CheckLocalHash
 	Command::DownloadInventory
 /;

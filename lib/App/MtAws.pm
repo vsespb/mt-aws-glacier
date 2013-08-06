@@ -98,7 +98,7 @@ sub load_all_dynamic_modules
 {
 	# we load here all dynamically loaded modules, to check that installation is correct.
 	require App::MtAws::Command::Sync;
-	require App::MtAws::RetrieveCommand;
+	require App::MtAws::Command::Retrieve;
 	require App::MtAws::Command::CheckLocalHash;
 	require App::MtAws::Command::DownloadInventory;
 	check_module_versions;
@@ -230,9 +230,9 @@ END
 		confess unless $options->{'max-number-of-files'};
 
 
-		require App::MtAws::RetrieveCommand;
+		require App::MtAws::Command::Retrieve;
 		check_module_versions;
-		App::MtAws::RetrieveCommand::run($options, $j);
+		App::MtAws::Command::Retrieve::run($options, $j);
 	} elsif ($action eq 'restore-completed') {
 		my $j = App::MtAws::Journal->new(%journal_opts, journal_file => $options->{journal}, root_dir => $options->{dir}, filter => $options->{filters}{parsed});
 

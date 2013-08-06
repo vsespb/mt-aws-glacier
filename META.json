@@ -93,6 +93,10 @@
          "file" : "lib/App/MtAws/Command/DownloadInventory.pm",
          "version" : "0.981"
       },
+      "App::MtAws::Command::Retrieve" : {
+         "file" : "lib/App/MtAws/Command/Retrieve.pm",
+         "version" : "0.981"
+      },
       "App::MtAws::Command::Sync" : {
          "file" : "lib/App/MtAws/Command/Sync.pm",
          "version" : "0.981"
@@ -227,10 +231,6 @@
       },
       "App::MtAws::RetrievalFetchJob" : {
          "file" : "lib/App/MtAws/RetrievalFetchJob.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::RetrieveCommand" : {
-         "file" : "lib/App/MtAws/RetrieveCommand.pm",
          "version" : "0.981"
       },
       "App::MtAws::RetrieveInventoryJob" : {
