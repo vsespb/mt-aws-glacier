@@ -7,7 +7,7 @@ Perl Multithreaded multipart sync to Amazon Glacier service.
 Amazon Glacier is an archive/backup service with very low storage price. However with some caveats in usage and archive retrieval prices.
 [Read more about Amazon Glacier][amazon glacier]
 
-mt-aws-glacier is a client application for Glacier.
+*mt-aws-glacier* is a client application for Amazon Glacier, written in Perl programming language, for *nix.
 
 [amazon glacier]:http://aws.amazon.com/glacier/
 
@@ -718,7 +718,7 @@ Notes:
 * Config file name (specified with `--config`) can be in any encoding (it's used as is) Of course it will work only if your terminal encoding match your
 filesystem encoding or if your config file name consists of ASCII-7bit characters only.
 
-* Additional information about encoding support in Perl: [CPAN module Encode::Supported](http://search.cpan.org/perldoc?Encode%3A%3ASupported)
+* Additional information about encoding support in Perl programming language: [CPAN module Encode::Supported](http://search.cpan.org/perldoc?Encode%3A%3ASupported)
 
 * Amazon Glacier metadata (on Amazon servers) is always stored in UTF-8. No way to override it. You can use Journal in any encoding with same
 metdata without problems and you can dump metadata to journals with different encodings (using `download-inventory` command)
