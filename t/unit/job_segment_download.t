@@ -28,7 +28,7 @@ use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
-use App::MtAws::SegmentDownloadJob;
+use App::MtAws::Job::SegmentDownload;
 use TestUtils;
 use constant ONE_MB => 1024*1024;
 use Carp;
@@ -54,7 +54,7 @@ my $segment_size = 16;
 
 for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB, 2*ONE_MB, 3*ONE_MB) {
 	my $size = 64*ONE_MB + $size_d;
-	my $job = App::MtAws::SegmentDownloadJob->new(
+	my $job = App::MtAws::Job::SegmentDownload->new(
 		archive => {
 			archive_id => $data->{archive_id},
 			mtime => $data->{mtime},
@@ -97,7 +97,7 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 
 {
 	my $size = 64*ONE_MB + 2;
-	my $job = App::MtAws::SegmentDownloadJob->new(
+	my $job = App::MtAws::Job::SegmentDownload->new(
 		archive => {
 			archive_id => $data->{archive_id},
 			size => $size,
@@ -125,16 +125,16 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 	my $last_task = shift @tasks;
 
 	no warnings 'redefine';
-	my $original = \&App::MtAws::SegmentDownloadJob::do_finish;
-	local *App::MtAws::SegmentDownloadJob::do_finish = sub { confess "unexpected finish" };
+	my $original = \&App::MtAws::Job::SegmentDownload::do_finish;
+	local *App::MtAws::Job::SegmentDownload::do_finish = sub { confess "unexpected finish" };
 	$job->finish_task($_) for @tasks;
-	local *App::MtAws::SegmentDownloadJob::do_finish = sub { ok 1, "finish_task should work"; };
+	local *App::MtAws::Job::SegmentDownload::do_finish = sub { ok 1, "finish_task should work"; };
 	my ($code) = $job->finish_task($last_task);
 }
 
 {
 	my $size = 64*ONE_MB + 2;
-	my $job = App::MtAws::SegmentDownloadJob->new(
+	my $job = App::MtAws::Job::SegmentDownload->new(
 		archive => {
 			archive_id => $data->{archive_id},
 			size => $size,
@@ -149,8 +149,8 @@ for my $size_d (-3*ONE_MB, -2*ONE_MB, -1*ONE_MB, -3, -2, -1, 0, 1, 2, 3, ONE_MB,
 
 	no warnings 'redefine';
 	my $finished = 0;
-	my $original = \&App::MtAws::SegmentDownloadJob::do_finish;
-	local *App::MtAws::SegmentDownloadJob::do_finish = sub { $finished = 1; };
+	my $original = \&App::MtAws::Job::SegmentDownload::do_finish;
+	local *App::MtAws::Job::SegmentDownload::do_finish = sub { $finished = 1; };
 	while() {
 		my ($code, $t) = $job->get_task();
 		if ($code eq 'ok') {

@@ -205,6 +205,10 @@
          "file" : "lib/App/MtAws/Job/RetrieveInventory.pm",
          "version" : "0.981"
       },
+      "App::MtAws::Job::SegmentDownload" : {
+         "file" : "lib/App/MtAws/Job/SegmentDownload.pm",
+         "version" : "0.981"
+      },
       "App::MtAws::JobIteratorProxy" : {
          "file" : "lib/App/MtAws/JobIteratorProxy.pm",
          "version" : "0.981"
@@ -235,10 +239,6 @@
       },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::SegmentDownloadJob" : {
-         "file" : "lib/App/MtAws/SegmentDownloadJob.pm",
          "version" : "0.981"
       },
       "App::MtAws::SingleDownloadJob" : {

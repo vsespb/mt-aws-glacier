@@ -28,7 +28,7 @@ use utf8;
 use base qw/App::MtAws::Job/;
 use App::MtAws::FileUploadJob;
 use App::MtAws::SingleDownloadJob;
-use App::MtAws::SegmentDownloadJob;
+use App::MtAws::Job::SegmentDownload;
 use App::MtAws::Job::RetrievalDownload;
 use Carp;
 use JSON::XS;
@@ -87,7 +87,7 @@ sub finish_task
 				return ("ok replace", App::MtAws::JobListProxy->new(jobs => [map {
 					confess unless $_->{size};
 					$_->{size} > $self->{file_downloads}{'segment-size'}*1048576 ?
-						App::MtAws::SegmentDownloadJob->new(file_downloads => $self->{file_downloads}, archive=>$_) :
+						App::MtAws::Job::SegmentDownload->new(file_downloads => $self->{file_downloads}, archive=>$_) :
 						App::MtAws::SingleDownloadJob->new(file_downloads => $self->{file_downloads}, archive=>$_)
 				} @{$self->{downloads}}]));
 			} else {
