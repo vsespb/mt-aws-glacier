@@ -61,8 +61,8 @@ use App::MtAws::ConfigDefinition;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use Carp;
 use IO::Handle;
-use App::MtAws::CreateVaultJob;
-use App::MtAws::DeleteVaultJob;
+use App::MtAws::Job::CreateVault;
+use App::MtAws::Job::DeleteVault;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use PerlIO::encoding;
@@ -287,14 +287,14 @@ END
 		$options->{concurrency} = 1;
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::CreateVaultJob->new(name => $options->{'vault-name'}));
+			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::CreateVault->new(name => $options->{'vault-name'}));
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'delete-vault') {
 		$options->{concurrency} = 1;
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::DeleteVaultJob->new(name => $options->{'vault-name'}));
+			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::DeleteVault->new(name => $options->{'vault-name'}));
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {

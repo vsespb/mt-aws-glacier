@@ -12,8 +12,6 @@ lib/App/MtAws/Command/Retrieve.pm
 lib/App/MtAws/Command/Sync.pm
 lib/App/MtAws/ConfigDefinition.pm
 lib/App/MtAws/ConfigEngine.pm
-lib/App/MtAws/CreateVaultJob.pm
-lib/App/MtAws/DeleteVaultJob.pm
 lib/App/MtAws/Exceptions.pm
 lib/App/MtAws/FileCreateJob.pm
 lib/App/MtAws/FileFinishJob.pm
@@ -28,6 +26,8 @@ lib/App/MtAws/GlacierRequest.pm
 lib/App/MtAws/HttpSegmentWriter.pm
 lib/App/MtAws/IntermediateFile.pm
 lib/App/MtAws/Job.pm
+lib/App/MtAws/Job/CreateVault.pm
+lib/App/MtAws/Job/DeleteVault.pm
 lib/App/MtAws/Job/InventoryDownload.pm
 lib/App/MtAws/Job/InventoryFetch.pm
 lib/App/MtAws/Job/RetrievalDownload.pm

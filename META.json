@@ -109,14 +109,6 @@
          "file" : "lib/App/MtAws/ConfigEngine.pm",
          "version" : "0.981"
       },
-      "App::MtAws::CreateVaultJob" : {
-         "file" : "lib/App/MtAws/CreateVaultJob.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::DeleteVaultJob" : {
-         "file" : "lib/App/MtAws/DeleteVaultJob.pm",
-         "version" : "0.981"
-      },
       "App::MtAws::Exceptions" : {
          "file" : "lib/App/MtAws/Exceptions.pm",
          "version" : "0.981"
@@ -185,6 +177,14 @@
          "file" : "lib/App/MtAws/Job.pm",
          "version" : "0.981"
       },
+      "App::MtAws::Job::CreateVault" : {
+         "file" : "lib/App/MtAws/Job/CreateVault.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Job::DeleteVault" : {
+         "file" : "lib/App/MtAws/Job/DeleteVault.pm",
+         "version" : "0.981"
+      },
       "App::MtAws::Job::InventoryDownload" : {
          "file" : "lib/App/MtAws/Job/InventoryDownload.pm",
          "version" : "0.981"
@@ -207,6 +207,10 @@
       },
       "App::MtAws::Job::SegmentDownload" : {
          "file" : "lib/App/MtAws/Job/SegmentDownload.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Job::SingleDownload" : {
+         "file" : "lib/App/MtAws/Job/SingleDownload.pm",
          "version" : "0.981"
       },
       "App::MtAws::JobIteratorProxy" : {
@@ -239,10 +243,6 @@
       },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::SingleDownloadJob" : {
-         "file" : "lib/App/MtAws/Job/SingleDownload.pm",
          "version" : "0.981"
       },
       "App::MtAws::Task" : {

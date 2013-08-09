@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::CreateVaultJob;
+package App::MtAws::Job::DeleteVault;
 
 our $VERSION = '0.981';
 
@@ -26,7 +26,6 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use File::stat;
 
 
 sub new
@@ -47,7 +46,7 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		return ("ok", App::MtAws::Task->new(id => 'create_vault', action=>"create_vault_job", data => { name => $self->{name} }));
+		return ("ok", App::MtAws::Task->new(id => 'delete_vault', action=>"delete_vault_job", data => { name => $self->{name} }));
 	}
 }
 
@@ -61,5 +60,5 @@ sub finish_task
 		die;
 	}
 }
-	
+
 1;
