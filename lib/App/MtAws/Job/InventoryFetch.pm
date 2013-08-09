@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::InventoryFetchJob;
+package App::MtAws::Job::InventoryFetch;
 
 our $VERSION = '0.981';
 
@@ -69,7 +69,7 @@ sub finish_task
 		}
 		
 		if ($scalar->{Marker}) {
-			return ("ok replace", App::MtAws::InventoryFetchJob->new(marker => $scalar->{Marker}) );
+			return ("ok replace", App::MtAws::Job::InventoryFetch->new(marker => $scalar->{Marker}) );
 		} else {
 			# TODO: to handle the case when we don't have any inventory retrieved $task->{result}->{response}=undef;
 			return ("done");

@@ -53,7 +53,7 @@ use App::MtAws::FileListRetrievalJob;
 use App::MtAws::RetrievalFetchJob;
 use App::MtAws::JobListProxy;
 use App::MtAws::RetrieveInventoryJob;
-use App::MtAws::InventoryFetchJob;
+use App::MtAws::Job::InventoryFetch;
 use File::Find ;
 use File::Spec;
 use App::MtAws::Journal;
