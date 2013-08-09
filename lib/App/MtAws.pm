@@ -50,7 +50,7 @@ use App::MtAws::JobProxy;
 use App::MtAws::FileCreateJob;
 use App::MtAws::FileListDeleteJob;
 use App::MtAws::FileListRetrievalJob;
-use App::MtAws::RetrievalFetchJob;
+use App::MtAws::Job::RetrievalFetch;
 use App::MtAws::JobListProxy;
 use App::MtAws::RetrieveInventoryJob;
 use App::MtAws::Job::InventoryFetch;
@@ -257,7 +257,7 @@ END
 						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n" for ($j->latest($_));
 					}
 				} else {
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrievalFetchJob->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrievalFetch->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 				}

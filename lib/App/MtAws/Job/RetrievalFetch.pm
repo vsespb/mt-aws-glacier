@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::RetrievalFetchJob;
+package App::MtAws::Job::RetrievalFetch;
 
 our $VERSION = '0.981';
 
@@ -79,7 +79,7 @@ sub finish_task
 		}
 		
 		if ($scalar->{Marker}) {
-			return ("ok replace", App::MtAws::RetrievalFetchJob->new(archives => $self->{archives}, file_downloads => $self->{file_downloads},
+			return ("ok replace", App::MtAws::Job::RetrievalFetch->new(archives => $self->{archives}, file_downloads => $self->{file_downloads},
 			downloads => $self->{downloads}, seen => $self->{seen}, marker => $scalar->{Marker} ) ); # TODO: we don't need go pagination if we have all archives to download
 		} elsif (scalar @{$self->{downloads}}) {
 			 #TODO allow parallel downloads while fetching job list

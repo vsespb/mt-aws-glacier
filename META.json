@@ -193,6 +193,14 @@
          "file" : "lib/App/MtAws/Job/InventoryFetch.pm",
          "version" : "0.981"
       },
+      "App::MtAws::Job::RetrievalDownload" : {
+         "file" : "lib/App/MtAws/Job/RetrievalDownload.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Job::RetrievalFetch" : {
+         "file" : "lib/App/MtAws/Job/RetrievalFetch.pm",
+         "version" : "0.981"
+      },
       "App::MtAws::JobIteratorProxy" : {
          "file" : "lib/App/MtAws/JobIteratorProxy.pm",
          "version" : "0.981"
@@ -223,14 +231,6 @@
       },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::RetrievalDownloadJob" : {
-         "file" : "lib/App/MtAws/RetrievalDownloadJob.pm",
-         "version" : "0.981"
-      },
-      "App::MtAws::RetrievalFetchJob" : {
-         "file" : "lib/App/MtAws/RetrievalFetchJob.pm",
          "version" : "0.981"
       },
       "App::MtAws::RetrieveInventoryJob" : {
