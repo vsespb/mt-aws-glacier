@@ -47,7 +47,7 @@ use constant ONE_MB => 1024*1024;
 use App::MtAws::ParentWorker;
 use App::MtAws::ChildWorker;
 use App::MtAws::JobProxy;
-use App::MtAws::FileCreateJob;
+use App::MtAws::Job::FileCreate;
 use App::MtAws::FileListDeleteJob;
 use App::MtAws::FileListRetrievalJob;
 use App::MtAws::Job::RetrievalFetch;
@@ -188,11 +188,11 @@ END
 			$j->open_for_write();
 
 			my $ft = ($options->{'data-type'} eq 'filename') ?
-				App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(
+				App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
 					filename => $options->{filename},
 					relfilename => $relfilename,
 					partsize => ONE_MB*$partsize)) :
-				App::MtAws::JobProxy->new(job => App::MtAws::FileCreateJob->new(
+				App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
 					stdin => 1,
 					relfilename => $relfilename,
 					partsize => ONE_MB*$partsize));

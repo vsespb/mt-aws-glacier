@@ -215,7 +215,7 @@ describe "command" => sub {
 				my ($options, $j, $file, $rec) = @_;
 				ok $rec->isa('App::MtAws::JobProxy');
 				my $job = $rec->{job};
-				ok $job->isa('App::MtAws::FileCreateJob');
+				ok $job->isa('App::MtAws::Job::FileCreate');
 				is $job->{partsize}, $options->{partsize}*1024*1024;
 				is $job->{relfilename}, $file->{relfilename};
 				is $job->{filename}, $j->absfilename($file->{relfilename});
@@ -358,7 +358,7 @@ describe "command" => sub {
 			is $job->{partsize}, $options->{partsize}*1024*1024;
 			is $job->{relfilename}, 'file1';
 			is $job->{filename}, $j->absfilename('file1');
-			ok $job->isa('App::MtAws::FileCreateJob');
+			ok $job->isa('App::MtAws::Job::FileCreate');
 			is scalar @{ $j->{listing}{new} }, 0;
 			ok !defined (App::MtAws::Command::Sync::next_new($options, $j));
 		};
@@ -588,7 +588,7 @@ describe "command" => sub {
 						is $task->{job}{relfilename}, $_;
 						is $task->{job}{partsize}, $options->{partsize}*1024*1024;
 						ok $task->isa('App::MtAws::JobProxy');
-						ok $task->{job}->isa('App::MtAws::FileCreateJob');
+						ok $task->{job}->isa('App::MtAws::Job::FileCreate');
 					}
 					return (1)
 				});
@@ -624,7 +624,7 @@ describe "command" => sub {
 						is $task->{job}{relfilename}, $_;
 						is $task->{job}{partsize}, $options->{partsize}*1024*1024;
 						ok $task->isa('App::MtAws::JobProxy');
-						ok $task->{job}->isa('App::MtAws::FileCreateJob');
+						ok $task->{job}->isa('App::MtAws::Job::FileCreate');
 					}
 					return (1)
 				});

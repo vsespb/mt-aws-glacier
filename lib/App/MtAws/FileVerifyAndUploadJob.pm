@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use App::MtAws::FileCreateJob;
+use App::MtAws::Job::FileCreate;
 use Carp;
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
@@ -70,7 +70,7 @@ sub finish_task
 		if ($task->{result}{match}) {
 			return ('done');
 		} else {
-			return ("ok replace", App::MtAws::FileCreateJob->new(
+			return ("ok replace", App::MtAws::Job::FileCreate->new(
 				map { $_ => $self->{$_} } qw/filename relfilename partsize/,
 				$self->{delete_after_upload} ?
 					(finish_cb => sub {

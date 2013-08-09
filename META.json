@@ -113,10 +113,6 @@
          "file" : "lib/App/MtAws/Exceptions.pm",
          "version" : "0.981"
       },
-      "App::MtAws::FileCreateJob" : {
-         "file" : "lib/App/MtAws/FileCreateJob.pm",
-         "version" : "0.981"
-      },
       "App::MtAws::FileFinishJob" : {
          "file" : "lib/App/MtAws/FileFinishJob.pm",
          "version" : "0.981"
@@ -179,6 +175,10 @@
       },
       "App::MtAws::Job::DeleteVault" : {
          "file" : "lib/App/MtAws/Job/DeleteVault.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Job::FileCreate" : {
+         "file" : "lib/App/MtAws/Job/FileCreate.pm",
          "version" : "0.981"
       },
       "App::MtAws::Job::FileUpload" : {

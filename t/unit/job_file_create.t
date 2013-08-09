@@ -27,7 +27,7 @@ use Test::More tests => 5;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
-use App::MtAws::FileCreateJob;
+use App::MtAws::Job::FileCreate;
 use File::Path;
 use Data::Dumper;
 use POSIX;
@@ -43,7 +43,7 @@ unlink $file;
 
 {
 	create($file, '');
-	my $job = App::MtAws::FileCreateJob->new(filename => $file, relfilename => 'job_file_create', partsize => 2);
+	my $job = App::MtAws::Job::FileCreate->new(filename => $file, relfilename => 'job_file_create', partsize => 2);
 	ok ! defined eval { $job->get_task(); 1; };
 	my $err = $@;
 	cmp_deeply $err, superhashof { code => 'file_is_zero',
@@ -57,7 +57,7 @@ SKIP: {
 	 
 	create($file, 'x');
 	chmod 0000, $file;
-	my $job = App::MtAws::FileCreateJob->new(filename => $file, relfilename => 'job_file_create', partsize => 2);
+	my $job = App::MtAws::Job::FileCreate->new(filename => $file, relfilename => 'job_file_create', partsize => 2);
 	ok ! defined eval { $job->get_task(); 1; };
 	my $err = $@;
 	cmp_deeply $err, superhashof { code => 'upload_file_open_error',

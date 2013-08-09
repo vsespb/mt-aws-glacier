@@ -35,7 +35,7 @@ use constant SHOULD_NOACTION => 0;
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
-use App::MtAws::FileCreateJob;
+use App::MtAws::Job::FileCreate;
 use App::MtAws::FileListDeleteJob;
 use App::MtAws::FileVerifyAndUploadJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
@@ -99,7 +99,7 @@ sub next_modified
 					treehash => $file->{treehash}
 			));
 		} elsif ($should_upload == SHOULD_CREATE) {
-			return App::MtAws::JobProxy->new(job=> App::MtAws::FileCreateJob->new(
+			return App::MtAws::JobProxy->new(job=> App::MtAws::Job::FileCreate->new(
 				filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 				(finish_cb => sub {
 					App::MtAws::FileListDeleteJob->new(archives => [{
@@ -134,7 +134,7 @@ sub next_new
 	if (my $rec = shift @{ $j->{listing}{new} }) {
 		my ($absfilename, $relfilename) = ($j->absfilename($rec->{relfilename}), $rec->{relfilename});
 		App::MtAws::JobProxy->new(job =>
-			App::MtAws::FileCreateJob->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
+			App::MtAws::Job::FileCreate->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
 	} else {
 		return;
 	}
