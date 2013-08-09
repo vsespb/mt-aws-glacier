@@ -32,6 +32,7 @@ lib/App/MtAws/Job/InventoryDownload.pm
 lib/App/MtAws/Job/InventoryFetch.pm
 lib/App/MtAws/Job/RetrievalDownload.pm
 lib/App/MtAws/Job/RetrievalFetch.pm
+lib/App/MtAws/Job/RetrieveInventory.pm
 lib/App/MtAws/JobIteratorProxy.pm
 lib/App/MtAws/JobListProxy.pm
 lib/App/MtAws/JobProxy.pm
@@ -40,7 +41,6 @@ lib/App/MtAws/LineProtocol.pm
 lib/App/MtAws/MetaData.pm
 lib/App/MtAws/ParentWorker.pm
 lib/App/MtAws/ProxyTask.pm
-lib/App/MtAws/RetrieveInventoryJob.pm
 lib/App/MtAws/SegmentDownloadJob.pm
 lib/App/MtAws/SingleDownloadJob.pm
 lib/App/MtAws/Task.pm
