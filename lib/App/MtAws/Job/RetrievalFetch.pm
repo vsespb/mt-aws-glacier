@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use App::MtAws::FileUploadJob;
+use App::MtAws::Job::FileUpload;
 use App::MtAws::Job::SingleDownload;
 use App::MtAws::Job::SegmentDownload;
 use App::MtAws::Job::RetrievalDownload;

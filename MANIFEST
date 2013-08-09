@@ -17,7 +17,6 @@ lib/App/MtAws/FileCreateJob.pm
 lib/App/MtAws/FileFinishJob.pm
 lib/App/MtAws/FileListDeleteJob.pm
 lib/App/MtAws/FileListRetrievalJob.pm
-lib/App/MtAws/FileUploadJob.pm
 lib/App/MtAws/FileVerifyAndUploadJob.pm
 lib/App/MtAws/FileVersions.pm
 lib/App/MtAws/Filter.pm
@@ -28,6 +27,7 @@ lib/App/MtAws/IntermediateFile.pm
 lib/App/MtAws/Job.pm
 lib/App/MtAws/Job/CreateVault.pm
 lib/App/MtAws/Job/DeleteVault.pm
+lib/App/MtAws/Job/FileUpload.pm
 lib/App/MtAws/Job/InventoryDownload.pm
 lib/App/MtAws/Job/InventoryFetch.pm
 lib/App/MtAws/Job/RetrievalDownload.pm

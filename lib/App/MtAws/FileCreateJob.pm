@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use App::MtAws::FileUploadJob;
+use App::MtAws::Job::FileUpload;
 use File::stat;
 use Time::localtime;
 use Carp;
@@ -85,7 +85,7 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
-		return ("ok replace", App::MtAws::FileUploadJob->new(
+		return ("ok replace", App::MtAws::Job::FileUpload->new(
 			fh => $self->{fh},
 			finish_cb => $self->{finish_cb},
 			relfilename => $self->{relfilename},
