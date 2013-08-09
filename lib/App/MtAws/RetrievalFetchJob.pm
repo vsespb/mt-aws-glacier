@@ -29,7 +29,7 @@ use base qw/App::MtAws::Job/;
 use App::MtAws::FileUploadJob;
 use App::MtAws::SingleDownloadJob;
 use App::MtAws::SegmentDownloadJob;
-use App::MtAws::RetrievalDownloadJob;
+use App::MtAws::Job::RetrievalDownload;
 use Carp;
 use JSON::XS;
 
@@ -91,7 +91,7 @@ sub finish_task
 						App::MtAws::SingleDownloadJob->new(file_downloads => $self->{file_downloads}, archive=>$_)
 				} @{$self->{downloads}}]));
 			} else {
-				return ("ok replace", App::MtAws::RetrievalDownloadJob->new(file_downloads => $self->{file_downloads}, archives=>$self->{downloads}));
+				return ("ok replace", App::MtAws::Job::RetrievalDownload->new(file_downloads => $self->{file_downloads}, archives=>$self->{downloads}));
 			}
 		} else {
 			return ("done");
