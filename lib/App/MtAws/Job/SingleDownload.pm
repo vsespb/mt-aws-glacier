@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::SingleDownloadJob;
+package App::MtAws::Job::SingleDownload;
 
 our $VERSION = '0.981';
 

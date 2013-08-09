@@ -242,7 +242,7 @@
          "version" : "0.981"
       },
       "App::MtAws::SingleDownloadJob" : {
-         "file" : "lib/App/MtAws/SingleDownloadJob.pm",
+         "file" : "lib/App/MtAws/Job/SingleDownload.pm",
          "version" : "0.981"
       },
       "App::MtAws::Task" : {

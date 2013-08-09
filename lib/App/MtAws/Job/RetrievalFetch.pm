@@ -27,7 +27,7 @@ use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
 use App::MtAws::FileUploadJob;
-use App::MtAws::SingleDownloadJob;
+use App::MtAws::Job::SingleDownload;
 use App::MtAws::Job::SegmentDownload;
 use App::MtAws::Job::RetrievalDownload;
 use Carp;
@@ -88,7 +88,7 @@ sub finish_task
 					confess unless $_->{size};
 					$_->{size} > $self->{file_downloads}{'segment-size'}*1048576 ?
 						App::MtAws::Job::SegmentDownload->new(file_downloads => $self->{file_downloads}, archive=>$_) :
-						App::MtAws::SingleDownloadJob->new(file_downloads => $self->{file_downloads}, archive=>$_)
+						App::MtAws::Job::SingleDownload->new(file_downloads => $self->{file_downloads}, archive=>$_)
 				} @{$self->{downloads}}]));
 			} else {
 				return ("ok replace", App::MtAws::Job::RetrievalDownload->new(file_downloads => $self->{file_downloads}, archives=>$self->{downloads}));
