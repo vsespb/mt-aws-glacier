@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use App::MtAws::InventoryDownloadJob;
+use App::MtAws::Job::InventoryDownload;
 
 use JSON::XS;
 
@@ -64,7 +64,7 @@ sub finish_task
 		for my $job (@{$scalar->{JobList}}) {
 			#print "$job->{Completed}|$job->{JobId}\n";
 			if ($job->{Action} eq 'InventoryRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
-				return ("ok replace", App::MtAws::InventoryDownloadJob->new(job_id => $job->{JobId}));
+				return ("ok replace", App::MtAws::Job::InventoryDownload->new(job_id => $job->{JobId}));
 			}
 		}
 		
