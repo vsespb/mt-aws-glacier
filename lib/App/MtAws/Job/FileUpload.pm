@@ -26,7 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
-use App::MtAws::FileFinishJob;
+use App::MtAws::Job::FileFinish;
 use Carp;
 
 
@@ -78,8 +78,8 @@ sub get_task
 			confess "Unexpected: zero-size archive" unless ($self->{position});
 			$self->{all_raised} = 1;
 			if (scalar keys %{$self->{uploadparts}} == 0) {
-				# TODO: why do we have to have two FileFinishJob->new ??
-				return ("ok replace", App::MtAws::FileFinishJob->new(finish_cb => $self->{finish_cb}, upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, th => $self->{th}));
+				# TODO: why do we have to have two Job::FileFinish->new ??
+				return ("ok replace", App::MtAws::Job::FileFinish->new(finish_cb => $self->{finish_cb}, upload_id => $self->{upload_id}, mtime => $self->{mtime}, filesize => $self->{position}, relfilename => $self->{relfilename}, th => $self->{th}));
 			} else {
 				return ("wait");
 			}
@@ -93,7 +93,7 @@ sub finish_task
 	my ($self, $task) = @_;
 	delete $self->{uploadparts}->{$task->{id}};
 	if ($self->{all_raised} && scalar keys %{$self->{uploadparts}} == 0) {
-		return ("ok replace", App::MtAws::FileFinishJob->new(finish_cb => $self->{finish_cb}, upload_id => $self->{upload_id}, mtime => $self->{mtime}, relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
+		return ("ok replace", App::MtAws::Job::FileFinish->new(finish_cb => $self->{finish_cb}, upload_id => $self->{upload_id}, mtime => $self->{mtime}, relfilename => $self->{relfilename}, filename => $self->{filename}, filesize => $self->{position}, th => $self->{th}));
 	} else {
 		return ("ok");
 	}
