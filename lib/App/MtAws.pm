@@ -52,7 +52,7 @@ use App::MtAws::FileListDeleteJob;
 use App::MtAws::FileListRetrievalJob;
 use App::MtAws::Job::RetrievalFetch;
 use App::MtAws::JobListProxy;
-use App::MtAws::RetrieveInventoryJob;
+use App::MtAws::Job::RetrieveInventory;
 use App::MtAws::Job::InventoryFetch;
 use File::Find ;
 use File::Spec;
@@ -274,7 +274,7 @@ END
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::RetrieveInventoryJob->new());
+			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrieveInventory->new());
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'download-inventory') {
