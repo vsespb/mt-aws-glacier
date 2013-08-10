@@ -28,6 +28,7 @@ use utf8;
 use Carp;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use App::MtAws::Utils;
+use App::MtAws::Job::FileListRetrieval;
 
 sub run
 {
@@ -35,9 +36,9 @@ sub run
 	confess unless $j->{use_active_retrievals};
 	with_forks !$options->{'dry-run'}, $options, sub {
 		$j->read_journal(should_exist => 1);
-		
+
 		my @filelist = get_file_list($options, $j);
-		
+
 		if (@filelist) {
 			if ($options->{'dry-run'}) {
 				for (@filelist) {

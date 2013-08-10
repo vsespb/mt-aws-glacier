@@ -31,6 +31,7 @@ use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::Journal;
+use App::MtAws::Job::InventoryFetch;
 
 sub run
 {
