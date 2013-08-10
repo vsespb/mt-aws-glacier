@@ -45,7 +45,7 @@ sub run
 				}
 			} else {
 				$j->open_for_write();
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListRetrievalJob->new(archives => \@filelist ));
+				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListRetrieval->new(archives => \@filelist ));
 				my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 				die unless $R;
 				$j->close_for_write();

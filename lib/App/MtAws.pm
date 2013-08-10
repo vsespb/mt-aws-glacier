@@ -49,7 +49,7 @@ use App::MtAws::ChildWorker;
 use App::MtAws::JobProxy;
 use App::MtAws::Job::FileCreate;
 use App::MtAws::Job::FileListDelete;
-use App::MtAws::FileListRetrievalJob;
+use App::MtAws::Job::FileListRetrieval;
 use App::MtAws::Job::RetrievalFetch;
 use App::MtAws::JobListProxy;
 use App::MtAws::Job::RetrieveInventory;
