@@ -37,7 +37,7 @@ use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
 use App::MtAws::Job::FileCreate;
 use App::MtAws::Job::FileListDelete;
-use App::MtAws::FileVerifyAndUploadJob;
+use App::MtAws::Job::FileVerifyAndUpload;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
 use App::MtAws::Utils;
@@ -92,7 +92,7 @@ sub next_modified
 
 		if ($should_upload == SHOULD_TREEHASH) {
 			return App::MtAws::JobProxy->new(job=>
-				App::MtAws::FileVerifyAndUploadJob->new(filename => $absfilename,
+				App::MtAws::Job::FileVerifyAndUpload->new(filename => $absfilename,
 					relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 					delete_after_upload => 1,
 					archive_id => $file->{archive_id},

@@ -113,10 +113,6 @@
          "file" : "lib/App/MtAws/Exceptions.pm",
          "version" : "0.981"
       },
-      "App::MtAws::FileVerifyAndUploadJob" : {
-         "file" : "lib/App/MtAws/FileVerifyAndUploadJob.pm",
-         "version" : "0.981"
-      },
       "App::MtAws::FileVersions" : {
          "file" : "lib/App/MtAws/FileVersions.pm",
          "version" : "0.981"
@@ -183,6 +179,10 @@
       },
       "App::MtAws::Job::FileUpload" : {
          "file" : "lib/App/MtAws/Job/FileUpload.pm",
+         "version" : "0.981"
+      },
+      "App::MtAws::Job::FileVerifyAndUpload" : {
+         "file" : "lib/App/MtAws/Job/FileVerifyAndUpload.pm",
          "version" : "0.981"
       },
       "App::MtAws::Job::InventoryDownload" : {

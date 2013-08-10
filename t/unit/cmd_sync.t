@@ -233,7 +233,7 @@ describe "command" => sub {
 				my ($options, $j, $file, $rec) = @_;
 				ok $rec->isa('App::MtAws::JobProxy');
 				my $job = $rec->{job};
-				ok $job->isa('App::MtAws::FileVerifyAndUploadJob');
+				ok $job->isa('App::MtAws::Job::FileVerifyAndUpload');
 				is $job->{filename}, $j->absfilename($file->{relfilename});
 				is $job->{relfilename}, $file->{relfilename};
 				ok $job->{delete_after_upload};
