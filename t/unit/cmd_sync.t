@@ -224,7 +224,7 @@ describe "command" => sub {
 
 				my $finish = $job->{finish_cb}->();
 
-				ok $finish->isa('App::MtAws::FileListDeleteJob');
+				ok $finish->isa('App::MtAws::Job::FileListDelete');
 				cmp_deeply $finish->{archives}, [{archive_id => $file->{archive_id}, relfilename => $file->{relfilename}}];
 			}
 
@@ -388,7 +388,7 @@ describe "command" => sub {
 			$j->{listing}{missing} = [$r];
 			$j->_add_filename($r);
 			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
-			ok $rec->isa('App::MtAws::FileListDeleteJob');
+			ok $rec->isa('App::MtAws::Job::FileListDelete');
 			is scalar @{ $rec->{archives} }, 1;
 			my $job = $rec->{archives}[0];
 			is $job->{relfilename}, 'file1';
@@ -401,7 +401,7 @@ describe "command" => sub {
 				$j->_add_filename($_);
 			}
 			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
-			ok $rec->isa('App::MtAws::FileListDeleteJob');
+			ok $rec->isa('App::MtAws::Job::FileListDelete');
 			is scalar @{ $rec->{archives} }, 1;
 			my $job = $rec->{archives}[0];
 			is $job->{relfilename}, 'file1';
@@ -421,7 +421,7 @@ describe "command" => sub {
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112});
 			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
-			ok $rec->isa('App::MtAws::FileListDeleteJob');
+			ok $rec->isa('App::MtAws::Job::FileListDelete');
 			is scalar @{ $rec->{archives} }, 1;
 			my $job = $rec->{archives}[0];
 			is $job->{archive_id}, 'zz2';
@@ -666,7 +666,7 @@ describe "command" => sub {
 					my $itt = $job->{jobs}[0];
 					for (sort keys %files) {
 						my $task = $itt->{iterator}->();
-						ok $task->isa('App::MtAws::FileListDeleteJob');
+						ok $task->isa('App::MtAws::Job::FileListDelete');
 						is scalar @{ $task->{archives} }, 1;
 						my $a = $task->{archives}[0];
 						is $a->{relfilename}, $_;

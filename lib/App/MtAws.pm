@@ -48,7 +48,7 @@ use App::MtAws::ParentWorker;
 use App::MtAws::ChildWorker;
 use App::MtAws::JobProxy;
 use App::MtAws::Job::FileCreate;
-use App::MtAws::FileListDeleteJob;
+use App::MtAws::Job::FileListDelete;
 use App::MtAws::FileListRetrievalJob;
 use App::MtAws::Job::RetrievalFetch;
 use App::MtAws::JobListProxy;
@@ -216,7 +216,7 @@ END
 				} else {
 					$j->open_for_write();
 					my @filelist = map { {archive_id => $_, relfilename =>$archives->{$_}->{relfilename} } } keys %{$archives};
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::FileListDeleteJob->new(archives => \@filelist ));
+					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListDelete->new(archives => \@filelist ));
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 					$j->close_for_write();

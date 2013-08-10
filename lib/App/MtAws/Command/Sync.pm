@@ -36,7 +36,7 @@ use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
 use App::MtAws::Job::FileCreate;
-use App::MtAws::FileListDeleteJob;
+use App::MtAws::Job::FileListDelete;
 use App::MtAws::FileVerifyAndUploadJob;
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
@@ -102,7 +102,7 @@ sub next_modified
 			return App::MtAws::JobProxy->new(job=> App::MtAws::Job::FileCreate->new(
 				filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 				(finish_cb => sub {
-					App::MtAws::FileListDeleteJob->new(archives => [{
+					App::MtAws::Job::FileListDelete->new(archives => [{
 						archive_id => $file->{archive_id}, relfilename => $relfilename
 					}])
 				})
@@ -120,7 +120,7 @@ sub next_missing
 {
 	my ($options, $j) = @_;
 	if (my $rec = shift @{ $j->{listing}{missing} }) {
-		App::MtAws::FileListDeleteJob->new(archives => [{
+		App::MtAws::Job::FileListDelete->new(archives => [{
 			archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
 		}]);
 	} else {

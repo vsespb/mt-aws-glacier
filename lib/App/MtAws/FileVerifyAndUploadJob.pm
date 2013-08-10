@@ -74,7 +74,7 @@ sub finish_task
 				map { $_ => $self->{$_} } qw/filename relfilename partsize/,
 				$self->{delete_after_upload} ?
 					(finish_cb => sub {
-						App::MtAws::FileListDeleteJob->new(archives => [{
+						App::MtAws::Job::FileListDelete->new(archives => [{
 							archive_id => $self->{archive_id}, relfilename => $self->{relfilename}
 						}])
 					})
