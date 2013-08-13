@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 26;
+use Test::More tests => 36;
 use Encode;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -41,6 +41,24 @@ for (undef, 0, ''){
 	ok ! eval { get_filename_encoding(); 1 }, "get_filename_encoding() should confess if no filename_encoding";
 	ok ! eval { binaryfilename("abc"); 1 }, "binaryfilename() should confess if no filename_encoding";
 	ok ! eval { characterfilename("abc"); 1 }, "characterfilename() should confess if no filename_encoding";
+}
+
+{
+	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
+	my $s0 = "тест";
+	my $s = $s0;
+	my $s_b = binaryfilename($s);
+	isnt $s_b, $s, "assume binaryfilename output differs from input";
+	is $s, $s0, "binaryfilename should not modify argument";
+}
+
+{
+	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
+	my $s_b0 = encode('UTF-8', "тест");
+	my $s_b = $s_b0;
+	my $s = characterfilename($s_b);
+	isnt $s, $s_b, "assume characterfilename output differs from input";
+	is $s_b, $s_b0, "characterfilename should not modify argument";
 }
 
 for my $encoding ('UTF-8', 'KOI8-R') {
@@ -75,5 +93,23 @@ for my $encoding ('UTF-8', 'KOI8-R') {
 	ok !utf8::is_utf8($s_d), "assume s_d is downgraded string";
 	is binaryfilename($s_d), $s_b, "binaryfilename should work for encoding Latin-1 downgraded strings";
 }
+
+
+{
+	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
+	my $s = "тест";
+	my $s_b = encode('UTF-8', $s);
+	ok !utf8::is_utf8($s_b);
+	isnt $s_b, $s;
+	is binaryfilename($s), $s_b, "binaryfilename should work with arguments";
+	is characterfilename($s_b), $s, "characterfilename should work with arguments";
+	for ($s) {
+		is binaryfilename, $s_b, "binaryfilename should work with \$_";
+	}
+	for ($s_b) {
+		is characterfilename, $s, "characterfilename should work with \$_";
+	}
+}
+
 
 1;
