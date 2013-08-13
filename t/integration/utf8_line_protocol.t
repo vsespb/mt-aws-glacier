@@ -161,7 +161,7 @@ sub receiving
 	sub check_utf8_on
 	{
 		my $h = shift;
-		utf8::is_utf8((keys %$h)[0]) &&	utf8::is_utf8((values %$h)[0])
+		utf8::is_utf8((keys %$h)[0]) && utf8::is_utf8((values %$h)[0]);
 	}
 
 	my $c = 'Ñ';
