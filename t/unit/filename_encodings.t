@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 36;
+use Test::More tests => 37;
 use Encode;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -92,6 +92,12 @@ for my $encoding ('UTF-8', 'KOI8-R') {
 	is $s_d, $s, "assume s_d is downgraded string";
 	ok !utf8::is_utf8($s_d), "assume s_d is downgraded string";
 	is binaryfilename($s_d), $s_b, "binaryfilename should work for encoding Latin-1 downgraded strings";
+}
+
+{
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	my $s = "µµµ";
+	ok ! eval { binaryfilename($s); 1 }, "binaryfilename should confess if string cant be represented in encoding";
 }
 
 
