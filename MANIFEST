@@ -103,6 +103,7 @@ t/unit/config_engine_parse.t
 t/unit/exceptions.t
 t/unit/file_versions.t
 t/unit/file_versions_behaviour.t
+t/unit/filename_encodings.t
 t/unit/filter.t
 t/unit/glacier_request.t
 t/unit/intermediate_file.t
