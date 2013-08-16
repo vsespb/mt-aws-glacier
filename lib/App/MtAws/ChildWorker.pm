@@ -32,8 +32,6 @@ use utf8;
 use Carp;
 use IO::Select;
 use POSIX;
-use bytes;
-no bytes;
 
 sub new
 {

@@ -31,8 +31,7 @@ use Carp;
 use Encode;
 use App::MtAws::Exceptions;
 use LWP::UserAgent;
-use bytes;
-no bytes;
+use bytes ();
 
 require Exporter;
 use base qw/Exporter/;

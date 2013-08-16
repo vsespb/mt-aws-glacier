@@ -31,8 +31,6 @@ use App::MtAws::LineProtocol;
 use Carp;
 use POSIX;
 use App::MtAws::Utils;
-use bytes;
-no bytes;
 
 sub new
 {
@@ -97,7 +95,7 @@ sub wait_worker
 
 		delete $task_list->{$taskid};
 		my ($result) = $ft->finish_task($task);
-	
+
 		if ($result eq 'done') {
 			return ($task->{result}, $task->{attachmentref});
 		}
