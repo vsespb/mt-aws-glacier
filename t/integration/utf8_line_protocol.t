@@ -26,7 +26,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
-use Test::More tests => 178;
+use Test::More tests => 189;
 use Test::Deep;
 use Encode;
 use bytes;
@@ -156,13 +156,14 @@ sub receiving
 	}
 }
 
+sub check_utf8_on
+{
+	my $h = shift;
+	utf8::is_utf8((keys %$h)[0]) && utf8::is_utf8((values %$h)[0]);
+}
+
 # should not downgrade Latin-1 strings
 {
-	sub check_utf8_on
-	{
-		my $h = shift;
-		utf8::is_utf8((keys %$h)[0]) && utf8::is_utf8((values %$h)[0]);
-	}
 
 	my $c = 'Ñ';
 	ok ord $c <= 255;
@@ -175,6 +176,38 @@ sub receiving
 	sending sub {
 		ok send_data($file, 'testaction', 'sometaskid', $src);
 		ok check_utf8_on($src);
+	};
+	receiving sub {
+		my ($pid, $action, $taskid, $data) = get_data($file);
+		is $pid, $$;
+		is $action, 'testaction';
+		is $taskid, 'sometaskid';
+		cmp_deeply($data, $src);
+		ok check_utf8_on($data);
+	}
+}
+
+sub check_utf8_off
+{
+	my $h = shift;
+	!utf8::is_utf8((keys %$h)[0]) && !utf8::is_utf8((values %$h)[0]);
+}
+
+# should upgrade Latin-1 strings on the other end
+{
+	my $c = 'Ñ';
+	ok ord $c <= 255;
+
+	ok utf8::is_utf8 $c;
+	utf8::downgrade $c;
+	ok !utf8::is_utf8 $c;
+
+	my $src = { $c => $c };
+	ok check_utf8_off($src);
+
+	sending sub {
+		ok send_data($file, 'testaction', 'sometaskid', $src);
+		ok check_utf8_off($src);
 	};
 	receiving sub {
 		my ($pid, $action, $taskid, $data) = get_data($file);
