@@ -46,7 +46,7 @@ base64url() input - byte sequence, output - byte sequence
 
 json_utf8() - input - Hash, output - byte sequence
 	JSON string in UTF-8 representation. Can contain not-escaped UTF-8 characters. Will not contain linefeed. Hash objects are unordered.
-	
+
 latin1_to_utf8() - input - byte sequence, output - byte sequence
 	Treats input data as Latin1 (ISO 8859-1) encoded sequence and converts it to UTF-8 sequence
 
@@ -89,7 +89,7 @@ NOTES:
 Byte string is sequence of octets. Character string is an internal representation of sequence of characters. Character strings cannot have encodings
 by definition - it's internal, encoding is known to language implementation.
 
-Some programming languages (like Ruby) have different model, when every string is a sequence of bytes with a known encoding (or no encoding at all). 
+Some programming languages (like Ruby) have different model, when every string is a sequence of bytes with a known encoding (or no encoding at all).
 
 2) According to this spec. Same (FILENAME,MTIME) values can produce different x-amz-archive-description, as JSON hash is unordered.
 
@@ -188,7 +188,7 @@ sub _encode_utf8
 sub _encode_json
 {
 	my ($relfilename, $mtime) = @_;
-	
+
 	return $meta_coder->encode({
 		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
 		filename => $relfilename
