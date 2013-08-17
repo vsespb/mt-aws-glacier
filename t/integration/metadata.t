@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 941;
+use Test::More tests => 952;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -63,10 +63,10 @@ no warnings 'redefine';
 		ok ($result !~ /[\r\n]/m, 'does not contain linefeed');
 		ok ($result !~ /[\+\/\=]/m, 'does not contain + and /');
 		my $redecoded = App::MtAws::MetaData::_decode_utf8(App::MtAws::MetaData::_decode_b64($result));
-		
+
 		#ok(utf8::is_utf8($_), "source should be utf8 $_");
 		ok(utf8::is_utf8($redecoded), "recoded should be utf8");
-		
+
 		ok ($redecoded eq $_, 'reverse decodable');
 	}
 }
@@ -99,7 +99,7 @@ no warnings 'redefine';
 		my $base64url = App::MtAws::MetaData::_encode_b64($_);
 		ok ($base64url !~ /=/g, "_enocde_b64 should not pad base64 $_");
 		ok (App::MtAws::MetaData::_decode_b64($base64url) eq $_, "_decode_b64 should work without padding $_ $base64url");
-		
+
 	}
 }
 
@@ -130,7 +130,7 @@ no warnings 'redefine';
 
 
 
-# test _encode_b64/_decode_b64 and UTF-8 with raw fixtures 
+# test _encode_b64/_decode_b64 and UTF-8 with raw fixtures
 {
 	for (
 		['{"c":"d","a":"b"}', 'eyJjIjoiZCIsImEiOiJiIn0'],
@@ -168,7 +168,7 @@ no warnings 'redefine';
 		is_deeply($recoded, { mtime => to_iso8601($_->[1]), filename => $_->[0]}, "jsone string should be json with correct filename and mtime");
 		my $result_decoded =decode("UTF-8", $result, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 		ok ($result_decoded =~ /\Q$_->[0]\E/m, "json string should contain UTF without escapes");
-		
+
 		my ($filename, $mtime) = App::MtAws::MetaData::_decode_json($result);
 		ok ($filename eq $_->[0], 'filename match');
 		ok ($mtime == $_->[1], 'mtime match');
@@ -183,8 +183,11 @@ no warnings 'redefine';
 		['file/a/b/c/d','1352124178', 'mt2 eyJmaWxlbmFtZSI6ImZpbGUvYS9iL2MvZCIsIm10aW1lIjoiMjAxMjExMDVUMTQwMjU4WiJ9'],
 		['директория/a/b/c/d','1352124178', 'mt2 eyJmaWxlbmFtZSI6ItC00LjRgNC10LrRgtC-0YDQuNGPL2EvYi9jL2QiLCJtdGltZSI6IjIwMTIxMTA1VDE0MDI1OFoifQ'],
 		['директория/файл',1352124178, 'mt2 eyJmaWxlbmFtZSI6ItC00LjRgNC10LrRgtC-0YDQuNGPL9GE0LDQudC7IiwibXRpbWUiOiIyMDEyMTEwNVQxNDAyNThaIn0'],
+		["\xB5", 1234, 'mt2 eyJmaWxlbmFtZSI6IsK1IiwibXRpbWUiOiIxOTcwMDEwMVQwMDIwMzRaIn0'], # downgraded string
+		["\xDF", 1234, 'mt2 eyJmaWxlbmFtZSI6IsOfIiwibXRpbWUiOiIxOTcwMDEwMVQwMDIwMzRaIn0'], # downgraded string
 	) {
 		my ($filename, $mtime) = App::MtAws::MetaData::meta_decode($_->[2]);
+		ok utf8::is_utf8($filename) || $filename =~ /^[\x00-\x7f]+$/, 'check that we get back upgraded strings';
 		ok $_->[0] eq $filename, "check filename";
 		ok $_->[1] eq $mtime, 'check mtime';
 	}
@@ -201,7 +204,7 @@ no warnings 'redefine';
 		my $strlen = bytes::length($str);
 		my $encoded = App::MtAws::MetaData::meta_encode($str, 1234);
 		my $encoded_length = bytes::length($encoded);
-		
+
 		if (defined($old_strlen) && defined($old_encoded_lenth)) {
 			ok ( ($encoded_length - $old_encoded_lenth) <= int(((($strlen - $old_strlen) * 4)/3)+0.5) + 1);
 		}
@@ -238,14 +241,14 @@ no warnings 'redefine';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
-	
+
 	ok defined App::MtAws::MetaData::meta_decode('mt2   '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
 	ok defined App::MtAws::MetaData::meta_decode("mt2\t\t"._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
 	ok defined App::MtAws::MetaData::meta_decode(" \tmt2\t\t "._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
-	
+
 	eval { App::MtAws::MetaData::meta_decode('zzz') };
 	ok $@ eq '', 'should not override eval code';
-	
+
 	eval { App::MtAws::MetaData::meta_decode('mt2 zzz') };
 	ok $@ eq '', 'should not override eval code';
 
@@ -282,7 +285,7 @@ no warnings 'redefine';
 	) {
 		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
 		ok($result == $_->[1], 'should parse iso8601');
-		
+
 		my $dt = DateTime->from_epoch( epoch => $_->[1] );
 		my $dt_8601 = sprintf("%04d%02d%02dT%02d%02d%02dZ", $dt->year, $dt->month, $dt->day, $dt->hour, $dt->min, $dt->sec);
 		ok( $_->[0] eq $dt_8601, "iso8601 $dt_8601 should be correct string");
