@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 37;
+use Test::More tests => 50;
 use Encode;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -47,18 +47,45 @@ for (undef, 0, ''){
 	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
 	my $s0 = "тест";
 	my $s = $s0;
+	my $s_flag = utf8::is_utf8($s);
 	my $s_b = binaryfilename($s);
 	isnt $s_b, $s, "assume binaryfilename output differs from input";
 	is $s, $s0, "binaryfilename should not modify argument";
+	is utf8::is_utf8($s), $s_flag;
 }
 
 {
 	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
 	my $s_b0 = encode('UTF-8', "тест");
 	my $s_b = $s_b0;
+	my $s_b_flag = utf8::is_utf8($s_b);
 	my $s = characterfilename($s_b);
 	isnt $s, $s_b, "assume characterfilename output differs from input";
 	is $s_b, $s_b0, "characterfilename should not modify argument";
+	is utf8::is_utf8($s_b), $s_b_flag;
+}
+
+{
+	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
+	my $s0 = "µ";
+	ok ord($s0) > 127;
+	ok ord($s0) <= 255;
+	my $s_b = encode('UTF-8', $s0);
+	my $s = characterfilename($s_b);
+	isnt $s, $s_b, "assume characterfilename output differs from input";
+	is $s, $s0, "characterfilename should not modify argument";
+	ok utf8::is_utf8($s), "characterfilename returns upgraded string for Latin1";
+}
+
+{
+	local $App::MtAws::Utils::_filename_encoding = 'UTF-8';
+	my $s0 = "X";
+	ok ord($s0) <= 127;
+	my $s_b = encode('UTF-8', $s0);
+	my $s = characterfilename($s_b);
+	is $s, $s_b, "assume characterfilename output differs from input";
+	is $s, $s0, "characterfilename should not modify argument";
+	ok utf8::is_utf8($s), "characterfilename returns upgraded string for ASCII";
 }
 
 for my $encoding ('UTF-8', 'KOI8-R') {
@@ -78,6 +105,7 @@ for my $encoding ('UTF-8', 'KOI8-R') {
 	ok !utf8::is_utf8($s_b);
 	isnt $s_b, $s;
 	is binaryfilename($s), $s_b, "binaryfilename should work for encoding Latin-1 strings";
+	ok utf8::is_utf8($s), "should not alter source";
 }
 
 {
@@ -92,6 +120,7 @@ for my $encoding ('UTF-8', 'KOI8-R') {
 	is $s_d, $s, "assume s_d is downgraded string";
 	ok !utf8::is_utf8($s_d), "assume s_d is downgraded string";
 	is binaryfilename($s_d), $s_b, "binaryfilename should work for encoding Latin-1 downgraded strings";
+	ok !utf8::is_utf8($s_d), "shoult not alter source";
 }
 
 {
