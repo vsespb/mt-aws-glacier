@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 781;
+use Test::More tests => 1069;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -156,11 +156,15 @@ sub check
 	my $F = App::MtAws::Filter->new();
 	my ($re) = $F->_patterns_to_regexp({pattern => $filter});
 	for (@{$lists{ismatch}}) {
+		my $orig_utf_flag = utf8::is_utf8($_);
 		$_ = "/$_";
+		is utf8::is_utf8($_), $orig_utf_flag;
 		ok $re->{notmatch} ? ($_ !~ $re->{re}) : ($_ =~ $re->{re}), "[$filter], [$re->{re}],$_";
 	}
 	for (@{$lists{nomatch}}) {
+		my $orig_utf_flag = utf8::is_utf8($_);
 		$_ = "/$_";
+		is utf8::is_utf8($_), $orig_utf_flag;
 
 		#print Dumper $re;
 		ok $re->{notmatch} ? ($_ =~ $re->{re}) : ($_ !~ $re->{re}), "[$filter], [$re->{re}], $_";
@@ -321,12 +325,34 @@ check '!/tmp**',
 	ismatch => ['ptmpz', 'x/tmpz', 'x/tmpz/z'];
 
 check 'example',
-	ismatch => [],
+	ismatch => ['example'],
 	nomatch => ['tmp/example/a'];
 
 check 'z/example',
-	ismatch => [],
+	ismatch => ['z/example'],
 	nomatch => ['tmp/pz/example/a'];
+
+
+for my $s ("\xB5", "\xDF") { # Latin1
+	ok ord($s) > 127;
+	ok ord($s) <= 255;
+
+	for my $u1 (0, 1) {
+		my $s1 = $s;
+		$u1 ? utf8::downgrade($s1) : utf8::upgrade($s1);
+		for my $u2 (0, 1) {
+			my $s2 = $s;
+			$u2 ? utf8::downgrade($s2) : utf8::upgrade($s2);
+
+			ok $s1 eq $s;
+			ok $s1 eq $s2;
+
+			check $s1,
+				ismatch => [$s2],
+				nomatch => ["tmp/$s2/a"];
+		}
+	}
+}
 
 
 # check empty pattern
