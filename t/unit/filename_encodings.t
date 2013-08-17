@@ -74,7 +74,7 @@ for (undef, 0, ''){
 	my $s = characterfilename($s_b);
 	isnt $s, $s_b, "assume characterfilename output differs from input";
 	is $s, $s0, "characterfilename should not modify argument";
-	ok utf8::is_utf8($s), "characterfilename returns upgraded string for Latin1";
+	ok utf8::is_utf8($s), "characterfilename returns upgraded string for Latin1"; # NOT NECESSARY, JUST TESTING CURRENT IMPLEMENTATION
 }
 
 {

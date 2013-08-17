@@ -215,7 +215,7 @@ sub check_utf8_off
 		is $action, 'testaction';
 		is $taskid, 'sometaskid';
 		cmp_deeply($data, $src);
-		ok check_utf8_on($data);
+		ok check_utf8_on($data); # NOT NECESSARY, JUST TESTING CURRENT IMPLEMENTATION
 	}
 }
 
