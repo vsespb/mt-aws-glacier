@@ -243,15 +243,12 @@ sub retrieval_download_job
 		'TreeHash for received file %string filename% (full file) does not match. '.
 		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
 		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $relfilename;
-		# TODO: better report relative filename
 
 	$reported_th eq $journal_treehash or
 		die exception 'treehash_mismatch_journal' =>
 		'TreeHash for received file %string filename% (full file) does not match TreeHash in journal. '.
 		'TreeHash reported by server: %reported%, Calculated TreeHash: %calculated%, TreeHash from Journal: %journal_treehash%',
 		calculated => $th, reported => $reported_th, journal_treehash => $journal_treehash, filename => $relfilename;
-		# TODO: better report relative filename
-
 
 	return $resp ? 1 : undef;
 }
@@ -313,21 +310,6 @@ sub retrieval_download_to_memory
 	return $resp->content;
 }
 
-# TODO: remove
-sub download_inventory
-{
-	my ($self, $jobid) = @_;
-
-	$jobid||confess;
-
-	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs/$jobid/output";
-	$self->{method} = 'GET';
-
-	my $resp = $self->perform_lwp();
-	return $resp ? $resp : undef; # $resp->decoded_content is undefined here as content_file used
-}
-
-
 sub create_vault
 {
 	my ($self, $vault_name) = @_;
@@ -374,9 +356,9 @@ sub _sign
 
 	my $now = time();
 
-	$self->{last_request_time} = $now;
+	$self->{last_request_time} = $now;  # we use same timestamp when writing to journal
 
-	my $date8601 = strftime("%Y%m%dT%H%M%SZ", gmtime($now)); # TODO: use same timestamp when writing to journal
+	my $date8601 = strftime("%Y%m%dT%H%M%SZ", gmtime($now));
 	my $datestr = strftime("%Y%m%d", gmtime($now));
 
 

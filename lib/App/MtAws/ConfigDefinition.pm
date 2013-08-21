@@ -387,7 +387,6 @@ sub get_config
 		};
 
 		command 'check-local-hash' => sub {
-			# TODO: deprecated option to-vault
 			validate(mandatory(
 				optional('config'), mandatory(@encodings), @config_opts, check_https, qw/dir/, existing_journal('journal'), deprecated('vault'),
 				filter_options, optional('dry-run')

@@ -65,7 +65,7 @@ sub run
 							next;
 						}
 						my $th = App::MtAws::TreeHash->new();
-						$th->eat_file($F); # TODO: don't calc tree hash if size differs!
+						$th->eat_file($F);
 						close $F or confess;
 						$th->calc_tree();
 
