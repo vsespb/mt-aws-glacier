@@ -40,10 +40,10 @@ our @EXPORT = qw/exception get_exception is_exception exception_message dump_err
 
 our $_errno_encoding = undef;
 
-sub get_raw_errno { $! }
+sub get_raw_errno { @_ ? shift : $! } # testable
 sub get_errno
 {
-	my $err = get_raw_errno;
+	my $err = &get_raw_errno;
 
 	# some code in this scope copied from Encode::Locale
 	# http://search.cpan.org/perldoc?Encode%3A%3ALocale
@@ -86,13 +86,12 @@ sub exception
 		@data{qw/code message/} = (shift, shift);
 		while (@_) {
 			my $key = shift;
-			$data{$key} = do {
-				if ($key eq 'ERRNO') {
-					confess "ERRNO already used" if $data{$key};
-					$!;
-				} else {
-					shift or confess "Malformed exception"
-				}
+			if ($key eq 'ERRNO') {
+				confess "ERRNO already used" if exists $data{'errno'};
+				$data{'errno'} = "$!"; # stringify
+				$data{'errno_code'} = $!+0; # numify
+			} else {
+				$data{$key} = shift or confess "Malformed exception"
 			}
 		}
 	}

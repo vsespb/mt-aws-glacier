@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 100;
+use Test::More tests => 112;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -77,13 +77,14 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 	my $expect_errno = POSIX::strerror(EACCES);
 
 	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO'),
-		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno};
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno => $expect_errno, errno_code => EACCES};
+
 	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO', A => 123),
-		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, A => 123};
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno=> $expect_errno, errno_code => EACCES, A => 123};
 	cmp_deeply exception('mycode' => 'MyMessage', A => 123, 'ERRNO'),
-		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, A => 123};
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno => $expect_errno, errno_code => EACCES, A => 123};
 	cmp_deeply exception('mycode' => 'MyMessage', A => 123, 'ERRNO', B => 456),
-		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, A => 123, B => 456};
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno => $expect_errno, errno_code => EACCES, A => 123, B => 456};
 
 
 	ok ! eval { exception('mycode' => 'MyMessage', ERRNO => 'xyz'); 1 };
@@ -99,7 +100,14 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 	like $@, qr/already used/i;
 
 	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO', B => 'ERRNO'),
-		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, B => 'ERRNO'};
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno => $expect_errno, errno_code => EACCES, B => 'ERRNO'};
+
+	my $r = exception('mycode' => 'MyMessage', 'ERRNO');
+	{
+		no warnings 'numeric';
+		is $r->{errno}+1, 1, "strip magick";
+	}
+	is "$r->{errno_code}", EACCES, "strip magick";
 }
 
 # get_exception
@@ -313,6 +321,23 @@ test_error {
 	}
 }
 
+# test get_errno with argument
+{
+	for my $enc(qw/CP1251 KOI8-R UTF-8/) {
+		local $App::MtAws::Exceptions::_errno_encoding = undef;
+		my $test_str = "тест";
+		my $bin_str = encode($enc, $test_str);
+		no warnings 'redefine';
+
+		local *I18N::Langinfo::CODESET = sub { "codeset$enc" };
+		local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset$enc"; $enc };
+		is get_errno($bin_str), $test_str, "get_errno (with arg) should work with encoding $enc";
+
+		local *I18N::Langinfo::langinfo = sub { confess };
+		is get_errno($bin_str), $test_str, "get_errno (with arg) should re-use encoding, $enc";
+	}
+}
+
 SKIP: {
 	skip "Only for HP-UX", 2 if $^O ne 'hpux';
 	my ($encode_enc, $i18_enc) = ('hp-roman8', 'roman8');
@@ -377,6 +402,24 @@ SKIP: {
 	ok ! defined find_encoding(App::MtAws::Exceptions::BINARY_ENCODING()),
 		"BINARY_ENCODING should not be a valid encoding";
 	ok App::MtAws::Exceptions::BINARY_ENCODING(), "BINARY_ENCODING should be TRUE";
+}
+
+{
+	for my $err (EACCES, EAGAIN, ENOMEM, EEXIST) {
+		local $! = $err;
+
+		local $App::MtAws::Exceptions::_errno_encoding = undef;
+
+		my $res_errno = get_errno();
+		my $enc = $App::MtAws::Exceptions::_errno_encoding;
+
+		my $expect = POSIX::strerror($err);
+		if ($enc eq App::MtAws::Exceptions::BINARY_ENCODING()) {
+			is $res_errno, hex_dump_string($expect), "get_errno should work in real with real locales";
+		} else {
+			is $res_errno, decode($enc, $expect), "get_errno should work in real with real locales";
+		}
+	}
 }
 
 1;
