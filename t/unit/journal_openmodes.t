@@ -86,6 +86,7 @@ SKIP: {
 
 	create($file, $fixture);
 	chmod 0000, $file;
+	my $err_expected = get_errno(POSIX::strerror(EACCES));
 	ok ! defined eval {
 		$J->read_journal(should_exist => 1);
 		1;
@@ -95,7 +96,7 @@ SKIP: {
 	ok is_exception('journal_open_error'), "should_exist should work when true and file missing";
 	is get_exception->{message}, "Unable to open journal file %string filename% for reading, errno=%errno%";
 
-	is get_exception->{errno}, get_errno(POSIX::strerror(EACCES));
+	is get_exception->{errno}, $err_expected;
 	ok length(get_exception->{errno}) > 4; # should be a string, not a number
 	is get_exception->{filename}, $file;
 }
