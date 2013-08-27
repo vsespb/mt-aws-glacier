@@ -88,6 +88,7 @@ my $build = Module::Build->new(
 		'List::Util' => '1.11', # needed for Test::Spec, however 1.19 is released with perl 5.8.9 and 1.13 with perl 5.9
 		'POSIX' => 0,
 		'PerlIO::encoding' => 0,
+		'I18N::Langinfo' => 0,
 		'Time::Local' => 0,
 		'Time::localtime' => 0,
 		'bytes' => 0,
