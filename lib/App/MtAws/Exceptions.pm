@@ -35,7 +35,7 @@ our @EXPORT = qw/exception get_exception is_exception exception_message dump_err
 
 # Does not work with directory names
 
-# exception [$previous] { $msg | $code => $msg } @vars
+# exception [$previous] { $msg | $code => $msg } name1 => value1, name2 => value2 ...
 sub exception
 {
 	my %data;
@@ -92,7 +92,7 @@ sub exception_message
 			defined($data{$match}) ? $data{$match} : ':NULL:';
 		}
 	};
-	
+
 	$spec =~ s{%([\w\s]+)%} {$rep->($1)}ge if %data; # in new perl versions \w also means unicode chars..
 	$spec;
 }

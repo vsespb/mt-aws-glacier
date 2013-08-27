@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 65;
+use Test::More tests => 66;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -42,6 +42,8 @@ cmp_deeply exception('mycode' => 'MyMessage', myvar => 1),
 	{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', myvar => 1};
 cmp_deeply exception('mycode' => 'MyMessage', myvar => 1, anothervar => 2),
 	{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', myvar => 1, anothervar => 2};
+cmp_deeply exception('mycode' => 'MyMessage', code => 'code2'),
+	{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'code2'};
 
 my $existing_exception = exception('xcode' => 'xmessage', myvar => 'xvar');
 
@@ -253,4 +255,3 @@ test_error {
 
 
 1;
-
