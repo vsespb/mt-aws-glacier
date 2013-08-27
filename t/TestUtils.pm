@@ -45,7 +45,12 @@ use constant ALARM_FOR_FORK_TESTS => 30;
 
 sub warning_fatal
 {
-	$SIG{__WARN__} = sub {confess "Termination after a warning: $_[0]"};
+	my ($skip_re) = @_;
+	$SIG{__WARN__} = sub {
+		if (!defined($skip_re) || $_[0] !~ $skip_re) {
+			confess "Termination after a warning: $_[0]"
+		}
+	};
 }
 
 sub get_temp_dir
