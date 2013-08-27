@@ -44,7 +44,8 @@ sub get_raw_errno { @_ ? shift : $! } # testable
 sub get_errno
 {
 	local $@;
-	my $err = &get_raw_errno;
+	my $err = &get_raw_errno; # TODO: we actually use it only with argument!
+	local $!;
 
 	# some code in this scope copied from Encode::Locale
 	# http://search.cpan.org/perldoc?Encode%3A%3ALocale
@@ -57,7 +58,6 @@ sub get_errno
 
 		defined (find_encoding($enc)) ? $enc : undef;
 	} || BINARY_ENCODING();
-
 
 	my $res;
 	if ($_errno_encoding eq BINARY_ENCODING) {
@@ -89,7 +89,7 @@ sub exception
 			my $key = shift;
 			if ($key eq 'ERRNO') {
 				confess "ERRNO already used" if exists $data{'errno'};
-				$data{'errno'} = "$!"; # stringify
+				$data{'errno'} = get_errno($!);
 				$data{'errno_code'} = $!+0; # numify
 			} else {
 				$data{$key} = shift or confess "Malformed exception"
