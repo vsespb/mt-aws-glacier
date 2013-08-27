@@ -25,13 +25,52 @@ our $VERSION = '1.000';
 use strict;
 use warnings;
 use utf8;
+use Encode;
+use constant BINARY_ENCODING => "MT_BINARY";
+use App::MtAws::Utils;
+
 use Carp;
+use I18N::Langinfo;
 
 require Exporter;
 use base qw/Exporter/;
 
 
-our @EXPORT = qw/exception get_exception is_exception exception_message dump_error/;
+our @EXPORT = qw/exception get_exception is_exception exception_message dump_error get_errno/;
+
+our $_errno_encoding = undef;
+
+sub get_raw_errno { $! }
+sub get_errno
+{
+	my $err = get_raw_errno;
+
+	# some code in this scope copied from Encode::Locale
+	# http://search.cpan.org/perldoc?Encode%3A%3ALocale
+	# by Gisle Aas <gisle@aas.no>.
+	$_errno_encoding ||= eval {
+		my $enc = I18N::Langinfo::langinfo(I18N::Langinfo::CODESET());
+		# copy-paste workaround from Encode::Locale
+		# https://rt.cpan.org/Ticket/Display.html?id=66373
+		$enc = "hp-roman8" if $^O eq "hpux" && $enc eq "roman8";
+
+		defined (find_encoding($enc)) ? $enc : undef;
+	} || BINARY_ENCODING();
+
+
+	my $res;
+	if ($_errno_encoding eq BINARY_ENCODING) {
+		$res = hex_dump_string($err);
+	} else {
+		eval {
+			$res = decode($_errno_encoding, $err);
+			1;
+		} or do {
+			$res = hex_dump_string($err);
+		}
+	}
+	$res;
+}
 
 # Does not work with directory names
 

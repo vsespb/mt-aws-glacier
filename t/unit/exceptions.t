@@ -25,14 +25,17 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 83;
+use Test::More tests => 100;
 use Test::Deep;
 use Encode;
 use FindBin;
+use Carp;
 use POSIX;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Exceptions;
+use App::MtAws::Utils;
 use TestUtils;
+use I18N::Langinfo;
 
 warning_fatal();
 
@@ -292,6 +295,88 @@ test_error {
 
 	# TODO: check also that 'next' is called!
 
+# test get_errno
+{
+	for my $enc(qw/CP1251 KOI8-R UTF-8/) {
+		local $App::MtAws::Exceptions::_errno_encoding = undef;
+		my $test_str = "тест";
+		my $bin_str = encode($enc, $test_str);
+		no warnings 'redefine';
 
+		local *App::MtAws::Exceptions::get_raw_errno = sub { $bin_str };
+		local *I18N::Langinfo::CODESET = sub { "codeset$enc" };
+		local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset$enc"; $enc };
+		is get_errno(), $test_str, "get_errno should work with encoding $enc";
+
+		local *I18N::Langinfo::langinfo = sub { confess };
+		is get_errno(), $test_str, "get_errno should re-use encoding, $enc";
+	}
+}
+
+SKIP: {
+	skip "Only for HP-UX", 2 if $^O ne 'hpux';
+	my ($encode_enc, $i18_enc) = ('hp-roman8', 'roman8');
+	local $App::MtAws::Exceptions::_errno_encoding = undef;
+	my $test_str = "test";
+	my $bin_str = encode($encode_enc, $test_str);
+	no warnings 'redefine';
+
+	local *App::MtAws::Exceptions::get_raw_errno = sub { $bin_str };
+	local *I18N::Langinfo::CODESET = sub { "codeset" };
+	local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset"; $i18_enc };
+	is get_errno(), $test_str, "get_errno should work with roman8 encoding under HP-UX";
+	ok $App::MtAws::Exceptions::_errno_encoding, $encode_enc;
+}
+
+{
+	local $App::MtAws::Exceptions::_errno_encoding = undef;
+	my $test_str = encode("UTF-8", "тест");
+	no warnings 'redefine';
+
+	local *App::MtAws::Exceptions::get_raw_errno = sub { $test_str };
+	local *I18N::Langinfo::CODESET = sub { die };
+	local *I18N::Langinfo::langinfo = sub { die };
+	is get_errno(), hex_dump_string($test_str), "get_errno should work when CODESET crashed";
+
+	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
+		"should be a binary encoding, when CODESET crashed";
+
+	local *I18N::Langinfo::CODESET = sub { "OK" };
+	local *I18N::Langinfo::langinfo = sub { "UTF-8" };
+	get_errno();
+
+	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
+		"BINARY encoding should be reused";
+}
+
+{
+	local $App::MtAws::Exceptions::_errno_encoding = undef;
+	my $test_str = encode("UTF-8", "тест");
+	no warnings 'redefine';
+
+	my $not_encoding = "NOT_AN_ENCODING";
+	ok !defined find_encoding($not_encoding);
+
+	local *App::MtAws::Exceptions::get_raw_errno = sub { $test_str };
+	local *I18N::Langinfo::CODESET = sub { "OK" };
+	local *I18N::Langinfo::langinfo = sub { confess unless shift eq "OK"; $not_encoding };
+	is get_errno(), hex_dump_string($test_str), "get_errno should work encoding is unknown";
+
+	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
+		"should be a binary encoding, when encoding is unknown";
+
+	local *I18N::Langinfo::CODESET = sub { "OK" };
+	local *I18N::Langinfo::langinfo = sub { "UTF-8" };
+	get_errno();
+
+	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
+		"BINARY encoding should be reused";
+}
+
+{
+	ok ! defined find_encoding(App::MtAws::Exceptions::BINARY_ENCODING()),
+		"BINARY_ENCODING should not be a valid encoding";
+	ok App::MtAws::Exceptions::BINARY_ENCODING(), "BINARY_ENCODING should be TRUE";
+}
 
 1;
