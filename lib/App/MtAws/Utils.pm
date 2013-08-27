@@ -29,7 +29,6 @@ use File::Spec;
 use File::stat;
 use Carp;
 use Encode;
-use App::MtAws::Exceptions;
 use LWP::UserAgent;
 use bytes ();
 
