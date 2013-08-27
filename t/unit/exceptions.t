@@ -95,18 +95,23 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, a
 		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno => $expect_errno, errno_code => EACCES, A => 123, B => 456};
 
 
+	local $! = EACCES;
 	ok ! eval { exception('mycode' => 'MyMessage', ERRNO => 'xyz'); 1 };
 	like $@, qr/Malformed exception/;
 
+	local $! = EACCES;
 	ok ! eval { exception('mycode' => 'MyMessage', 'ERRNO', A => 123, 'xyz'); 1 };
 	like $@, qr/Malformed exception/;
 
+	local $! = EACCES;
 	ok ! eval { exception('mycode' => 'MyMessage', ERRNO => 'ERRNO'); 1 };
 	like $@, qr/already used/i;
 
+	local $! = EACCES;
 	ok ! eval { exception('mycode' => 'MyMessage', 'ERRNO', x => 'y', 'ERRNO'); 1 };
 	like $@, qr/already used/i;
 
+	local $! = EACCES;
 	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO', B => 'ERRNO'),
 		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', errno => $expect_errno, errno_code => EACCES, B => 'ERRNO'};
 
@@ -329,8 +334,7 @@ sub check_localized(&)
 		no warnings 'redefine';
 
 		local *App::MtAws::Exceptions::get_raw_errno = sub { $bin_str };
-		local *I18N::Langinfo::CODESET = sub { "codeset$enc" };
-		local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset$enc"; $enc };
+		local *I18N::Langinfo::langinfo = sub { $enc };
 		check_localized {
 			is get_errno(), $test_str, "get_errno should work with encoding $enc";
 		};
@@ -350,8 +354,7 @@ sub check_localized(&)
 		my $bin_str = encode($enc, $test_str);
 		no warnings 'redefine';
 
-		local *I18N::Langinfo::CODESET = sub { "codeset$enc" };
-		local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset$enc"; $enc };
+		local *I18N::Langinfo::langinfo = sub { $enc };
 		check_localized {
 			is get_errno($bin_str), $test_str, "get_errno (with arg) should work with encoding $enc";
 		};
@@ -386,7 +389,6 @@ SKIP: {
 	no warnings 'redefine';
 
 	local *App::MtAws::Exceptions::get_raw_errno = sub { $test_str };
-	local *I18N::Langinfo::CODESET = sub { die };
 	local *I18N::Langinfo::langinfo = sub { die };
 	check_localized {
 		is get_errno(), hex_dump_string($test_str), "get_errno should work when CODESET crashed";
@@ -395,7 +397,6 @@ SKIP: {
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"should be a binary encoding, when CODESET crashed";
 
-	local *I18N::Langinfo::CODESET = sub { "OK" };
 	local *I18N::Langinfo::langinfo = sub { "UTF-8" };
 	check_localized {
 		get_errno();
@@ -414,7 +415,6 @@ SKIP: {
 	ok !defined find_encoding($not_encoding);
 
 	local *App::MtAws::Exceptions::get_raw_errno = sub { $test_str };
-	local *I18N::Langinfo::CODESET = sub { "OK" };
 	local *I18N::Langinfo::langinfo = sub { confess unless shift eq "OK"; $not_encoding };
 	check_localized {
 		is get_errno(), hex_dump_string($test_str), "get_errno should work encoding is unknown";
@@ -423,7 +423,6 @@ SKIP: {
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"should be a binary encoding, when encoding is unknown";
 
-	local *I18N::Langinfo::CODESET = sub { "OK" };
 	local *I18N::Langinfo::langinfo = sub { "UTF-8" };
 	check_localized {
 		get_errno();
