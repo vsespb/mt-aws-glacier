@@ -25,10 +25,11 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 66;
+use Test::More tests => 83;
 use Test::Deep;
 use Encode;
 use FindBin;
+use POSIX;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Exceptions;
 use TestUtils;
@@ -58,6 +59,45 @@ cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar2 => 1),
 cmp_deeply exception($existing_exception, 'mycode' => 'MyMessage', myvar => 1, anothervar => 2),
 	{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', myvar => 1, anothervar => 2};
 
+# detecting wrong args
+{
+	ok ! eval { exception('mycode' => 'MyMessage', 'abc'); 1 };
+	like $@, qr/Malformed exception/;
+
+	ok ! eval { exception('mycode' => 'MyMessage', 'abc' => 'def', 'xyz'); 1 };
+	like $@, qr/Malformed exception/;
+}
+
+# parsing args with errno ERRNO
+{
+	local $! = EACCES;
+	my $expect_errno = POSIX::strerror(EACCES);
+
+	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO'),
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno};
+	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO', A => 123),
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, A => 123};
+	cmp_deeply exception('mycode' => 'MyMessage', A => 123, 'ERRNO'),
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, A => 123};
+	cmp_deeply exception('mycode' => 'MyMessage', A => 123, 'ERRNO', B => 456),
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, A => 123, B => 456};
+
+
+	ok ! eval { exception('mycode' => 'MyMessage', ERRNO => 'xyz'); 1 };
+	like $@, qr/Malformed exception/;
+
+	ok ! eval { exception('mycode' => 'MyMessage', 'ERRNO', A => 123, 'xyz'); 1 };
+	like $@, qr/Malformed exception/;
+
+	ok ! eval { exception('mycode' => 'MyMessage', ERRNO => 'ERRNO'); 1 };
+	like $@, qr/already used/i;
+
+	ok ! eval { exception('mycode' => 'MyMessage', 'ERRNO', x => 'y', 'ERRNO'); 1 };
+	like $@, qr/already used/i;
+
+	cmp_deeply exception('mycode' => 'MyMessage', 'ERRNO', B => 'ERRNO'),
+		{ MTEXCEPTION => bool(1), message => 'MyMessage', code => 'mycode', ERRNO => $expect_errno, B => 'ERRNO'};
+}
 
 # get_exception
 

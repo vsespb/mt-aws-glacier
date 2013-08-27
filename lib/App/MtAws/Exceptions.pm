@@ -36,6 +36,7 @@ our @EXPORT = qw/exception get_exception is_exception exception_message dump_err
 # Does not work with directory names
 
 # exception [$previous] { $msg | $code => $msg } name1 => value1, name2 => value2 ...
+# exception [$previous] { $msg | $code => $msg } name1 => value1, 'ERRNO', name2 => value2 ...
 sub exception
 {
 	my %data;
@@ -43,8 +44,18 @@ sub exception
 	if (scalar @_ == 1) {
 		$data{message} = shift;
 	} else {
-		(@data{qw/code message/}, my %others) = @_;
-		%data = (%data, %others);
+		@data{qw/code message/} = (shift, shift);
+		while (@_) {
+			my $key = shift;
+			$data{$key} = do {
+				if ($key eq 'ERRNO') {
+					confess "ERRNO already used" if $data{$key};
+					$!;
+				} else {
+					shift or confess "Malformed exception"
+				}
+			}
+		}
 	}
 	return { 'MTEXCEPTION' => 1, %data };
 }
