@@ -1,3 +1,11 @@
+### 2013-08-27 v1.000
+
+  * After one year since first public version released, beta testing was finished and version 1.xxx released. Current project status is non-beta, stable.
+
+  * New version scheme: 1.xyz (x - major change or major internal change, y - new version, z - tiny fixes)
+
+  * Internal changes. Nothing new.
+
 ### 2013-08-06 v0.981 beta
 
   * Fixed possible problems with mtglacier process termination under OpenBSD 5.1. Fixed possible install problem (test
