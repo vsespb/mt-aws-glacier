@@ -157,7 +157,7 @@ sub existing_journal
 {
 	my ($journal) = @_;
 	if (defined($journal) && present($journal) && !exists $App::MtAws::ConfigEngine::context->{override_validations}->{journal}) { # TODO: this is hack!
-		error('Journal file not found') unless -r binaryfilename value($journal);
+		error('Journal file not found') unless -f binaryfilename value($journal);
 	}
 	$journal;
 }
