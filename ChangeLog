@@ -1,3 +1,7 @@
+
+  * Fixed: system error messages (i.e. ERRNO - like Permission denied etc) where clobbered on non-English locales (i.e.
+  when message is not ASCII-7bit)
+
 ### 2013-08-27 v1.000
 
   * After one year since first public version released, beta testing now finished and version 1.000 released.
