@@ -22,8 +22,6 @@ package App::MtAws::ParentWorker;
 
 our $VERSION = '0.981';
 
-use lib 'lib';
-
 use strict;
 use warnings;
 use utf8;
