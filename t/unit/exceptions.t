@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 112;
+use Test::More tests => 133;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -314,10 +314,14 @@ test_error {
 		local *App::MtAws::Exceptions::get_raw_errno = sub { $bin_str };
 		local *I18N::Langinfo::CODESET = sub { "codeset$enc" };
 		local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset$enc"; $enc };
+		local $@ = 'checkme';
 		is get_errno(), $test_str, "get_errno should work with encoding $enc";
+		is $@, 'checkme', "should not clobber eval error";
 
 		local *I18N::Langinfo::langinfo = sub { confess };
+		local $@ = 'checkme';
 		is get_errno(), $test_str, "get_errno should re-use encoding, $enc";
+		is $@, 'checkme', "should not clobber eval error";
 	}
 }
 
@@ -331,15 +335,19 @@ test_error {
 
 		local *I18N::Langinfo::CODESET = sub { "codeset$enc" };
 		local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset$enc"; $enc };
+		local $@ = 'checkme';
 		is get_errno($bin_str), $test_str, "get_errno (with arg) should work with encoding $enc";
+		is $@, 'checkme', "should not clobber eval error";
 
 		local *I18N::Langinfo::langinfo = sub { confess };
+		local $@ = 'checkme';
 		is get_errno($bin_str), $test_str, "get_errno (with arg) should re-use encoding, $enc";
+		is $@, 'checkme', "should not clobber eval error";
 	}
 }
 
 SKIP: {
-	skip "Only for HP-UX", 2 if $^O ne 'hpux';
+	skip "Only for HP-UX", 3 if $^O ne 'hpux';
 	my ($encode_enc, $i18_enc) = ('hp-roman8', 'roman8');
 	local $App::MtAws::Exceptions::_errno_encoding = undef;
 	my $test_str = "test";
@@ -349,7 +357,9 @@ SKIP: {
 	local *App::MtAws::Exceptions::get_raw_errno = sub { $bin_str };
 	local *I18N::Langinfo::CODESET = sub { "codeset" };
 	local *I18N::Langinfo::langinfo = sub { confess unless shift eq "codeset"; $i18_enc };
+	local $@ = 'checkme';
 	is get_errno(), $test_str, "get_errno should work with roman8 encoding under HP-UX";
+	is $@, 'checkme', "should not clobber eval error";
 	ok $App::MtAws::Exceptions::_errno_encoding, $encode_enc;
 }
 
@@ -361,14 +371,18 @@ SKIP: {
 	local *App::MtAws::Exceptions::get_raw_errno = sub { $test_str };
 	local *I18N::Langinfo::CODESET = sub { die };
 	local *I18N::Langinfo::langinfo = sub { die };
+	local $@ = 'checkme';
 	is get_errno(), hex_dump_string($test_str), "get_errno should work when CODESET crashed";
+	is $@, 'checkme', "should not clobber eval error";
 
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"should be a binary encoding, when CODESET crashed";
 
 	local *I18N::Langinfo::CODESET = sub { "OK" };
 	local *I18N::Langinfo::langinfo = sub { "UTF-8" };
+	local $@ = 'checkme';
 	get_errno();
+	is $@, 'checkme', "should not clobber eval error";
 
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"BINARY encoding should be reused";
@@ -385,14 +399,18 @@ SKIP: {
 	local *App::MtAws::Exceptions::get_raw_errno = sub { $test_str };
 	local *I18N::Langinfo::CODESET = sub { "OK" };
 	local *I18N::Langinfo::langinfo = sub { confess unless shift eq "OK"; $not_encoding };
+	local $@ = 'checkme';
 	is get_errno(), hex_dump_string($test_str), "get_errno should work encoding is unknown";
+	is $@, 'checkme', "should not clobber eval error";
 
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"should be a binary encoding, when encoding is unknown";
 
 	local *I18N::Langinfo::CODESET = sub { "OK" };
 	local *I18N::Langinfo::langinfo = sub { "UTF-8" };
+	local $@ = 'checkme';
 	get_errno();
+	is $@, 'checkme', "should not clobber eval error";
 
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"BINARY encoding should be reused";
@@ -414,11 +432,13 @@ SKIP: {
 		my $enc = $App::MtAws::Exceptions::_errno_encoding;
 
 		my $expect = POSIX::strerror($err);
+		local $@ = 'checkme';
 		if ($enc eq App::MtAws::Exceptions::BINARY_ENCODING()) {
 			is $res_errno, hex_dump_string($expect), "get_errno should work in real with real locales";
 		} else {
 			is $res_errno, decode($enc, $expect), "get_errno should work in real with real locales";
 		}
+		is $@, 'checkme', "should not clobber eval error";
 	}
 }
 

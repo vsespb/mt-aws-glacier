@@ -43,6 +43,7 @@ our $_errno_encoding = undef;
 sub get_raw_errno { @_ ? shift : $! } # testable
 sub get_errno
 {
+	local $@;
 	my $err = &get_raw_errno;
 
 	# some code in this scope copied from Encode::Locale
