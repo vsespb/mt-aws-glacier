@@ -83,7 +83,7 @@ sub read_journal
 	} elsif (-e $binary_filename) {
 		open_file(my $F, $self->{journal_file}, file_encoding => $self->{journal_encoding}, mode => '<') or
 			die exception journal_open_error => "Unable to open journal file %string filename% for reading, errno=%errno%",
-				filename => $self->{journal_file}, errno => $!;
+				filename => $self->{journal_file}, 'ERRNO';
 		my $lineno = 0;
 		while (!eof($F)) {
 			defined( my $line = <$F> ) or confess;
@@ -103,7 +103,7 @@ sub open_for_write
 	my ($self) = @_;
 	open_file($self->{append_file}, $self->{journal_file}, mode => '>>', file_encoding => $self->{journal_encoding}) or
 		die exception journal_open_error => "Unable to open journal file %string filename% for writing, errno=%errno%",
-			filename => $self->{journal_file}, errno => $!;
+			filename => $self->{journal_file}, 'ERRNO';
 	$self->{append_file}->autoflush();
 }
 

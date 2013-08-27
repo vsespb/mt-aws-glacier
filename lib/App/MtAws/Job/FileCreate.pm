@@ -53,28 +53,28 @@ sub get_task
 		return ("wait");
 	} else {
 		$self->{raised} = 1;
-		
+
 		if ($self->{stdin}) {
 			$self->{mtime} = time();
 			$self->{fh} = *STDIN;
 		} else {
 			my $binaryfilename = binaryfilename $self->{filename};
 			my $filesize = -s $binaryfilename;
-			
+
 			die exception file_is_zero => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
 				filename => $self->{filename}
 					unless $filesize;
-			
+
 			$self->{mtime} = stat($binaryfilename)->mtime; # TODO: how could we assure file not modified when uploading btw?
 
 			die exception too_many_parts =>
 				"With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
 				partsize => $self->{partsize}, filename => $self->{filename}, size => $filesize
 					if ($filesize / $self->{partsize} > 10000);
-				
+
 			open_file($self->{fh}, $self->{filename}, mode => '<', binary => 1) or
 				die exception upload_file_open_error => "Unable to open task file %string filename% for reading, errno=%errno%",
-					filename => $self->{filename}, errno => $!;
+					filename => $self->{filename}, 'ERRNO';
 		}
 		return ("ok", App::MtAws::Task->new(id => "create_upload",action=>"create_upload", data => { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } ));
 	}

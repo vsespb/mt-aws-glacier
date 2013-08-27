@@ -28,6 +28,7 @@ use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Job::FileCreate;
+use App::MtAws::Exceptions;
 use File::Path;
 use Data::Dumper;
 use POSIX;
@@ -54,7 +55,7 @@ unlink $file;
 
 SKIP: {
 	skip "Cannot run under root", 3 unless $>;
-	 
+
 	create($file, 'x');
 	chmod 0000, $file;
 	my $job = App::MtAws::Job::FileCreate->new(filename => $file, relfilename => 'job_file_create', partsize => 2);
@@ -63,7 +64,8 @@ SKIP: {
 	cmp_deeply $err, superhashof { code => 'upload_file_open_error',
 		message => "Unable to open task file %string filename% for reading, errno=%errno%",
 		filename => $file };
-	is $err->{errno}+0, EACCES;
+
+	is $err->{errno}, get_errno(POSIX::strerror(EACCES));
 	chmod 0744, $file;
 	unlink $file;
 }
@@ -78,7 +80,7 @@ sub create
 	open F, ">", $file;
 	print F $content if defined $content;
 	close F;
-	
+
 }
 
 1;

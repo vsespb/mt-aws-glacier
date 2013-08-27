@@ -55,8 +55,8 @@ SKIP: {
 		ok $err;
 		is $err->{code}, 'cannot_read_config';
 		is $err->{config}, hex_dump_string($file);
-		is $err->{errno}, strerror(EACCES);
-		is exception_message($err), "Cannot read config file: ".hex_dump_string($file).", errno=".strerror(EACCES);
+		is $err->{errno}, get_errno(POSIX::strerror(EACCES));
+		is exception_message($err), "Cannot read config file: ".hex_dump_string($file).", errno=".get_errno(POSIX::strerror(EACCES));
 	};
 }
 

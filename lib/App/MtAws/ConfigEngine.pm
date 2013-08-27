@@ -650,7 +650,7 @@ sub read_config
 		config => hex_dump_string($filename);
 	open (my $F, "<:crlf", $filename) or
 		die exception 'cannot_read_config' => "Cannot read config file: %config%, errno=%errno%",
-		config => hex_dump_string($filename), errno => $!;
+		config => hex_dump_string($filename), 'ERRNO';
 	my %newconfig;
 	local $_;
 	my $lineno = 0;

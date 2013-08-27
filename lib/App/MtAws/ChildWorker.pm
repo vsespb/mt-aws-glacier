@@ -193,7 +193,7 @@ sub process_task
 
 		open_file(my $F, $data->{filename}, mode => '<', binary => 1) or
 			die exception upload_file_open_error => "Unable to open task file %string filename% for reading, errno=%errno%",
-				filename => $data->{filename}, errno => $!;
+				filename => $data->{filename}, 'ERRNO'; # TODO: test
 
 		$th->eat_file($F);
 		close $F or confess;
