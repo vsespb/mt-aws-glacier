@@ -101,7 +101,7 @@ b) AND there is no INCLUDE rules before this exclude RULE
 
 package App::MtAws::Filter;
 
-our $VERSION = '0.981';
+our $VERSION = '1.000';
 
 use strict;
 use warnings;

@@ -20,7 +20,7 @@
 
 package App::MtAws::JobListProxy;
 
-our $VERSION = '0.981';
+our $VERSION = '1.000';
 
 use strict;
 use warnings;
