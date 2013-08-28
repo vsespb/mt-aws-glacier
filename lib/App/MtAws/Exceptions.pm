@@ -40,12 +40,10 @@ our @EXPORT = qw/exception get_exception is_exception exception_message dump_err
 
 our $_errno_encoding = undef;
 
-sub get_raw_errno { @_ ? shift : $! } # testable
 sub get_errno
 {
-	local $@;
-	my $err = &get_raw_errno; # TODO: we actually use it only with argument!
-	local $!;
+	my $err = "$_[0]";
+	local ($@, $!);
 
 	# some code in this scope copied from Encode::Locale
 	# http://search.cpan.org/perldoc?Encode%3A%3ALocale
