@@ -62,14 +62,9 @@ sub get_errno
 		$res = hex_dump_string($err);
 	} else {
 		eval {
-			{
-				# workaround issue https://rt.perl.org/rt3/Ticket/Display.html?id=119499
-				if ($] >= 5.019002-1e-10 && utf8::is_utf8($err)) {
-					$res = $err;
-				} else {
-					$res = decode($_errno_encoding, $err, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
-				}
-			}
+			# workaround issue https://rt.perl.org/rt3/Ticket/Display.html?id=119499
+			# perhaps Encode::decode_utf8 can be used here too
+			$res = utf8::is_utf8($err) ? $err : decode($_errno_encoding, $err, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			1;
 		} or do {
 			$res = hex_dump_string($err);
