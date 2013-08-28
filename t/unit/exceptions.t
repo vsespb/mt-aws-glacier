@@ -35,7 +35,7 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
 use TestUtils;
-use I18N::Langinfo;
+use I18N::Langinfo; # TODO: skip test without that module??
 
 warning_fatal();
 

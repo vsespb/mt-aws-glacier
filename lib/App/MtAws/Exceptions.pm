@@ -30,7 +30,7 @@ use constant BINARY_ENCODING => "MT_BINARY";
 use App::MtAws::Utils;
 
 use Carp;
-use I18N::Langinfo;
+eval { require I18N::Langinfo; }; # TODO: test that it's loaded compile time, test that it wont break if failed
 
 require Exporter;
 use base qw/Exporter/;
@@ -49,6 +49,7 @@ sub get_errno
 	# http://search.cpan.org/perldoc?Encode%3A%3ALocale
 	# by Gisle Aas <gisle@aas.no>.
 	$_errno_encoding ||= eval {
+		require I18N::Langinfo;
 		my $enc = I18N::Langinfo::langinfo(I18N::Langinfo::CODESET());
 		# copy-paste workaround from Encode::Locale
 		# https://rt.cpan.org/Ticket/Display.html?id=66373
