@@ -457,6 +457,10 @@ SKIP: {
 			if ($enc eq App::MtAws::Exceptions::BINARY_ENCODING()) {
 				is $res_errno, hex_dump_string($expect), "get_errno should work in real with real locales";
 			} else {
+				{ # workaround issue https://rt.perl.org/rt3/Ticket/Display.html?id=119499
+					local $@;
+					$] < 5.019002-1e-10 or eval { utf8::downgrade($expect); 1 } or eval { Encode::_utf8_off($expect); };
+				}
 				is $res_errno, decode($enc, $expect), "get_errno should work in real with real locales";
 			}
 		};

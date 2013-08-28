@@ -62,7 +62,12 @@ sub get_errno
 		$res = hex_dump_string($err);
 	} else {
 		eval {
-			$res = decode($_errno_encoding, $err, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+			my $err_copy = $err;
+			{ # workaround issue https://rt.perl.org/rt3/Ticket/Display.html?id=119499
+				local $@;
+				$] < 5.019002-1e-10 or eval { utf8::downgrade($err_copy); 1 } or eval { Encode::_utf8_off($err_copy); };
+			}
+			$res = decode($_errno_encoding, $err_copy, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			1;
 		} or do {
 			$res = hex_dump_string($err);
