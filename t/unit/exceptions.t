@@ -453,7 +453,7 @@ SKIP: {
 	};
 
 	is $App::MtAws::Exceptions::_errno_encoding, $found_encoding,
-		"should NOT reset to binary encoding, when encoding is incompatible";
+		"should NOT reset to binary encoding, when ERRNo is character string";
 
 }
 
