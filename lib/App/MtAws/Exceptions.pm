@@ -62,7 +62,7 @@ sub get_errno
 		$res = hex_dump_string($err);
 	} else {
 		eval {
-			$res = decode($_errno_encoding, $err);
+			$res = decode($_errno_encoding, $err, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			1;
 		} or do {
 			$res = hex_dump_string($err);

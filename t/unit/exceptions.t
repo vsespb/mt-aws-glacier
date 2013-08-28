@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 136;
+use Test::More tests => 144;
 use Test::Deep;
 use Encode;
 use FindBin;
@@ -405,6 +405,38 @@ SKIP: {
 
 	is $App::MtAws::Exceptions::_errno_encoding, App::MtAws::Exceptions::BINARY_ENCODING(),
 		"BINARY encoding should be reused";
+}
+
+{
+	local $App::MtAws::Exceptions::_errno_encoding = undef;
+
+	my $actual_encoding = 'KOI8-R';
+	my $found_encoding = 'UTF-8';
+	my $s = 'test тест';
+
+	{
+		my $bin = encode($actual_encoding, $s);
+		ok ! eval { decode($found_encoding, $bin, Encode::DIE_ON_ERR|Encode::LEAVE_SRC); 1 };
+	}
+
+	my $test_str = encode($actual_encoding, $s);
+
+	no warnings 'redefine';
+	local *I18N::Langinfo::langinfo = sub { $found_encoding };
+	check_localized {
+		is get_errno($test_str), hex_dump_string($test_str), "get_errno should work encoding is incompatible";
+	};
+
+	is $App::MtAws::Exceptions::_errno_encoding, $found_encoding,
+		"should NOT reset to binary encoding, when encoding is incompatible";
+
+	local *I18N::Langinfo::langinfo = sub { $actual_encoding };
+	check_localized {
+		get_errno($test_str);
+	};
+
+	is $App::MtAws::Exceptions::_errno_encoding, $found_encoding,
+		"should not be BINARY encoding";
 }
 
 {
