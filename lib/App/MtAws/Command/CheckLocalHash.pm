@@ -60,7 +60,7 @@ sub run
 
 						my $F;
 						unless (open_file($F, $absfilename, mode => '<', binary => 1)) {
-							print "CANNOT OPEN file $f: $!\n";
+							print "CANNOT OPEN file $f: ".get_errno($!)."\n";
 							++$error_io;
 							next;
 						}

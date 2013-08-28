@@ -38,6 +38,7 @@ use Data::Dumper;
 use TestUtils;
 
 use App::MtAws::Journal;
+use App::MtAws::Exceptions;
 
 sub _close { CORE::close($_[0]) };
 BEGIN { *CORE::GLOBAL::close = sub(;*) { _close($_[0]) }; };
@@ -317,7 +318,7 @@ describe "command" => sub {
 
 				my ($res, $out) = run_command($options, $j);
 				ok !$res;
-				my $estr = strerror(EACCES);
+				my $estr = get_errno(strerror(EACCES));
 				ok $out =~ /^CANNOT OPEN file file1: $estr$/m;
 				check_ok($out, qw/errors/);
 			};

@@ -28,6 +28,7 @@ use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
+use App::MtAws::Exceptions;
 use File::Path;
 use POSIX;
 use TestUtils;
@@ -40,7 +41,6 @@ my $journal = "$localroot/journal";
 my $rootdir = "$localroot/root";
 mkpath($localroot);
 mkpath($rootdir);
-
 
 my $data = {
 	archive_id => "HdGDbije6lWPT8Q8S3uOWJF6Ou9MWRlrfMGDr6TCrhXuDqJ1pzwKR6XV4l1IZ-VrDd2rlLxDFACqnuJouYTzsT5zd6s2ZEAHfRQFriVbjpFfJ1uWruHRRXIrFIma4PVuz-fp9_pBkA",
@@ -99,7 +99,7 @@ SKIP: {
 
 	ok $out =~ m!CANNOT OPEN file def/abc!;
 	ok $out =~ m!1 ERRORS!;
-	ok index($out, strerror(EACCES)) != -1;
+	ok index($out, get_errno(strerror(EACCES))) != -1;
 	# TODO: check also that 'next' is called!
 
 	chmod 0744, $file;
@@ -110,4 +110,3 @@ SKIP: {
 
 
 1;
-

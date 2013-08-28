@@ -31,6 +31,7 @@ use Test::More;
 
 require Exporter;
 use base qw/Exporter/;
+use Encode;
 use Carp;
 use IO::Pipe;
 use File::Temp qw/tempdir/;
@@ -106,17 +107,27 @@ sub config_create_and_parse(@)
 sub capture_stdout($&)
 {
 	local(*STDOUT);
+	my $enc = 'UTF-8';
 	$_[0]='';# perl 5.8.x issue warning if undefined $out is used in open() below
 	open STDOUT, '>', \$_[0] or die "Can't open STDOUT: $!";
-	$_[1]->();
+	binmode STDOUT, ":encoding($enc)";
+	my $res = $_[1]->();
+	close STDOUT;
+	$_[0] = decode($enc, $_[0], Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	$res;
 }
 
 sub capture_stderr($&)
 {
 	local(*STDERR);
+	my $enc = 'UTF-8';
 	$_[0]='';# perl 5.8.x issue warning if undefined $out is used in open() below
 	open STDERR, '>', \$_[0] or die "Can't open STDERR: $!";
-	$_[1]->();
+	binmode STDOUT, ":encoding($enc)";
+	my $res = $_[1]->();
+	close STDERR;
+	$_[0] = decode($enc, $_[0], Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	$res;
 }
 
 # TODO: call only as assert_raises_exception sub {}, $e - don't omit sub!
