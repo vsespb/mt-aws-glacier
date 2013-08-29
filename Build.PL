@@ -130,6 +130,7 @@ my $build = Module::Build->new(
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
 		'Test::Tabs' => '0.003',
+		'B' => 0, # test that some scalar IV only to save memory
 
 		# CORE MODULES OR DUAL-LIFE MODULES
 		'Data::Dumper' => 0,

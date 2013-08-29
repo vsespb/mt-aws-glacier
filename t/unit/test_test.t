@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 20;
+use Test::More tests => 25;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -192,5 +192,18 @@ warning_fatal();
 	is $out, "Test123\nTest456", , "should work with stdout when out is defined";
 }
 
-1;
 
+{ # test is_iv_without_pv
+	ok is_iv_without_pv(1);
+	ok !is_iv_without_pv("1");
+	my $x = 1;
+	ok is_iv_without_pv($x);
+	my $z = "$x";
+	ok !is_iv_without_pv($x);
+
+	my $y = "2";
+	$y = $y + 0;
+	ok !is_iv_without_pv($y);
+}
+
+1;

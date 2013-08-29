@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 4716;
+use Test::More tests => 5573;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -115,9 +115,9 @@ for my $position (1..7) {
 # line formats
 
 {
-	
+
 	my $last_supported_version = 'C';
-	
+
 	# versions A-Z
 	my $data =$data_sample;
 	for my $v (chr(ord($last_supported_version)+1)..'Z') {
@@ -167,29 +167,36 @@ sub test_all_ok
 	my $data;
 	%$data = %$data_sample;
 	@$data{keys %override} = values %override;
-	
-	
+
+
 	#
 	# Test parsing line of Journal version 'A', 'B', 'C'
 	#
-	
+
 	my @versions = $data->{_versions} ? @{$data->{_versions}} : qw/A B C/;
 	for my $ver (@versions) {
 		# CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 		{
 			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
-	
+
 			my ($args);
-			
+
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_add_filename', sub { (undef, $args) = @_; });
-			
+
 			$J->process_line("$ver\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
 			$J->_index_archives_as_files();
 			ok($args);
+
+			ok is_iv_without_pv $args->{$_} for (qw/time size/);
+			ok ( !defined($args->{mtime}) || is_iv_without_pv($args->{mtime}) );
+
 			ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
+
+
+
 			ok ( ( $data->{_mtime_should_be_undef} && !defined($args->{mtime}) )
-				or ( !$data->{_mtime_should_be_undef} && $data->{mtime} eq $args->{mtime} ) );
+				or ( !$data->{_mtime_should_be_undef} && $data->{mtime} == $args->{mtime} ));
 			ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
 			is_deeply($J->{used_versions}, {$ver=>1});
 		}
@@ -197,12 +204,12 @@ sub test_all_ok
 		# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
 		{
 			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
-	
+
 			my ($archive_id);
-			
+
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_delete_archive', sub { (undef, $archive_id) = @_; });
-			
+
 			$J->process_line("$ver\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
 			ok(defined $archive_id);
 			ok($archive_id eq $data->{archive_id});
@@ -212,13 +219,14 @@ sub test_all_ok
 		#  RETRIEVE_JOB
 		{
 			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
-	
+
 			my ($time, $archive_id, $job_id);
-			
+
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
 				mock('_retrieve_job', sub { (undef, $time, $archive_id, $job_id) = @_; });
-			
+
 			$J->process_line("$ver\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
+			ok is_iv_without_pv $time;
 
 			ok(defined($time) && $archive_id && $job_id);
 			ok($time == $data->{time});
@@ -243,7 +251,10 @@ sub test_all_ok
 
 		$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $data->{relfilename}");
 		$J->_index_archives_as_files();
+
 		ok($args);
+		ok is_iv_without_pv $args->{$_} for (qw/time size/);
+
 		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
 		ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
 
@@ -276,13 +287,15 @@ sub test_all_ok
 
 	$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");
 
+	ok is_iv_without_pv $time;
+
 	ok(defined($time) && $archive_id);
 	ok($time == $data->{time});
 	ok($archive_id eq $data->{archive_id});
 	ok(! defined $job_id);
 	is_deeply($J->{used_versions}, {'0'=>1});
 	}
-	
+
 }
 
 
@@ -292,12 +305,12 @@ sub test_all_fails_for_create_A
 	my $data;
 	%$data = %$data_sample;
 	@$data{keys %override} = values %override;
-	
-	
+
+
 	#
 	# Test parsing line of Journal version 'A'
 	#
-	
+
 	# CREATED /^A\t(\d+)\tCREATED\t(\S+)\t(\d+)\t(\d+)\t(\S+)\t(.*?)$/
 	my @versions = $data->{_versions} ? @{$data->{_versions}} : qw/A B C/;
 	for my $ver (@versions) {
@@ -321,8 +334,8 @@ sub test_all_fails_for_create_A
 		ok(! $called);
 		is_deeply($J->{used_versions}, {});
 	}
-	
-	
+
+
 }
 
 sub test_all_fails_for_create_07
@@ -331,13 +344,13 @@ sub test_all_fails_for_create_07
 	my $data;
 	%$data = %$data_sample;
 	@$data{keys %override} = values %override;
-	
+
 
 	#
 	# Test parsing line of Journal version '0'
 	#
-	
-		
+
+
 	# CREATED /^(\d+)\s+CREATED\s+(\S+)\s+(\d+)\s+(\S+)\s+(.*?)$/
 	{
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
@@ -360,7 +373,7 @@ sub test_all_fails_for_create_07
 		ok(! $called);
 		is_deeply($J->{used_versions}, {});
 	}
-	
+
 }
 
 sub test_all_fails_for_delete
@@ -369,8 +382,8 @@ sub test_all_fails_for_delete
 	my $data;
 	%$data = %$data_sample;
 	@$data{keys %override} = values %override;
-	
-	
+
+
 	# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
 	my @versions = $data->{_versions} ? @{$data->{_versions}} : qw/A B C/;
 	for my $ver (@versions) {
@@ -389,8 +402,8 @@ sub test_all_fails_for_delete
 	#
 	# Test parsing line of Journal version '0'
 	#
-	
-	
+
+
 	# DELETED /^\d+\s+DELETED\s+(\S+)\s+(.*?)$/
 	{
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
@@ -412,8 +425,8 @@ sub test_all_fails_for_retrieve
 	my $data;
 	%$data = %$data_sample;
 	@$data{keys %override} = values %override;
-	
-	
+
+
 	# DELETED /^A\t(\d+)\tDELETED\t(\S+)\t(.*?)$/
 	my @versions = $data->{_versions} ? @{$data->{_versions}} : qw/A B C/;
 	for my $ver (@versions) {
@@ -452,4 +465,3 @@ sub test_all_fails_for_retrieve
 }
 
 1;
-

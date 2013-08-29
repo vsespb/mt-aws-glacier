@@ -16,6 +16,7 @@
    "prereqs" : {
       "build" : {
          "requires" : {
+            "B" : "0",
             "Data::Dumper" : "0",
             "DateTime" : "0",
             "HTTP::Daemon" : "1.36",

@@ -144,10 +144,10 @@ sub process_line
 
 		$self->_add_archive({
 			relfilename => $relfilename,
-			time => $time,
+			time => $time+0, # numify
 			archive_id => $archive_id,
-			size => $size,
-			mtime => $mtime,
+			size => $size+0, # numify
+			mtime => defined($mtime) ? $mtime + 0 : undef,
 			treehash => $treehash,
 		});
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
@@ -155,7 +155,7 @@ sub process_line
 		$self->_delete_archive($archive_id); # TODO avoid stuff like $1 $2 $3 etc
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 	} elsif (($ver, $time, $archive_id, $job_id) = $line =~ /^([ABC])\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
-		$self->_retrieve_job($time, $archive_id, $job_id);
+		$self->_retrieve_job($time+0, $archive_id, $job_id);
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 
 	# Journal version '0'
@@ -165,10 +165,10 @@ sub process_line
 		confess "invalid filename" unless is_relative_filename($relfilename);
 		$self->_add_archive({
 			relfilename => $relfilename,
-			time => $time,
+			time => $time+0,
 			mtime => undef,
 			archive_id => $archive_id,
-			size => $size,
+			size => $size+0,
 			treehash => $treehash,
 		});
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
@@ -176,7 +176,7 @@ sub process_line
 		$self->_delete_archive($1);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} elsif (($time, $archive_id) = $line =~ /^([0-9]{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
-		$self->_retrieve_job($time, $archive_id);
+		$self->_retrieve_job($time+0, $archive_id);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} elsif ( ($line =~ /^([0-9]{1,20}) /) || ($line =~ /^[A-$self->{last_supported_version}]\t/) ) {
 		die exception journal_format_error_broken => "Invalid format of journal, line %lineno% is broken: %line%",

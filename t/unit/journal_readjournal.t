@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 31;
+use Test::More tests => 38;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -60,6 +60,8 @@ my $data = {
 
 	$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$relfilename");
 	$J->_index_archives_as_files();
+
+	ok is_iv_without_pv $args->{$_} for (qw/time mtime size/);
 	ok($args);
 	ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash/;
 	ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($relfilename, $rootdir));
@@ -76,6 +78,7 @@ my $data = {
 		mock('_delete_archive', sub { (undef, $archive_id) = @_; });
 
 	$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$relfilename");
+
 	ok($archive_id);
 	ok($archive_id eq $data->{archive_id});
 	is_deeply($J->{used_versions}, {'A'=>1});
@@ -92,6 +95,7 @@ my $data = {
 
 	$J->process_line("A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
 
+	ok is_iv_without_pv $time;
 	ok($time && $archive_id && $job_id);
 	ok($time == $data->{time});
 	ok($archive_id eq $data->{archive_id});
@@ -115,6 +119,7 @@ my $data = {
 
 	$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $relfilename");
 	$J->_index_archives_as_files();
+	ok is_iv_without_pv $args->{$_} for (qw/time size/);
 	ok($args);
 	ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
 	ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($relfilename, $rootdir));
@@ -148,6 +153,7 @@ my $data = {
 
 	$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");
 
+	ok is_iv_without_pv $time;
 	ok($time && $archive_id);
 	ok($time == $data->{time});
 	ok($archive_id eq $data->{archive_id});
@@ -156,4 +162,3 @@ my $data = {
 }
 
 1;
-
