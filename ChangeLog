@@ -1,4 +1,6 @@
 
+  * Optimized Journal memory usage by 12%
+
   * Fixed: system error messages (i.e. ERRNO - like Permission denied etc) where clobbered on non-English locales (i.e.
   when message is not ASCII-7bit). Error messages and check-local-hash output were affected.
 
