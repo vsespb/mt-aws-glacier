@@ -127,8 +127,8 @@ for my $redef (0, 1) {
 	SKIP: {
 		skip "Cannot test in this configuration or due to some perl bugs", 20
 			if $redef && (
-				($] < 5.01-$e) ||
-				( ($] > 5.014-$e) && ($] < 5.016-$e) ) ||
+				($^V lt v5.10.0) ||
+				( ($^V ge v5.14.0) && ($^V le 5.16.0) ) ||
 				(defined $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/)
 			);
 
