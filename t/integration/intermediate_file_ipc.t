@@ -80,7 +80,8 @@ with_fork
 			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/somefile2");
 			print $out $I->tempfilename."\n";
 			<$in>;
-			die "diying from child\n";
+			print "# exiting from child\n";
+			exit 1;
 		};
 	ok ! -e $filename, "temporary file discarded when child dies";
 }

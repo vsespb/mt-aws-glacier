@@ -35,9 +35,8 @@ use TestUtils;
 use Test::More;
 use HTTP::Daemon;
 use App::MtAws;
-#use HTTP::Daemon::SSL;
 
-warn "LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION() unless @ARGV;
+print "# LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION()."\n" unless @ARGV;
 
 warning_fatal();
 
@@ -54,8 +53,8 @@ my ($base) = initialize_processes();
 	my $mtroot = get_temp_dir();
 
 	my $tmpfile = "$mtroot/lwp.tmp";
-	
-	
+
+
 	sub make_glacier_request
 	{
 		my ($method, $url, $glacier_options, $merge_keys) = @_;
@@ -69,7 +68,7 @@ my ($base) = initialize_processes();
 		};
 		return $resp ? ($g, $resp, undef) : ($g, undef, $@);
 	}
-	
+
 	sub httpd_content_length
 	{
 		my($c, $req, $size, $header_size) = @_;
@@ -80,7 +79,7 @@ my ($base) = initialize_processes();
 		$c->send_crlf;
 		print $c $s;
 	}
-	
+
 	sub httpd_content_length_400
 	{
 		my($c, $req) = @_;
@@ -93,7 +92,7 @@ my ($base) = initialize_processes();
 		$c->send_crlf;
 		print $c $s;
 	}
-	
+
 	sub httpd_check_user_agent
 	{
 		my($c, $req) = @_;
@@ -111,7 +110,7 @@ my ($base) = initialize_processes();
 		my($c, $req, $size, $header_size) = @_;
 		$c->send_basic_header(200);
 	}
-	
+
 	sub httpd_without_content_length
 	{
 		my($c, $req, $size) = @_;
@@ -128,7 +127,7 @@ my ($base) = initialize_processes();
 		});
 		$c->send_response($resp);
 	}
-	
+
 	# success with size defined
 	{
 		open F, ">$tmpfile";
@@ -139,7 +138,7 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
 	}
-	
+
 	sub httpd_chunked_throttling_exception
 	{
 		my($c, $req) = @_;
@@ -158,7 +157,7 @@ my ($base) = initialize_processes();
 		});
 		$c->send_response($resp);
 	}
-	
+
 	sub httpd_throttling_exception
 	{
 		my($c, $req, $size, $header_size) = @_;
@@ -199,7 +198,7 @@ my ($base) = initialize_processes();
 		is -s $tmpfile, $test_size;
 		ok($resp->is_success);
 	}
-	
+
 	# truncated response, no size is defined
 	{
 		no warnings 'redefine';
@@ -212,7 +211,7 @@ my ($base) = initialize_processes();
 		is $g->{last_retry_reason}, 'Unexpected end of data';
 		is -s $tmpfile, $test_size;
 	}
-	
+
 	# user_agent
 	{
 		no warnings 'redefine';
@@ -232,7 +231,7 @@ my ($base) = initialize_processes();
 		is $g->{last_retry_reason}, 'ThrottlingException'; # TODO: BUG actually need to detect truncated response as well, and this is actually bug
 		is -s $tmpfile, $test_size;
 	}
-	
+
 	# truncated response, size is defined
 	{
 		no warnings 'redefine';
@@ -270,7 +269,7 @@ my ($base) = initialize_processes();
 		}
 	}
 
-	# data truncated, writer not used 
+	# data truncated, writer not used
 	{
 		no warnings 'redefine';
 		local *App::MtAws::GlacierRequest::_max_retries = sub { 1 };
@@ -302,7 +301,7 @@ my ($base) = initialize_processes();
 		$c->send_error(503, "Bye, bye");
 		exit;  # terminate HTTP server
 	}
-	
+
 	my $ua = new LWP::UserAgent;
 	my $req = new HTTP::Request GET => "$proto://$base/quit";
 	my $resp = $ua->request($req);

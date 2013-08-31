@@ -22,7 +22,6 @@
 
 use strict;
 use warnings;
-use warnings FATAL => 'all';
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
@@ -337,7 +336,7 @@ no warnings 'redefine';
 	});
 	my @my_args = ('mycommand', '-myoption', 'def');
 	my $res = do {
-		local $SIG{__WARN__} = 'DEFAULT';
+		local $SIG{__WARN__} = sub {}; # TODO: now suppress warnings, test for actual warning?
 		$c->parse_options(@my_args);
 	};
 
@@ -1089,7 +1088,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub { optional('myoption')};
 	});
 	my $res = do {
-		local $SIG{__WARN__} = 'DEFAULT';
+		local $SIG{__WARN__} = sub {}; # TODO: now suppress warnings, test for actual warning?
 		$c->parse_options('mycommand', '-MYoption', 123);
 	};
 	ok $res->{errors} && $res->{error_texts};
@@ -1280,7 +1279,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub { };
 	});
 	my $res = do {
-		local $SIG{__WARN__} = 'DEFAULT';
+		local $SIG{__WARN__} = sub {}; # TODO: now suppress warnings, test for actual warning?
 		$c->parse_options('mycommand', '--f--');
 	};
 	ok $res->{errors} && $res->{error_texts};
@@ -1296,7 +1295,7 @@ for (['-o0', '11', '-o1', '42'], ['-o1', '42', '-o0', '11']) {
 		command 'mycommand' => sub { mandatory('o1') };
 	});
 	my $res = do {
-		local $SIG{__WARN__} = 'DEFAULT';
+		local $SIG{__WARN__} = sub {}; # TODO: now suppress warnings, test for actual warning?
 		$c->parse_options('mycommand', '--o1=3.3');
 	};
 	ok $res->{errors} && $res->{error_texts};

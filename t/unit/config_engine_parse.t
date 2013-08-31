@@ -153,7 +153,7 @@ sub assert_config_throw_error($$$)
 
 {
 	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
-		local $SIG{__WARN__} = 'DEFAULT';
+		local $SIG{__WARN__} = sub {}; # TODO: now suppress warnings, test for actual warning?
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'--myvault x'
 		));
@@ -252,7 +252,7 @@ sub assert_config_throw_error($$$)
 		no_disable_validations sub {
 			my $file = "$mtroot/journal_t_1";
 			unlink $file || confess if -e $file;
-			
+
 			my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 			'restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
 			));
@@ -274,10 +274,10 @@ for ('restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1') {
 
 {
 	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
-		
+
 		my $file = "$mtroot/journal_t_1";
 		unlink $file || confess if -e $file;
-		
+
 		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 		'sync --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1'
 		));
@@ -334,7 +334,7 @@ for ('restore --from-dir x --config y -journal z -to-va va -conc 9 --max-n 1') {
 
 {
 	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', vault => 'newvault', sub {
-	
+
 	my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ',
 	'create-vault --config=glacier.cfg'
 	));

@@ -45,8 +45,8 @@ my $rootdir = get_temp_dir();
 
 my @TRUE_CMD = ($Config{'perlpath'}, '-e', '0');
 
-print STDERR "STARTED $$ ".time()."\n";
-$SIG{ALRM} = sub { print STDERR "ALARM $$ ".time()."\n"; exit(1) };
+print "# STARTED $$ ".time()."\n";
+$SIG{ALRM} = sub { print "# ALARM $$ ".time()."\n"; exit(1) };
 
 sub fork_engine_test($%)
 {

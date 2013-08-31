@@ -88,7 +88,7 @@ for my $redef (0, 1) {
 	}
 
 	{
-		local $SIG{USR1} = sub { print STDERR "SIG $$\n" };
+		local $SIG{USR1} = sub { print "# SIG $$\n" };
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
@@ -105,7 +105,7 @@ for my $redef (0, 1) {
 	}
 
 	{
-		local $SIG{USR1} = sub { print STDERR "SIG $$\n" };
+		local $SIG{USR1} = sub { print "# SIG $$\n" };
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
@@ -132,7 +132,7 @@ for my $redef (0, 1) {
 				(defined $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/)
 			);
 
-		local $SIG{ALRM} = sub { print STDERR "SIG $$\n" };
+		local $SIG{ALRM} = sub { print "# SIG $$\n" };
 		my $sample = 'abxhrtf6';
 		my $full_sample = 'abxhrtf6' x (8192-7);
 		my $sample_l = length $full_sample;

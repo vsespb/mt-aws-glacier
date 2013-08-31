@@ -54,7 +54,10 @@ for my $line (
 	fake_config sub {
 		disable_validations qw/journal secret key filename dir/ => sub {
 			assert_segment_size '0 size allowed', 0, @$line, qq!--segment-size!, 0;
-			assert_segment_error "non-number size invalid", [{format => 'getopts_error'}], @$line, qq!--segment-size!, 'x';
+			{
+				local $SIG{__WARN__} = sub { $_[0] =~ /invalid for option segment\-size/ or die "Wrong error message $_[0]" };
+				assert_segment_error "non-number size invalid", [{format => 'getopts_error'}], @$line, qq!--segment-size!, 'x';
+			}
 			assert_segment_size "$_ size allowed", $_, @$line, qq!--segment-size!, $_
 				for (qw/1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384/);
 			assert_segment_error "$_ size invalid", [{a => 'segment-size', format => '%option a% must be zero or power of two', value => $_}],
