@@ -20,7 +20,7 @@
 
 package App::MtAws::Job::FileUpload;
 
-our $VERSION = '1.000';
+our $VERSION = '1.050';
 
 use strict;
 use warnings;

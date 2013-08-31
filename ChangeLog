@@ -1,8 +1,11 @@
+### 2013-08-31 v1.050
 
   * Optimized Journal memory usage by 12%
 
   * Fixed: system error messages (i.e. ERRNO - like Permission denied etc) where clobbered on non-English locales (i.e.
   when message is not ASCII-7bit). Error messages and check-local-hash output were affected.
+
+  * CPAN/Cosmetic: testsuite does not produce strings which looks like a warnings anymore.
 
 ### 2013-08-27 v1.000
 
