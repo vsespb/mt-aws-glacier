@@ -49,7 +49,9 @@ sub sanity_relative_filename
 	$filename =~ s!^/!!;
 	return undef if $filename =~ m![\r\n\t]!g;
 	$filename = File::Spec->catdir( map {return undef if m!^\.\.?$!; $_; } split('/', File::Spec->canonpath($filename)) );
-	return undef if $filename eq '';
+	return undef
+		if !defined($filename) ||  # workaround https://rt.cpan.org/Public/Bug/Display.html?id=86624
+			$filename eq '';
 	return $filename;
 }
 
