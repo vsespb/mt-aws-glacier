@@ -207,7 +207,7 @@ for (['a'], ['b','c'], ['b', 'c', 'd'], ['e', 'f', 'g']) {
 }
 
 SKIP: {
-	skip "Cannot run under root", 5 unless $>;
+	skip "Cannot run under root", 5 if is_posix_root;
 	my $dir = "$rootdir/denied1";
 	ok mkpath($dir), "path is created";
 	ok -d $dir, "path is created";;
@@ -218,7 +218,7 @@ SKIP: {
 }
 
 SKIP: {
-	skip "Cannot run under root", 5 unless $>;
+	skip "Cannot run under root", 5 if is_posix_root;
 	my $dir = "$rootdir/denied2";
 	ok mkpath($dir), "path is created";
 	ok -d $dir, "path is created";;
@@ -229,7 +229,7 @@ SKIP: {
 }
 
 SKIP: {
-	skip "Cannot run under root", 7 unless $>;
+	skip "Cannot run under root", 7 if is_posix_root;
 	my $dir = "$rootdir/testpermanent";
 	ok ! -e $dir, "not yet exists";
 	ok mkpath($dir), "path is created";
@@ -285,7 +285,7 @@ SKIP: {
 SKIP: {
 	for (5) {
 		skip "Test cannot be performed on character-oriented filesyste", $_ unless can_work_with_non_utf8_files;
-		skip "Cannot run under root", $_ unless $>;
+		skip "Cannot run under root", $_ if is_posix_root;
 	}
 	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
 	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
@@ -304,7 +304,7 @@ SKIP: {
 SKIP: {
 	for (6) {
 		skip "Test cannot be performed on character-oriented filesyste", $_ unless can_work_with_non_utf8_files;
-		skip "Cannot run under root", $_ unless $>;
+		skip "Cannot run under root", $_ if is_posix_root;
 	}
 	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
 	is get_filename_encoding, 'KOI8-R', "assume encoding is set";

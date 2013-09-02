@@ -80,7 +80,7 @@ chmod 0744, $file if -e $file;
 }
 
 SKIP: {
-	skip "Cannot run under root", 6 unless $>;
+	skip "Cannot run under root", 6 if is_posix_root;
 
 	my $J = App::MtAws::Journal->new(journal_file=>$file, root_dir => $rootdir);
 
@@ -173,7 +173,7 @@ SKIP: {
 }
 
 SKIP: {
-	skip "Cannot run under root", 6 unless $>;
+	skip "Cannot run under root", 6 if is_posix_root;
 	unlink($file);
 	create($file, $fixture);
 	chmod 0444, $file;

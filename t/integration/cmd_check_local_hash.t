@@ -63,7 +63,7 @@ my $content = "hello\n";
 }
 
 SKIP: {
-	skip "Cannot run under root", 5 unless $>;
+	skip "Cannot run under root", 5 if is_posix_root;
 	my $file = "$rootdir/def/abc";
 	mkpath "$rootdir/def";
 	chmod 0744, $file;

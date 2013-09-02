@@ -43,7 +43,7 @@ rmtree($file);
 
 my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to-vault=myvault --journal x";
 SKIP: {
-	skip "Cannot run under root", 6 unless $>;
+	skip "Cannot run under root", 6 if is_posix_root;
 	rmtree($file);
 	open F, ">", $file;
 	print F " ";

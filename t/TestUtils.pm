@@ -39,7 +39,8 @@ use File::Temp qw/tempdir/;
 
 our %disable_validations;
 our @EXPORT = qw/fake_config config_create_and_parse disable_validations no_disable_validations warning_fatal
-capture_stdout capture_stderr assert_raises_exception ordered_test test_fast_ok fast_ok with_fork can_work_with_non_utf8_files get_temp_dir is_iv_without_pv/;
+capture_stdout capture_stderr assert_raises_exception ordered_test test_fast_ok fast_ok with_fork
+can_work_with_non_utf8_files get_temp_dir is_iv_without_pv is_posix_root/;
 
 use Test::Deep; # should be last line, after EXPORT stuff, otherwise versions ^(0\.089|0\.09[0-9].*) do something nastly with exports
 
@@ -260,6 +261,24 @@ sub get_pv_iv
 sub is_iv_without_pv
 {
 	&get_pv_iv eq 'IV';
+}
+
+our $_cached_posix_root = undef;
+
+sub is_posix_root()
+{
+	$_cached_posix_root = do {
+		if ($^O eq 'cygwin') {
+			local ($!, $^E, $@);
+			eval {
+				require Win32;
+				Win32::IsAdminUser();
+			}
+		} else {
+			$> == 0;
+		}
+	} unless defined $_cached_posix_root;
+	$_cached_posix_root;
 }
 
 1;

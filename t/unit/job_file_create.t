@@ -54,7 +54,7 @@ unlink $file;
 }
 
 SKIP: {
-	skip "Cannot run under root", 3 unless $>;
+	skip "Cannot run under root", 3 if is_posix_root;
 
 	create($file, 'x');
 	chmod 0000, $file;

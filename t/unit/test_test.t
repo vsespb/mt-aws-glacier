@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 25;
+use Test::More tests => 27;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -204,6 +204,20 @@ warning_fatal();
 	my $y = "2";
 	$y = $y + 0;
 	ok !is_iv_without_pv($y);
+}
+
+# is_posix_root
+
+{
+	if ($^O eq 'cygwin') {
+		require Win32;
+		ok ( (!! is_posix_root()) == (!!Win32::IsAdminUser()) );
+		ok ( (!! is_posix_root()) == (!!Win32::IsAdminUser()) ); # double check, as it's cached
+	} else {
+		ok ( (!! is_posix_root()) == (!! ($>==0)) );
+		ok ( (!! is_posix_root()) == (!! ($>==0)) ); # double check, as it's cached
+	}
+
 }
 
 1;
