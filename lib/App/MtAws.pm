@@ -119,6 +119,8 @@ sub process
 	STDERR->autoflush(1);
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
 
+	print STDERR "**NOT RECOMMENDED FOR PRODUCTION USE UNDER CYGWIN**\n\n" if ($^O eq 'cygwin');
+
 	my ($P) = @_;
 	my ($src, $vault, $journal);
 	my $maxchildren = 4;
