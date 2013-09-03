@@ -60,11 +60,11 @@ Will NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pret
 
 #### Install prerequisites
 
-##### Ubuntu 12.04+, Debian 7
+###### Ubuntu 12.04+, Debian 7
 
 `sudo apt-get install libwww-perl libjson-xs-perl`
 
-##### RHEL/CentOS 5
+###### RHEL/CentOS 5
 
 `sudo yum install perl-Digest-SHA perl-JSON-XS perl-libwww-perl`
 
@@ -76,7 +76,7 @@ To use HTTPS you also need:
 
 3. install `LWP::Protocol::https` via [cpanm]
 
-##### RHEL/CentOS 6
+###### RHEL/CentOS 6
 
 `sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl`
 
@@ -88,7 +88,7 @@ To use HTTPS you also need:
 
 3. install `LWP::Protocol::https` via [cpanm]
 
-##### Debian 6
+###### Debian 6
 
 `sudo apt-get install libwww-perl libjson-xs-perl`
 
@@ -98,15 +98,15 @@ To use HTTPS you also need:
 
 2. install `LWP::Protocol::https` via [cpanm]
 
-##### Fedora 18+
+###### Fedora 18+
 
 `sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl perl-LWP-Protocol-https`
 
-##### Amazon Linux 2013.03
+###### Amazon Linux 2013.03
 
 `sudo yum install perl-core perl-JSON-XS perl-libwww-perl perl-LWP-Protocol-https`
 
-##### MacOS X
+###### MacOS X
 
 Install the following packages:
 
