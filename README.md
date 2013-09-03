@@ -55,6 +55,60 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 Script is made for Unix OS. Tested under Linux. Should work under other POSIX OSes (*BSD, Solaris). Lightly tested under Mac OS X.
 Should NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pretty old, AFAIK there are no supported distributions with older Perls)
 
+### NEW
+
+#### Ubuntu 12.04+, Debian 7
+
+`sudo apt-get install libwww-perl libjson-xs-perl`
+
+#### RHEL/CentOS 5
+
+`sudo yum install perl-Digest-SHA perl-JSON-XS perl-libwww-perl`
+
+To use HTTPS you also need:
+
+1. `sudo yum groupinstall "Development Tools"`
+
+2. `sudo yum install openssl-devel`
+
+3. install `LWP::Protocol::https` via [cpanm]
+
+#### RHEL/CentOS 6
+
+`sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl`
+
+To use HTTPS you also need:
+
+1. `sudo yum groupinstall "Development Tools"`
+
+2. `sudo yum install openssl-devel`
+
+3. install `LWP::Protocol::https` via [cpanm]
+
+#### Debian 6
+
+`sudo apt-get install libwww-perl libjson-xs-perl`
+
+To use HTTPS you also need:
+
+1. `sudo apt-get install build-essential libssl-dev`
+
+2. install `LWP::Protocol::https` via [cpanm]
+
+#### Fedora 18+
+
+`sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl perl-LWP-Protocol-https`
+
+#### Amazon Linux 2013.03
+
+`sudo yum install perl-core perl-JSON-XS perl-libwww-perl perl-LWP-Protocol-https`
+
+#### MacOS X
+
+Install the following packages:
+
+`p5-libwww-perl p5-json-XS`
+
 ### Manual (universal) installation instructions.
 
 * Install the following CPAN modules:
@@ -118,6 +172,8 @@ NOTE: CPAN asks too many questions during install (but ignores important errors)
 
 NOTE: Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/perldoc?App%3A%3Acpanminus) - it's a bit easier to install and configure.
 
+
+[cpanm]:http://search.cpan.org/perldoc?App%3A%3Acpanminus
 
 ## Warnings ( *MUST READ* )
 
