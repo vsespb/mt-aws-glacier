@@ -1,3 +1,9 @@
+### 2013-09-03 v1.051
+
+  * Installation instructions reworked
+
+  * Alpha testing on Cygwin platform
+
 ### 2013-08-31 v1.050
 
   * Optimized Journal memory usage by 12%
