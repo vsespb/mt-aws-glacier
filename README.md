@@ -13,7 +13,7 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 ## Version
 
-* Version 1.000 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 1.050 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -123,14 +123,6 @@ After that you can execute `mtglacier` script (found in root of repository) from
 
 ### *OR* Installation via CPAN
 
-* Prerequisites:
-
-	* OpenSSL dev library for HTTPS support (`openssl-devel` RPM or `libssl-dev` DEB)
-
-	* C compiller and header files: `yum groupinstall "Development Tools"` for RHEL or `build-essential` for Debian
-
-* How to install (or update in the future):
-
 		cpan -i App::MtAws
 
 That's it.
@@ -177,7 +169,7 @@ so package named `perl`, which is a part of default installation, is not actuall
 
 12. Instead system `cpan` tool you might want to try [`cpanm`](http://search.cpan.org/perldoc?App%3A%3Acpanminus) - it's a bit easier to install and configure.
 
-
+13. Installation of **LWP::Protocol::https** requires C header files ( `yum groupinstall "Development Tools"` for RHEL or `build-essential` for Debian ) and OpenSSL dev library (`openssl-devel` RPM or `libssl-dev` DEB).
 
 [cpanm]:http://search.cpan.org/perldoc?App%3A%3Acpanminus
 
