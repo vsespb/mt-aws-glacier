@@ -120,6 +120,8 @@ sub process
 	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
 
 	print STDERR "**NOT RECOMMENDED FOR PRODUCTION USE UNDER CYGWIN**\n\n" if ($^O eq 'cygwin');
+	print STDERR "**NOT TESTED UNDER PERLIO=stdio**\n\n" if (defined $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/);
+	die "Will *not* work under Win32\n" if ($^O eq 'MSWin32');
 
 	my ($P) = @_;
 	my ($src, $vault, $journal);
