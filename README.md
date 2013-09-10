@@ -102,6 +102,13 @@ To use HTTPS you also need:
 
 `sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl perl-LWP-Protocol-https`
 
+###### SUSE Linux Enterprise Server 11
+
+1. `sudo zypper install perl-libwww-perl libopenssl-devel`
+2. `sudo zypper install --type pattern Basis-Devel`
+3. Update `ExtUtils::MakeMaker` via [cpanm]
+4. Install `LWP::UserAgent`, `LWP::Protocol::https`, `JSON::XS` via [cpanm]
+
 ###### Amazon Linux 2013.03
 
 `sudo yum install perl-core perl-JSON-XS perl-libwww-perl perl-LWP-Protocol-https`
