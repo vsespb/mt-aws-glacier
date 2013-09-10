@@ -123,7 +123,6 @@ for my $redef (0, 1) {
 			};
 	}
 
-	my $e = 1e-6;
 	SKIP: {
 		skip "Cannot test in this configuration or due to some perl bugs", 20
 			if $redef && (
