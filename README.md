@@ -781,7 +781,7 @@ metdata without problems and you can dump metadata to journals with different en
 
 ## Limitations
 
-* Only support filenames, which consist of octets, that can me mapped to a valid character sequence in desired encoding (i.e. filename
+* Only support filenames, which consist of octets, that can be mapped to a valid character sequence in desired encoding (i.e. filename
 which are made of random bytes/garbage is not supported. usually it's not a problem).
 
 * Filenames with CR (Carriage return, code 0x0D) LF (Line feed, code 0x0A) and TAB (0x09) are not supported (usually not a problem too).
