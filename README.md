@@ -74,7 +74,7 @@ To use HTTPS you also need:
 
 2. `sudo yum install openssl-devel`
 
-3. install `LWP::Protocol::https` via [cpanm]
+3. install/update `LWP::UserAgent` and `LWP::Protocol::https` via [cpanm]
 
 ###### RHEL/CentOS 6
 
@@ -86,7 +86,7 @@ To use HTTPS you also need:
 
 2. `sudo yum install openssl-devel`
 
-3. install `LWP::Protocol::https` via [cpanm]
+3. install/update `LWP::UserAgent` and `LWP::Protocol::https` via [cpanm]
 
 ###### Debian 6
 
@@ -96,7 +96,7 @@ To use HTTPS you also need:
 
 1. `sudo apt-get install build-essential libssl-dev`
 
-2. install `LWP::Protocol::https` via [cpanm]
+3. install/update `LWP::UserAgent` and `LWP::Protocol::https` via [cpanm]
 
 ###### Fedora 18+
 
