@@ -106,7 +106,7 @@ To use HTTPS you also need:
 
 1. `sudo zypper install perl-libwww-perl libopenssl-devel`
 2. `sudo zypper install --type pattern Basis-Devel`
-3. Upgrade openssl to (at least) `0.9.8r` (to check version use`openssl version`), can be found [here](http://download.opensuse.org/repositories/security:/fips/) (more info here [RT#81575](https://rt.cpan.org/Public/Bug/Display.html?id=81575))
+3. Upgrade openssl to (at least) `0.9.8r` (to check version use `openssl version`), can be found [here](http://download.opensuse.org/repositories/security:/fips/) (more info here [RT#81575](https://rt.cpan.org/Public/Bug/Display.html?id=81575))
 4. Update `ExtUtils::MakeMaker` via [cpanm]
 5. Install `LWP::UserAgent`, `LWP::Protocol::https`, `JSON::XS` via [cpanm]
 
