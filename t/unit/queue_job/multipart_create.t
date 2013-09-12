@@ -26,9 +26,11 @@ use Test::More tests => 5;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../../lib";
-use App::MtAws::QueueJob;
+use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartCreate;
 use TestUtils;
+
+use constant JOB_RESULT_CLASS => 'App::MtAws::QueueJobResult';
 
 warning_fatal();
 

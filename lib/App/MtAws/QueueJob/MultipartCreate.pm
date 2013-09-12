@@ -24,7 +24,7 @@ package App::MtAws::QueueJob::MultipartCreate;
 use strict;
 use warnings;
 
-use App::MtAws::QueueJob;
+use App::MtAws::QueueJobResult;
 use base 'App::MtAws::QueueJob';
 
 sub on_default
