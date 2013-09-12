@@ -30,8 +30,9 @@ use constant JOB_RETRY => "MT_J_RETRY";
 use constant JOB_OK => "MT_J_OK";
 use constant JOB_WAIT => "MT_J_WAIT";
 use constant JOB_DONE => "MT_J_DONE";
+use constant JOB_RESULT_CLASS => 'App::MtAws::QueueJob::Result';
 
-our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task/;
+our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE JOB_RESULT_CLASS state task/;
 
 sub _is_code
 {
@@ -42,7 +43,7 @@ sub _is_code
 
 sub state($)
 {
-	{ MT_RESULT => 1, state => shift }
+	bless { state => shift }, JOB_RESULT_CLASS;
 }
 
 sub task(@)
@@ -51,7 +52,7 @@ sub task(@)
 	my $task_action = shift;
 	confess unless $cb && ref($cb) eq ref(sub {});
 	my @args = @_;
-	return { MT_RESULT => 1, code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args };
+	return bless { code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args }, JOB_RESULT_CLASS;
 }
 
 # return WAIT, "my_task", 1, 2, 3, sub { ... }
@@ -59,17 +60,15 @@ sub parse_result
 {
 	my $res = {};
 	for (@_) {
-		if (ref($_) eq ref({})) {
-			confess "unknown hash ref" unless ($_->{MT_RESULT});
+		if (ref($_) eq JOB_RESULT_CLASS) {
 			confess "double code" if defined($res->{code}) && defined($_->{code});
 			%$res = (%$res, %$_);
 		} elsif (ref($_) eq ref("")) {
 			confess "code already exists" if defined($res->{code});
 			$res->{code} = $_;
 		}
-		$res->{MT_RESULT} = 1;
 	}
-	confess "no data" unless $res->{MT_RESULT};
+	bless $res, JOB_RESULT_CLASS;
 	confess "no code" unless defined($res->{code});
 	confess "bad code" unless _is_code($res->{code});
 	if ($res->{code} eq JOB_OK) {
