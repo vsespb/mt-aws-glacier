@@ -36,6 +36,19 @@ our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task parse_result/;
 my @valid_codes_a = (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
 my %valid_codes_h = map { $_ => 1 } @valid_codes_a;
 
+### Instance methods
+
+sub new
+{
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	return $self;
+}
+
+
+### Class methods and DSL
+
 sub is_code($)
 {
 	$valid_codes_h{shift()};
@@ -54,14 +67,6 @@ sub task(@)
 	confess unless $cb && ref($cb) eq 'CODE';
 	my @args = @_;
 	return __PACKAGE__->new(code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args);
-}
-
-sub new
-{
-	my ($class, %args) = @_;
-	my $self = \%args;
-	bless $self, $class;
-	return $self;
 }
 
 

@@ -34,17 +34,17 @@ use constant JOB_RESULT_CLASS => 'App::MtAws::QueueJobResult';
 
 warning_fatal();
 
-sub coderef { code sub { ref $_[0] eq 'CODE' } }
+sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 
 use Data::Dumper;
 
 my $j = App::MtAws::QueueJob::MultipartCreate->new();
-cmp_deeply my $res = $j->next, bless { task_args => [], code => JOB_OK, task_action => 'create_file', state => 'wait', task_cb => coderef }, JOB_RESULT_CLASS;
-cmp_deeply $j->next, bless { code => JOB_WAIT }, JOB_RESULT_CLASS ;
-cmp_deeply $j->next, bless { code => JOB_WAIT }, JOB_RESULT_CLASS;
+cmp_deeply my $res = $j->next, App::MtAws::QueueJobResult->new(task_args => [], code => JOB_OK, task_action => 'create_file', state => 'wait', task_cb => test_coderef);
+cmp_deeply $j->next, App::MtAws::QueueJobResult->new(code => JOB_WAIT);
+cmp_deeply $j->next, App::MtAws::QueueJobResult->new(code => JOB_WAIT);
 $res->{task_cb}->();
-cmp_deeply $j->next, bless { code => JOB_DONE }, JOB_RESULT_CLASS;
-cmp_deeply $j->next, bless { code => JOB_DONE }, JOB_RESULT_CLASS;
+cmp_deeply $j->next, App::MtAws::QueueJobResult->new(code => JOB_DONE);
+cmp_deeply $j->next, App::MtAws::QueueJobResult->new(code => JOB_DONE);
 
 
 1;
