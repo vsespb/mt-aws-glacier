@@ -1,3 +1,23 @@
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package App::MtAws::QueueJob;
 
 use strict;
@@ -6,17 +26,17 @@ use warnings;
 use Carp;
 use base 'Exporter';
 
-use constant JOB_RETRY => 39201;
-use constant JOB_OK => 39202;
-use constant JOB_WAIT => 39203;
-use constant JOB_DONE => 39204;
+use constant JOB_RETRY => "MT_J_RETRY";
+use constant JOB_OK => "MT_J_OK";
+use constant JOB_WAIT => "MT_J_WAIT";
+use constant JOB_DONE => "MT_J_DONE";
 
 our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task/;
 
 sub _is_code
 {
 	my $c = shift;
-	$c =~ /\A\d+\z/ && grep { $_ == $c } (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
+	$c =~ /\AMT_J/ && grep { $_ eq $c } (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
 }
 
 
@@ -52,12 +72,12 @@ sub parse_result
 	confess "no data" unless $res->{MT_RESULT};
 	confess "no code" unless defined($res->{code});
 	confess "bad code" unless _is_code($res->{code});
-	if ($res->{code} == JOB_OK) {
+	if ($res->{code} eq JOB_OK) {
 		confess "no action" unless defined($res->{task_action});
 		confess "no cb" unless defined($res->{task_cb});
 		confess "no args" unless defined($res->{task_args});
 	}
-	if ($res->{code} != JOB_OK) {
+	if ($res->{code} ne JOB_OK) {
 		confess "unexpected action" if defined($res->{task_action});
 		confess "unexpected cb" if defined($res->{task_cb});
 		confess "unexpected args" if defined($res->{task_args});
@@ -92,7 +112,7 @@ sub next
 		if ( @{ $self->{_jobs} } ) {
 			my $res = $self->{_jobs}->[-1]->{job}->next();
 			confess unless $res->{MT_RESULT};
-			if ($res->{code} == JOB_DONE) {
+			if ($res->{code} eq JOB_DONE) {
 				my $j = pop @{ $self->{_jobs} };
 				$j->{cb}->($j->{job}) if $j->{cb};
 			} else {
@@ -102,7 +122,7 @@ sub next
 			my $method = "on_$self->{_state}";
 			my $res = parse_result($self->$method());
 			$self->enter($res->{state}) if defined($res->{state});
-			redo if $res->{code} == JOB_RETRY;
+			redo if $res->{code} eq JOB_RETRY;
 			return $res;
 		}
 	}
