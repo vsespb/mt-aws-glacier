@@ -38,14 +38,23 @@ my %valid_codes_h = map { $_ => 1 } @valid_codes_a;
 
 ### Instance methods
 
-sub new
+sub partial_new
 {
 	my ($class, %args) = @_;
 	my $self = \%args;
 	bless $self, $class;
+	$self->{_type} = 'partial';
 	return $self;
 }
 
+sub full_new
+{
+	my ($class, %args) = @_;
+	my $self = \%args;
+	bless $self, $class;
+	$self->{_type} = 'full';
+	return $self;
+}
 
 ### Class methods and DSL
 
@@ -57,7 +66,7 @@ sub is_code($)
 
 sub state($)
 {
-	__PACKAGE__->new( state => shift);
+	__PACKAGE__->partial_new( state => shift);
 }
 
 sub task(@)
@@ -66,7 +75,7 @@ sub task(@)
 	my $task_action = shift;
 	confess unless $cb && ref($cb) eq 'CODE';
 	my @args = @_;
-	return __PACKAGE__->new(code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args);
+	return __PACKAGE__->partial_new(code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args);
 }
 
 
@@ -76,6 +85,7 @@ sub parse_result
 	my $res = {};
 	for (@_) {
 		if ($_->isa(__PACKAGE__)) {
+			confess "should be partial" unless delete $_->{_type} eq 'partial';
 			confess "double code" if defined($res->{code}) && defined($_->{code});
 			%$res = (%$res, %$_);
 		} elsif (ref($_) eq ref("")) {
@@ -83,7 +93,7 @@ sub parse_result
 			$res->{code} = $_;
 		}
 	}
-	$res = __PACKAGE__->new(%$res);
+	$res = __PACKAGE__->full_new(%$res);
 	confess "no code" unless defined($res->{code});
 	confess "bad code" unless is_code $res->{code};
 	if ($res->{code} eq JOB_OK) {
