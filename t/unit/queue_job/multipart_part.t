@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 6;
+use Test::More tests => 12;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../../lib";
@@ -44,7 +44,7 @@ use Data::Dumper;
 	no warnings 'redefine';
 	local *App::MtAws::QueueJob::MultipartPart::read_part = sub {
 		my $p = shift @parts;
-		if (@$p) {
+		if ($p) {
 			return (1, @$p)
 		} else {
 			return;
@@ -54,6 +54,7 @@ use Data::Dumper;
 	my $j = App::MtAws::QueueJob::MultipartPart->new(%args);
 
 	my $i = 0;
+	my @callbacks;
 	for (@orig_parts) {
 		my $res = $j->next;
 		cmp_deeply $res,
@@ -68,6 +69,12 @@ use Data::Dumper;
 				code => JOB_OK, task_action => 'upload_part', task_cb => test_coderef, $i ? () : (state => 'other_parts')
 			);
 		++$i;
+		push @callbacks, $res->{task_cb};
+	}
+
+	while (my $cb = shift @callbacks) {
+		$cb->();
+		cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
 	}
 }
 
