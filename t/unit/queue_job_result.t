@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 53;
+use Test::More tests => 60;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -47,14 +47,31 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'
 
 # task
 {
-	cmp_deeply (App::MtAws::QueueJobResult->partial_new(task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => []), task('abc', $coderef));
-	cmp_deeply (App::MtAws::QueueJobResult->partial_new(task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => [1, 'z']), task('abc', 1, 'z', $coderef));
+	cmp_deeply (App::MtAws::QueueJobResult->partial_new(task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => {}),
+		task('abc', $coderef));
+	cmp_deeply (App::MtAws::QueueJobResult->partial_new(task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => {z => 1}),
+		task('abc', { z => 1}, $coderef));
 
-	ok ! eval { task($coderef); 1; }, "should complain without task_action";
-	like $@, qr/no task action/, "should complain without task_action";
+	my $attachment = "somedata";
+	cmp_deeply (App::MtAws::QueueJobResult->partial_new(
+		task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => {z => 1}, task_attachment => \$attachment
+		),
+		task('abc', { z => 1}, \$attachment, $coderef));
 
-	ok ! eval { task('a', 'b'); 1; }, "should complain without coderef";
-	like $@, qr/no code ref/, "should complain without task_action";
+	ok ! eval { task("something"); 1; }, "should complain with 1 arg";
+	like $@, qr/at least two args/, "should complain without task_action";
+
+	ok ! eval { task('a', 'z'); 1; }, "should complain if second arg is not hashref";
+	like $@, qr/no code ref/, "should complain if second arg is not hashref";
+
+	ok ! eval { task('a', 'z', $coderef); 1; }, "should complain if second arg is not hashref";
+	like $@, qr/task_args should be hashref/, "should complain if second arg is not hashref";
+
+	ok ! eval { task('a', {z => 1 }); 1; }, "should complain without coderef";
+	like $@, qr/no code ref/, "should complain without coderef";
+
+	ok ! eval { task('a', {z => 1 }, "scalar", $coderef); 1; }, "should complain if attachment is not reference";
+	like $@, qr/attachment is not reference to scalar/, "should complain if attachment is not reference";
 };
 
 
@@ -97,10 +114,10 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'
 		like $@, qr/double code/, "should not allow cobmining code and task for code $c";
 	}
 
-	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task_action => "mytask", task_args => [], task_cb => $coderef ),
+	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task_action => "mytask", task_args => {}, task_cb => $coderef ),
 		parse_result(task("mytask", $coderef)), "should allow task");
 
-	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task_action => "mytask", task_args => [], task_cb => $coderef, state => "somestate" ),
+	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task_action => "mytask", task_args => {}, task_cb => $coderef, state => "somestate" ),
 		parse_result(task("mytask", $coderef), state("somestate")), "should allow task+state");
 
 	for my $c (grep { $_ ne JOB_OK } @codes) {

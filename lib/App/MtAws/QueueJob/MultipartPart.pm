@@ -80,13 +80,14 @@ sub get_part
 	if ($ok) {
 		$self->{uploadparts}->{$start} = 1;
 		return task "upload_part",
-			start => $start,
-			upload_id => $self->{upload_id},
-			part_final_hash => $part_final_hash,
-			relfilename => $self->{relfilename},
-			mtime => $self->{mtime},
-			#$attachment,
-			sub {
+			{
+				start => $start,
+				upload_id => $self->{upload_id},
+				part_final_hash => $part_final_hash,
+				relfilename => $self->{relfilename},
+				mtime => $self->{mtime},
+				#$attachment,
+			} => sub {
 				delete $self->{uploadparts}->{$start} or confess;
 				$self->enter("done") unless keys %{$self->{uploadparts}};
 			};

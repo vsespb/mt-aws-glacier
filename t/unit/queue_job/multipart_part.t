@@ -59,13 +59,13 @@ use Data::Dumper;
 		my $res = $j->next;
 		cmp_deeply $res,
 			App::MtAws::QueueJobResult->full_new(
-				task_args => [
+				task_args => {
 					start => $_->[0],
 					upload_id => $args{upload_id},
 					part_final_hash => $_->[1],
 					relfilename => $args{relfilename},
 					mtime => $args{mtime},
-				],
+				},
 				code => JOB_OK, task_action => 'upload_part', task_cb => test_coderef, $i ? () : (state => 'other_parts')
 			);
 		++$i;

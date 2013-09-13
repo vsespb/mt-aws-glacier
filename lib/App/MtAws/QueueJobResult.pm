@@ -73,12 +73,16 @@ sub state($)
 
 sub task(@)
 {
-	my $cb = pop;
+	confess "at least two args expected" unless @_ >= 2;
 	my $task_action = shift;
+	my $cb = pop;
+	my ($task_args, $attachment) = @_;
+	confess "task_args should be hashref" if defined($task_args) && (ref($task_args) ne ref({}));
 	confess "no task action" unless $task_action;
 	confess "no code ref" unless $cb && ref($cb) eq 'CODE';
-	my @args = @_;
-	return __PACKAGE__->partial_new(code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args);
+	confess "attachment is not reference to scalar".ref($attachment) if defined($attachment) && (ref($attachment) ne ref(\""));
+	return __PACKAGE__->partial_new(code => JOB_OK, task_action => $task_action, task_cb => $cb,
+		task_args => $task_args||{}, defined($attachment) ? ( task_attachment => $attachment) : ());
 }
 
 
