@@ -71,6 +71,9 @@ sub state($)
 	__PACKAGE__->partial_new( state => shift);
 }
 
+# task ACTION, sub { ... }
+# task ACTION, { k1 => v1, k2 => v2 ... },  sub { ... }
+# task ACTION, { k1 => v1, k2 => v2 ... }, \$ATTACHMENT, sub { ... }
 sub task(@)
 {
 	confess "at least two args expected" unless @_ >= 2;
