@@ -80,7 +80,7 @@ sub task(@)
 	confess "task_args should be hashref" if defined($task_args) && (ref($task_args) ne ref({}));
 	confess "no task action" unless $task_action;
 	confess "no code ref" unless $cb && ref($cb) eq 'CODE';
-	confess "attachment is not reference to scalar".ref($attachment) if defined($attachment) && (ref($attachment) ne ref(\""));
+	confess "attachment is not reference to scalar: ".ref($attachment) if defined($attachment) && (ref($attachment) ne ref(\""));
 	return __PACKAGE__->partial_new(code => JOB_OK, task_action => $task_action, task_cb => $cb,
 		task_args => $task_args||{}, defined($attachment) ? ( task_attachment => $attachment) : ());
 }

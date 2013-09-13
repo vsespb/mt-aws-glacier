@@ -66,7 +66,9 @@ use Data::Dumper;
 					relfilename => $args{relfilename},
 					mtime => $args{mtime},
 				},
-				code => JOB_OK, task_action => 'upload_part', task_cb => test_coderef, $i ? () : (state => 'other_parts')
+				task_attachment => $_->[2],
+				code => JOB_OK, task_action => 'upload_part', task_cb => test_coderef,
+				$i ? () : (state => 'other_parts')
 			);
 		++$i;
 		push @callbacks, $res->{task_cb};

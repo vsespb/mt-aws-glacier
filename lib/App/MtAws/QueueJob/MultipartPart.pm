@@ -86,8 +86,7 @@ sub get_part
 				part_final_hash => $part_final_hash,
 				relfilename => $self->{relfilename},
 				mtime => $self->{mtime},
-				#$attachment,
-			} => sub {
+			} => $attachment => sub {
 				delete $self->{uploadparts}->{$start} or confess;
 				$self->enter("done") unless keys %{$self->{uploadparts}};
 			};
