@@ -24,14 +24,54 @@ our $VERSION = '1.051';
 
 use strict;
 use warnings;
+use Carp;
 
 use App::MtAws::QueueJobResult;
+use App::MtAws::Exceptions;
 use base 'App::MtAws::QueueJob';
 
-sub on_default
+sub init
 {
 	my ($self) = @_;
-	return state "wait", task "create_file" => sub {
+	defined($self->{filename}) || $self->{stdin} || confess "no filename nor stdin";
+	defined($self->{relfilename}) || confess "no relfilename";
+	$self->{partsize}||die;
+	$self->enter('create');
+}
+
+sub init_file
+{
+	my ($self) = @_;
+	if ($self->{stdin}) {
+		$self->{mtime} = time(); # should be as close as possible to upload process time
+		$self->{fh} = *STDIN;
+	} else {
+		my $binaryfilename = binaryfilename $self->{filename};
+		my $filesize = -s $binaryfilename;
+
+		die exception file_is_zero => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
+			filename => $self->{filename}
+				unless $filesize;
+
+		# should be as close as possible to upload process time
+		$self->{mtime} = stat($binaryfilename)->mtime; # TODO: how could we assure file not modified when uploading btw?
+
+		die exception too_many_parts =>
+			"With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
+			partsize => $self->{partsize}, filename => $self->{filename}, size => $filesize
+				if ($filesize / $self->{partsize} > 10000);
+
+		open_file($self->{fh}, $self->{filename}, mode => '<', binary => 1) or
+			die exception upload_file_open_error => "Unable to open task file %string filename% for reading, errno=%errno%",
+				filename => $self->{filename}, 'ERRNO';
+	}
+}
+
+sub on_create
+{
+	my ($self) = @_;
+	$self->init_file;
+	return state "wait", task "create_upload", partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime}, sub {
 		$self->{result} = shift;
 		$self->enter("done")
 	}
