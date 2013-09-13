@@ -20,6 +20,7 @@
 
 package App::MtAws::QueueJob::MultipartCreate;
 
+our $VERSION = '1.051';
 
 use strict;
 use warnings;

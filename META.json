@@ -248,13 +248,16 @@
          "version" : "1.051"
       },
       "App::MtAws::QueueJob" : {
-         "file" : "lib/App/MtAws/QueueJob.pm"
+         "file" : "lib/App/MtAws/QueueJob.pm",
+         "version" : "1.051"
       },
       "App::MtAws::QueueJob::MultipartCreate" : {
-         "file" : "lib/App/MtAws/QueueJob/MultipartCreate.pm"
+         "file" : "lib/App/MtAws/QueueJob/MultipartCreate.pm",
+         "version" : "1.051"
       },
       "App::MtAws::QueueJobResult" : {
-         "file" : "lib/App/MtAws/QueueJobResult.pm"
+         "file" : "lib/App/MtAws/QueueJobResult.pm",
+         "version" : "1.051"
       },
       "App::MtAws::Task" : {
          "file" : "lib/App/MtAws/Task.pm",
