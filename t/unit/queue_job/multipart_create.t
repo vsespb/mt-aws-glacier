@@ -30,8 +30,6 @@ use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartCreate;
 use TestUtils;
 
-use constant JOB_RESULT_CLASS => 'App::MtAws::QueueJobResult';
-
 warning_fatal();
 
 sub test_coderef { code sub { ref $_[0] eq 'CODE' } }

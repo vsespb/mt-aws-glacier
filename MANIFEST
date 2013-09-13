@@ -43,6 +43,9 @@ lib/App/MtAws/LineProtocol.pm
 lib/App/MtAws/MetaData.pm
 lib/App/MtAws/ParentWorker.pm
 lib/App/MtAws/ProxyTask.pm
+lib/App/MtAws/QueueJob.pm
+lib/App/MtAws/QueueJob/MultipartCreate.pm
+lib/App/MtAws/QueueJobResult.pm
 lib/App/MtAws/Task.pm
 lib/App/MtAws/TreeHash.pm
 lib/App/MtAws/Utils.pm
@@ -118,6 +121,8 @@ t/unit/journal_sanity.t
 t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
+t/unit/queue_job/multipart_create.t
+t/unit/queue_job_result.t
 t/unit/string_escape.t
 t/unit/sysread_syswrite_unit.t
 t/unit/test_test.t

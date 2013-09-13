@@ -247,6 +247,15 @@
          "file" : "lib/App/MtAws/ProxyTask.pm",
          "version" : "1.051"
       },
+      "App::MtAws::QueueJob" : {
+         "file" : "lib/App/MtAws/QueueJob.pm"
+      },
+      "App::MtAws::QueueJob::MultipartCreate" : {
+         "file" : "lib/App/MtAws/QueueJob/MultipartCreate.pm"
+      },
+      "App::MtAws::QueueJobResult" : {
+         "file" : "lib/App/MtAws/QueueJobResult.pm"
+      },
       "App::MtAws::Task" : {
          "file" : "lib/App/MtAws/Task.pm",
          "version" : "1.051"

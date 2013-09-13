@@ -73,7 +73,8 @@ sub task(@)
 {
 	my $cb = pop;
 	my $task_action = shift;
-	confess unless $cb && ref($cb) eq 'CODE';
+	confess "no task action" unless $task_action;
+	confess "no code ref" unless $cb && ref($cb) eq 'CODE';
 	my @args = @_;
 	return __PACKAGE__->partial_new(code => JOB_OK, task_action => $task_action, task_cb => $cb, task_args => \@args);
 }
@@ -83,8 +84,9 @@ sub task(@)
 sub parse_result
 {
 	my $res = {};
+	confess "no data" unless @_;
 	for (@_) {
-		if ($_->isa(__PACKAGE__)) {
+		if (ref($_) ne ref("") && $_->isa(__PACKAGE__)) {
 			confess "should be partial" unless delete $_->{_type} eq 'partial';
 			confess "double code" if defined($res->{code}) && defined($_->{code});
 			%$res = (%$res, %$_);
