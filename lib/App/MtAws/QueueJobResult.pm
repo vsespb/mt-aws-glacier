@@ -97,6 +97,9 @@ sub parse_result
 			$res->{code} = $_;
 		}
 	}
+
+	$res->{code} = JOB_RETRY if ($res->{state} && !$res->{code});
+
 	$res = __PACKAGE__->full_new(%$res);
 	confess "no code" unless defined($res->{code});
 	confess "bad code" unless is_code $res->{code};

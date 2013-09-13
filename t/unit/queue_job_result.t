@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 52;
+use Test::More tests => 53;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -107,6 +107,7 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'
 		cmp_deeply( App::MtAws::QueueJobResult->full_new(code => $c), parse_result($c), "should allow sole code $c" );
 		cmp_deeply( App::MtAws::QueueJobResult->full_new(code => $c, state => "somestate"), parse_result($c, state("somestate")), "should allow code $c and state" );
 	}
+	cmp_deeply( App::MtAws::QueueJobResult->full_new(code => JOB_RETRY, state => "somestate"), parse_result(state("somestate")), "should allow sole state" );
 
 }
 
