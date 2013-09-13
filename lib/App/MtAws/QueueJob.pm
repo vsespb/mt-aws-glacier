@@ -35,6 +35,7 @@ sub new
 	bless $self, $class;
 	$self->{_state} = 'default';
 	$self->{_jobs} = [];
+	$self->init();
 	return $self;
 }
 
@@ -71,19 +72,10 @@ sub next
 	}
 }
 
-sub on_wait
-{
-	JOB_WAIT
-}
-
-sub on_done
-{
-	JOB_DONE
-}
-
-sub on_die
-{
-	confess;
-}
+sub on_wait { JOB_WAIT }
+sub on_done { JOB_DONE }
+sub on_die { confess "on_die"; }
+sub on_default  { confess "Unimplemented"; }
+sub init { confess "Unimplemented"; }
 
 1;
