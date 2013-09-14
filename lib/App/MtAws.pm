@@ -85,7 +85,7 @@ sub print_system_modules_version
 			my $name = $module;
 			$name =~ s[/][::]g;
 			$name =~ s[\.pmc?$][];
-			my $ver = $name->VERSION;
+			my $ver = eval qq{\$${name}::VERSION};
 			$ver = 'undef' unless defined $ver;
 			print "$name\t$ver\t$INC{$module}\n";
 		}
