@@ -28,6 +28,8 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 use App::MtAws;
 
+warning_fatal();
+
 my @dynamic_modules = map { my $a = $_;  $a =~ s!::!/!g; $a; } qw/
 	Command::Sync
 	Command::Retrieve
