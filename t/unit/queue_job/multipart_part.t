@@ -70,12 +70,13 @@ use Data::Dumper;
 					attachment => $_->[2],
 					action => 'upload_part',
 					cb => test_coderef,
+					cb_proxy => test_coderef,
 				},
 				code => JOB_OK,
 				$i ? () : (state => 'other_parts')
 			);
 		++$i;
-		push @callbacks, $res->{task}{cb};
+		push @callbacks, $res->{task}{cb_proxy};
 	}
 
 	while (my $cb = shift @callbacks) {

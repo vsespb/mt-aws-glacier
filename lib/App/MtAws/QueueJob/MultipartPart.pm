@@ -88,7 +88,7 @@ sub get_part
 				mtime => $self->{mtime},
 			} => $attachment => sub {
 				delete $self->{uploadparts}->{$start} or confess;
-				$self->enter("done") unless keys %{$self->{uploadparts}};
+				keys %{$self->{uploadparts}} ? () : state('done');
 			};
 	} else {
 		return;

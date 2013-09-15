@@ -58,7 +58,8 @@ sub next
 			confess unless $res->isa('App::MtAws::QueueJobResult');
 			if ($res->{code} eq JOB_DONE) {
 				my $j = pop @{ $self->{_jobs} };
-				$j->{cb}->($j->{job}) if $j->{cb};
+				confess if $j->{cb} && !$j->{cb_proxy};
+				$j->{cb_proxy}->($j->{job}) if $j->{cb_proxy};
 			} else {
 				return $res;
 			}
@@ -67,6 +68,17 @@ sub next
 			my $res = parse_result($self->$method());
 			$self->enter($res->{state}) if defined($res->{state});
 			$self->push_job($res->{job}) if defined($res->{job});
+			if ($res->{task} && $res->{task}{cb}) {
+				my $cb = $res->{task}{cb};
+				$res->{task}{cb_proxy} = sub {
+					if (my @r = $cb->($self)) {
+						my $result = parse_result(@r);
+						$self->enter($result->{state}) if defined($result->{state});
+						confess if $result->{job};
+						confess if $result->{task};
+					}
+				}
+			}
 			redo if $res->{code} eq JOB_RETRY;
 			return $res;
 		}

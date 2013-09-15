@@ -48,10 +48,10 @@ use Data::Dumper;
 	cmp_deeply my $res = $j->next,
 		App::MtAws::QueueJobResult->full_new(code => JOB_OK, state => 'wait',
 		task => { args => {partsize => $partsize, relfilename => 'somefile', mtime => 123456},
-		action => 'create_upload', cb => test_coderef});
+		action => 'create_upload', cb => test_coderef, cb_proxy => test_coderef});
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
-	$res->{task}{cb}->();
+	$res->{task}{cb_proxy}->();
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
 }

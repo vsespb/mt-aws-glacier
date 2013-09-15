@@ -73,7 +73,7 @@ sub on_create
 	$self->init_file;
 	return state "wait", task "create_upload", { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } => sub {
 		$self->{result} = shift;
-		$self->enter("done")
+		state("done")
 	}
 }
 
