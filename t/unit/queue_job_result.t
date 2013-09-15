@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 74;
+use Test::More tests => 114;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -139,18 +139,53 @@ cmp_deeply ([JOB_RETRY, App::MtAws::QueueJobResult->partial_new(job => 'abc')], 
 		App::MtAws::QueueJobResult->partial_new(default_code => JOB_WAIT),
 	), App::MtAws::QueueJobResult->full_new(code => JOB_WAIT), "code should default to default_code";
 
+	# task
 	cmp_deeply(parse_result(task("mytask", $coderef)),
 		App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef} ), "should allow task");
 
+	# task+state
 	cmp_deeply(parse_result(task("mytask", $coderef), state("somestate")),
 		App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef}, state => "somestate" ), "should allow task+state");
 
+	# code+state
 	for my $c (grep { $_ ne JOB_OK } @codes) {
 		cmp_deeply( parse_result($c), App::MtAws::QueueJobResult->full_new(code => $c), "should allow sole code $c" );
 		cmp_deeply( parse_result($c, state("somestate")), App::MtAws::QueueJobResult->full_new(code => $c, state => "somestate"), "should allow code $c and state" );
 	}
 	cmp_deeply( parse_result(state("somestate")), App::MtAws::QueueJobResult->full_new(code => JOB_RETRY, state => "somestate"), "should allow sole state" );
 
+}
+
+# another way to test compatibility between parse_result arguments
+{
+	for my $code ([], map { [$_] } @codes) {
+		for my $job ([], [job('abc')]) {
+			for my $task ([], [ task("def", sub {}) ]) {
+				for my $state ([], [state("xyz")]) {
+					my $got = eval { parse_result(@$code, @$job, @$task, @$state); };
+					my $expected = 1;
+
+					$expected = 0 unless (@$code || @$job || @$task || @$state);
+
+
+					$expected = 0 if (@$task && @$code);
+					$expected = 0 if (@$job && @$code);
+					$expected = 0 if (@$job && @$task);
+					if (@$code && !@$task && $code->[0] eq JOB_OK) {
+						$expected = 0;
+					}
+
+
+					if ($expected) {
+						ok $got;
+					} else {
+						ok !defined($got);
+					}
+
+				}
+			}
+		}
+	}
 }
 
 

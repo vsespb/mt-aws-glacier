@@ -73,6 +73,8 @@ sub is_code($)
 }
 
 
+# state STATE
+# returns: list with 2 elements
 sub state($)
 {
 	my $class = __PACKAGE__;
@@ -83,6 +85,8 @@ sub state($)
 
 }
 
+# job JOB
+# returns: list with 2 elements
 sub job($)
 {
 	confess unless wantarray;
@@ -94,6 +98,7 @@ sub job($)
 # task ACTION, sub { ... }
 # task ACTION, { k1 => v1, k2 => v2 ... },  sub { ... }
 # task ACTION, { k1 => v1, k2 => v2 ... }, \$ATTACHMENT, sub { ... }
+# returns: list with 2 elements
 sub task(@)
 {
 	confess unless wantarray;
@@ -113,6 +118,30 @@ sub task(@)
 
 
 # return WAIT, "my_task", 1, 2, 3, sub { ... }
+# allowed input:
+#
+# combination of return values of the following functions
+# task()
+# job()
+# state()
+# JOB_XXXX (code)
+#
+# job+code not allowed
+# task+code not allowed
+#
+# job assumes code JOB_RETRY
+# task assumes code JOB_OK
+#
+# state defaults code to JOB_RETRY
+#
+#
+#   parse_result( task(...) )
+#   parse_result( job(...) )
+#   parse_result( state(...), task(...) )
+#   parse_result( state(...), job(...) )
+#
+#
+
 sub parse_result
 {
 	my $class = __PACKAGE__;
@@ -120,7 +149,7 @@ sub parse_result
 	confess "no data" unless @_;
 	for my $o (@_) {
 		if (ref($o) ne ref("") && $o->isa($class)) { # anything, but code
-			confess "should be partial" unless delete $o->{_type} eq 'partial';
+			confess "should be partial" unless $o->{_type} eq 'partial';
 			my @fields_to_copy = grep { $o->{$_} } @valid_fields;
 			confess "should be just one field in the object" if @fields_to_copy != 1;
 			my ($field_to_copy) = @fields_to_copy;
