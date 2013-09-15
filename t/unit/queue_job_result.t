@@ -65,19 +65,19 @@ cmp_deeply ([JOB_RETRY, App::MtAws::QueueJobResult->partial_new(job => 'abc')], 
 	cmp_deeply [task('abc', { z => 1}, \$attachment, $coderef)],
 		[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}, attachment => \$attachment})];
 
-	ok ! eval { task("something"); 1; }, "should complain with 1 arg";
+	ok ! eval { my @a = task("something"); 1; }, "should complain with 1 arg";
 	like $@, qr/^at least two args/, "should complain without task_action";
 
-	ok ! eval { task('a', 'z'); 1; }, "should complain if second arg is not hashref";
+	ok ! eval { my @a = task('a', 'z'); 1; }, "should complain if second arg is not hashref";
 	like $@, qr/^no code ref/, "should complain if second arg is not hashref";
 
-	ok ! eval { task('a', 'z', $coderef); 1; }, "should complain if second arg is not hashref";
+	ok ! eval { my @a = task('a', 'z', $coderef); 1; }, "should complain if second arg is not hashref";
 	like $@, qr/^task_args should be hashref/, "should complain if second arg is not hashref";
 
-	ok ! eval { task('a', {z => 1 }); 1; }, "should complain without coderef";
+	ok ! eval { my @a = task('a', {z => 1 }); 1; }, "should complain without coderef";
 	like $@, qr/^no code ref/, "should complain without coderef";
 
-	ok ! eval { task('a', {z => 1 }, "scalar", $coderef); 1; }, "should complain if attachment is not reference";
+	ok ! eval { my @a = task('a', {z => 1 }, "scalar", $coderef); 1; }, "should complain if attachment is not reference";
 	like $@, qr/^attachment is not reference to scalar/, "should complain if attachment is not reference";
 };
 

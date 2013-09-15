@@ -76,6 +76,7 @@ sub is_code($)
 sub state($)
 {
 	my $class = __PACKAGE__;
+	confess unless wantarray;
 	return
 		$class->partial_new(state => shift),
 		$class->partial_new(default_code => JOB_RETRY);
@@ -84,6 +85,7 @@ sub state($)
 
 sub job($)
 {
+	confess unless wantarray;
 	return
 		JOB_RETRY,
 		__PACKAGE__->partial_new(job => shift);
@@ -94,6 +96,7 @@ sub job($)
 # task ACTION, { k1 => v1, k2 => v2 ... }, \$ATTACHMENT, sub { ... }
 sub task(@)
 {
+	confess unless wantarray;
 	my $class = __PACKAGE__;
 	confess "at least two args expected" unless @_ >= 2;
 	my ($task_action, $cb, $task_args, $attachment) = (shift, pop, @_);
