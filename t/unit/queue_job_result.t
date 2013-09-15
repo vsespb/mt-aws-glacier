@@ -47,31 +47,34 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'
 
 # task
 {
-	cmp_deeply (App::MtAws::QueueJobResult->partial_new(task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => {}),
-		task('abc', $coderef));
-	cmp_deeply (App::MtAws::QueueJobResult->partial_new(task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => {z => 1}),
-		task('abc', { z => 1}, $coderef));
+	cmp_deeply
+		[task('abc', $coderef)],
+		[App::MtAws::QueueJobResult->partial_new(code => JOB_OK),
+		App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {}})];
+	cmp_deeply
+		[task('abc', { z => 1}, $coderef)],
+		[App::MtAws::QueueJobResult->partial_new(code => JOB_OK),
+		App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}})];
 
 	my $attachment = "somedata";
-	cmp_deeply (App::MtAws::QueueJobResult->partial_new(
-		task_action => 'abc', task_cb => $coderef, code => JOB_OK, task_args => {z => 1}, task_attachment => \$attachment
-		),
-		task('abc', { z => 1}, \$attachment, $coderef));
+	cmp_deeply [task('abc', { z => 1}, \$attachment, $coderef)],
+	[App::MtAws::QueueJobResult->partial_new(code => JOB_OK),
+	App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}, attachment => \$attachment})];
 
 	ok ! eval { task("something"); 1; }, "should complain with 1 arg";
-	like $@, qr/at least two args/, "should complain without task_action";
+	like $@, qr/^at least two args/, "should complain without task_action";
 
 	ok ! eval { task('a', 'z'); 1; }, "should complain if second arg is not hashref";
-	like $@, qr/no code ref/, "should complain if second arg is not hashref";
+	like $@, qr/^no code ref/, "should complain if second arg is not hashref";
 
 	ok ! eval { task('a', 'z', $coderef); 1; }, "should complain if second arg is not hashref";
-	like $@, qr/task_args should be hashref/, "should complain if second arg is not hashref";
+	like $@, qr/^task_args should be hashref/, "should complain if second arg is not hashref";
 
 	ok ! eval { task('a', {z => 1 }); 1; }, "should complain without coderef";
-	like $@, qr/no code ref/, "should complain without coderef";
+	like $@, qr/^no code ref/, "should complain without coderef";
 
 	ok ! eval { task('a', {z => 1 }, "scalar", $coderef); 1; }, "should complain if attachment is not reference";
-	like $@, qr/attachment is not reference to scalar/, "should complain if attachment is not reference";
+	like $@, qr/^attachment is not reference to scalar/, "should complain if attachment is not reference";
 };
 
 
@@ -95,29 +98,29 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'
 
 {
 	ok ! eval { parse_result(); 1 };
-	like $@, qr/no data/;
+	like $@, qr/^no data/;
 
 	ok ! eval { parse_result(1); 1 };
-	like $@, qr/bad code/;
+	like $@, qr/^bad code/;
 
 	ok ! eval { parse_result({}); 1 };
 	ok ! eval { parse_result(sub {}); 1 };
 
 	ok ! eval { parse_result(App::MtAws::QueueJobResult->full_new); 1 };
-	like $@, qr/should be partial/;
+	like $@, qr/^should be partial/;
 
 	ok ! eval { parse_result(JOB_OK); 1 };
-	like $@, qr/no action/, "should not allow sole JOB_OK ";
+	like $@, qr/^no task/, "should not allow sole JOB_OK ";
 
 	for my $c (@codes) {
 		ok ! eval { parse_result($c, task("mytask", sub {})); 1 };
-		like $@, qr/double code/, "should not allow cobmining code and task for code $c";
+		like $@, qr/^double data/, "should not allow cobmining code and task for code $c";
 	}
 
-	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task_action => "mytask", task_args => {}, task_cb => $coderef ),
+	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef} ),
 		parse_result(task("mytask", $coderef)), "should allow task");
 
-	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task_action => "mytask", task_args => {}, task_cb => $coderef, state => "somestate" ),
+	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef}, state => "somestate" ),
 		parse_result(task("mytask", $coderef), state("somestate")), "should allow task+state");
 
 	for my $c (grep { $_ ne JOB_OK } @codes) {

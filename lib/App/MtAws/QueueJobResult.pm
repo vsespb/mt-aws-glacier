@@ -37,6 +37,7 @@ our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task parse_result/;
 
 my @valid_codes_a = (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
 my %valid_codes_h = map { $_ => 1 } @valid_codes_a;
+my @valid_fields = qw/code task state/;
 
 ### Instance methods
 
@@ -76,48 +77,53 @@ sub state($)
 # task ACTION, { k1 => v1, k2 => v2 ... }, \$ATTACHMENT, sub { ... }
 sub task(@)
 {
+	my $class = __PACKAGE__;
 	confess "at least two args expected" unless @_ >= 2;
 	my ($task_action, $cb, $task_args, $attachment) = (shift, pop, @_);
 	confess "task_args should be hashref" if defined($task_args) && (ref($task_args) ne ref({}));
 	confess "no task action" unless $task_action;
 	confess "no code ref" unless $cb && ref($cb) eq 'CODE';
 	confess "attachment is not reference to scalar: ".ref($attachment) if defined($attachment) && (ref($attachment) ne ref(\""));
-	return __PACKAGE__->partial_new(code => JOB_OK, task_action => $task_action, task_cb => $cb,
-		task_args => $task_args||{}, defined($attachment) ? ( task_attachment => $attachment) : ());
+	return
+		$class->partial_new(code => JOB_OK),
+		$class->partial_new(task => {
+			action => $task_action, cb => $cb, args => $task_args||{}, defined($attachment) ? ( attachment => $attachment) : ()
+		});
 }
 
 
 # return WAIT, "my_task", 1, 2, 3, sub { ... }
 sub parse_result
 {
+	my $class = __PACKAGE__;
 	my $res = {};
 	confess "no data" unless @_;
-	for (@_) {
-		if (ref($_) ne ref("") && $_->isa(__PACKAGE__)) {
-			confess "should be partial" unless delete $_->{_type} eq 'partial';
-			confess "double code" if defined($res->{code}) && defined($_->{code});
-			%$res = (%$res, %$_);
-		} elsif (ref($_) eq ref("")) {
+	for my $o (@_) {
+		if (ref($o) ne ref("") && $o->isa($class)) { # anything, but code
+			confess "should be partial" unless delete $o->{_type} eq 'partial';
+			my @fields_to_copy = grep { $o->{$_} } @valid_fields;
+			confess "should be just one field in the object" if @fields_to_copy != 1;
+			my ($field_to_copy) = @fields_to_copy;
+			confess "double data" if defined($res->{$field_to_copy});
+			$res->{$field_to_copy} = $o->{$field_to_copy};
+		} elsif (ref($_) eq ref("")) { # code
 			confess "code already exists" if defined($res->{code});
-			$res->{code} = $_;
+			$res->{code} = $o;
 		}
 	}
 
 	$res->{code} = JOB_RETRY if ($res->{state} && !$res->{code});
 
-	$res = __PACKAGE__->full_new(%$res);
+	$res = $class->full_new(%$res);
 	confess "no code" unless defined($res->{code});
 	confess "bad code" unless is_code $res->{code};
 	if ($res->{code} eq JOB_OK) {
-		confess "no action" unless defined($res->{task_action});
-		confess "no cb" unless defined($res->{task_cb});
-		confess "no args" unless defined($res->{task_args});
+		confess "no task" unless defined($res->{task});
+		confess "no task action" unless defined($res->{task}{action});
+		confess "no task cb" unless defined($res->{task}{cb});
+		confess "no task args" unless defined($res->{task}{args});
 	}
-	if ($res->{code} ne JOB_OK) {
-		confess "unexpected action" if defined($res->{task_action});
-		confess "unexpected cb" if defined($res->{task_cb});
-		confess "unexpected args" if defined($res->{task_args});
-	}
+	confess "unexpected task" if ($res->{code} ne JOB_OK && defined($res->{task}));
 	$res;
 }
 
