@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 154;
+use Test::More tests => 202;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
