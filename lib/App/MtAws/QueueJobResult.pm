@@ -84,7 +84,9 @@ sub state($)
 
 sub job($)
 {
-	__PACKAGE__->partial_new(job => shift);
+	return
+		JOB_RETRY,
+		__PACKAGE__->partial_new(job => shift);
 }
 
 # task ACTION, sub { ... }

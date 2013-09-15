@@ -45,10 +45,11 @@ cmp_deeply (App::MtAws::QueueJobResult->full_new(a => 1, b => 2), bless { _type 
 }
 
 # state
-cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'));
+cmp_deeply ([App::MtAws::QueueJobResult->partial_new(state => 'abc'), App::MtAws::QueueJobResult->partial_new(default_code => JOB_RETRY)],
+	[state('abc')]);
 
 # job
-cmp_deeply (App::MtAws::QueueJobResult->partial_new(job => 'abc'), job('abc'));
+cmp_deeply ([JOB_RETRY, App::MtAws::QueueJobResult->partial_new(job => 'abc')], [job('abc')]);
 
 
 # task

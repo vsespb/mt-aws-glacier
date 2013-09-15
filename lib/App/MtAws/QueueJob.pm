@@ -41,7 +41,7 @@ sub new
 
 sub enter { $_[0]->{_state} = $_[1]; JOB_RETRY }
 
-sub push
+sub push_job
 {
 	my ($self, $job, $cb) = @_;
 	push @{ $self->{_jobs} }, { job => $job, cb => $cb };
@@ -66,6 +66,7 @@ sub next
 			my $method = "on_$self->{_state}";
 			my $res = parse_result($self->$method());
 			$self->enter($res->{state}) if defined($res->{state});
+			$self->push_job($res->{job}) if defined($res->{job});
 			redo if $res->{code} eq JOB_RETRY;
 			return $res;
 		}
