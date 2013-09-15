@@ -117,30 +117,22 @@ sub task(@)
 }
 
 
-# return WAIT, "my_task", 1, 2, 3, sub { ... }
-# allowed input:
-#
-# combination of return values of the following functions
-# task()
-# job()
-# state()
-# JOB_XXXX (code)
-#
-# job+code not allowed
-# task+code not allowed
-#
-# job assumes code JOB_RETRY
-# task assumes code JOB_OK
-#
-# state defaults code to JOB_RETRY
-#
-#
-#   parse_result( task(...) )
-#   parse_result( job(...) )
-#   parse_result( state(...), task(...) )
-#   parse_result( state(...), job(...) )
-#
-#
+=pod
+
+parse_result(@) input is a list concatenation of one or more of the following entities: TASK, JOB, STATE and CODE
+
+TASK - is a return value of task() function. (i.e. list with 2 items - task object and CODE)
+JOB - is a return value of job() function (i.e. list with 2 items - job object and CODE)
+STATE - is a return value of state() function (i.e. list with 2 items - state object and default_code object)
+CODE - is JOB_xxx code
+
+allowed combination:
+
+STATE
+[STATE, ] (TASK|JOB)
+[STATE, ] CODE  (when CODE is not JOB_OK )
+
+=cut
 
 sub parse_result
 {

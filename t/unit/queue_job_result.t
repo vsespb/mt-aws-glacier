@@ -162,32 +162,35 @@ cmp_deeply ([JOB_RETRY, App::MtAws::QueueJobResult->partial_new(job => 'abc')], 
 		for my $job ([], [job('abc')]) {
 			for my $task ([], [ task("def", sub {}) ]) {
 				for my $state ([], [state("xyz")]) {
-					my $got = eval { parse_result(@$code, @$job, @$task, @$state); };
-					my $expected = undef;
+					for my $code_value (@$code ? ($code, [App::MtAws::QueueJobResult->partial_new(code => $code->[0])]) : ()) {
+
+						my $got = eval { parse_result(@$code_value, @$job, @$task, @$state); };
+						my $expected = undef;
 
 
-					# cases when incompatible
-					$expected = 0 unless (@$code || @$job || @$task || @$state);
+						# cases when incompatible
+						$expected = 0 unless (@$code || @$job || @$task || @$state);
 
-					$expected = 0 if (@$task && @$code);
-					$expected = 0 if (@$job && @$code);
-					$expected = 0 if (@$job && @$task);
-					$expected = 0 if (@$code && !@$task && $code->[0] eq JOB_OK);
+						$expected = 0 if (@$task && @$code);
+						$expected = 0 if (@$job && @$code);
+						$expected = 0 if (@$job && @$task);
+						$expected = 0 if (@$code && !@$task && $code->[0] eq JOB_OK);
 
-					# cases when compatible
-					$expected = 1 if (@$code && $code->[0] ne JOB_OK && !@$job && !@$task );
-					$expected = 1 if (@$task && !@$code && !@$job);
-					$expected = 1 if (@$job && !@$code && !@$task);
-					$expected = 1 if (@$state && !@$code && !@$task && !@$job);
+						# cases when compatible
+						$expected = 1 if (@$state && !@$code && !@$task && !@$job);
 
-					ok defined $expected;
+						$expected = 1 if (@$task && !@$code && !@$job);
+						$expected = 1 if (@$job  && !@$code && !@$task);
+						$expected = 1 if (@$code && $code->[0] ne JOB_OK && !@$job && !@$task );
 
-					if ($expected) {
-						ok $got;
-					} else {
-						ok !defined($got);
+						ok defined $expected;
+
+						if ($expected) {
+							ok $got;
+						} else {
+							ok !defined($got);
+						}
 					}
-
 				}
 			}
 		}
