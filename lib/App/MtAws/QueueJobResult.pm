@@ -100,7 +100,7 @@ sub task(@)
 	confess "no code ref" unless $cb && ref($cb) eq 'CODE';
 	confess "attachment is not reference to scalar: ".ref($attachment) if defined($attachment) && (ref($attachment) ne ref(\""));
 	return
-		$class->partial_new(code => JOB_OK),
+		JOB_OK,
 		$class->partial_new(task => {
 			action => $task_action, cb => $cb, args => $task_args||{}, defined($attachment) ? ( attachment => $attachment) : ()
 		});
@@ -121,9 +121,11 @@ sub parse_result
 			my ($field_to_copy) = @fields_to_copy;
 			confess "double data: $field_to_copy" if defined($res->{$field_to_copy});
 			$res->{$field_to_copy} = $o->{$field_to_copy};
-		} elsif (ref($_) eq ref("")) { # code
+		} elsif (ref($o) eq ref("")) { # code
 			confess "code already exists" if defined($res->{code});
 			$res->{code} = $o;
+		} else {
+			confess "bad argument: $o";
 		}
 	}
 

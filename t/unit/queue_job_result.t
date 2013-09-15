@@ -55,17 +55,14 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(job => 'abc'), job('abc'));
 {
 	cmp_deeply
 		[task('abc', $coderef)],
-		[App::MtAws::QueueJobResult->partial_new(code => JOB_OK),
-		App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {}})];
+			[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {}})];
 	cmp_deeply
 		[task('abc', { z => 1}, $coderef)],
-		[App::MtAws::QueueJobResult->partial_new(code => JOB_OK),
-		App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}})];
+			[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}})];
 
 	my $attachment = "somedata";
 	cmp_deeply [task('abc', { z => 1}, \$attachment, $coderef)],
-	[App::MtAws::QueueJobResult->partial_new(code => JOB_OK),
-	App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}, attachment => \$attachment})];
+		[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef, args => {z => 1}, attachment => \$attachment})];
 
 	ok ! eval { task("something"); 1; }, "should complain with 1 arg";
 	like $@, qr/^at least two args/, "should complain without task_action";
@@ -120,7 +117,7 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(job => 'abc'), job('abc'));
 
 	for my $c (@codes) {
 		ok ! eval { parse_result($c, task("mytask", sub {})); 1 };
-		like $@, qr/^double data/, "should not allow cobmining code and task for code $c";
+		like $@, qr/^code already/, "should not allow cobmining code and task for code $c";
 	}
 
 	for my $field (@App::MtAws::QueueJobResult::valid_fields) {
@@ -141,17 +138,17 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(job => 'abc'), job('abc'));
 		App::MtAws::QueueJobResult->partial_new(default_code => JOB_WAIT),
 	), App::MtAws::QueueJobResult->full_new(code => JOB_WAIT), "code should default to default_code";
 
-	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef} ),
-		parse_result(task("mytask", $coderef)), "should allow task");
+	cmp_deeply(parse_result(task("mytask", $coderef)),
+		App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef} ), "should allow task");
 
-	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef}, state => "somestate" ),
-		parse_result(task("mytask", $coderef), state("somestate")), "should allow task+state");
+	cmp_deeply(parse_result(task("mytask", $coderef), state("somestate")),
+		App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef}, state => "somestate" ), "should allow task+state");
 
 	for my $c (grep { $_ ne JOB_OK } @codes) {
-		cmp_deeply( App::MtAws::QueueJobResult->full_new(code => $c), parse_result($c), "should allow sole code $c" );
-		cmp_deeply( App::MtAws::QueueJobResult->full_new(code => $c, state => "somestate"), parse_result($c, state("somestate")), "should allow code $c and state" );
+		cmp_deeply( parse_result($c), App::MtAws::QueueJobResult->full_new(code => $c), "should allow sole code $c" );
+		cmp_deeply( parse_result($c, state("somestate")), App::MtAws::QueueJobResult->full_new(code => $c, state => "somestate"), "should allow code $c and state" );
 	}
-	cmp_deeply( App::MtAws::QueueJobResult->full_new(code => JOB_RETRY, state => "somestate"), parse_result(state("somestate")), "should allow sole state" );
+	cmp_deeply( parse_result(state("somestate")), App::MtAws::QueueJobResult->full_new(code => JOB_RETRY, state => "somestate"), "should allow sole state" );
 
 }
 
