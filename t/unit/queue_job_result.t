@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 60;
+use Test::More tests => 61;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -41,8 +41,10 @@ cmp_deeply (App::MtAws::QueueJobResult->full_new(a => 1, b => 2), bless { _type 
 
 
 # state
-
 cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'));
+
+# job
+cmp_deeply (App::MtAws::QueueJobResult->partial_new(job => 'abc'), job('abc'));
 
 
 # task

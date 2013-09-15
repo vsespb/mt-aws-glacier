@@ -33,11 +33,11 @@ use constant JOB_OK => "MT_J_OK";
 use constant JOB_WAIT => "MT_J_WAIT";
 use constant JOB_DONE => "MT_J_DONE";
 
-our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task parse_result/;
+our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task job parse_result/;
 
 my @valid_codes_a = (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
 my %valid_codes_h = map { $_ => 1 } @valid_codes_a;
-my @valid_fields = qw/code task state/;
+my @valid_fields = qw/code task state job/;
 
 ### Instance methods
 
@@ -75,7 +75,12 @@ sub is_code($)
 
 sub state($)
 {
-	__PACKAGE__->partial_new( state => shift);
+	__PACKAGE__->partial_new(state => shift);
+}
+
+sub job($)
+{
+	__PACKAGE__->partial_new(job => shift);
 }
 
 # task ACTION, sub { ... }
