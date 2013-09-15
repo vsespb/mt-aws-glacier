@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 114;
+use Test::More tests => 154;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -163,18 +163,24 @@ cmp_deeply ([JOB_RETRY, App::MtAws::QueueJobResult->partial_new(job => 'abc')], 
 			for my $task ([], [ task("def", sub {}) ]) {
 				for my $state ([], [state("xyz")]) {
 					my $got = eval { parse_result(@$code, @$job, @$task, @$state); };
-					my $expected = 1;
+					my $expected = undef;
 
+
+					# cases when incompatible
 					$expected = 0 unless (@$code || @$job || @$task || @$state);
-
 
 					$expected = 0 if (@$task && @$code);
 					$expected = 0 if (@$job && @$code);
 					$expected = 0 if (@$job && @$task);
-					if (@$code && !@$task && $code->[0] eq JOB_OK) {
-						$expected = 0;
-					}
+					$expected = 0 if (@$code && !@$task && $code->[0] eq JOB_OK);
 
+					# cases when compatible
+					$expected = 1 if (@$code && $code->[0] ne JOB_OK && !@$job && !@$task );
+					$expected = 1 if (@$task && !@$code && !@$job);
+					$expected = 1 if (@$job && !@$code && !@$task);
+					$expected = 1 if (@$state && !@$code && !@$task && !@$job);
+
+					ok defined $expected;
 
 					if ($expected) {
 						ok $got;
