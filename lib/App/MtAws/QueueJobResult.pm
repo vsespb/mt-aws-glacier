@@ -37,7 +37,7 @@ our @EXPORT = qw/JOB_RETRY JOB_OK JOB_WAIT JOB_DONE state task job parse_result/
 
 my @valid_codes_a = (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
 my %valid_codes_h = map { $_ => 1 } @valid_codes_a;
-my @valid_fields = qw/code task state job/;
+our @valid_fields = qw/code default_code task state job/;
 
 ### Instance methods
 
@@ -75,7 +75,11 @@ sub is_code($)
 
 sub state($)
 {
-	__PACKAGE__->partial_new(state => shift);
+	my $class = __PACKAGE__;
+	return
+		$class->partial_new(state => shift),
+		$class->partial_new(default_code => JOB_RETRY);
+
 }
 
 sub job($)
@@ -115,7 +119,7 @@ sub parse_result
 			my @fields_to_copy = grep { $o->{$_} } @valid_fields;
 			confess "should be just one field in the object" if @fields_to_copy != 1;
 			my ($field_to_copy) = @fields_to_copy;
-			confess "double data" if defined($res->{$field_to_copy});
+			confess "double data: $field_to_copy" if defined($res->{$field_to_copy});
 			$res->{$field_to_copy} = $o->{$field_to_copy};
 		} elsif (ref($_) eq ref("")) { # code
 			confess "code already exists" if defined($res->{code});
@@ -123,10 +127,12 @@ sub parse_result
 		}
 	}
 
-	$res->{code} = JOB_RETRY if ($res->{state} && !$res->{code});
+	$res->{code} ||= $res->{default_code};
+	delete $res->{default_code};
 
 	$res = $class->full_new(%$res);
 	confess "no code" unless defined($res->{code});
+	confess "code is false" unless $res->{code};
 	confess "bad code" unless is_code $res->{code};
 	if ($res->{code} eq JOB_OK) {
 		confess "no task" unless defined($res->{task});

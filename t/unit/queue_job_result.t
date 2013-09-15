@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 61;
+use Test::More tests => 74;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -39,6 +39,10 @@ my $coderef = sub { };
 cmp_deeply (App::MtAws::QueueJobResult->partial_new(a => 1, b => 2), bless { _type => 'partial', a => 1, b => 2 }, 'App::MtAws::QueueJobResult');
 cmp_deeply (App::MtAws::QueueJobResult->full_new(a => 1, b => 2), bless { _type => 'full', a => 1, b => 2 }, 'App::MtAws::QueueJobResult');
 
+{
+	my ($r1, $r2) = map { { map { $_ => 1 } @$_ } } \@App::MtAws::QueueJobResult::valid_fields, [qw/code default_code task state job/];
+	cmp_deeply $r1, $r2, "valid_fields should contain right data",
+}
 
 # state
 cmp_deeply (App::MtAws::QueueJobResult->partial_new(state => 'abc'), state('abc'));
@@ -118,6 +122,24 @@ cmp_deeply (App::MtAws::QueueJobResult->partial_new(job => 'abc'), job('abc'));
 		ok ! eval { parse_result($c, task("mytask", sub {})); 1 };
 		like $@, qr/^double data/, "should not allow cobmining code and task for code $c";
 	}
+
+	for my $field (@App::MtAws::QueueJobResult::valid_fields) {
+		my $a1 = App::MtAws::QueueJobResult->partial_new($field => "somevalue1");
+		my $a2 = App::MtAws::QueueJobResult->partial_new($field => "somevalue2");
+		ok !eval { parse_result($a1, $a2); 1; };
+		like $@, qr/^double data/, "should not allow double data";
+	}
+
+
+	# code and default_code
+	cmp_deeply parse_result(
+		App::MtAws::QueueJobResult->partial_new(default_code => JOB_WAIT),
+		JOB_RETRY
+	), App::MtAws::QueueJobResult->full_new(code => JOB_RETRY), "existing code should not be overwritten by default_code";
+
+	cmp_deeply parse_result(
+		App::MtAws::QueueJobResult->partial_new(default_code => JOB_WAIT),
+	), App::MtAws::QueueJobResult->full_new(code => JOB_WAIT), "code should default to default_code";
 
 	cmp_deeply(App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {action => "mytask", args => {}, cb => $coderef} ),
 		parse_result(task("mytask", $coderef)), "should allow task");
