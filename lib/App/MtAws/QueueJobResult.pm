@@ -41,11 +41,18 @@ my @valid_fields = qw/code task state/;
 
 ### Instance methods
 
-sub partial_new
+sub new
 {
 	my ($class, %args) = @_;
 	my $self = \%args;
 	bless $self, $class;
+	return $self;
+}
+
+sub partial_new
+{
+	my ($class, %args) = @_;
+	my $self = $class->new(%args);
 	$self->{_type} = 'partial';
 	return $self;
 }
@@ -53,8 +60,7 @@ sub partial_new
 sub full_new
 {
 	my ($class, %args) = @_;
-	my $self = \%args;
-	bless $self, $class;
+	my $self = $class->new(%args);
 	$self->{_type} = 'full';
 	return $self;
 }
