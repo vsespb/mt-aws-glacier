@@ -77,9 +77,7 @@ sub state($)
 sub task(@)
 {
 	confess "at least two args expected" unless @_ >= 2;
-	my $task_action = shift;
-	my $cb = pop;
-	my ($task_args, $attachment) = @_;
+	my ($task_action, $cb, $task_args, $attachment) = (shift, pop, @_);
 	confess "task_args should be hashref" if defined($task_args) && (ref($task_args) ne ref({}));
 	confess "no task action" unless $task_action;
 	confess "no code ref" unless $cb && ref($cb) eq 'CODE';
