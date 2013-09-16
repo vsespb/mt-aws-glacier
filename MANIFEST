@@ -44,6 +44,7 @@ lib/App/MtAws/MetaData.pm
 lib/App/MtAws/ParentWorker.pm
 lib/App/MtAws/ProxyTask.pm
 lib/App/MtAws/QueueJob.pm
+lib/App/MtAws/QueueJob/Iterator.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
 lib/App/MtAws/QueueJob/MultipartPart.pm
 lib/App/MtAws/QueueJobResult.pm
@@ -123,6 +124,7 @@ t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
 t/unit/queue_job.t
+t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_part.t
 t/unit/queue_job_result.t

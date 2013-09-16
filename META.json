@@ -251,6 +251,10 @@
          "file" : "lib/App/MtAws/QueueJob.pm",
          "version" : "1.051"
       },
+      "App::MtAws::QueueJob::Iterator" : {
+         "file" : "lib/App/MtAws/QueueJob/Iterator.pm",
+         "version" : "1.051"
+      },
       "App::MtAws::QueueJob::MultipartCreate" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartCreate.pm",
          "version" : "1.051"
