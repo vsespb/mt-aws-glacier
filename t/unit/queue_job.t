@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 19;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -60,43 +60,79 @@ sub expect_task
 	expect_code $j,JOB_DONE;
 }
 
+
 {
-	{
-		package JobWaitStates;
-		use App::MtAws::QueueJobResult;
-		use base 'App::MtAws::QueueJob';
-		sub init { shift->enter('s1') };
-		sub on_s1 { task('t1', sub{}), state 's2' };
-		sub on_s2 { task('t2', sub{}), state 's3' };
-		sub on_s3 { JOB_WAIT, state 'done' };
-	}
-	my $j = JobWaitStates->new();
+	package JobWaitStates;
+	use App::MtAws::QueueJobResult;
+	use base 'App::MtAws::QueueJob';
+	sub init { shift->enter('s1') };
+	sub on_s1 { task('t1', sub{}), state 's2' };
+	sub on_s2 { task('t2', sub{}), state 's3' };
+	sub on_s3 { JOB_WAIT, state 'done' };
+}
+
+sub jon_wait_states_test
+{
+	my ($j) = @_;
 	expect_task $j, 't1';
 	expect_task $j, 't2';
 	expect_code $j,JOB_WAIT;
+
+}
+
+{
+	my $j = JobWaitStates->new();
+	jon_wait_states_test($j);
 	expect_code $j,JOB_DONE;
 }
 
 {
-	{
-		package JobNested;
-		use App::MtAws::QueueJobResult;
-		use base 'App::MtAws::QueueJob';
-		sub init { shift->enter('sa') };
-		sub on_sa { JOB_WAIT, state 'sb' };
-		sub on_sb { state 'sc', job(JobWaitStates->new()) };
-		sub on_sc { JOB_WAIT, state 'sd' };
-		sub on_sd { JOB_WAIT, state 'done' };
-	}
+	package JobNested;
+	use App::MtAws::QueueJobResult;
+	use base 'App::MtAws::QueueJob';
+	sub init { shift->enter('sa') };
+	sub on_sa { task('tx', sub{}), state 'sb' };
+	sub on_sb { state 'sc', job(JobWaitStates->new()) };
+	sub on_sc { task('ty', sub{}), state 'sd' };
+	sub on_sd { JOB_DONE };
+}
+
+sub job_nested_tests
+{
+	my ($j) = @_;
+	expect_task $j, 'tx';
+	jon_wait_states_test($j);
+	expect_task $j, 'ty';
+}
+
+{
 	my $j = JobNested->new();
-	expect_code $j,JOB_WAIT;
+	job_nested_tests($j);
+	expect_code $j,JOB_DONE;
+}
 
-	expect_task $j, 't1';
-	expect_task $j, 't2';
-	expect_code $j,JOB_WAIT;
+{
+	package JobDoubleNested;
+	use App::MtAws::QueueJobResult;
+	use base 'App::MtAws::QueueJob';
+	sub init{};
+	sub on_default { task('abc', sub{}), state 's2' };
+	sub on_s2 { state 's3', job(JobNested->new()) };
+	sub on_s3 { task('def', sub{}), state 'sd' };
+	sub on_sd { JOB_DONE };
+}
 
-	expect_code $j,JOB_WAIT;
-	expect_code $j,JOB_WAIT;
+sub job_double_nested_tests
+{
+	my ($j) = @_;
+	expect_task $j, 'abc';
+	job_nested_tests($j);
+	expect_task $j, 'def';
+}
+
+{
+	my $j = JobDoubleNested->new();
+	job_double_nested_tests($j);
 	expect_code $j,JOB_DONE;
 }
 
