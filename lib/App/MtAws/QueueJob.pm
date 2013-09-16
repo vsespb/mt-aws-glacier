@@ -41,26 +41,7 @@ sub new
 
 sub enter { $_[0]->{_state} = $_[1]; JOB_RETRY }
 
-sub push_job
-{
-	my ($self, $j) = @_;
-
-	if ($j->{cb}) {
-		my $cb = $j->{cb};
-		$j->{cb_job_proxy} = sub {
-			if (my @r = $cb->($j->{job})) {
-				my $result = parse_result(@r);
-				$self->enter($result->{state}) if defined($result->{state});
-				confess if $result->{job};
-				confess if $result->{task};
-			}
-		}
-	}
-
-	push @{ $self->{_jobs} }, $j;
-}
-
-sub proxy_callback
+sub set_task_proxy_callback
 {
 	my ($self, $res) = @_;
 	my $cb = $res->{task}{cb};
@@ -72,6 +53,28 @@ sub proxy_callback
 			confess if $result->{task};
 		}
 	}
+}
+
+
+sub set_job_proxy_callback
+{
+	my ($self, $j) = @_;
+	my $cb = $j->{cb};
+	$j->{cb_job_proxy} = sub {
+		if (my @r = $cb->($j->{job})) {
+			my $result = parse_result(@r);
+			$self->enter($result->{state}) if defined($result->{state});
+			confess if $result->{job};
+			confess if $result->{task};
+		}
+	}
+}
+
+sub push_job
+{
+	my ($self, $j) = @_;
+	$self->set_job_proxy_callback($j) if ($j->{cb});
+	push @{ $self->{_jobs} }, $j;
 }
 
 sub next
@@ -94,7 +97,7 @@ sub next
 			my $res = parse_result($self->$method());
 			$self->enter(delete $res->{state}) if defined($res->{state});
 			$self->push_job(delete $res->{job}) if defined($res->{job});
-			$self->proxy_callback($res) if $res->{task} && $res->{task}{cb};
+			$self->set_task_proxy_callback($res) if $res->{task} && $res->{task}{cb};
 			redo if $res->{code} eq JOB_RETRY;
 			return $res;
 		}
