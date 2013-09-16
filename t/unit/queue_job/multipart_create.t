@@ -46,7 +46,7 @@ use Data::Dumper;
 	my $partsize = 2*1024*1024;
 	my $j = App::MtAws::QueueJob::MultipartCreate->new(filename => '/somedir/somefile', relfilename => 'somefile', partsize => $partsize);
 	cmp_deeply my $res = $j->next,
-		App::MtAws::QueueJobResult->full_new(code => JOB_OK, state => 'wait',
+		App::MtAws::QueueJobResult->full_new(code => JOB_OK,
 		task => { args => {partsize => $partsize, relfilename => 'somefile', mtime => 123456},
 		action => 'create_upload', cb => test_coderef, cb_proxy => test_coderef});
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);

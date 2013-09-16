@@ -60,14 +60,15 @@ sub next
 				my $j = pop @{ $self->{_jobs} };
 				confess if $j->{cb} && !$j->{cb_proxy};
 				$j->{cb_proxy}->($j->{job}) if $j->{cb_proxy};
+				#redo; # we already 'redo' in this loop
 			} else {
 				return $res;
 			}
 		} else {
 			my $method = "on_$self->{_state}";
 			my $res = parse_result($self->$method());
-			$self->enter($res->{state}) if defined($res->{state});
-			$self->push_job($res->{job}) if defined($res->{job});
+			$self->enter(delete $res->{state}) if defined($res->{state});
+			$self->push_job(delete $res->{job}) if defined($res->{job});
 			if ($res->{task} && $res->{task}{cb}) {
 				my $cb = $res->{task}{cb};
 				$res->{task}{cb_proxy} = sub {

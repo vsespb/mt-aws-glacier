@@ -122,6 +122,7 @@ t/unit/journal_sanity.t
 t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
+t/unit/queue_job.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_part.t
 t/unit/queue_job_result.t

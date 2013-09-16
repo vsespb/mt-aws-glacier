@@ -53,7 +53,6 @@ use Data::Dumper;
 
 	my $j = App::MtAws::QueueJob::MultipartPart->new(%args);
 
-	my $i = 0;
 	my @callbacks;
 	for (@orig_parts) {
 		my $res = $j->next;
@@ -73,9 +72,7 @@ use Data::Dumper;
 					cb_proxy => test_coderef,
 				},
 				code => JOB_OK,
-				$i ? () : (state => 'other_parts')
 			);
-		++$i;
 		push @callbacks, $res->{task}{cb_proxy};
 	}
 

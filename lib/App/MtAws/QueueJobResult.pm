@@ -126,7 +126,7 @@ JOB - is a return value of job() function (i.e. list with 2 items - job object a
 STATE - is a return value of state() function (i.e. list with 2 items - state object and default_code object)
 CODE - is JOB_xxx code
 
-allowed combination:
+allowed combinations:
 
 STATE
 [STATE, ] (TASK|JOB)
