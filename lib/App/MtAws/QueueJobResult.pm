@@ -105,6 +105,13 @@ sub task(@)
 	my $class = __PACKAGE__;
 	confess "at least two args expected" unless @_ >= 2;
 	my ($task_action, $cb, $task_args, $attachment) = (shift, pop, @_);
+
+	if (ref $task_action eq ref {}) {
+		my $h = $task_action;
+		($task_action, $task_args, $attachment) = ($h->{action}, $h->{args}, $h->{attachment} ? $h->{attachment} : ());
+	}
+
+
 	confess "task_args should be hashref" if defined($task_args) && (ref($task_args) ne ref({}));
 	confess "no task action" unless $task_action;
 	confess "no code ref" unless $cb && ref($cb) eq 'CODE';

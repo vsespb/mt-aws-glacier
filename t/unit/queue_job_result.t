@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 202;
+use Test::More tests => 205;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -32,7 +32,7 @@ use TestUtils;
 warning_fatal();
 
 my @codes = (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
-my $coderef = sub { };
+my $coderef = sub { "dummy" };
 
 # partial_new, partial_full
 
@@ -79,6 +79,21 @@ cmp_deeply ([JOB_RETRY, App::MtAws::QueueJobResult->partial_new(job => 'abc')], 
 
 	ok ! eval { my @a = task('a', {z => 1 }, "scalar", $coderef); 1; }, "should complain if attachment is not reference";
 	like $@, qr/^attachment is not reference to scalar/, "should complain if attachment is not reference";
+
+	# task can be constructed from another task object
+	{
+		my $coderef2 = sub { "dummy2" };
+		cmp_deeply
+			[task(parse_result(task('abc', $coderef))->{task}, $coderef2)],
+			[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef2, args => {}})];
+		cmp_deeply
+			[task(parse_result(task('abc', {a => 3}, $coderef))->{task}, $coderef2)],
+			[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef2, args => {a => 3}})];
+		my $attachment = \"somedata";
+		cmp_deeply
+			[task(parse_result(task('abc', {a => 3}, $attachment, $coderef))->{task}, $coderef2)],
+			[JOB_OK, App::MtAws::QueueJobResult->partial_new(task => {action => 'abc', cb => $coderef2, args => {a => 3}, attachment => $attachment})];
+	}
 };
 
 
