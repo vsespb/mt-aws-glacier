@@ -60,6 +60,20 @@ sub push_job
 	push @{ $self->{_jobs} }, $j;
 }
 
+sub proxy_callback
+{
+	my ($self, $res) = @_;
+	my $cb = $res->{task}{cb};
+	$res->{task}{cb_proxy} = sub {
+		if (my @r = $cb->($self)) {
+			my $result = parse_result(@r);
+			$self->enter($result->{state}) if defined($result->{state});
+			confess if $result->{job};
+			confess if $result->{task};
+		}
+	}
+}
+
 sub next
 {
 	my ($self) = @_;
@@ -80,17 +94,7 @@ sub next
 			my $res = parse_result($self->$method());
 			$self->enter(delete $res->{state}) if defined($res->{state});
 			$self->push_job(delete $res->{job}) if defined($res->{job});
-			if ($res->{task} && $res->{task}{cb}) {
-				my $cb = $res->{task}{cb};
-				$res->{task}{cb_proxy} = sub {
-					if (my @r = $cb->($self)) {
-						my $result = parse_result(@r);
-						$self->enter($result->{state}) if defined($result->{state});
-						confess if $result->{job};
-						confess if $result->{task};
-					}
-				}
-			}
+			$self->proxy_callback($res) if $res->{task} && $res->{task}{cb};
 			redo if $res->{code} eq JOB_RETRY;
 			return $res;
 		}
