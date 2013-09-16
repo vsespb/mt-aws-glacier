@@ -74,7 +74,7 @@ sub find_next_job
 			return task($res->{task}, sub {
 				delete $self->{pending}{$task_id} or confess;
 				delete $self->{jobs}{$job_id} or confess;
-				$res->{task}{cb_proxy}->();
+				$res->{task}{cb_task_proxy}->();
 				return;
 			});
 		} else {
@@ -122,5 +122,3 @@ sub on_jobs_only
 }
 
 1;
-
-

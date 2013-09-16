@@ -63,7 +63,7 @@ use Data::Dumper;
 		ok $r->{code} eq JOB_OK || $r->{code} eq JOB_DONE;
 		last if $r->{code} eq JOB_DONE;
 		push @actions, $r->{task}{action};
-		$r->{task}{cb_proxy}->();
+		$r->{task}{cb_task_proxy}->();
 	}
 
 	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt], "test it works when callback called immediately";
@@ -76,7 +76,7 @@ use Data::Dumper;
 		ok $r->{code} eq JOB_OK || $r->{code} eq JOB_WAIT;
 		last if $r->{code} eq JOB_WAIT;
 		push @actions, $r->{task}{action};
-		push @callbacks, $r->{task}{cb_proxy};
+		push @callbacks, $r->{task}{cb_task_proxy};
 	}
 	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt];
 

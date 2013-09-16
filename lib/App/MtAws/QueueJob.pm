@@ -47,7 +47,7 @@ sub push_job
 
 	if ($j->{cb}) {
 		my $cb = $j->{cb};
-		$j->{cb_proxy} = sub {
+		$j->{cb_job_proxy} = sub {
 			if (my @r = $cb->($j->{job})) {
 				my $result = parse_result(@r);
 				$self->enter($result->{state}) if defined($result->{state});
@@ -64,7 +64,7 @@ sub proxy_callback
 {
 	my ($self, $res) = @_;
 	my $cb = $res->{task}{cb};
-	$res->{task}{cb_proxy} = sub {
+	$res->{task}{cb_task_proxy} = sub {
 		if (my @r = $cb->($self)) {
 			my $result = parse_result(@r);
 			$self->enter($result->{state}) if defined($result->{state});
@@ -84,7 +84,7 @@ sub next
 			confess unless $res->isa('App::MtAws::QueueJobResult');
 			if ($res->{code} eq JOB_DONE) {
 				my $j = pop @{ $self->{_jobs} };
-				$j->{cb_proxy}->() if $j->{cb_proxy};
+				$j->{cb_job_proxy}->() if $j->{cb_job_proxy};
 				#redo; # we already 'redo' in this loop
 			} else {
 				return $res;
