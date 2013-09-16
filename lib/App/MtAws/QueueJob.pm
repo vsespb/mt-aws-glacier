@@ -48,7 +48,7 @@ sub push_job
 	if ($j->{cb}) {
 		my $cb = $j->{cb};
 		$j->{cb_proxy} = sub {
-			if (my @r = $cb->($self)) {
+			if (my @r = $cb->($j->{job})) {
 				my $result = parse_result(@r);
 				$self->enter($result->{state}) if defined($result->{state});
 				confess if $result->{job};

@@ -30,6 +30,8 @@ use App::MtAws::QueueJob;
 use App::MtAws::QueueJobResult;
 use TestUtils;
 
+use Data::Dumper;
+
 warning_fatal();
 
 sub expect_code
@@ -68,7 +70,7 @@ sub expect_task
 	sub init { shift->enter('s1') };
 	sub on_s1 { task('t1', sub{}), state 's2' };
 	sub on_s2 { task('t2', sub{}), state 's3' };
-	sub on_s3 { JOB_WAIT, state 'done' };
+	sub on_s3 { shift->{secret} = 'sezam'; JOB_WAIT, state 'done' };
 }
 
 sub jon_wait_states_test
@@ -92,8 +94,8 @@ sub jon_wait_states_test
 	use base 'App::MtAws::QueueJob';
 	sub init { shift->enter('sa') };
 	sub on_sa { task('tx', sub{}), state 'sb' };
-	sub on_sb { state 'wait', job(JobWaitStates->new(), sub { state 'sc' }) };
-	sub on_sc { task('ty', sub{}), state 'sd' };
+	sub on_sb { my $self = shift; state 'wait', job(JobWaitStates->new(), sub { $self->{secret} = shift->{secret}; state 'sc' }) };
+	sub on_sc { my $self = shift; task("ty_$self->{secret}", sub{}), state 'sd' };
 	sub on_sd { JOB_DONE };
 }
 
@@ -102,7 +104,7 @@ sub job_nested_tests
 	my ($j) = @_;
 	expect_task $j, 'tx';
 	jon_wait_states_test($j);
-	expect_task $j, 'ty';
+	expect_task $j, 'ty_sezam';
 }
 
 {
