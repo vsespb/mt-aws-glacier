@@ -43,9 +43,21 @@ sub enter { $_[0]->{_state} = $_[1]; JOB_RETRY }
 
 sub push_job
 {
-	my ($self, $job, $cb) = @_;
-	push @{ $self->{_jobs} }, { job => $job, cb => $cb };
-	JOB_RETRY;
+	my ($self, $j) = @_;
+
+	if ($j->{cb}) {
+		my $cb = $j->{cb};
+		$j->{cb_proxy} = sub {
+			if (my @r = $cb->($self)) {
+				my $result = parse_result(@r);
+				$self->enter($result->{state}) if defined($result->{state});
+				confess if $result->{job};
+				confess if $result->{task};
+			}
+		}
+	}
+
+	push @{ $self->{_jobs} }, $j;
 }
 
 sub next
@@ -54,12 +66,11 @@ sub next
 
 	while () {
 		if ( @{ $self->{_jobs} } ) {
-			my $res = $self->{_jobs}->[-1]->{job}->next();
+			my $res = $self->{_jobs}[-1]{job}->next();
 			confess unless $res->isa('App::MtAws::QueueJobResult');
 			if ($res->{code} eq JOB_DONE) {
 				my $j = pop @{ $self->{_jobs} };
-				confess if $j->{cb} && !$j->{cb_proxy};
-				$j->{cb_proxy}->($j->{job}) if $j->{cb_proxy};
+				$j->{cb_proxy}->() if $j->{cb_proxy};
 				#redo; # we already 'redo' in this loop
 			} else {
 				return $res;

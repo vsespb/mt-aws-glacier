@@ -92,7 +92,7 @@ sub jon_wait_states_test
 	use base 'App::MtAws::QueueJob';
 	sub init { shift->enter('sa') };
 	sub on_sa { task('tx', sub{}), state 'sb' };
-	sub on_sb { state 'sc', job(JobWaitStates->new()) };
+	sub on_sb { state 'wait', job(JobWaitStates->new(), sub { state 'sc' }) };
 	sub on_sc { task('ty', sub{}), state 'sd' };
 	sub on_sd { JOB_DONE };
 }

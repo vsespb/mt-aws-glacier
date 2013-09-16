@@ -87,12 +87,13 @@ sub state($)
 
 # job JOB
 # returns: list with 2 elements
-sub job($)
+sub job(@)
 {
+	my ($job, $cb) = @_;
 	confess unless wantarray;
 	return
 		JOB_RETRY,
-		__PACKAGE__->partial_new(job => shift);
+		__PACKAGE__->partial_new(job => { job => $job, $cb ? (cb => $cb) : () } );
 }
 
 # task ACTION, sub { ... }
