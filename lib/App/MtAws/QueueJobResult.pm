@@ -26,6 +26,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Scalar::Util qw/blessed/;
 use base 'Exporter';
 
 use constant JOB_RETRY => "MT_J_RETRY";
@@ -148,7 +149,7 @@ sub parse_result
 	my $res = {};
 	confess "no data" unless @_;
 	for my $o (@_) {
-		if (ref($o) ne ref("") && $o->isa($class)) { # anything, but code
+		if (blessed($o) && $o->isa($class)) { # anything, but code
 			confess "should be partial" unless $o->{_type} eq 'partial';
 			my @fields_to_copy = grep { $o->{$_} } @valid_fields;
 			confess "should be just one field in the object" if @fields_to_copy != 1;
