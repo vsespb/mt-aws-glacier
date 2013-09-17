@@ -46,7 +46,9 @@ lib/App/MtAws/ProxyTask.pm
 lib/App/MtAws/QueueJob.pm
 lib/App/MtAws/QueueJob/Iterator.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
+lib/App/MtAws/QueueJob/MultipartFinish.pm
 lib/App/MtAws/QueueJob/MultipartPart.pm
+lib/App/MtAws/QueueJob/UploadMultipart.pm
 lib/App/MtAws/QueueJobResult.pm
 lib/App/MtAws/Task.pm
 lib/App/MtAws/TreeHash.pm
@@ -126,7 +128,9 @@ t/unit/open_file.t
 t/unit/queue_job.t
 t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
+t/unit/queue_job/multipart_finish.t
 t/unit/queue_job/multipart_part.t
+t/unit/queue_job/upload_multipart.t
 t/unit/queue_job_result.t
 t/unit/string_escape.t
 t/unit/sysread_syswrite_unit.t
