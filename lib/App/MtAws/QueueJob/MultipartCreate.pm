@@ -28,6 +28,7 @@ use Carp;
 
 use App::MtAws::QueueJobResult;
 use App::MtAws::Exceptions;
+use App::MtAws::Utils;
 use base 'App::MtAws::QueueJob';
 
 sub init
@@ -72,12 +73,11 @@ sub on_create
 	my ($self) = @_;
 	$self->init_file;
 	return state "wait", task "create_upload", { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } => sub {
-		$self->{result} = shift;
+		my ($self, %args) = @_;
+		$self->{upload_id} = $args{upload_id} or confess;
 		state("done")
 	}
 }
-
-sub get_upload_id { shift->{result}||die };
 
 
 

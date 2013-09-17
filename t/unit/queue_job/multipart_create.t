@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 5;
+use Test::More tests => 6;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../../lib";
@@ -51,9 +51,10 @@ use Data::Dumper;
 		action => 'create_upload', cb => test_coderef, cb_task_proxy => test_coderef});
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
-	$res->{task}{cb_task_proxy}->();
+	$res->{task}{cb_task_proxy}->(upload_id => "someuploadid");
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
+	is $j->{upload_id}, "someuploadid";
 }
 
 1;
