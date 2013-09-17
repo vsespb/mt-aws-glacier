@@ -73,8 +73,8 @@ sub on_create
 	my ($self) = @_;
 	$self->init_file;
 	return state "wait", task "create_upload", { partsize => $self->{partsize}, relfilename => $self->{relfilename}, mtime => $self->{mtime} } => sub {
-		my (%args) = @_;
-		$self->{upload_id} = $args{upload_id} or confess;
+		my ($args) = @_;
+		$self->{upload_id} = $args->{upload_id} or confess;
 		state("done")
 	}
 }

@@ -57,7 +57,7 @@ use Data::Dumper;
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
 
-	$create_resp->{task}{cb_task_proxy}->(upload_id => $upload_id);
+	$create_resp->{task}{cb_task_proxy}->({upload_id => $upload_id});
 
 	my $n = 5;
 	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (1..$n);

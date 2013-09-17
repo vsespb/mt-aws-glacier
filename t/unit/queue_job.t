@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -150,8 +150,9 @@ sub job_double_nested_tests
 	sub on_s1 {
 		my ($self) = @_;
 		state 'wait', task('t1', sub{
-			my (%args) = @_;
-			$self->{param} = $args{param} || confess;
+			my ($args, $attachment) = @_;
+			$self->{param} = $args->{param} || confess;
+			$self->{attachment} = $attachment || confess;
 			state 'done';
 		});
 	};
@@ -160,7 +161,7 @@ sub job_double_nested_tests
 sub job_callback_states_test
 {
 	my ($j) = @_;
-	expect_task($j, 't1')->{task}{cb_task_proxy}->(param => 42);
+	expect_task($j, 't1')->{task}{cb_task_proxy}->({param => 42}, \"somescalar");
 }
 
 {
@@ -168,6 +169,7 @@ sub job_callback_states_test
 	job_callback_states_test($j);
 	expect_code $j,JOB_DONE;
 	is $j->{param}, 42;
+	is ${$j->{attachment}}, "somescalar";
 }
 
 
