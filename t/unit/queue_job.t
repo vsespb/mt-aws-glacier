@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 22;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -39,6 +39,7 @@ sub expect_code
 	my ($j, $code) = @_;
 	my $res = $j->next;
 	is $res->{code}, $code;
+	$res;
 }
 
 sub expect_task
@@ -46,6 +47,7 @@ sub expect_task
 	my ($j, $task_action) = @_;
 	my $res = $j->next;
 	is $res->{task}{action}, $task_action;
+	$res;
 }
 
 {
@@ -73,7 +75,7 @@ sub expect_task
 	sub on_s3 { shift->{secret} = 'sezam'; JOB_WAIT, state 'done' };
 }
 
-sub jon_wait_states_test
+sub job_wait_states_test
 {
 	my ($j) = @_;
 	expect_task $j, 't1';
@@ -84,7 +86,7 @@ sub jon_wait_states_test
 
 {
 	my $j = JobWaitStates->new();
-	jon_wait_states_test($j);
+	job_wait_states_test($j);
 	expect_code $j,JOB_DONE;
 }
 
@@ -103,7 +105,7 @@ sub job_nested_tests
 {
 	my ($j) = @_;
 	expect_task $j, 'tx';
-	jon_wait_states_test($j);
+	job_wait_states_test($j);
 	expect_task $j, 'ty_sezam';
 }
 
@@ -137,5 +139,36 @@ sub job_double_nested_tests
 	job_double_nested_tests($j);
 	expect_code $j,JOB_DONE;
 }
+
+
+{
+	package JobCallbackStates;
+	use Carp;
+	use App::MtAws::QueueJobResult;
+	use base 'App::MtAws::QueueJob';
+	sub init { shift->enter('s1') };
+	sub on_s1 {
+		my ($self) = @_;
+		state 'wait', task('t1', sub{
+			my (%args) = @_;
+			$self->{param} = $args{param} || confess;
+			state 'done';
+		});
+	};
+}
+
+sub job_callback_states_test
+{
+	my ($j) = @_;
+	expect_task($j, 't1')->{task}{cb_task_proxy}->(param => 42);
+}
+
+{
+	my $j = JobCallbackStates->new();
+	job_callback_states_test($j);
+	expect_code $j,JOB_DONE;
+	is $j->{param}, 42;
+}
+
 
 1;

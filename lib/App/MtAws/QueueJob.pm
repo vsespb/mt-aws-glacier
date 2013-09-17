@@ -46,7 +46,7 @@ sub set_task_proxy_callback
 	my ($self, $res) = @_;
 	my $cb = $res->{task}{cb};
 	$res->{task}{cb_task_proxy} = sub {
-		if (my @r = $cb->($self, @_)) {
+		if (my @r = $cb->(@_)) {
 			my $result = parse_result(@r);
 			$self->enter($result->{state}) if defined($result->{state});
 			confess if $result->{job};
