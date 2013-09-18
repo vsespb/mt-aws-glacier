@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -106,6 +106,11 @@ warning_fatal();
 				}
 			}
 		}
+	}
+}
+{
+	lcg_srand 167846290 => sub {
+		is sha256_hex(join(',', map { lcg_irand(-114, 87) } (1..1000))), '50a3718bff562bf3151b791ce9dc9782dad03193532f5ef043b83021e25887a9';
 	}
 }
 1;
