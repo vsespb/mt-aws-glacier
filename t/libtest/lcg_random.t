@@ -82,12 +82,12 @@ warning_fatal();
 		no warnings 'redefine';
 		local *LCGRandom::lcg_rand = sub { $rand_fake };
 
-		test_fast_ok 2754, "lcg_irand produce right ranges" => sub {
+		test_fast_ok 378, "lcg_irand produce right ranges" => sub {
 			for my $seed (1231236, 4_000_000_000+87654, 1_876_354_567) {
 				for my $base (0, -101, 103) {
-					for my $size (1, 7, 17) {
+					for my $size (1, 7, 11) {
 						my $previous = undef;
-						for my $i (1..103) {
+						for my $i (1..15) {
 							local $rand_fake = $seed + $i;
 							my $a = $base;
 							my $b = $base+$size;
