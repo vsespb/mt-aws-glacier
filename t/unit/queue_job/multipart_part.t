@@ -22,10 +22,11 @@
 
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 32;
 use Test::Deep;
 use FindBin;
-use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../../lib";
+use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../lib", "$FindBin::RealBin/../../../lib";
+use LCGRandom;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartPart;
 use TestUtils;
@@ -37,7 +38,7 @@ sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 use Data::Dumper;
 
 {
-	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..5);
+	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..15);
 	my @parts = @orig_parts;
 	my %args = (relfilename => 'somefile', partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => 12345);
 
@@ -76,9 +77,13 @@ use Data::Dumper;
 		push @callbacks, $res->{task}{cb_task_proxy};
 	}
 
-	while (my $cb = shift @callbacks) {
-		$cb->();
-		cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
+	lcg_srand 444242 => sub {
+		@callbacks = lcg_shuffle @callbacks;
+
+		while (my $cb = shift @callbacks) {
+			$cb->();
+			cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
+		}
 	}
 }
 
