@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 38;
+use Test::More tests => 27;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -218,44 +218,6 @@ warning_fatal();
 		ok ( (!! is_posix_root()) == (!! ($>==0)) ); # double check, as it's cached
 	}
 
-}
-
-{
-	use LCGRandom;
-	use Digest::SHA qw/sha256_hex/;
-	use Test::Deep;
-
-	# make sure we have same number sequence each time
-	is sha256_hex(join(',', map { lcg_rand() } (1..10_000))), '135cbcb5641b2e7d387b083a3aa25de8e6066f28d5fe84e569dbba4ab94b1b86';
-	lcg_srand(0);
-	is sha256_hex(join(',', map { lcg_rand() } (1..10_000))), '135cbcb5641b2e7d387b083a3aa25de8e6066f28d5fe84e569dbba4ab94b1b86';
-	lcg_srand(764846290);
-	is sha256_hex(join(',', map { lcg_rand() } (1..10_000))), '8fc1c7490ccbc9fc34c484bdd94d18e3c7a43c80c8a82892127f71ce25e7d552';
-
-	# make sure it's lcg
-	lcg_srand(0);
-	cmp_deeply [ map { lcg_rand } 1..10 ], [12345,1406932606,654583775,1449466924,229283573,1109335178,1051550459,1293799192,794471793,551188310];
-
-	lcg_srand(0);
-	my @a = map { lcg_rand } 1..10;
-	lcg_srand();
-	my @b = map { lcg_rand } 1..10;
-	cmp_deeply [@b], [@a], "lcg_srand without argument works like with 0";
-
-
-	for my $seed (0, 101, 105){
-		lcg_srand($seed);
-		my @a = map { lcg_rand } 1..10;
-		lcg_srand($seed);
-		my @a1 = map { lcg_rand } 1..5;
-		my @bb;
-		lcg_srand $seed, sub {
-			@bb = map { lcg_rand } 1..10;
-		};
-		my @a2 = map { lcg_rand } 1..5;
-		cmp_deeply [@a1, @a2], [@a], "lcg_srand properly localize seed";
-		cmp_deeply [@bb], [@a], "lcg_srand accepts callback";
-	}
 }
 
 1;

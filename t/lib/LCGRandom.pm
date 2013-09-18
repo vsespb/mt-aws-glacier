@@ -26,13 +26,14 @@ use strict;
 use warnings;
 
 use base 'Exporter';
-our @EXPORT = qw/lcg_srand lcg_rand/;
+our @EXPORT = qw/lcg_srand lcg_rand lcg_irand/;
 
 use Carp;
 
 our $seed = 0;
 
-sub lcg_srand {
+sub lcg_srand
+{
 	my ($newseed, $cb) = @_;
 	$newseed ||= 0;
 	if ($cb) {
@@ -42,6 +43,32 @@ sub lcg_srand {
 		$seed = $newseed;
 	}
 }
-sub lcg_rand { confess if @_; $seed = (1103515245 * $seed + 12345) % (1 << 31) }
+
+sub lcg_rand
+{
+	confess if @_;
+	return $seed = (1103515245 * $seed + 12345) % (1 << 31)
+}
+
+sub lcg_irand
+{
+	my ($a, $b) = @_;
+	confess "b should be greater than a" unless defined($a) && defined($b) && $b > $a;
+	my $r = lcg_rand();
+	$a + $r % ($b - $a + 1);
+}
+
+1;
+
+__END__
+
+sub lcg_shuffle {
+	my @array = @_;
+	my $i = @array;
+	while (--$i) {
+		my $j = int lcg_rand($i+1);
+		@$array[$i,$j] = @$array[$j,$i];
+	}
+}
 
 1;
