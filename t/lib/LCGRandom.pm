@@ -26,7 +26,7 @@ use strict;
 use warnings;
 
 use base 'Exporter';
-our @EXPORT = qw/lcg_srand lcg_rand lcg_irand/;
+our @EXPORT = qw/lcg_srand lcg_rand lcg_irand lcg_shuffle/;
 
 use Carp;
 
@@ -58,17 +58,14 @@ sub lcg_irand
 	$a + $r % ($b - $a + 1);
 }
 
-1;
-
-__END__
-
 sub lcg_shuffle {
 	my @array = @_;
 	my $i = @array;
 	while (--$i) {
-		my $j = int lcg_rand($i+1);
-		@$array[$i,$j] = @$array[$j,$i];
+		my $j = lcg_irand(0, $i);
+		@array[$i,$j] = @array[$j,$i];
 	}
+	@array;
 }
 
 1;
