@@ -48,6 +48,7 @@ sub lcg_rand
 {
 	confess if @_;
 	confess "seed uninitialized" unless defined $seed;
+	use integer;
 	return $seed = (1103515245 * $seed + 12345) % (1 << 31)
 }
 
