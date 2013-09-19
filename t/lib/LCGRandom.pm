@@ -30,7 +30,7 @@ our $seed = undef;
 BEGIN {
 	use constant A => 1103515245;
 	use constant C => 12345;
-	if (4_000_000_000*A+C == 4414060980000012345) { # that is more than 2**31*A+C
+	if (do { use integer; 4_000_000_000*A+C == 4414060980000012345 }) { # that is more than 2**31*A+C
 		*_lcg_rand = sub {
 			use integer;
 			return $seed = (A * $seed + C) % (1 << 31)
