@@ -49,6 +49,18 @@ sub unqueue_task
 	return $task;
 }
 
+sub get_busy_workers_ids
+{
+	my ($self) = @_;
+	grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
+}
+
+sub call_task_callback
+{
+	my ($self, $task) = (shift, shift);
+	$task->{cb_task_proxy}->(@_);
+}
+
 sub process
 {
 	my ($self, $job) = @_;

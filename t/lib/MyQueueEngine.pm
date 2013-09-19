@@ -38,7 +38,7 @@ sub queue { }
 sub wait_worker
 {
 	my ($self) = @_;
-	my @possible = grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
+	my @possible = $self->get_busy_workers_ids;
 	confess unless @possible;
 	my $worker_id = $possible[lcg_irand(0, @possible-1)];
 
@@ -48,7 +48,7 @@ sub wait_worker
 	no strict 'refs';
 
 	my @r = $self->$method(%{$task->{args}});
-	$task->{cb_task_proxy}->(@r);
+	$self->call_task_callback($task, @r);
 }
 
 
