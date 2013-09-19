@@ -28,68 +28,13 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib/", "$FindBin::RealBin/../../lib";
 use App::MtAws::QueueJobResult;
 use TestUtils;
+use MyQueueEngine;
 
 use Data::Dumper;
 
 warning_fatal();
 
 {
-	{ package MyQueueEngine;
-		use strict;
-		use warnings;
-		use LCGRandom;
-		use base q{App::MtAws::QueueEngine};
-		use Carp;
-
-		sub new
-		{
-			my ($class, $n) = @_;
-			my $self = $class->SUPER::new(children => {map { $_ => {} } (1..$n) });
-			$self;
-		}
-
-		sub queue
-		{
-			my ($self, $worker_id, $task_id, $task) = @_;
-			$self->{children}{$worker_id}{task} = $task_id;
-		}
-
-		sub wait_worker
-		{
-			my ($self, $tasks) = @_;
-			my @possible = grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
-
-			confess unless @possible;
-			my $rr = lcg_irand(0, @possible-1);
-			my $r = $possible[$rr];
-			my $t_id = delete $self->{children}{$r}{task};
-			my $t = delete $tasks->{$t_id} or confess;
-			push @{ $self->{freeworkers} }, $r;
-			my $method = "on_$t->{action}";
-			no strict 'refs';
-			my @r = $method->(%{$t->{args}});
-			$t->{cb_task_proxy}->(@r);
-		}
-
-		sub on_task_a
-		{
-			my (%args) = @_;
-			{ xx1 => "a=$args{a},b=$args{b},c=$args{c}", xx2 => "thexx2" };
-		}
-
-		sub on_task_b
-		{
-			my (%args) = @_;
-			{ yy1 => 'z', yy2 => 'f' };
-		}
-
-		sub on_task_c
-		{
-			my (%args) = @_;
-			{ zz1 => "thezz1", zz2 => "Y1=($args{y1}); Y2=($args{y2})" };
-		}
-	};
-
 	{ package MultiJob;
 
 		use strict;

@@ -102,6 +102,7 @@ t/integration/utf8_journal.t
 t/integration/utf8_line_protocol.t
 t/JournalTest.pm
 t/lib/LCGRandom.pm
+t/lib/MyQueueEngine.pm
 t/libtest/lcg_random.t
 t/test_cover
 t/TestUtils.pm
