@@ -36,7 +36,7 @@ sub new
 	$self->{task_inc} = 0;
 	$self->{tasks} = undef;
 	$self->{freeworkers} = undef;
-	$self->{children} = {};
+	$self->{workers} = {};
 	$self->init(%args);
 	return $self;
 }
@@ -47,13 +47,13 @@ sub queue { confess "Unimplemented" }
 sub add_worker
 {
 	my ($self, $worker_id) = @_;
-	$self->{children}{$worker_id} = {};
+	$self->{workers}{$worker_id} = {};
 }
 
 sub unqueue_task
 {
 	my ($self, $worker_id) = @_;
-	my $task_id = delete $self->{children}{$worker_id}{task};
+	my $task_id = delete $self->{workers}{$worker_id}{task};
 	my $task = delete $self->{tasks}{$task_id} or confess;
 	push @{ $self->{freeworkers} }, $worker_id;
 	return $task;
@@ -64,7 +64,7 @@ sub process
 	my ($self, $job) = @_;
 	confess "code is not reentrant" if defined $self->{tasks};
 	$self->{tasks} = {};
-	@{$self->{freeworkers}} = keys %{$self->{children}};
+	@{$self->{freeworkers}} = keys %{$self->{workers}};
 	while () {
 		if (@{ $self->{freeworkers} }) {
 			my $res = $job->next;
@@ -78,7 +78,7 @@ sub process
 				$self->queue($worker_id, $task);
 
 				$self->{tasks}{$task_id} = $task;
-				$self->{children}{$worker_id}{task} = $task_id;
+				$self->{workers}{$worker_id}{task} = $task_id;
 
 			} elsif ($res->{code} eq JOB_WAIT) {
 				$self->wait_worker();
@@ -96,7 +96,7 @@ sub process
 sub get_busy_workers_ids
 {
 	my ($self) = @_;
-	grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
+	grep { $self->{workers}{$_}{task} } keys %{ $self->{workers}};
 }
 
 1;
