@@ -28,6 +28,7 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib/", "$FindBin::RealBin/../../lib";
 use App::MtAws::QueueJobResult;
 use TestUtils;
+use LCGRandom;
 use MyQueueEngine;
 
 use Data::Dumper;
@@ -35,13 +36,40 @@ use Data::Dumper;
 warning_fatal();
 
 {
-	{ package MultiJob;
+	{
+		package QE;
+
+		use strict;
+		use warnings;
+		use base q{MyQueueEngine};
+
+		sub on_task_a
+		{
+			my ($self, %args) = @_;
+			{ xx1 => "a=$args{a},b=$args{b},c=$args{c}", xx2 => "thexx2" };
+		}
+
+		sub on_task_b
+		{
+			my ($self, %args) = @_;
+			{ yy1 => 'z', yy2 => 'f' };
+		}
+
+		sub on_task_c
+		{
+			my ($self, %args) = @_;
+			{ zz1 => "thezz1", zz2 => "Y1=($args{y1}); Y2=($args{y2})" };
+		}
+	};
+
+	{
+		package MultiJob;
 
 		use strict;
 		use warnings;
 		use Carp;
 		use App::MtAws::QueueJobResult;
-		use base 'App::MtAws::QueueJob';
+		use base q{App::MtAws::QueueJob};
 
 		sub init
 		{
@@ -91,12 +119,13 @@ warning_fatal();
 		}
 	};
 
-	{ package JobA;
+	{
+		package JobA;
 
 		use strict;
 		use warnings;
 		use App::MtAws::QueueJobResult;
-		use base 'App::MtAws::QueueJob';
+		use base q{App::MtAws::QueueJob};
 		use Carp;
 		sub init{};
 		sub on_default
@@ -111,12 +140,13 @@ warning_fatal();
 		}
 	};
 
-	{ package JobB;
+	{
+		package JobB;
 
 		use strict;
 		use warnings;
 		use App::MtAws::QueueJobResult;
-		use base 'App::MtAws::QueueJob';
+		use base q{App::MtAws::QueueJob};
 		use Carp;
 
 		sub init
@@ -151,12 +181,13 @@ warning_fatal();
 		}
 	};
 
-	{ package JobC;
+	{
+		package JobC;
 
 		use strict;
 		use warnings;
 		use App::MtAws::QueueJobResult;
-		use base 'App::MtAws::QueueJob';
+		use base q{App::MtAws::QueueJob};
 		use Carp;
 
 		sub init{};
@@ -173,10 +204,12 @@ warning_fatal();
 		}
 	}
 
+	lcg_srand(4672);
+	
 	for my $n (1, 10, 100) {#
 		for my $workers (1, 2, 10) {#
 			my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
-			my $q = MyQueueEngine->new($workers);
+			my $q = QE->new($workers);
 			$q->process($j);
 
 			my $x1 = "a=101,b=102,c=103";

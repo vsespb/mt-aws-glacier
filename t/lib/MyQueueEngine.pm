@@ -57,22 +57,5 @@ sub wait_worker
 	$t->{cb_task_proxy}->(@r);
 }
 
-sub on_task_a
-{
-	my ($self, %args) = @_;
-	{ xx1 => "a=$args{a},b=$args{b},c=$args{c}", xx2 => "thexx2" };
-}
-
-sub on_task_b
-{
-	my ($self, %args) = @_;
-	{ yy1 => 'z', yy2 => 'f' };
-}
-
-sub on_task_c
-{
-	my ($self, %args) = @_;
-	{ zz1 => "thezz1", zz2 => "Y1=($args{y1}); Y2=($args{y2})" };
-}
 
 1;
