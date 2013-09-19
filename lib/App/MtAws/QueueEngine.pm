@@ -62,7 +62,9 @@ sub unqueue_task
 sub _next_task_id
 {
 	my ($self) = @_;
-	++$self->{task_inc} or confess "perhaps 32bit int overflow?";
+	my $next_id = ++$self->{task_inc};
+	$next_id > 0 or confess;
+	$next_id;
 }
 
 sub process
