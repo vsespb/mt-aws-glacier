@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 44;
+use Test::More tests => 57;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../lib", "$FindBin::RealBin/../../../lib";
@@ -94,40 +94,34 @@ test_case 15, sub {
 		}
 	}
 };
-if (0) {
 
-test_case 15, sub {
+test_case 11, sub {
 	my ($j, $args, $parts) = @_;
 
-	local $_;
-	while ($_ = shift @$parts) {
+	for (@$parts) {
 		my $res = $j->next;
-		if (@$parts) {
-			cmp_deeply $res,
-				App::MtAws::QueueJobResult->full_new(
-					task => {
-						args => {
-							start => $_->[0],
-							upload_id => $args->{upload_id},
-							part_final_hash => $_->[1],
-							relfilename => $args->{relfilename},
-							mtime => $args->{mtime},
-						},
-						attachment => $_->[2],
-						action => 'upload_part',
-						cb => test_coderef,
-						cb_task_proxy => test_coderef,
+		cmp_deeply $res,
+			App::MtAws::QueueJobResult->full_new(
+				task => {
+					args => {
+						start => $_->[0],
+						upload_id => $args->{upload_id},
+						part_final_hash => $_->[1],
+						relfilename => $args->{relfilename},
+						mtime => $args->{mtime},
 					},
-					code => JOB_OK,
-				);
-			$res->{task}{cb_task_proxy}->();
-		} else {
-			cmp_deeply $res, App::MtAws::QueueJobResult->full_new(JOB_DONE);
-		}
+					attachment => $_->[2],
+					action => 'upload_part',
+					cb => test_coderef,
+					cb_task_proxy => test_coderef,
+				},
+				code => JOB_OK,
+			);
+		$res->{task}{cb_task_proxy}->();
 	}
-};
+	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
 
-}
+};
 
 {
 	{
