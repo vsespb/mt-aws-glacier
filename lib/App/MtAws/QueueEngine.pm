@@ -31,13 +31,23 @@ use App::MtAws::QueueJobResult;
 sub new
 {
 	my ($class, %args) = @_;
-	my $self = \%args;
-	$self->{children}||confess;
-	$self->{task_inc} = 0;
-	@{$self->{freeworkers}} = keys %{$self->{children}};
-	$self->{tasks} = undef;
+	my $self = {};
 	bless $self, $class;
+	$self->{task_inc} = 0;
+	$self->{tasks} = undef;
+	$self->{freeworkers} = undef;
+	$self->{children} = {};
+	$self->init(%args);
 	return $self;
+}
+
+sub init { confess "Unimplemented" }
+sub queue { confess "Unimplemented" }
+
+sub add_worker
+{
+	my ($self, $worker_id) = @_;
+	$self->{children}{$worker_id} = {};
 }
 
 sub unqueue_task
@@ -49,23 +59,12 @@ sub unqueue_task
 	return $task;
 }
 
-sub get_busy_workers_ids
-{
-	my ($self) = @_;
-	grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
-}
-
-sub call_task_callback
-{
-	my ($self, $task) = (shift, shift);
-	$task->{cb_task_proxy}->(@_);
-}
-
 sub process
 {
 	my ($self, $job) = @_;
 	confess "code is not reentrant" if defined $self->{tasks};
 	$self->{tasks} = {};
+	@{$self->{freeworkers}} = keys %{$self->{children}};
 	while () {
 		if (@{ $self->{freeworkers} }) {
 			my $res = $job->next;
@@ -92,6 +91,12 @@ sub process
 			$self->wait_worker();
 		}
 	}
+}
+
+sub get_busy_workers_ids
+{
+	my ($self) = @_;
+	grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
 }
 
 1;

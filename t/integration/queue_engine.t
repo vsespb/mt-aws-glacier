@@ -208,7 +208,7 @@ warning_fatal();
 		for my $n (1, 10, 100) {
 			for my $workers (1, 2, 10) {
 				my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
-				my $q = QE->new($workers);
+				my $q = QE->new(n => $workers);
 				$q->process($j);
 
 				my $x1 = "a=101,b=102,c=103";

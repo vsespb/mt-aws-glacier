@@ -26,11 +26,10 @@ use LCGRandom;
 use base q{App::MtAws::QueueEngine};
 use Carp;
 
-sub new
+sub init
 {
-	my ($class, $n) = @_;
-	my $self = $class->SUPER::new(children => {map { $_ => {} } (1..$n) });
-	$self;
+	my ($self, %args) = @_;
+	$self->add_worker($_) for (1..$args{n});
 }
 
 sub queue { }
@@ -48,7 +47,7 @@ sub wait_worker
 	no strict 'refs';
 
 	my @r = $self->$method(%{$task->{args}});
-	$self->call_task_callback($task, @r);
+	$task->{cb_task_proxy}->(@r);
 }
 
 
