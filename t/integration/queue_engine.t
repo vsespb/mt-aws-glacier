@@ -1,0 +1,253 @@
+#!/usr/bin/env perl
+
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2013  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+use Test::More tests => 54;
+use Test::Deep;
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib/", "$FindBin::RealBin/../../lib";
+use App::MtAws::QueueJobResult;
+use TestUtils;
+
+use Data::Dumper;
+
+warning_fatal();
+
+{
+	{ package MyQueueEngine;
+		use strict;
+		use warnings;
+		use LCGRandom;
+		use base q{App::MtAws::QueueEngine};
+		use Carp;
+
+		sub new
+		{
+			my ($class, $n) = @_;
+			my $self = $class->SUPER::new(children => {map { $_ => {} } (1..$n) });
+			$self;
+		}
+
+		sub queue
+		{
+			my ($self, $worker_id, $task_id, $task) = @_;
+			$self->{children}{$worker_id}{task} = $task_id;
+		}
+
+		sub wait_worker
+		{
+			my ($self, $tasks) = @_;
+			my @possible = grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
+
+			confess unless @possible;
+			my $rr = lcg_irand(0, @possible-1);
+			my $r = $possible[$rr];
+			my $t_id = delete $self->{children}{$r}{task};
+			my $t = delete $tasks->{$t_id} or confess;
+			push @{ $self->{freeworkers} }, $r;
+			my $method = "on_$t->{action}";
+			no strict 'refs';
+			my @r = $method->(%{$t->{args}});
+			$t->{cb_task_proxy}->(@r);
+		}
+
+		sub on_task_a
+		{
+			my (%args) = @_;
+			{ xx1 => "a=$args{a},b=$args{b},c=$args{c}", xx2 => "thexx2" };
+		}
+
+		sub on_task_b
+		{
+			my (%args) = @_;
+			{ yy1 => 'z', yy2 => 'f' };
+		}
+
+		sub on_task_c
+		{
+			my (%args) = @_;
+			{ zz1 => "thezz1", zz2 => "Y1=($args{y1}); Y2=($args{y2})" };
+		}
+	};
+
+	{ package MultiJob;
+
+		use strict;
+		use warnings;
+		use Carp;
+		use App::MtAws::QueueJobResult;
+		use base 'App::MtAws::QueueJob';
+
+		sub init
+		{
+			my ($self) = @_;
+			$self->{a}||confess;
+			$self->{b}||confess;
+			$self->{c}||confess;
+			$self->{cnt}||confess;
+			$self->enter("s1");
+			return $self;
+		}
+
+		sub on_s1
+		{
+			my ($self) = @_;
+			return
+				state("wait"),
+				job( JobA->new(map { $_ => $self->{$_} } qw/a b c/), sub {
+					my $j = shift;
+					$self->{$_} = $j->{$_} or confess for qw/x1 x2/;
+					state("s2")
+				});
+		}
+
+		sub on_s2
+		{
+			my ($self) = @_;
+			return
+				state("wait"),
+				job( JobB->new(map { $_ => $self->{$_} } qw/cnt a b c x1 x2/), sub {
+					my $j = shift;
+					$self->{$_} = $j->{$_} or confess for qw/y1 y2/;
+					state("s3")
+				});
+		}
+
+		sub on_s3
+		{
+			my ($self) = @_;
+			return
+				state("wait"),
+				job( JobC->new(map { $_ => $self->{$_} } qw/a b c y1 y2/), sub {
+					my $j = shift;
+					$self->{$_} = $j->{$_} or confess for qw/z1 z2/;
+					state("done")
+				});
+		}
+	};
+
+	{ package JobA;
+
+		use strict;
+		use warnings;
+		use App::MtAws::QueueJobResult;
+		use base 'App::MtAws::QueueJob';
+		use Carp;
+		sub init{};
+		sub on_default
+		{
+			my ($self) = @_;
+			return state "wait", task "task_a", { map { $_ => $self->{$_} } qw/a b c/ } => sub {
+				my ($args) = @_;
+				$self->{x1} = $args->{xx1} or confess;
+				$self->{x2} = $args->{xx2} or confess;
+				state("done")
+			}
+		}
+	};
+
+	{ package JobB;
+
+		use strict;
+		use warnings;
+		use App::MtAws::QueueJobResult;
+		use base 'App::MtAws::QueueJob';
+		use Carp;
+
+		sub init
+		{
+			my ($self) = @_;
+			$self->{cnt}||confess;
+			$self->{t} = {};
+			$self->{y1} = "y1:";
+			$self->{y2} = "y2:";
+		}
+
+		sub on_default
+		{
+			my ($self) = @_;
+
+			if ((my $i = $self->{cnt}--) > 0) {
+				$self->{t}{$i} = 1;
+				return task 'task_b', {  map { $_ => $self->{$_} } qw/a b c x1 x2/  } => sub {
+					my ($args) = @_;
+					$self->{y1} .= $args->{yy1};
+					$self->{y2} .= $args->{yy2};
+					delete $self->{t}->{$i} or confess;
+					return;
+				}
+			} else {
+				if (keys %{$self->{t}}) {
+					return JOB_WAIT;
+				} else {
+					return state('done');
+				}
+			}
+		}
+	};
+
+	{ package JobC;
+
+		use strict;
+		use warnings;
+		use App::MtAws::QueueJobResult;
+		use base 'App::MtAws::QueueJob';
+		use Carp;
+
+		sub init{};
+
+		sub on_default
+		{
+			my ($self) = @_;
+			return state "wait", task "task_c", { map { $_ => $self->{$_} } qw/a b c y1 y2/ } => sub {
+				my ($args) = @_;
+				$self->{z1} = $args->{zz1} or confess;
+				$self->{z2} = $args->{zz2} or confess;
+				state("done")
+			}
+		}
+	}
+
+	for my $n (1, 10, 100) {#
+		for my $workers (1, 2, 10) {#
+			my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
+			my $q = MyQueueEngine->new($workers);
+			$q->process($j);
+
+			my $x1 = "a=101,b=102,c=103";
+			my $x2 = "thexx2";
+			my $y1 = "y1:".("z"x$n);
+			my $y2 = "y2:".("f"x$n);
+			my $z1 = "thezz1";
+			my $z2 = "Y1=($y1); Y2=($y2)";
+
+			is $j->{x1}, $x1;
+			is $j->{x2}, $x2;
+			is $j->{y1}, $y1;
+			is $j->{y2}, $y2;
+			is $j->{z1}, $z1;
+			is $j->{z2}, $z2;
+		}
+	}
+}
+1;

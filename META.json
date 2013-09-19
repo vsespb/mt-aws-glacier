@@ -247,6 +247,10 @@
          "file" : "lib/App/MtAws/ProxyTask.pm",
          "version" : "1.051"
       },
+      "App::MtAws::QueueEngine" : {
+         "file" : "lib/App/MtAws/QueueEngine.pm",
+         "version" : "1.051"
+      },
       "App::MtAws::QueueJob" : {
          "file" : "lib/App/MtAws/QueueJob.pm",
          "version" : "1.051"

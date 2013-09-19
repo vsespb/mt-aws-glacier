@@ -43,6 +43,7 @@ lib/App/MtAws/LineProtocol.pm
 lib/App/MtAws/MetaData.pm
 lib/App/MtAws/ParentWorker.pm
 lib/App/MtAws/ProxyTask.pm
+lib/App/MtAws/QueueEngine.pm
 lib/App/MtAws/QueueJob.pm
 lib/App/MtAws/QueueJob/Iterator.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
@@ -90,6 +91,7 @@ t/integration/journal_zerofiles.t
 t/integration/lwp.t
 t/integration/metadata.t
 t/integration/metadata_mt1.t
+t/integration/queue_engine.t
 t/integration/source_checks.t
 t/integration/sysread_syswrite_full.t
 t/integration/system_flock.t
