@@ -22,13 +22,14 @@
 
 use strict;
 use warnings;
-use Test::More tests => 32;
+use Test::More tests => 36;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../lib", "$FindBin::RealBin/../../../lib";
 use LCGRandom;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartPart;
+use MyQueueEngine;
 use TestUtils;
 
 warning_fatal();
@@ -37,7 +38,9 @@ sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 
 use Data::Dumper;
 
+sub test_case
 {
+	my ($test_cb) = @_;
 	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..15);
 	my @parts = @orig_parts;
 	my %args = (relfilename => 'somefile', partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => 12345);
@@ -53,19 +56,24 @@ use Data::Dumper;
 	};
 
 	my $j = App::MtAws::QueueJob::MultipartPart->new(%args);
+	$test_cb->($j, \%args, \@orig_parts);
+}
 
+
+test_case sub {
+	my ($j, $args, $parts) = @_;
 	my @callbacks;
-	for (@orig_parts) {
+	for (@$parts) {
 		my $res = $j->next;
 		cmp_deeply $res,
 			App::MtAws::QueueJobResult->full_new(
 				task => {
 					args => {
 						start => $_->[0],
-						upload_id => $args{upload_id},
+						upload_id => $args->{upload_id},
 						part_final_hash => $_->[1],
-						relfilename => $args{relfilename},
-						mtime => $args{mtime},
+						relfilename => $args->{relfilename},
+						mtime => $args->{mtime},
 					},
 					attachment => $_->[2],
 					action => 'upload_part',
@@ -84,6 +92,63 @@ use Data::Dumper;
 			$cb->();
 			cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
 		}
+	}
+};
+if (0) {
+
+test_case sub {
+	my ($j, $args, $parts) = @_;
+
+	local $_;
+	while ($_ = shift @$parts) {
+		my $res = $j->next;
+		if (@$parts) {
+			cmp_deeply $res,
+				App::MtAws::QueueJobResult->full_new(
+					task => {
+						args => {
+							start => $_->[0],
+							upload_id => $args->{upload_id},
+							part_final_hash => $_->[1],
+							relfilename => $args->{relfilename},
+							mtime => $args->{mtime},
+						},
+						attachment => $_->[2],
+						action => 'upload_part',
+						cb => test_coderef,
+						cb_task_proxy => test_coderef,
+					},
+					code => JOB_OK,
+				);
+			$res->{task}{cb_task_proxy}->();
+		} else {
+			cmp_deeply $res, App::MtAws::QueueJobResult->full_new(JOB_DONE);
+		}
+	}
+};
+
+}
+
+{
+	{
+		package QE;
+		use MyQueueEngine;
+		use base q{MyQueueEngine};
+
+		sub on_upload_part
+		{
+			my ($self, %args) = @_;
+			push @{$self->{res}}, $args{part_final_hash};
+		}
+	};
+
+	for my $workers (1, 2, 10, 20) {
+		test_case sub {
+			my ($j, $args, $parts) = @_;
+			my $q = QE->new($workers);
+			$q->process($j);
+			cmp_deeply [sort @{ $q->{res} }], [sort map { $_->[1] } @$parts];
+		};
 	}
 }
 

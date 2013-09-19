@@ -88,7 +88,7 @@ sub get_part
 				mtime => $self->{mtime},
 			} => $attachment => sub {
 				delete $self->{uploadparts}->{$start} or confess;
-				keys %{$self->{uploadparts}} ? () : state('done');
+				return;
 			};
 	} else {
 		return;
@@ -107,12 +107,7 @@ sub on_other_parts
 {
 	my ($self) = @_;
 	my @res = $self->get_part();
-	if (@res) {
-		return @res;
-	} else {
-		return state('wait');
-	}
-
+	return @res ? @res : (keys %{$self->{uploadparts}} ? JOB_WAIT : state('done'));
 }
 
 
