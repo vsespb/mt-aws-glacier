@@ -37,6 +37,7 @@ BEGIN {
 		}
 	} else {
 		*_lcg_rand = sub {
+			use integer; # need both integer and bigint here
 			use # hide from PAUSE?
 				bigint;
 			$seed = (A * $seed + C) % (1 << 31);
