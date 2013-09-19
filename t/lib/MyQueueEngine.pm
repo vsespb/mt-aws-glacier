@@ -33,11 +33,7 @@ sub new
 	$self;
 }
 
-sub queue
-{
-	my ($self, $worker_id, $task_id, $task) = @_;
-	$self->{children}{$worker_id}{task} = $task_id;
-}
+sub queue { }
 
 sub wait_worker
 {

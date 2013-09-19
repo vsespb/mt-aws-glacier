@@ -42,20 +42,23 @@ sub new
 
 sub process
 {
-	my ($self, $task) = @_;
+	my ($self, $job) = @_;
 	my $tasks = {};
 	while () {
 		if (@{ $self->{freeworkers} }) {
-			my $res = $task->next;
+			my $res = $job->next;
 			if ($res->{code} eq JOB_OK) {
 				my $task_id = ++$self->{task_inc};
+				$task_id = 1 if $task_id > 1_000_000_000; # who knows..
 				my $worker_id = shift @{ $self->{freeworkers} };
-				$tasks->{$task_id} = $res->{task};
+				my $task = $res->{task};
 				$self->queue($worker_id, $task_id, $task);
+				$tasks->{$task_id} = $task;
+				$self->{children}{$worker_id}{task} = $task_id;
 			} elsif ($res->{code} eq JOB_WAIT) {
 				$self->wait_worker($tasks);
 			} elsif ($res->{code} eq JOB_DONE) {
-				return $task
+				return $job
 			} else {
 				confess;
 			}
