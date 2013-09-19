@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 24;
+use Test::More tests => 30;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -74,18 +74,24 @@ warning_fatal();
 
 {
 	ok ! eval { lcg_irand(); 1 };
+	like $@, qr/should pass two arguments/;
 	ok ! eval { lcg_irand(1); 1 };
-	ok ! eval { lcg_irand("a", "b"); 1 };
+	like $@, qr/should pass two arguments/;
+	ok ! eval { lcg_irand(1, 2, 3); 1 };
+	like $@, qr/should pass two arguments/;
+	ok ! eval { lcg_irand(2,1); 1 };
+	like $@, qr/b should be greater or equal than a/;
+	ok eval { lcg_irand(0,0); 1 };
 
 	{
 		our $rand_fake;
 		no warnings 'redefine';
 		local *LCGRandom::lcg_rand = sub { $rand_fake };
 
-		test_fast_ok 378, "lcg_irand produce right ranges" => sub {
+		test_fast_ok 504, "lcg_irand produce right ranges" => sub {
 			for my $seed (1231236, 4_000_000_000+87654, 1_876_354_567) {
 				for my $base (0, -101, 103) {
-					for my $size (1, 7, 11) {
+					for my $size (0, 1, 7, 11) {
 						my $previous = undef;
 						for my $i (1..15) {
 							local $rand_fake = $seed + $i;

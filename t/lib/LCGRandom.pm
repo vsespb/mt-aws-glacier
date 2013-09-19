@@ -53,7 +53,8 @@ sub lcg_rand
 sub lcg_irand
 {
 	my ($a, $b) = @_;
-	confess "b should be greater than a" unless defined($a) && defined($b) && $b > $a;
+	confess "should pass two arguments" unless @_ == 2;
+	confess "b should be greater or equal than a" unless $b >= $a;
 	my $r = lcg_rand();
 	$a + $r % ($b - $a + 1);
 }
