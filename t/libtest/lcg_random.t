@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 22;
+use Test::More tests => 24;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -128,7 +128,19 @@ warning_fatal();
 		my @a = map { lcg_rand() } 1..1000;
 		my @b = lcg_shuffle @a;
 		is sha256_hex(join(',', @b)), '9f8ad1002c5bfc23047165aaab63bbe3b1e9abdfe63e0348ffa53b90b1d9284a';
-	}
+	};
+
+	lcg_srand 167846290 => sub {
+		my @a = map { lcg_rand() } 1..2;
+		my @b = lcg_shuffle @a;
+		cmp_deeply [@a], [@b], "not necessary shuffle two elements array";
+	};
+
+	lcg_srand 167846291 => sub {
+		my @a = map { lcg_rand() } 1..2;
+		my @b = lcg_shuffle @a;
+		cmp_deeply [@a], [reverse @b], "abble to shuffle two elements array";
+	};
 }
 
 1;
