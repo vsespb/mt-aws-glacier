@@ -25,12 +25,31 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use strict;
 use warnings;
 
+our $seed = undef;
+
+BEGIN {
+	use constant A => 1103515245;
+	use constant C => 12345;
+	if (4_000_000_000*A+C == 4414060980000012345) { # that is more than 2**31*A+C
+		*_lcg_rand = sub {
+			use integer;
+			return $seed = (A * $seed + C) % (1 << 31)
+		}
+	} else {
+		*_lcg_rand = sub {
+			use # hide from PAUSE?
+				bigint;
+			$seed = (A * $seed + C) % (1 << 31);
+			$seed = $seed->numify;
+			return $seed;
+		}
+	}
+};
+
 use base 'Exporter';
 our @EXPORT = qw/lcg_srand lcg_rand lcg_irand lcg_shuffle/;
 
 use Carp;
-
-our $seed = undef;
 
 sub lcg_srand
 {
@@ -48,8 +67,7 @@ sub lcg_rand
 {
 	confess if @_;
 	confess "seed uninitialized" unless defined $seed;
-	use integer;
-	return $seed = (1103515245 * $seed + 12345) % (1 << 31)
+	&_lcg_rand;
 }
 
 sub lcg_irand
