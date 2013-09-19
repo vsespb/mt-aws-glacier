@@ -59,6 +59,12 @@ sub unqueue_task
 	return $task;
 }
 
+sub _next_task_id
+{
+	my ($self) = @_;
+	++$self->{task_inc} or confess "perhaps 32bit int overflow?";
+}
+
 sub process
 {
 	my ($self, $job) = @_;
@@ -69,7 +75,7 @@ sub process
 		if (@{ $self->{freeworkers} }) {
 			my $res = $job->next;
 			if ($res->{code} eq JOB_OK) {
-				my $task_id = ++$self->{task_inc};
+				my $task_id = $self->_next_task_id;
 				$task_id = 1 if $task_id > 1_000_000_000; # who knows..
 
 				my $worker_id = shift @{ $self->{freeworkers} };
