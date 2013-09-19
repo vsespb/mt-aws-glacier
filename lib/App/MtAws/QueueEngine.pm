@@ -35,35 +35,49 @@ sub new
 	$self->{children}||confess;
 	$self->{task_inc} = 0;
 	@{$self->{freeworkers}} = keys %{$self->{children}};
+	$self->{tasks} = undef;
 	bless $self, $class;
 	return $self;
 }
 
+sub unqueue_task
+{
+	my ($self, $worker_id) = @_;
+	my $task_id = delete $self->{children}{$worker_id}{task};
+	my $task = delete $self->{tasks}{$task_id} or confess;
+	push @{ $self->{freeworkers} }, $worker_id;
+	return $task;
+}
 
 sub process
 {
 	my ($self, $job) = @_;
-	my $tasks = {};
+	confess "code is not reentrant" if defined $self->{tasks};
+	$self->{tasks} = {};
 	while () {
 		if (@{ $self->{freeworkers} }) {
 			my $res = $job->next;
 			if ($res->{code} eq JOB_OK) {
 				my $task_id = ++$self->{task_inc};
 				$task_id = 1 if $task_id > 1_000_000_000; # who knows..
+
 				my $worker_id = shift @{ $self->{freeworkers} };
 				my $task = $res->{task};
-				$self->queue($worker_id, $task_id, $task);
-				$tasks->{$task_id} = $task;
+
+				$self->queue($worker_id, $task);
+
+				$self->{tasks}{$task_id} = $task;
 				$self->{children}{$worker_id}{task} = $task_id;
+
 			} elsif ($res->{code} eq JOB_WAIT) {
-				$self->wait_worker($tasks);
+				$self->wait_worker();
 			} elsif ($res->{code} eq JOB_DONE) {
 				return $job
 			} else {
 				confess;
 			}
 		} else {
-			$self->wait_worker($tasks);
+			$self->wait_worker();
 		}
 	}
 }

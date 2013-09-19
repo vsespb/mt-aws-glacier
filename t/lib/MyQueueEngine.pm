@@ -37,20 +37,18 @@ sub queue { }
 
 sub wait_worker
 {
-	my ($self, $tasks) = @_;
+	my ($self) = @_;
 	my @possible = grep { $self->{children}{$_}{task} } keys %{ $self->{children}};
-
 	confess unless @possible;
-	my $rr = lcg_irand(0, @possible-1);
-	my $r = $possible[$rr];
-	my $t_id = delete $self->{children}{$r}{task};
-	my $t = delete $tasks->{$t_id} or confess;
-	push @{ $self->{freeworkers} }, $r;
-	my $method = "on_$t->{action}";
+	my $worker_id = $possible[lcg_irand(0, @possible-1)];
+
+	my $task = $self->unqueue_task($worker_id);
+
+	my $method = "on_$task->{action}";
 	no strict 'refs';
 
-	my @r = $self->$method(%{$t->{args}});
-	$t->{cb_task_proxy}->(@r);
+	my @r = $self->$method(%{$task->{args}});
+	$task->{cb_task_proxy}->(@r);
 }
 
 
