@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 32;
+use Test::More tests => 35;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -58,6 +58,15 @@ like $@, qr/seed uninitialized/;
 	my @b = map { lcg_rand } 1..10;
 	cmp_deeply [@b], [@a], "lcg_srand without argument works like with 0";
 
+	{
+		#use integer;
+		my $max = 2**31;
+		is $max % (1<<31), 0;
+		is ( ( ($max-1) % (1<<31) ), 2147483647);
+		local $LCGRandom::seed = $max-1;
+
+		is lcg_rand(), 1043980748, "should work with 64bit ints";
+	}
 }
 
 {
