@@ -204,27 +204,27 @@ warning_fatal();
 		}
 	}
 
-	lcg_srand(4672);
+	lcg_srand 4672 => sub {
+		for my $n (1, 10, 100) {
+			for my $workers (1, 2, 10) {
+				my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
+				my $q = QE->new($workers);
+				$q->process($j);
 
-	for my $n (1, 10, 100) {
-		for my $workers (1, 2, 10) {
-			my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
-			my $q = QE->new($workers);
-			$q->process($j);
+				my $x1 = "a=101,b=102,c=103";
+				my $x2 = "thexx2";
+				my $y1 = "y1:".("z"x$n);
+				my $y2 = "y2:".("f"x$n);
+				my $z1 = "thezz1";
+				my $z2 = "Y1=($y1); Y2=($y2)";
 
-			my $x1 = "a=101,b=102,c=103";
-			my $x2 = "thexx2";
-			my $y1 = "y1:".("z"x$n);
-			my $y2 = "y2:".("f"x$n);
-			my $z1 = "thezz1";
-			my $z2 = "Y1=($y1); Y2=($y2)";
-
-			is $j->{x1}, $x1;
-			is $j->{x2}, $x2;
-			is $j->{y1}, $y1;
-			is $j->{y2}, $y2;
-			is $j->{z1}, $z1;
-			is $j->{z2}, $z2;
+				is $j->{x1}, $x1;
+				is $j->{x2}, $x2;
+				is $j->{y1}, $y1;
+				is $j->{y2}, $y2;
+				is $j->{z1}, $z1;
+				is $j->{z2}, $z2;
+			}
 		}
 	}
 }

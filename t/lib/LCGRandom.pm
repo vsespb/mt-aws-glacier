@@ -30,7 +30,7 @@ our @EXPORT = qw/lcg_srand lcg_rand lcg_irand lcg_shuffle/;
 
 use Carp;
 
-our $seed = 0;
+our $seed = undef;
 
 sub lcg_srand
 {
@@ -47,6 +47,7 @@ sub lcg_srand
 sub lcg_rand
 {
 	confess if @_;
+	confess "seed uninitialized" unless defined $seed;
 	return $seed = (1103515245 * $seed + 12345) % (1 << 31)
 }
 

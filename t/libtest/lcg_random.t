@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 30;
+use Test::More tests => 32;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
 use TestUtils;
@@ -36,8 +36,12 @@ use Test::Deep;
 warning_fatal();
 
 
+ok ! eval { lcg_rand(); 1 };
+like $@, qr/seed uninitialized/;
+
 {
 	# make sure we have same number sequence each time
+	lcg_srand(0);
 	is sha256_hex(join(',', map { lcg_rand() } (1..10_000))), '135cbcb5641b2e7d387b083a3aa25de8e6066f28d5fe84e569dbba4ab94b1b86';
 	lcg_srand(0);
 	is sha256_hex(join(',', map { lcg_rand() } (1..10_000))), '135cbcb5641b2e7d387b083a3aa25de8e6066f28d5fe84e569dbba4ab94b1b86';

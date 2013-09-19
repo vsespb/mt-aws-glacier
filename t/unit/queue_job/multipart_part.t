@@ -136,14 +136,16 @@ test_case 11, sub {
 		}
 	};
 
-	for my $n (1, 2, 15) {
-		for my $workers (1, 2, 10, 20) {
-			test_case $n, sub {
-				my ($j, $args, $parts) = @_;
-				my $q = QE->new($workers);
-				$q->process($j);
-				cmp_deeply [sort @{ $q->{res} }], [sort map { $_->[1] } @$parts];
-			};
+	lcg_srand 4672 => sub {
+		for my $n (1, 2, 15) {
+			for my $workers (1, 2, 10, 20) {
+				test_case $n, sub {
+					my ($j, $args, $parts) = @_;
+					my $q = QE->new($workers);
+					$q->process($j);
+					cmp_deeply [sort @{ $q->{res} }], [sort map { $_->[1] } @$parts];
+				};
+			}
 		}
 	}
 }
