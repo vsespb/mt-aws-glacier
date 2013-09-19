@@ -205,9 +205,9 @@ warning_fatal();
 	}
 
 	lcg_srand(4672);
-	
-	for my $n (1, 10, 100) {#
-		for my $workers (1, 2, 10) {#
+
+	for my $n (1, 10, 100) {
+		for my $workers (1, 2, 10) {
 			my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
 			my $q = QE->new($workers);
 			$q->process($j);

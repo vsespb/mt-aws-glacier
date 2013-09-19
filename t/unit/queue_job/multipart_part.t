@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 36;
+use Test::More tests => 44;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../lib", "$FindBin::RealBin/../../../lib";
@@ -40,8 +40,8 @@ use Data::Dumper;
 
 sub test_case
 {
-	my ($test_cb) = @_;
-	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..15);
+	my ($n, $test_cb) = @_;
+	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..$n);
 	my @parts = @orig_parts;
 	my %args = (relfilename => 'somefile', partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => 12345);
 
@@ -60,7 +60,7 @@ sub test_case
 }
 
 
-test_case sub {
+test_case 15, sub {
 	my ($j, $args, $parts) = @_;
 	my @callbacks;
 	for (@$parts) {
@@ -96,7 +96,7 @@ test_case sub {
 };
 if (0) {
 
-test_case sub {
+test_case 15, sub {
 	my ($j, $args, $parts) = @_;
 
 	local $_;
@@ -142,13 +142,15 @@ test_case sub {
 		}
 	};
 
-	for my $workers (1, 2, 10, 20) {
-		test_case sub {
-			my ($j, $args, $parts) = @_;
-			my $q = QE->new($workers);
-			$q->process($j);
-			cmp_deeply [sort @{ $q->{res} }], [sort map { $_->[1] } @$parts];
-		};
+	for my $n (1, 2, 15) {
+		for my $workers (1, 2, 10, 20) {
+			test_case $n, sub {
+				my ($j, $args, $parts) = @_;
+				my $q = QE->new($workers);
+				$q->process($j);
+				cmp_deeply [sort @{ $q->{res} }], [sort map { $_->[1] } @$parts];
+			};
+		}
 	}
 }
 
