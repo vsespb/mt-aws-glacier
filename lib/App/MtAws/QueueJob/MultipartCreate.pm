@@ -25,6 +25,7 @@ our $VERSION = '1.051';
 use strict;
 use warnings;
 use Carp;
+use File::stat;
 
 use App::MtAws::QueueJobResult;
 use App::MtAws::Exceptions;
@@ -78,7 +79,5 @@ sub on_create
 		state("done")
 	}
 }
-
-
 
 1;
