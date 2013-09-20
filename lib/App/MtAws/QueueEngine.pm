@@ -78,11 +78,11 @@ sub process
 			my $res = $job->next;
 			if ($res->{code} eq JOB_OK) {
 				my $task_id = $self->_next_task_id;
-				$task_id = 1 if $task_id > 1_000_000_000; # who knows..
 
 				my $worker_id = shift @{ $self->{freeworkers} };
 				my $task = $res->{task};
 
+				$task->{_id} = $task_id;
 				$self->queue($worker_id, $task);
 
 				$self->{tasks}{$task_id} = $task;
