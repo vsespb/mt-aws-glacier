@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 23;
+use Test::More tests => 24;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -161,7 +161,7 @@ sub job_double_nested_tests
 sub job_callback_states_test
 {
 	my ($j) = @_;
-	expect_task($j, 't1')->{task}{cb_task_proxy}->({param => 42}, \"somescalar");
+	cmp_deeply [expect_task($j, 't1')->{task}{cb_task_proxy}->({param => 42}, \"somescalar")], [], "cb_task_proxy should return empty list";
 }
 
 {

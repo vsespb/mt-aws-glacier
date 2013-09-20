@@ -52,6 +52,7 @@ sub set_task_proxy_callback
 			confess if $result->{job};
 			confess if $result->{task};
 		}
+		return;
 	}
 }
 
