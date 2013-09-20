@@ -38,7 +38,7 @@ sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 use Data::Dumper;
 
 {
-
+	# TODO: also test that it works with mtime=0
 	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
 
 	no warnings 'redefine';
