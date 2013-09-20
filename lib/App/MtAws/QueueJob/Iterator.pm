@@ -73,8 +73,8 @@ sub find_next_job
 			$self->{pending}{$task_id} = 1;
 			return task($res->{task}, sub {
 				delete $self->{pending}{$task_id} or confess;
-				delete $self->{jobs}{$job_id} or confess;
-				$res->{task}{cb_task_proxy}->();
+				# TODO: test that this line does no present here: delete $self->{jobs}{$job_id} or confess;
+				$res->{task}{cb_task_proxy}->(@_);
 				return;
 			});
 		} else {

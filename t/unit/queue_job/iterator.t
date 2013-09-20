@@ -40,10 +40,18 @@ use Data::Dumper;
 {
 	{
 		package SimpleJob;
-		use App::MtAws::QueueJobResult;
+		use Carp;
+		use App::MtAws::QueueJobResult;use Data::Dumper;
 		use base 'App::MtAws::QueueJob';
 		sub init {  };
-		sub on_default { task("abc$_[0]->{n}", sub { state 'done' } ), state 'wait' };
+
+		sub on_default
+		{
+			state 'wait', task("abc$_[0]->{n}", sub {
+				confess unless $_[0] && $_[0] =~ /^somedata\d$/;
+				state 'done'
+			});
+		};
 
 	}
 
@@ -63,7 +71,7 @@ use Data::Dumper;
 		ok $r->{code} eq JOB_OK || $r->{code} eq JOB_DONE;
 		last if $r->{code} eq JOB_DONE;
 		push @actions, $r->{task}{action};
-		$r->{task}{cb_task_proxy}->();
+		$r->{task}{cb_task_proxy}->("somedata1");
 	}
 
 	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt], "test it works when callback called immediately";
@@ -80,7 +88,7 @@ use Data::Dumper;
 	}
 	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt];
 
-	$_->() for @callbacks;
+	$_->("somedata2") for @callbacks;
 	is $itt->next->{code}, JOB_DONE, "test it works when callback called later";
 }
 
