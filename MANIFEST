@@ -42,6 +42,7 @@ lib/App/MtAws/Journal.pm
 lib/App/MtAws/LineProtocol.pm
 lib/App/MtAws/MetaData.pm
 lib/App/MtAws/ParentWorker.pm
+lib/App/MtAws/ParentWorkerNew.pm
 lib/App/MtAws/ProxyTask.pm
 lib/App/MtAws/QueueEngine.pm
 lib/App/MtAws/QueueJob.pm
