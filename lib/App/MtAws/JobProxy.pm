@@ -20,17 +20,19 @@
 
 package App::MtAws::JobProxy;
 
+our $VERSION = '1.051';
+
 use strict;
 use warnings;
 use utf8;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{job}||die;
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{job}||die;
+	bless $self, $class;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
@@ -41,7 +43,7 @@ sub get_task
 	
 	if ($r[0] eq 'ok replace'){
 		$self->{job} = $r[1];
-		 @r = $self->{job}->get_task(@a);
+		@r = $self->{job}->get_task(@a);
 	}
 	return @r;
 }
@@ -57,6 +59,13 @@ sub finish_task
 	} else {
 		return @res;
 	}
+}
+
+sub will_do
+{
+	# TODO: does it make any sense to call will_do() after job replaced?? probably yes..
+	# for example we can dump pending jobs anytime.. 
+	shift->{job}->will_do();
 }
 	
 1;

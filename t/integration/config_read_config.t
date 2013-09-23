@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -23,13 +23,21 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 65;
-use lib qw{../lib ../../lib};
+use Test::More tests => 276;
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use Data::Dumper;
 use App::MtAws::ConfigEngine;
+use App::MtAws::Exceptions;
+use App::MtAws::Utils;
 use File::Path;
 use Encode;
+use POSIX;
+use TestUtils;
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+warning_fatal();
+
+my $mtroot = get_temp_dir();
 mkpath($mtroot);
 my $file = "$mtroot/read-config-test.txt";
 rmtree($file);
@@ -41,17 +49,30 @@ for my $linefeed ("\n", "\012", "\015\012") {
 	is_deeply(read_as_config("${linefeed}${linefeed}mykey1=myvalue1${linefeed}${linefeed}mykey2=myvalue2${linefeed}${linefeed}"), $vars, "should read different CR/LF");
 }
 
-for my $space (" ", "\t") {
+for my $space (" ", "  ", "\t", " \t") {
 	my $vars = { 'mykey1' => 'myvalue', 'mykey2' => 'myvalue2'};
 	is_deeply(read_as_config("mykey1=myvalue${space}\nmykey2=myvalue2"), $vars, "should trim spaces");
-	is_deeply(read_as_config("mykey1=${space}${space}myvalue\nmykey2=myvalue2"), $vars, "should trim spaces");
+	is_deeply(read_as_config("mykey1=${space}myvalue\nmykey2=myvalue2"), $vars, "should trim spaces");
 	is_deeply(read_as_config("mykey1=myvalue\nmykey2${space}${space}=myvalue2"), $vars, "should trim spaces");
 	is_deeply(read_as_config("mykey1=myvalue\nmykey2=myvalue2${space}"), $vars, "should trim spaces");
-	is_deeply(read_as_config("${space}${space}mykey1=myvalue\nmykey2=myvalue2"), $vars, "should trim spaces");
+	is_deeply(read_as_config("${space}mykey1=myvalue\nmykey2=myvalue2"), $vars, "should trim spaces");
+
+	is_deeply(read_as_config("mykey1${space}"), { mykey1 => 1}, "should trim spaces when no value");
+	is_deeply(read_as_config("${space}mykey1"), { mykey1 => 1}, "should trim spaces when no value");
+	is_deeply(read_as_config("${space}mykey1${space}"), { mykey1 => 1}, "should trim spaces when no value");
 }
 
-for my $notspace ("\xc2\xa0", "\xe2\x80\xaf") {
+
+for my $notspace ("\xc2\xa0", "\xe2\x80\xaf", "\xc2\xa0\xe2\x80\xaf") {
 	my $utfspace = decode("UTF-8", $notspace);
+	ok ! defined eval { read_as_config("${notspace}mykey1"); 1 }, "should not trim unicode spaces when no value";
+	is get_exception && get_exception->{code}, 'invalid_config_line';
+	ok ! defined eval { read_as_config("mykey1${notspace}"); 1 }, "should not trim unicode spaces when no value";
+	is get_exception && get_exception->{code}, 'invalid_config_line';
+	ok ! defined eval { read_as_config("${notspace}mykey1${notspace}"); 1 }, "should not trim unicode spaces when no value";
+	is get_exception && get_exception->{code}, 'invalid_config_line';
+
+	ok ! defined eval { read_as_config("mykey1${notspace}=myvalue\nmykey2=myvalue2"); 1 }, "should not trim unicode spaces";
 	is_deeply(
 		read_as_config("mykey1=myvalue${notspace}\nmykey2=myvalue2"),
 		{ 'mykey1' => "myvalue${utfspace}", 'mykey2' => 'myvalue2'},
@@ -62,17 +83,37 @@ for my $notspace ("\xc2\xa0", "\xe2\x80\xaf") {
 		{ 'mykey1' => "${utfspace}myvalue", 'mykey2' => 'myvalue2'},
 		"should NOT trim unicode spaces"
 	);
-	is_deeply(
-		read_as_config("${notspace}mykey1=myvalue\nmykey2=myvalue2"),
-		{ "${utfspace}mykey1" => "myvalue", 'mykey2' => 'myvalue2'},
-		"should NOT trim unicode spaces"
-	);
-	is_deeply(
-		read_as_config("mykey1${notspace}=myvalue\nmykey2=myvalue2"),
-		{ "mykey1${utfspace}" => "myvalue", 'mykey2' => 'myvalue2'},
-		"should NOT trim unicode spaces"
-	);
 }
+
+for my $badname ("!somename", 'some@name', 'some_name', '-somename', '--somename', '-', '--', '_', 'some-name-!', 'some name') {
+	ok ! defined eval { read_as_config("$badname"); 1 }, "should deny invalid names";
+	is get_exception && get_exception->{code}, 'invalid_config_line';
+	ok ! defined eval { read_as_config(" $badname"); 1 }, "should deny invalid names";
+	is get_exception && get_exception->{code}, 'invalid_config_line';
+	ok ! defined eval { read_as_config("$badname=myvalue"); 1 }, "should deny invalid names";
+	is get_exception && get_exception->{code}, 'invalid_config_line';
+}
+
+for my $goodname ("somename", 'some-name', 'some--name', 'SomeName', 'Some-Name', '1', '1name', '1-name', 'name-123') {
+	is_deeply(read_as_config("$goodname=myvalue"), { $goodname => 'myvalue'}, "should accet correct names");
+	is_deeply(read_as_config("$goodname"), { $goodname => 1}, "should accet correct names");
+}
+
+for my $badline ("x!=1", "тест=1", "test!1=тест") {
+	my $utfbadline = encode("UTF-8", $badline);
+	for my $append_lines (0..3) {
+		my $wholefile = join("\n", (map { $_ } 1..$append_lines), $utfbadline);
+		ok ! defined eval { read_as_config($wholefile); 1 };
+		ok get_exception;
+		is get_exception->{code}, 'invalid_config_line', "should have valid exception code";
+		is get_exception->{lineno}, $append_lines + 1, "should report correct lineno";
+		is get_exception->{line}, hex_dump_string($utfbadline), "should report correct line";
+		is get_exception->{config}, hex_dump_string($file), "should report filename";
+		is exception_message(get_exception),
+			"Cannot parse line in config file: ".hex_dump_string($utfbadline)." at ".hex_dump_string($file)." line ".($append_lines + 1);
+	}
+}
+
 
 for my $utfstring ("тест", "вф") {
 	is_deeply(
@@ -103,7 +144,11 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	unlink $file if -e $file;
 	ok ! -e $file, "assert we deleted file";
 	my $C = App::MtAws::ConfigEngine->new();
-	ok !defined $C->read_config($file), "should die if file not found"
+	ok !defined eval { $C->read_config($file); 1 };
+	ok get_exception;
+	is get_exception->{code}, 'config_file_is_not_a_file';
+	is get_exception->{config}, hex_dump_string($file);
+	is exception_message(get_exception), "Config file is not a file: ".hex_dump_string($file);
 }
 
 {
@@ -112,7 +157,12 @@ for my $value ("a", "=b", "a=b", "c=d", "e==f", "===x") {
 	mkpath($file);
 	ok -d $file, "assert file is directory";
 	my $C = App::MtAws::ConfigEngine->new();
-	ok !defined $C->read_config($file), "should die if file is directory"
+	ok !defined eval { $C->read_config($file); 1;};
+	ok get_exception;
+	is get_exception->{code}, 'config_file_is_not_a_file';
+	is get_exception->{config}, hex_dump_string($file);
+	is exception_message(get_exception), "Config file is not a file: ".hex_dump_string($file);
+
 }
 
 sub read_as_config
@@ -123,8 +173,9 @@ sub read_as_config
 	print F $bytes;
 	close F;
 	my $C = App::MtAws::ConfigEngine->new();
-	return $C->read_config($file);
-	
+	my $r = $C->read_config($file);
+	return undef unless defined $r;
+	return ({map { decode("UTF-8", $_)  } %$r}); # UTF-8 decode hash
 }
 
 

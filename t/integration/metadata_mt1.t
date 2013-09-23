@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -24,11 +24,15 @@ use strict;
 use warnings;
 use utf8;
 use Test::More tests => 4154;
-use lib qw{../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use POSIX;
+use TestUtils;
+
+warning_fatal();
 
 my $meta_coder = JSON::XS->new->utf8;
 

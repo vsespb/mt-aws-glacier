@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -23,15 +23,19 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 76;
-use lib qw{../lib ../../lib};
+use Test::Simple tests => 228;
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::Journal;
 use File::Path;
 use JournalTest;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
+use TestUtils;
+
+warning_fatal();
 
 
-my $mtroot = '/tmp/mt-aws-glacier-tests';
+my $mtroot = get_temp_dir();
 my $tmproot = "$mtroot/journal-plain";
 my $dataroot = "$tmproot/dataL1/dataL2";
 my $journal_file = "$tmproot/journal";
@@ -56,8 +60,13 @@ my $testfiles1 = [
 ];
 
 
-for my $jv (qw/0 A/) {
+for my $jv (qw/0 A B C/) {
 	my $J = JournalTest->new(create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
+	$J->test_all();
+}
+
+for my $follow (qw/0 1/) {
+	my $J = JournalTest->new(create_journal_version => 'B', follow => 1, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
 	$J->test_all();
 }
 

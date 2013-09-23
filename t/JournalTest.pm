@@ -23,11 +23,12 @@ package JournalTest;
 use strict;
 use warnings;
 use utf8;
-use lib qw/../;
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
 use App::MtAws::Journal;
 use File::Path;
 use App::MtAws::TreeHash;
-use Test::Simple;
+use Test::More;
 use Encode;
 use Carp;
 
@@ -37,6 +38,8 @@ sub new
     my ($class, %args) = @_;
     my $self = \%args;
     defined($self->{create_journal_version})||confess;
+    $self->{filenames_encoding} ||= 'UTF-8';
+    $self->{journal_encoding} ||= 'UTF-8';
     bless $self, $class;
     return $self;
 }
@@ -55,10 +58,11 @@ sub test_all
 sub test_journal
 {
 	my ($self) = @_;
-	mkpath($self->{dataroot});
+	mkpath(encode($self->{filenames_encoding}, $self->{dataroot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	$self->create_journal();
 	
-	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, follow => $self->{follow});
 	$j->read_journal(should_exist => 1);
 	
 	my @checkfiles = grep { $_->{type} eq 'normalfile' && $_->{journal} && $_->{journal} eq 'created' } @{$self->{testfiles}};
@@ -69,89 +73,103 @@ sub test_journal
 		ok ($jf->{size} == $cf->{filesize}, "file size match $jf->{size} == $cf->{filesize}");
 		ok ($jf->{treehash} eq $cf->{final_hash}, "treehash matches"	);
 		ok ($jf->{archive_id} eq $cf->{archive_id}, "archive id matches"	);
-		ok ($j->absfilename($cf->{filename}) eq File::Spec->rel2abs($cf->{filename}, $self->{dataroot}), "absfilename match"); # actually better test in real
+		is ($j->absfilename($cf->{filename}), File::Spec->rel2abs($cf->{filename}, $self->{dataroot}), "absfilename match"); # actually better test in real
 	}
-	rmtree($self->{tmproot}) if ($self->{tmproot}) && (-d $self->{tmproot});
+	
+	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	rmtree($tmproot_e)
+		if ($tmproot_e) && (-d $tmproot_e);
 }
 
 sub test_real_files
 {
 	my ($self) = @_;
-	mkpath($self->{dataroot});
+	mkpath(encode($self->{filenames_encoding}, $self->{dataroot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	$self->create_files();
 	
-	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
-	$j->read_all_files();
+	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter}, follow => $self->{follow});
+	$j->read_files({new=>1,existing=>1});
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' } @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{exclude} } @{$self->{testfiles}};
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{new}}+scalar @{$j->{listing}{existing}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{allfiles_a}}) {
+	for my $realfile (@{$j->{listing}{new}}, @{$j->{listing}{existing}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	rmtree($self->{tmproot}) if ($self->{tmproot}) && (-d $self->{tmproot});
+	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	rmtree($tmproot_e)
+		if ($tmproot_e) && (-d $tmproot_e);
 }
 
 sub test_all_files
 {
 	my ($self) = @_;
-	mkpath($self->{dataroot});
+	mkpath(encode($self->{filenames_encoding}, $self->{dataroot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	$self->create_journal();
 	$self->create_files('skip');
+	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter}, follow => $self->{follow});
+	$j->read_files({new=>1,existing=>1});
 	
-	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
-	$j->read_all_files();
-	
-	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} } @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{allfiles_a}}, "number of planed and real files match");
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} } @{$self->{testfiles}};
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{new}}+scalar @{$j->{listing}{existing}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{allfiles_a}}) {
+	for my $realfile (@{$j->{listing}{new}}, @{$j->{listing}{existing}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	rmtree($self->{tmproot}) if ($self->{tmproot}) && (-d $self->{tmproot});
+	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	rmtree($tmproot_e)
+		if ($tmproot_e) && (-d $tmproot_e);
 }
 
 
 sub test_new_files
 {
 	my ($self) = @_;
-	mkpath($self->{dataroot});
+	mkpath(encode($self->{filenames_encoding}, $self->{dataroot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	$self->create_journal();
 	$self->create_files('skip');
-	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter}, follow => $self->{follow});#
 	$j->read_journal(should_exist => 1);
-	$j->read_new_files();
-	
-	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{newfiles_a}}, "number of planed and real files match");
+	$j->read_files({new=>1});
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} && (!$_->{journal} || $_->{journal} ne 'created' ) } @{$self->{testfiles}};
+
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{new}}, "number of planned and real files match");
 
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{newfiles_a}}) {
+	for my $realfile (@{$j->{listing}{new}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	rmtree($self->{tmproot}) if ($self->{tmproot}) && (-d $self->{tmproot});
+	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	rmtree($tmproot_e)
+		if ($tmproot_e) && (-d $tmproot_e);
 }
 
 sub test_existing_files
 {
 	my ($self) = @_;
-	mkpath($self->{dataroot});
+	mkpath(encode($self->{filenames_encoding}, $self->{dataroot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	$self->create_journal();
 	$self->create_files('skip');
-	my $j = App::MtAws::Journal->new(journal_file => $self->{journal_file}, root_dir => $self->{dataroot});
+	my $j = App::MtAws::Journal->new(journal_encoding => $self->{journal_encoding},
+		journal_file => $self->{journal_file}, root_dir => $self->{dataroot}, filter => $self->{filter}, follow => $self->{follow});
 	$j->read_journal(should_exist => 1);
-	$j->read_existing_files();
+	$j->read_files({existing=>1});
 	
-	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};
-	ok((scalar @checkfiles) == scalar @{$j->{existingfiles_a}}, "number of planed and real files match");
+	my @checkfiles = grep { $_->{type} ne 'dir' && !$_->{skip} && !$_->{exclude} && ($_->{journal} && $_->{journal} eq 'created')} @{$self->{testfiles}};
+	ok((scalar @checkfiles) == scalar @{$j->{listing}{existing}}, "number of planed and real files match");
 	
 	my %testfile_h = map { $_->{filename } => $_} @checkfiles;
-	for my $realfile (@{$j->{existingfiles_a}}) {
+	for my $realfile (@{$j->{listing}{existing}}) {
 		ok ( $testfile_h{ $realfile->{relfilename} }, "found file $realfile->{relfilename} exists in planned test file list" );
 	}
-	rmtree($self->{tmproot}) if ($self->{tmproot}) && (-d $self->{tmproot});
+	my $tmproot_e = encode($self->{filenames_encoding}, $self->{tmproot}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	rmtree($tmproot_e)
+		if ($tmproot_e) && (-d $tmproot_e);
 }
 
 sub create_files
@@ -160,13 +178,13 @@ sub create_files
 	for my $testfile (@{$self->{testfiles}}) {
 		$testfile->{fullname} = "$self->{dataroot}/$testfile->{filename}";
 		if ($testfile->{type} eq 'dir') {
-			mkpath($testfile->{fullname});
-		} elsif (($testfile->{type} eq 'normalfile') && (
+			mkpath(encode($self->{filenames_encoding}, $testfile->{fullname}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
+		} elsif (($testfile->{type} eq 'normalfile')  && ( #&& !$testfile->{exclude}
 		     (!defined($mode)) ||
 		     ( ($mode eq 'skip') && !$testfile->{skip} )
 		     ))
 		{
-			open (F, ">:encoding(UTF-8)", $testfile->{fullname});
+			open (F, ">:encoding(UTF-8)", encode($self->{filenames_encoding}, $testfile->{fullname}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 			print F $testfile->{content};
 			close F;
 		}
@@ -177,8 +195,8 @@ sub create_files
 sub create_journal
 {
 	my ($self, $mode) = @_;
-	if ($self->{create_journal_version} eq 'A') {
-		$self->create_journal_vA($mode);
+	if ($self->{create_journal_version} =~ /^[ABC]$/) {
+		$self->create_journal_vABC($self->{create_journal_version}, $mode);
 	} elsif ($self->{create_journal_version} eq '0') {
 		$self->create_journal_v0($mode);
 	} else {
@@ -190,7 +208,7 @@ sub create_journal
 sub create_journal_v0
 {
 	my ($self, $mode) = @_;
-	open (F, ">:encoding(UTF-8)", $self->{journal_file});
+	open (F, ">:encoding($self->{journal_encoding})", encode($self->{filenames_encoding}, $self->{journal_file}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)) || confess;
 	my $t = time() - (scalar @{$self->{testfiles}})*2;
 	for my $testfile (@{$self->{testfiles}}) {
 		if (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created')) {
@@ -210,11 +228,11 @@ sub create_journal_v0
 	close F;
 }
 
-# creating journal for v0.7beta
-sub create_journal_vA
+# creating journal v 'A'
+sub create_journal_vABC
 {
-	my ($self, $mode) = @_;
-	open (F, ">:encoding(UTF-8)", $self->{journal_file});
+	my ($self, $version, $mode) = @_;
+	open (F, ">:encoding($self->{journal_encoding})", encode($self->{filenames_encoding}, $self->{journal_file}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 	my $t = time() - (scalar @{$self->{testfiles}})*2;
 	my $ft = $t - 1000;
 	my $dt = $t + 1;
@@ -224,13 +242,13 @@ sub create_journal_vA
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
-			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
+			print F "$version\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
 		} elsif (($testfile->{type} eq 'normalfile') && $testfile->{journal} && ($testfile->{journal} eq 'created_and_deleted')) {
 			$testfile->{archive_id} = get_random_archive_id($t);
 			$testfile->{filesize} = length($testfile->{content});
 			$testfile->{final_hash} = scalar_treehash(encode_utf8($testfile->{content}));
-			print F "A\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
-			print F "A\t$dt\tDELETED\t$testfile->{archive_id}\t$testfile->{filename}\n";
+			print F "$version\t$t\tCREATED\t$testfile->{archive_id}\t$testfile->{filesize}\t$ft\t$testfile->{final_hash}\t$testfile->{filename}\n";
+			print F "$version\t$dt\tDELETED\t$testfile->{archive_id}\t$testfile->{filename}\n";
 		}
 		$t++;
 	}

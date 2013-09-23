@@ -33,7 +33,7 @@
 
 package App::MtAws::TreeHash;
 
-
+our $VERSION = '1.051';
 
 use strict;
 use warnings;
@@ -45,24 +45,24 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{tree} = [];
-    $self->{pending} = {};
-    $self->{unit} ||= 1048576;
-    $self->{processed_size} = 0; # MB
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{tree} = [];
+	$self->{pending} = {};
+	$self->{unit} ||= 1048576;
+	$self->{processed_size} = 0; # MB
+	bless $self, $class;
+	return $self;
 }
 
 
 sub eat_file
 {
 	my ($self, $fh) = @_;
-	while (1) {
-		my $r = sysread($fh, my $data, $self->{unit});
+	while () {
+		my $r = read($fh, my $data, $self->{unit});
 		if (!defined($r)) {
-			die;
+			die $!;
 		} elsif ($r > 0) {
 			$self->_eat_data_one_mb(\$data);
 		} else {
@@ -87,6 +87,31 @@ sub eat_data
 			$self->_eat_data_one_mb(\$part);
 			$i += $mb
 		}
+	}
+}
+
+sub eat_data_any_size
+{
+	my $self = $_[0];
+	my $dataref = (ref($_[1]) eq '') ? \$_[1] : $_[1];
+	my $mb = $self->{unit};
+	my $n = length($$dataref);
+	if (defined $self->{buffer}) {
+		$self->{buffer} .= $$dataref;
+	} else {
+		$self->{buffer} = $$dataref;
+	}
+	if (length($self->{buffer}) == $mb) {
+		$self->_eat_data_one_mb($self->{buffer});
+		$self->{buffer} = '';
+	} elsif (length($self->{buffer}) > $mb) {
+		my $i = -0;
+		while ($i + $mb <=  length($self->{buffer})) { # TODO this loop for performance optimization, and optimization is not tested
+			my $part = substr($self->{buffer}, $i, $mb);
+			$self->_eat_data_one_mb($part);
+			$i += $mb;
+		}
+		$self->{buffer} = substr($self->{buffer}, $i);
 	}
 }
 
@@ -127,6 +152,7 @@ sub _eat_data_one_mb
 sub calc_tree
 {
 	my ($self)  = @_;
+	$self->_eat_data_one_mb($self->{buffer}) if defined($self->{buffer}) && length($self->{buffer});
 	my $prev_level = 0;
 	while (scalar @{ $self->{tree}->[$prev_level] } > 1) {
 		my $curr_level = $prev_level+1;
@@ -167,8 +193,8 @@ sub _treehash_recursive
 		if ($a == $b) {
 			return $self->{by_position}->{$a}->{hash};
 		} else {
-				my $middle = _maxpower($b-$a) + $a;
-				return sha256 ($self->_treehash_recursive($a, $middle - 1 ).$self->_treehash_recursive($middle, $b));
+			my $middle = _maxpower($b-$a) + $a;
+			return sha256 ($self->_treehash_recursive($a, $middle - 1 ).$self->_treehash_recursive($middle, $b));
 		}
 	} else {
 		return $self->_treehash_recursive(0,$self->{max});
@@ -179,14 +205,14 @@ sub _maxpower
 {
 	my ($x) = @_;
 	die if $x == 0;
-    $x |= $x >> 1;
-    $x |= $x >> 2;
-    $x |= $x >> 4;
-    $x |= $x >> 8;
-    $x |= $x >> 16;
-    $x >>= 1;
-    $x++;
-    return $x;
+	$x |= $x >> 1;
+	$x |= $x >> 2;
+	$x |= $x >> 4;
+	$x |= $x >> 8;
+	$x |= $x >> 16;
+	$x >>= 1;
+	$x++;
+	return $x;
 }
 
 

@@ -20,50 +20,55 @@
 
 package App::MtAws::ParentWorker;
 
-use lib 'lib';
+our $VERSION = '1.051';
 
 use strict;
 use warnings;
 use utf8;
 use App::MtAws::LineProtocol;
 use Carp;
+use POSIX;
+use App::MtAws::Utils;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{children}||die;
-    $self->{disp_select}||die;
-    $self->{options}||die;
-    @{$self->{freeworkers}} = keys %{$self->{children}};
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{children}||die;
+	$self->{disp_select}||die;
+	$self->{options}||die;
+	@{$self->{freeworkers}} = keys %{$self->{children}};
+	bless $self, $class;
+	return $self;
 }
 
 sub process_task
 {
 	my ($self, $ft, $journal) = @_;
 	my $task_list = {};
-	while (1) {
+	while () {
 		if ( @{$self->{freeworkers}} ) {
 			my ($result, $task) = $ft->get_task();
 			if ($result eq 'wait') {
 				if (scalar keys %{$self->{children}} == scalar @{$self->{freeworkers}}) {
 					die;
 				}
-				my $r = $self->wait_worker($task_list, $ft, $journal);
-				return $r if $r;
+				my ($r, $att) = $self->wait_worker($task_list, $ft, $journal);
+				return ($r, $att) if $r;
 			} elsif ($result eq 'ok') {
 				my $worker_pid = shift @{$self->{freeworkers}};
 				my $worker = $self->{children}->{$worker_pid};
 				$task_list->{$task->{id}} = $task;
-				send_command($worker->{tochild}, $task->{id}, $task->{action}, $task->{data}, $task->{attachment});
+				send_data($worker->{tochild}, $task->{action}, $task->{id}, $task->{data}, $task->{attachment}) or
+					$self->comm_error;
+			} elsif ($result eq 'done') {
+				return (1, undef);
 			} else {
 				die;
 			}
 		} else {
-			my $r = $self->wait_worker($task_list, $ft, $journal);
-			return $r if $r;
+			my ($r, $att) = $self->wait_worker($task_list, $ft, $journal);
+			return ($r, $att) if $r;
 		}
 	}
 }
@@ -71,55 +76,38 @@ sub process_task
 sub wait_worker
 {
 	my ($self, $task_list, $ft, $journal) = @_;
-	my @ready = $self->{disp_select}->can_read();
+	my @ready;
+	do { @ready = $self->{disp_select}->can_read(); } until @ready || $! != EINTR;
 	for my $fh (@ready) {
-		if (eof($fh)) {
-			$self->{disp_select}->remove($fh);
-			die "Unexpeced EOF in Pipe";
-			next; 
-		}
-		my ($pid, $taskid, $data) = get_response($fh);
+		my ($pid, undef, $taskid, $data, $resultattachmentref) = get_data($fh);
+		$pid or $self->comm_error;
 		push @{$self->{freeworkers}}, $pid;
 		die unless my $task = $task_list->{$taskid};
 		$task->{result} = $data;
+		$task->{attachmentref} = $resultattachmentref;
 		print "PID $pid $task->{result}->{console_out}\n";
-		my ($result) = $ft->finish_task($task);
-		delete $task_list->{$taskid};
-	
 		if ($task->{result}->{journal_entry}) {
 			confess unless defined $journal;
 			$journal->add_entry($task->{result}->{journal_entry});
 		}
-		  
+
+		delete $task_list->{$taskid};
+		my ($result) = $ft->finish_task($task);
+
 		if ($result eq 'done') {
-			return $task->{result};
-		} 
+			return ($task->{result}, $task->{attachmentref});
+		}
 	}
 	return 0;
 }
 
-sub send_command
+sub comm_error
 {
-	my ($fh, $taskid, $action, $data, $attachmentref) = @_;
-    my $data_e = encode_data($data);
-    my $attachmentsize = $attachmentref ? length($$attachmentref) : 0;
-	my $line = "$taskid\t$action\t$attachmentsize\t$data_e\n";
-    #print ">$line\n";
-    print $fh $line;
-    print $fh $$attachmentref if $attachmentsize;
+	my ($self) = @_;
+	sleep 1; # let's wait for SIGCHLD in order to have same error message in same cases
+	kill (POSIX::SIGUSR2, keys %{$self->{children}});
+	print STDERR "EXIT eof/error when communicate with child process\n";
+	exit(1);
 }
-
-
-sub get_response
-{
-	my ($fh) = @_;
-    my $line = <$fh>;
-    chomp $line;
-   # print "<$line\n";
-    my ($pid, $taskid, $data_e) = split /\t/, $line;
-    my $data = decode_data($data_e);
-    return ($pid, $taskid, $data);
-}
-
 
 1;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -25,20 +25,13 @@ use warnings;
 use utf8;
 use Test::More tests => 6;
 use Test::Deep;
-use lib qw{../lib ../../lib};
-use App::MtAws::ConfigEngine;
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Test::MockModule;
 use Data::Dumper;
+use TestUtils;
 
-no warnings 'redefine';
-
-local *App::MtAws::ConfigEngine::read_config = sub { { key=>'mykey', secret => 'mysecret', region => 'myregion' } };
-
-my %disable_validations = ( 
-	'override_validations' => {
-		'journal' => [ ['Journal file not exist' => sub { 1 } ], ],
-	},
-);
+warning_fatal();
 
 
 
@@ -46,23 +39,27 @@ my %disable_validations = (
 
 
 my ($default_concurrency, $default_partsize) = (4, 16);
+my %misc_opts = ('journal-encoding' => 'UTF-8', 'filenames-encoding' => 'UTF-8', 'terminal-encoding' => 'UTF-8', 'config-encoding' => 'UTF-8', timeout => 180);
 
 # create-vault
 
 for (
 	qq!create-vault myvault --config=glacier.cfg!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && !$warnings, "$_ error/warnings");
-	ok ($command eq 'create-vault', "$_ command");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		'vault-name'=>'myvault',
-		config=>'glacier.cfg',
-	}, "$_ result");
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && !$warnings, "$_ error/warnings");
+		ok ($command eq 'create-vault', "$_ command");
+		is_deeply($result, {
+			%misc_opts,
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			'vault-name'=>'myvault',
+			config=>'glacier.cfg',
+		}, "$_ result");
+	}
 }
 
 
@@ -71,17 +68,20 @@ for (
 for (
 	qq!delete-vault myvault --config=glacier.cfg!,
 ){
-	my ($errors, $warnings, $command, $result) = App::MtAws::ConfigEngine->new(%disable_validations)->parse_options(split(' ', $_));
-	ok( !$errors && !$warnings, "$_ error/warnings");
-	ok ($command eq 'delete-vault', "$_ command");
-	is_deeply($result, {
-		key=>'mykey',
-		secret => 'mysecret',
-		region => 'myregion',
-		protocol => 'http',
-		'vault-name'=>'myvault',
-		config=>'glacier.cfg',
-	}, "$_ result");
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && !$warnings, "$_ error/warnings");
+		ok ($command eq 'delete-vault', "$_ command");
+		is_deeply($result, {
+			%misc_opts,
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			'vault-name'=>'myvault',
+			config=>'glacier.cfg',
+		}, "$_ result");
+	}
 }
 
 

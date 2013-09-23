@@ -20,6 +20,8 @@
 
 package App::MtAws::MetaData;
 
+our $VERSION = '1.051';
+
 use strict;
 use warnings;
 use utf8;
@@ -34,24 +36,10 @@ use constant MAX_SIZE => 1024;
 
 =pod
 
-MT-AWS-GLACIER metadata format (x-amz-archive-description field).
-
-Version 'mt2'
-
-x-amz-archive-description = 'mt2' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
-
-Input data:
-
-FILENAME (character string)
-	Is a relative filename (no leading slash). Filename is taken from file system and treated as a character sequence
-	with known encoding.
-MTIME (time)
-	is file last modification time with 1 second resolution. Can be below Y1970.
-	Internal representation is epoch time, so it can be any valid epoch time, including negative values. On some system it's
-	32bit signed, another are 64bit signed, for some filesystems it's 34 bit signed etc.
+MT-AWS-GLACIER metadata format ('x-amz-archive-description' field).
 
 Function definitions:
-
+=====================
 base64url() input - byte sequence, output - byte sequence
 	Is Base64 URL algorithm: http://en.wikipedia.org/wiki/Base64#URL_applications
 	basically it's base64 but with '=' padding removed, characters '+', '/' replaced with '-', '_' resp. and no new lines.
@@ -59,14 +47,56 @@ base64url() input - byte sequence, output - byte sequence
 json_utf8() - input - Hash, output - byte sequence
 	JSON string in UTF-8 representation. Can contain not-escaped UTF-8 characters. Will not contain linefeed. Hash objects are unordered.
 
+latin1_to_utf8() - input - byte sequence, output - byte sequence
+	Treats input data as Latin1 (ISO 8859-1) encoded sequence and converts it to UTF-8 sequence
+
 isoO8601() - input - time, output - character string
 	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC filezone. No leap seconds supported.
 	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
 
 {'filename': FILENAME, 'mtime': iso8601(MTIME)}
-	Hash with two keys: 'filename' and 'mtime'. Correspond to JSON 'Object'.
+	Hash with two keys: 'filename' and 'mtime'. Corresponds to JSON 'Object'.
 
-Note, that according to this spec. Same (FILENAME,MTIME) values can produce different x-amz-archive-description, as JSON hash is unordered.
+Input data:
+=====================
+
+FILENAME (character string)
+	Is a relative filename (no leading slash). Filename is taken from file system and treated as a character sequence
+	with known encoding.
+MTIME (time)
+	is file last modification time with 1 second resolution. Can be below Y1970.
+	Internal representation is epoch time, so it can be any valid epoch time (including negative values and zero). On some system it's
+	32bit signed, on others 64bit signed, for some filesystems it's 34 bit signed etc.
+
+Version 'mt2'
+=====================
+
+x-amz-archive-description = 'mt2' <space> base64url(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)}))
+
+Version 'mt1'
+=====================
+
+x-amz-archive-description = 'mt1' <space> base64url(latin1_to_utf8(json_utf8({'filename': FILENAME, 'mtime': iso8601(MTIME)})))
+
+This format actually contains a bug - data is double encoded. However it does not affect data integrity. UTF-8 double encoded data can be
+perfectly decoded (see http://www.j3e.de/linux/convmv/man/) - that's why the bug was unnoticed during one month.
+This format was in use starting from version 0.80beta (2012-12-27) till 0.84beta (2013-01-28).
+
+NOTES:
+=====================
+
+1) This specification assumes that in our programming language we have two different types of Strings: Byte string (byte sequence) and Character strings.
+Byte string is sequence of octets. Character string is an internal representation of sequence of characters. Character strings cannot have encodings
+by definition - it's internal, encoding is known to language implementation.
+
+Some programming languages (like Ruby) have different model, when every string is a sequence of bytes with a known encoding (or no encoding at all).
+
+2) According to this spec. Same (FILENAME,MTIME) values can produce different x-amz-archive-description, as JSON hash is unordered.
+
+3) This specification explains how to _encode_ data (because it's a specification). However it's easy to
+understant how to decode it back.
+
+4) Path separator in filename is '/'
 
 =cut
 
@@ -76,17 +106,17 @@ my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
 
 sub meta_decode
 {
-  my ($str) = @_;
-  my ($marker, $b64) = split(' ', $str);
-  if ($marker eq 'mt1') {
-  	return (undef, undef) unless length($b64) <= MAX_SIZE;
-  	return _decode_json(_decode_utf8(_decode_b64($b64)));
-  } elsif ($marker eq 'mt2') {
-  	return (undef, undef) unless length($b64) <= MAX_SIZE;
-  	return _decode_json(_decode_b64($b64));
-  } else {
-  	return (undef, undef);
-  }
+	my ($str) = @_;
+	my ($marker, $b64) = split(' ', $str);
+	if ($marker eq 'mt1') {
+		return (undef, undef) unless length($b64) <= MAX_SIZE;
+		return _decode_json(_decode_utf8(_decode_b64($b64)));
+	} elsif ($marker eq 'mt2') {
+		return (undef, undef) unless length($b64) <= MAX_SIZE;
+		return _decode_json(_decode_b64($b64));
+	} else {
+		return (undef, undef);
+	}
 }
 
 sub _decode_b64
@@ -115,7 +145,7 @@ sub _decode_json
 {
 	my ($str) = @_;
 	return unless defined $str;
-	my $h = eval { 
+	my $h = eval {
 		$meta_coder->decode($str)
 	};
 	if ($@ ne '') {
@@ -158,7 +188,7 @@ sub _encode_utf8
 sub _encode_json
 {
 	my ($relfilename, $mtime) = @_;
-	
+
 	return $meta_coder->encode({
 		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
 		filename => $relfilename

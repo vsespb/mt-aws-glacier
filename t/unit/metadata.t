@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
@@ -24,11 +24,15 @@ use strict;
 use warnings;
 use utf8;
 use Test::Spec;
-use lib qw{../lib ../../lib};
+use FindBin;
+use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
+use TestUtils;
+
+warning_fatal();
 
 describe "MetaData" => sub {
 	it "should catch undef in _decode_json" => sub {

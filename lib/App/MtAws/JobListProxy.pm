@@ -20,31 +20,34 @@
 
 package App::MtAws::JobListProxy;
 
+our $VERSION = '1.051';
+
 use strict;
 use warnings;
 use utf8;
 use App::MtAws::ProxyTask;
+use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    $self->{jobs}||die;
-    
-    $self->{jobs_h} = {};
-    $self->{jobs_a} = [];
-    my $i = 1;
-    for my $job (@{$self->{jobs}}) {
-    	push @{$self->{jobs_a}}, { jobid => $i, job => $job };
-    	$self->{jobs_h}->{$i} = $job;
-    	++$i;
-    }
-    
-    $self->{pending}={};
-    $self->{uid}=0;
-    $self->{all_raised} = 0;
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	$self->{jobs}||die;
+
+	$self->{jobs_h} = {};
+	$self->{jobs_a} = [];
+	my $i = 1;
+	for my $job (@{$self->{jobs}}) {
+		push @{$self->{jobs_a}}, { jobid => $i, job => $job };
+		$self->{jobs_h}->{$i} = $job;
+		++$i;
+	}
+
+	$self->{pending}={};
+	$self->{uid}=0;
+	$self->{all_raised} = 0;
+	bless $self, $class;
+	return $self;
 }
 
 # returns "ok" "wait" "ok subtask"
@@ -52,15 +55,28 @@ sub get_task
 {
 	my ($self) = @_;
 	if (scalar @{$self->{jobs_a}}) {
-		my $maxcnt = 30;
-		for my $job (@{$self->{jobs_a}}) {
-			my ($status, $task) = $job->{job}->get_task();
-			if ($status eq 'wait') {
-				last unless ($maxcnt--);
-			} else {
-				my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
-				$self->{pending}->{$newtask->{id}} = $newtask;
-				return ($status, $newtask);
+		my $maxcnt = $self->{maxcnt}||30;
+		OUTER: for (1) {
+			for my $job (@{$self->{jobs_a}}) {
+				my ($status, $task) = $job->{job}->get_task();
+				if ($status eq 'wait') {
+					if ($self->{one_by_one}) {
+						return ('wait');
+					} else {
+						return ('wait') unless --$maxcnt;
+					}
+				} elsif ($status eq 'done') {
+					my ($s, $t) = $self->do_finish($job->{jobid});
+					if ($s eq 'ok') {
+						redo OUTER; # TODO: can optimize here..
+					} else {
+						return ($s, $t); # if done
+					}
+				} else {
+					my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{uid}, jobid => $job->{jobid}, task => $task);
+					$self->{pending}->{$newtask->{id}} = $newtask;
+					return ($status, $newtask);
+				}
 			}
 		}
 		return ('wait');
@@ -74,30 +90,37 @@ sub finish_task
 {
 	my ($self, $task) = @_;
 	my $jobid = $task->{jobid};
-	
-	$task->{task}->{result} = $task->{result}; # TODO: move to App::MtAws::ProxyTask
-	
-	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task->{task});
-	delete $self->{pending}->{$task->{id}};
-	
+	my $id = $task->{id};
+
+	$task->pop;
+
+	my ($status, @res) = $self->{jobs_h}->{$jobid}->finish_task($task);
+	delete $self->{pending}->{$id};
+
 	if ($status eq 'ok'){
 		return ("ok");
 	} elsif ($status eq 'done') {
-		delete $self->{jobs_h}->{$jobid};
-		my $idx = 0;
-		for my $j (@{$self->{jobs_a}}) {
-			if ($j->{jobid} == $task->{jobid}) {
-				splice(@{$self->{jobs_a}}, $idx, 1);
-				last;
-			}
-			++$idx;
-		}
-		if (scalar @{$self->{jobs_a}}) {
-			return 'ok';
-		} else {
-			return 'done';
-		}
+		return $self->do_finish($jobid);
 	}
 }
-	
+
+sub do_finish
+{
+	my ($self, $jobid) = @_;
+	delete $self->{jobs_h}->{$jobid};
+	my $idx = 0;
+	for my $j (@{$self->{jobs_a}}) {
+		if ($j->{jobid} == $jobid) {
+			splice(@{$self->{jobs_a}}, $idx, 1);
+			last;
+		}
+		++$idx;
+	}
+	if (scalar @{$self->{jobs_a}}) {
+		return 'ok';
+	} else {
+		return 'done';
+	}
+}
+
 1;
