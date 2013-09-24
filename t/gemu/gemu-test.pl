@@ -9,14 +9,14 @@ use Data::Dumper;
 use Carp;
 use File::Basename;
 use Encode;
-use File::Path qw/mkpath/;
+use File::Path qw/mkpath rmtree/;
 use App::MtAws::TreeHash;
 
 
 our ($DIR, $ROOT, $VAULT, $JOURNAL, $NEWJOURNAL, $CFG, $GLACIER, $CONC);
 $DIR='/dev/shm/mtaws';
 $VAULT="test1";
-$GLACIER='src/mtglacier';
+$GLACIER='../../../src/mtglacier';
 
 $ROOT= "$DIR/файлы";
 $CFG="$DIR/конфиг.cfg";
@@ -73,30 +73,55 @@ sub create_journal
 			my $archive_id = gen_archive_id;
 			my $treehash = treehash($testfile->{content});
 			#print $F $t." CREATED $archive_id $testfile->{filesize} $testfile->{final_hash} $testfile->{filename}\n";
-			print $f "A\t$456\tCREATED\t$archive_id\t$testfile->{filesize}\t123\t$treehash\t$testfile->{filename}\n";
+			print $f "A\t456\tCREATED\t$archive_id\t$testfile->{filesize}\t123\t$treehash\t$testfile->{relfilename}\n";
 		}
 	}
 	close $f;
 }
 
+sub create_config
+{
+		my ($file, $terminal_encoding) = @_;
+		open (my $f, ">", encode($terminal_encoding, $file||die, Encode::DIE_ON_ERR|Encode::LEAVE_SRC))||confess "$file $!";
+		print $f <<"END";
+key=AKIAJ2QN54K3SOFABCDE
+secret=jhuYh6d73hdhGndk1jdHJHdjHghDjDkkdkKDkdkd
+# eu-west-1, us-east-1 etc
+#region=eu-west-1
+region=us-east-1
+protocol=https
+END
+		close $f;
+}
+
+
 
 sub process_one
 {
 	my ($data) = @_;
+
+	rmtree $DIR;
+
 	return if ($data->{filesize} > 1 && $data->{filename} ne 'default');
 
 	print join(" ", map { "$_=$data->{$_}" } sort keys %$data), "\n";
 
 	my $filenames_encoding = 'UTF-8';
 
+	my @opts = (-vault => $VAULT);
 	my $root_dir = "$DIR/root";
 
-	my @create_files;
-	if ($data->{filename} eq 'zero') {
-		push @create_files, '0';
-	} else {
-		push @create_files, 'somefile';
-	}
+	push @opts, '--dir', $root_dir;
+
+	my @create_files = (do {
+		if ($data->{filename} eq 'zero') {
+			'0';
+		} elsif ($data->{filename} eq 'russian') {
+			"файл"
+		} else {
+			'somefile';
+		}
+	});
 
 	my $filebody = $data->{filebody} or confess;
 	my $filesize = $data->{filesize};
@@ -108,7 +133,6 @@ sub process_one
 	} @create_files];
 	create_files($filenames_encoding, $root_dir, $files);
 
-	my @opts;
 	my $journal_name = do {
 		if ($data->{journal_name} eq 'default') {
 			"journal"
@@ -142,13 +166,32 @@ sub process_one
 		push @opts, q{--new};
 	} elsif ($data->{sync_mode} eq 'sync-modified') {
 		push @opts, q{--replace-modified};
-	} elsif ($data->{sync_mode} eq 'sync-removed') {
+	} elsif ($data->{sync_mode} eq 'sync-deleted') {
 		push @opts, q{--delete-removed};
+	} else {
+		confess $data->{sync_mode};
 	}
 	push @opts, map { ("--filter", $_) } @filter;
-	print "# sync ";
-	print join(" ", @opts), "\n";
 
+
+	my $terminal_encoding = do {
+		if ($data->{terminal_encoding} eq 'utf') {
+			"UTF-8"
+		} else {
+			"KOI8-R"
+		}
+	};
+    push @opts, q{--terminal-encoding}, $terminal_encoding;
+
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	push @opts, -config => $config;
+
+	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
+	print join(" ", @opts_e), "\n";
+	system($^X, $GLACIER, 'sync', @opts_e);
+	die if $?==2;
 }
 
 sub process_recursive
@@ -187,6 +230,7 @@ add(sub { otherfiles => qw/none many huge/ });
 add(sub { sync_mode => qw/sync-new sync-modified sync-deleted/ });
 add(sub { journal_match => qw/match nomatch/ });
 add(sub { match_filter => qw/default/ });#match nomatch
+add(sub { terminal_encoding => qw/utf/ });#match nomatch
 
 #return if ($data->{filebody} eq 'zero' && $data->{filesize} ne 1);
 
