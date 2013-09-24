@@ -133,7 +133,6 @@ sub run_fail
 sub process_one
 {
 	my ($data) = @_;
-
 	rmtree $DIR;
 
 	return if ($data->{filesize} > 1 && $data->{filename} ne 'default');
@@ -181,8 +180,10 @@ sub process_one
 	$opts{journal} = $journal_fullname;
 
 
+	my $will_upload = 1;
 	if ($data->{journal_match} eq 'match') {
 		$_->{already_in_journal} = 1 for @$files;
+		$will_upload = 0;
 	}
 	create_journal($journal_fullname, $files);
 
@@ -191,6 +192,7 @@ sub process_one
 		@filter = ((map { "+$_" } @create_files), "-");
 	} elsif ($data->{match_filter} eq 'nomatch') {
 		@filter = ((map { "-$_" } @create_files));
+		$will_upload = 0;
 	} elsif ($data->{match_filter} eq 'default') {
 
 	} else {
@@ -228,25 +230,36 @@ sub process_one
 	my @opts = map { my $k = $_; ref $opts{$k} ? (map { $k => $_ } @{$opts{$_}}) : ( $k => $opts{$k} )} keys %opts;
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
 	#$terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args
-	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
-	{
-		local $ENV{NEWFSM}=1;
-		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+
+	if ($will_upload) {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+		{
+			local $ENV{NEWFSM}=1;
+			run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+		}
+		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+
+		rmtree $root_dir;
+		mkpath $root_dir;
+
+		#run_fail($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+		$opts{'max-number-of-files'} = 100_000;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files/]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault /]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+		rmtree $root_dir;
+		mkpath $root_dir;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault/]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+	} else {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+		{
+			local $ENV{NEWFSM}=1;
+			run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+		}
+		rmtree $root_dir;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 	}
-	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
-
-	rmtree $root_dir;
-	mkpath $root_dir;
-
-	#run_fail($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
-	$opts{'max-number-of-files'} = 100_000;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault /]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
-	rmtree $root_dir;
-	mkpath $root_dir;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
 sub process_recursive
@@ -278,21 +291,38 @@ sub process
 }
 
 add(sub { journal_name => qw/default russian/ });
-add(sub { filename => qw/zero default russian latin1/ });
-add(sub { filesize => qw/1 1048576 1055555/ });#0
-add(sub { filebody => (get "filesize" == 1) ? qw/normal zero/ : 'normal' });
-add(sub { otherfiles => qw/none many huge/ });
-add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
-add(sub { journal_match => qw/nomatch/ });# match
-add(sub { match_filter => qw/default/ });#match nomatch
-add(sub { concurrency => qw/1 2 4/ });#match nomatch
+add(sub { filename => qw/zero default russian/ });#latin1
+add(sub { match_filter => qw/default match nomatch/ });#
+add(sub { journal_match => qw/nomatch match/ });#
 add(sub {
-	if (get("filesize") > 1024*1024) {
+	if (get("journal_match") eq "match" or get("match_filter") ne "default") {
+		filesize => (1)
+	} else {
+		filesize => (1, 1024*1024-1, 4*1024*1024+1)
+	}
+});#0
+add(sub { filebody => (get "filesize" == 1) ? qw/normal zero/ : 'normal' });
+add(sub { otherfiles => qw/none/ });# many huge
+add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
+add(sub {
+	return partsize => qw/1/ if get("journal_match") eq "match" or get("match_filter") ne "default";
+	if (get("filesize") >= 4*1024*1024) {
+		partsize => qw/1 2 4/
+	} elsif (get("filesize") >= 1024*1024) {
 		partsize => qw/1 2/
 	} else {
 		partsize => qw/1/
 	}
 });
+add(sub {
+	return concurrency => qw/1/ if get("journal_match") eq "match" or get("match_filter") ne "default";
+	my $r = (get("partsize")*1024*1024)/get("filesize");
+	if ($r > 3) {
+		concurrency => qw/1 2 4/
+	} else {
+		concurrency => qw/1 2/
+	}
+});#match nomatch
 add(sub { get("filename") eq 'russian' || get("journal_name") eq 'russian' ? (terminal_encoding => qw/utf singlebyte/) : (terminal_encoding => qw/utf/) });#match nomatch
 
 #return if ($data->{filebody} eq 'zero' && $data->{filesize} ne 1);
