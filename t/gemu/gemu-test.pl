@@ -326,6 +326,15 @@ add sub { get "filesize" == 1 || get "filebody" eq 'normal'};
 #add sub { print "#", get "filebody", "\n"};
 add(sub { otherfiles => qw/none/ });# many huge
 add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
+add(sub { detect => qw/none treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/ });
+add(sub {
+	if (get "sync_mode" eq 'sync-modified') {
+		return get "detect" eq 'none'
+	} else {
+		return get "detect" ne 'none'
+	}
+});
+add(sub { get "detect" eq 'none' ? 1 : detect_result => qw/modified notmodified/ });
 
 add(sub { partsize => qw/1 2 4/ });
 add(sub {
