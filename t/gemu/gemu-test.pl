@@ -26,6 +26,8 @@ $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 
 our $increment = 0;
 
+
+
 my @variants;
 
 sub get($) { die "Unimplemented"; };
@@ -37,9 +39,14 @@ sub add(&)
 	push @variants, $type_cb;
 }
 
+sub get_uniq_id()
+{
+	++$increment
+}
+
 sub gen_archive_id
 {
-	sprintf("%s%08d", "x" x 130, ++$increment);
+	sprintf("%s%08d", "x" x 130, get_uniq_id);
 }
 
 sub treehash
@@ -128,18 +135,25 @@ sub run_fail
 	confess unless run(@_);
 }
 
+sub empty_dir
+{
+	my $dir = shift;
+	rmtree $dir if -d $dir;
+	mkpath $dir;
+
+}
 
 
 sub process_one
 {
 	my ($data) = @_;
-	rmtree $DIR;
+	empty_dir $DIR;
 
 
 	my $filenames_encoding = 'UTF-8';
 
 	my %opts;
-	$opts{vault} = "test".(++$increment);
+	$opts{vault} = "test".get_uniq_id;
 	my $root_dir = "$DIR/root";
 
 	$opts{dir} = $root_dir;
@@ -217,9 +231,7 @@ sub process_one
 
 	my @opts = map { my $k = $_; ref $opts{$k} ? (map { $k => $_ } @{$opts{$_}}) : ( $k => $opts{$k} )} keys %opts;
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
-	#$terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args
 
-	#print "============================W $will_upload\n";
 	if ($will_upload) {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 		{
@@ -228,20 +240,16 @@ sub process_one
 		}
 		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
-		rmtree $root_dir;
-		mkpath $root_dir;
+		empty_dir $root_dir;
 
-		#run_fail($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 		$opts{'max-number-of-files'} = 100_000;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files/]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault /]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
-		rmtree $root_dir;
-		mkpath $root_dir;
+		empty_dir $root_dir;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault/]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 	} else {
-		#print Dumper $data;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 		{
 			local $ENV{NEWFSM}=1;
