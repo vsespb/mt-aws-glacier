@@ -135,7 +135,6 @@ sub process_one
 	my ($data) = @_;
 	rmtree $DIR;
 
-	return if ($data->{filesize} > 1 && $data->{filename} ne 'default');
 
 	my $filenames_encoding = 'UTF-8';
 
@@ -206,14 +205,7 @@ sub process_one
 	$opts{filter} = \@filter;
 
 
-	my $terminal_encoding = do {
-		if ($data->{terminal_encoding} eq 'utf') {
-			"UTF-8"
-		} else {
-			"KOI8-R"
-		}
-	};
-	$opts{'terminal-encoding'} = $terminal_encoding;
+	$opts{'terminal-encoding'} = my $terminal_encoding = $data->{terminal_encoding};
 
 	$opts{concurrency} = $data->{concurrency} or confess Dumper $data;
 	$opts{partsize} = $data->{partsize} or confess;
@@ -318,7 +310,10 @@ add(sub {
 });
 
 
-add(sub { filesize => (1, 1024*1024-1, 4*1024*1024+1) });#0
+add(sub { filesize => (1, 1024*1024-1, 4*1024*1024+1, 100*1024*1024-156897) });#0
+
+add sub { return get "filename" ne 'default' || get "filesize" == 1 };
+
 add(sub {
 	return !get "filterstest" || get "filesize" == 1;
 });#0
@@ -335,7 +330,7 @@ add(sub {
 });
 
 
-add(sub { concurrency => qw/1 2 4/ });#match nomatch
+add(sub { concurrency => qw/1 2 4 20/ });#match nomatch
 add(sub {
 	#print "#", get("filesize"), "\t", get("partsize"), "\n";
 	my $r = get("filesize") / (get("partsize")*1024*1024);
@@ -350,19 +345,22 @@ add(sub {
 	return !get "filterstest" || (get "concurrency" == 1 && get "partsize" == 1);
 });
 
-add(sub { get("filename") eq 'russian' || get("journal_name") eq 'russian' ? (terminal_encoding => qw/utf singlebyte/) : (terminal_encoding => qw/utf/) });#match nomatch
+add sub {
+	russian_text => get("filename") eq 'russian' || get("journal_name") eq 'russian';
+};
 
-#return if ($data->{filebody} eq 'zero' && $data->{filesize} ne 1);
+add sub { terminal_encoding_type => qw/utf singlebyte/ };
+add sub {
+	return get "russian_text" || get "terminal_encoding_type" eq 'utf';
+};
 
-#my $filename = sub { filename => qw/zero default russian latin1/ };
-#my $filebody = sub { filebody => $data{filesize} == 1 ? qw/normal zero/ : 'normal' };
+add sub {
+	if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+		terminal_encoding => qw/UTF-8 KOI8-R CP1251/;
+	} else {
+		terminal_encoding => "UTF-8"
+	}
+};
 
 
-process
-
-__END__
-
-(relfilename is "0")
-	(sync-new sync-modified sync-deleted)
-		if sync-new: (match, not-match)
-			(match-filter not-match-filter)
+process();
