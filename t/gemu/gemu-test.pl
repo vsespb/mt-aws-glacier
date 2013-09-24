@@ -217,6 +217,9 @@ sub process_one
 	};
 	$opts{'terminal-encoding'} = $terminal_encoding;
 
+	$opts{concurrency} = $data->{concurrency} or confess;
+	$opts{partsize} = $data->{partsize} or confess;
+
 
 	my $config = "$DIR/glacier.cfg";
 	create_config($config, $terminal_encoding);
@@ -226,17 +229,24 @@ sub process_one
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
 	#$terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args
 	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	{
+		local $ENV{NEWFSM}=1;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	}
 	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
 	rmtree $root_dir;
 	mkpath $root_dir;
 
-	run_fail($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+	#run_fail($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 	$opts{'max-number-of-files'} = 100_000;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault /]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+	rmtree $root_dir;
+	mkpath $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
 sub process_recursive
@@ -269,13 +279,21 @@ sub process
 
 add(sub { journal_name => qw/default russian/ });
 add(sub { filename => qw/zero default russian latin1/ });
-add(sub { filesize => qw/1 1048576/ });#0
+add(sub { filesize => qw/1 1048576 1055555/ });#0
 add(sub { filebody => (get "filesize" == 1) ? qw/normal zero/ : 'normal' });
 add(sub { otherfiles => qw/none many huge/ });
 add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
 add(sub { journal_match => qw/nomatch/ });# match
 add(sub { match_filter => qw/default/ });#match nomatch
-add(sub { terminal_encoding => qw/utf/ });#match nomatch
+add(sub { concurrency => qw/1 2 4/ });#match nomatch
+add(sub {
+	if (get("filesize") > 1024*1024) {
+		partsize => qw/1 2/
+	} else {
+		partsize => qw/1/
+	}
+});
+add(sub { get("filename") eq 'russian' || get("journal_name") eq 'russian' ? (terminal_encoding => qw/utf singlebyte/) : (terminal_encoding => qw/utf/) });#match nomatch
 
 #return if ($data->{filebody} eq 'zero' && $data->{filesize} ne 1);
 
