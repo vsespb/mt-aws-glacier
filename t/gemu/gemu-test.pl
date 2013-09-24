@@ -137,8 +137,6 @@ sub process_one
 
 	return if ($data->{filesize} > 1 && $data->{filename} ne 'default');
 
-	print join(" ", map { "$_=$data->{$_}" } sort keys %$data), "\n";
-
 	my $filenames_encoding = 'UTF-8';
 
 	my %opts;
@@ -180,10 +178,9 @@ sub process_one
 	$opts{journal} = $journal_fullname;
 
 
-	my $will_upload = 1;
+	my $will_upload = $data->{willupload};
 	if ($data->{journal_match} eq 'match') {
 		$_->{already_in_journal} = 1 for @$files;
-		$will_upload = 0;
 	}
 	create_journal($journal_fullname, $files);
 
@@ -192,7 +189,6 @@ sub process_one
 		@filter = ((map { "+$_" } @create_files), "-");
 	} elsif ($data->{match_filter} eq 'nomatch') {
 		@filter = ((map { "-$_" } @create_files));
-		$will_upload = 0;
 	} elsif ($data->{match_filter} eq 'default') {
 
 	} else {
@@ -219,7 +215,7 @@ sub process_one
 	};
 	$opts{'terminal-encoding'} = $terminal_encoding;
 
-	$opts{concurrency} = $data->{concurrency} or confess;
+	$opts{concurrency} = $data->{concurrency} or confess Dumper $data;
 	$opts{partsize} = $data->{partsize} or confess;
 
 
@@ -231,6 +227,7 @@ sub process_one
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
 	#$terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args
 
+	#print "============================W $will_upload\n";
 	if ($will_upload) {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 		{
@@ -252,6 +249,7 @@ sub process_one
 		run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault/]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 	} else {
+		#print Dumper $data;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 		{
 			local $ENV{NEWFSM}=1;
@@ -275,13 +273,21 @@ sub process_recursive
 			confess "use before $_[0]" if defined $data->{$_[0]};
 		};
 		my ($type, @vals) = $v->($data);
-		for (@vals) {
-			process_recursive({%$data, $type => $_}, @variants);
+
+		if (@vals) {
+			for (@vals) {
+				process_recursive({%$data, $type => $_}, @variants);
+			}
+		} else {
+			if ($type) {
+				process_recursive({%$data}, @variants);
+			} else {
+				return;
+			}
 		}
 	} else {
-		#print Dumper $data;
-
-		process_one($data);
+		print join(" ", map { "$_=$data->{$_}" } sort keys %$data), "\n";
+		process_one($data) unless $ENV{GEMU_TEST_LISTONLY};
 	}
 }
 
@@ -294,35 +300,56 @@ add(sub { journal_name => qw/default russian/ });
 add(sub { filename => qw/zero default russian/ });#latin1
 add(sub { match_filter => qw/default match nomatch/ });#
 add(sub { journal_match => qw/nomatch match/ });#
+
 add(sub {
-	if (get("journal_match") eq "match" or get("match_filter") ne "default") {
-		filesize => (1)
+	if (get("journal_match") eq "match" or get("match_filter") eq "nomatch") {
+		willupload => 0
 	} else {
-		filesize => (1, 1024*1024-1, 4*1024*1024+1)
-	}
-});#0
-add(sub { filebody => (get "filesize" == 1) ? qw/normal zero/ : 'normal' });
-add(sub { otherfiles => qw/none/ });# many huge
-add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
-add(sub {
-	return partsize => qw/1/ if get("journal_match") eq "match" or get("match_filter") ne "default";
-	if (get("filesize") >= 4*1024*1024) {
-		partsize => qw/1 2 4/
-	} elsif (get("filesize") >= 1024*1024) {
-		partsize => qw/1 2/
-	} else {
-		partsize => qw/1/
+		willupload => 1
 	}
 });
+
 add(sub {
-	return concurrency => qw/1/ if get("journal_match") eq "match" or get("match_filter") ne "default";
-	my $r = (get("partsize")*1024*1024)/get("filesize");
-	if ($r > 3) {
-		concurrency => qw/1 2 4/
+	if (get("willupload") == 0 or get("match_filter") ne "default") {
+		filterstest => 1
 	} else {
-		concurrency => qw/1 2/
+		filterstest => 0
 	}
-});#match nomatch
+});
+
+
+add(sub { filesize => (1, 1024*1024-1, 4*1024*1024+1) });#0
+add(sub {
+	return !get "filterstest" || get "filesize" == 1;
+});#0
+
+add(sub { filebody => qw/normal zero/ });
+add sub { get "filesize" == 1 || get "filebody" eq 'normal'};
+#add sub { print "#", get "filebody", "\n"};
+add(sub { otherfiles => qw/none/ });# many huge
+add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
+
+add(sub { partsize => qw/1 2 4/ });
+add(sub {
+	return get "partsize" == 1 || get("filesize")/(1024*1024) >= get "partsize";
+});
+
+
+add(sub { concurrency => qw/1 2 4/ });#match nomatch
+add(sub {
+	#print "#", get("filesize"), "\t", get("partsize"), "\n";
+	my $r = get("filesize") / (get("partsize")*1024*1024);
+	if ($r < 3 && get "concurrency" > 2) {
+		return 0;
+	} else {
+		return 1;
+	}
+});
+
+add(sub {
+	return !get "filterstest" || (get "concurrency" == 1 && get "partsize" == 1);
+});
+
 add(sub { get("filename") eq 'russian' || get("journal_name") eq 'russian' ? (terminal_encoding => qw/utf singlebyte/) : (terminal_encoding => qw/utf/) });#match nomatch
 
 #return if ($data->{filebody} eq 'zero' && $data->{filesize} ne 1);
