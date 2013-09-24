@@ -95,6 +95,40 @@ END
 }
 
 
+sub cmd
+{
+	print ">>", join(" ", @_), "\n";
+	my $res = system(@_);
+	die if $?==2;
+	$res;
+}
+
+sub run
+{
+	my ($terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args) = @_;
+	my %opts;
+	if ($optlist) {
+		$opts{$_} = $opts->{$_} for (@$optlist);
+	} else {
+		%opts = %$opts;
+	}
+
+	my @opts = map { my $k = $_; ref $opts{$k} ? (map { ("-$k" => $_) } @{$opts{$_}}) : ( defined($opts{$k}) ? ("-$k" => $opts{$k}) : "-$k")} keys %opts;
+	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
+	cmd($perl, $glacier, $command, @$args, @opts_e);
+}
+
+sub run_ok
+{
+	confess if run(@_);
+}
+
+sub run_fail
+{
+	confess unless run(@_);
+}
+
+
 
 sub process_one
 {
@@ -108,10 +142,11 @@ sub process_one
 
 	my $filenames_encoding = 'UTF-8';
 
-	my @opts = (-vault => $VAULT);
+	my %opts;
+	$opts{vault} = "test".(++$increment);
 	my $root_dir = "$DIR/root";
 
-	push @opts, '--dir', $root_dir;
+	$opts{dir} = $root_dir;
 
 	my @create_files = (do {
 		if ($data->{filename} eq 'zero') {
@@ -143,7 +178,7 @@ sub process_one
 		}
 	};
 	my $journal_fullname = "$DIR/$journal_name";
-	push @opts,(q{--journal}, $journal_fullname);
+	$opts{journal} = $journal_fullname;
 
 
 	if ($data->{journal_match} eq 'match') {
@@ -163,15 +198,14 @@ sub process_one
 	}
 
 	if ($data->{sync_mode} eq 'sync-new') {
-		push @opts, q{--new};
 	} elsif ($data->{sync_mode} eq 'sync-modified') {
-		push @opts, q{--replace-modified};
+		$opts{'replace-modified'}=undef;
 	} elsif ($data->{sync_mode} eq 'sync-deleted') {
-		push @opts, q{--delete-removed};
+		$opts{'delete-removed'}=undef;
 	} else {
 		confess $data->{sync_mode};
 	}
-	push @opts, map { ("--filter", $_) } @filter;
+	$opts{filter} = \@filter;
 
 
 	my $terminal_encoding = do {
@@ -181,17 +215,28 @@ sub process_one
 			"KOI8-R"
 		}
 	};
-    push @opts, q{--terminal-encoding}, $terminal_encoding;
+	$opts{'terminal-encoding'} = $terminal_encoding;
 
 
 	my $config = "$DIR/glacier.cfg";
 	create_config($config, $terminal_encoding);
-	push @opts, -config => $config;
+	$opts{config} = $config;
 
+	my @opts = map { my $k = $_; ref $opts{$k} ? (map { $k => $_ } @{$opts{$_}}) : ( $k => $opts{$k} )} keys %opts;
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
-	print join(" ", @opts_e), "\n";
-	system($^X, $GLACIER, 'sync', @opts_e);
-	die if $?==2;
+	#$terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+
+	rmtree $root_dir;
+	mkpath $root_dir;
+
+	run_fail($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+	$opts{'max-number-of-files'} = 100_000;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault /]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 }
 
 sub process_recursive
@@ -224,11 +269,11 @@ sub process
 
 add(sub { journal_name => qw/default russian/ });
 add(sub { filename => qw/zero default russian latin1/ });
-add(sub { filesize => qw/0 1 1048576/ });
+add(sub { filesize => qw/1 1048576/ });#0
 add(sub { filebody => (get "filesize" == 1) ? qw/normal zero/ : 'normal' });
 add(sub { otherfiles => qw/none many huge/ });
-add(sub { sync_mode => qw/sync-new sync-modified sync-deleted/ });
-add(sub { journal_match => qw/match nomatch/ });
+add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
+add(sub { journal_match => qw/nomatch/ });# match
 add(sub { match_filter => qw/default/ });#match nomatch
 add(sub { terminal_encoding => qw/utf/ });#match nomatch
 
