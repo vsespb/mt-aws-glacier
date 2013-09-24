@@ -33,10 +33,20 @@ my @variants;
 sub get($) { die "Unimplemented"; };
 sub before($) { die "Unimplemented"; };
 
-sub add(&)
+sub _add
 {
-	my $type_cb = shift;
-	push @variants, $type_cb;
+	my $variants = shift;
+	if (@_ == 1 ) {
+		push @$variants, shift;
+	} else {
+		my @a = @_;
+		push @$variants, sub { @a };
+	}
+}
+
+sub add
+{
+	_add(\@variants, @_);
 }
 
 sub get_uniq_id()
@@ -258,25 +268,39 @@ sub process_recursive
 	my ($data, @variants) = @_;
 	no warnings 'redefine';
 	local *get = sub($) {
-		$data->{+shift} // confess;
+		$data->{+shift} // confess Dumper $data;
 	};
 	local *before = sub($) {
 		confess "use before $_[0]" if defined $data->{$_[0]};
 	};
-	use warnings 'redefine';
+	local *AUTOLOAD = sub {
+		use vars qw/$AUTOLOAD/;
+		$AUTOLOAD =~ s/^.*:://;
+		get("$AUTOLOAD");
+	};
 	if (@variants) {
 		my $v = shift @variants;
+
+		my @additional;
+		local *add = sub {
+			_add(\@additional, @_);
+		};
+
 		my ($type, @vals) = $v->($data);
 
-		if (@vals) {
-			for (@vals) {
-				process_recursive({%$data, $type => $_}, @variants);
-			}
+		if (@additional) {
+			process_recursive({%$data}, @additional, @variants);
 		} else {
-			if ($type) {
-				process_recursive({%$data}, @variants);
+			if (@vals) {
+				for (@vals) {
+					process_recursive({%$data, $type => $_}, @variants);
+				}
 			} else {
-				return;
+				if ($type) {
+					process_recursive({%$data}, @variants);
+				} else {
+					return;
+				}
 			}
 		}
 	} else {
@@ -290,89 +314,89 @@ sub process
 	process_recursive({}, @variants);
 }
 
-add(sub { journal_name => qw/default russian/ });
-add(sub { filename => qw/zero default russian/ });#latin1
-add(sub { filenames_encoding => qw/UTF-8/ });
-add(sub { match_filter => qw/default match nomatch/ });#
-add(sub { journal_match => qw/nomatch match/ });#
+
+add journal_name => qw/default russian/;
+add filename => qw/zero default russian/;#latin1
+add filenames_encoding => qw/UTF-8/;
+
+add match_filter => qw/default match nomatch/;#
+add journal_match => qw/nomatch match/;#
 
 add(sub {
-	if (get("journal_match") eq "match" or get("match_filter") eq "nomatch") {
-		willupload => 0
-	} else {
-		willupload => 1
-	}
+	willupload => !(get("journal_match") eq "match" or get("match_filter") eq "nomatch");
 });
 
 add(sub {
-	if (get("willupload") == 0 or get("match_filter") ne "default") {
-		filterstest => 1
-	} else {
-		filterstest => 0
-	}
+	filterstest =>  get("willupload") == 0 || get("match_filter") ne "default";
 });
 
 
-add(sub { filesize => (1, 1024*1024-1, 4*1024*1024+1, 100*1024*1024-156897) });#0
-
-add sub { return get "filename" ne 'default' || get "filesize" == 1 };
-
-add(sub {
-	return !get "filterstest" || get "filesize" == 1;
-});#0
-
-add(sub { filebody => qw/normal zero/ });
-add sub { get "filesize" == 1 || get "filebody" eq 'normal'};
-#add sub { print "#", get "filebody", "\n"};
-add(sub { otherfiles => qw/none/ });# many huge
-add(sub { sync_mode => qw/sync-new/ });# sync-modified sync-deleted
-add(sub { detect => qw/none treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/ });
-add(sub {
-	if (get "sync_mode" eq 'sync-modified') {
-		return get "detect" eq 'none'
-	} else {
-		return get "detect" ne 'none'
-	}
-});
-add(sub { get "detect" eq 'none' ? 1 : detect_result => qw/modified notmodified/ });
-
-add(sub { partsize => qw/1 2 4/ });
-add(sub {
-	return get "partsize" == 1 || get("filesize")/(1024*1024) >= get "partsize";
-});
-
-
-add(sub { concurrency => qw/1 2 4 20/ });#match nomatch
-add(sub {
-	#print "#", get("filesize"), "\t", get("partsize"), "\n";
-	my $r = get("filesize") / (get("partsize")*1024*1024);
-	if ($r < 3 && get "concurrency" > 2) {
-		return 0;
-	} else {
-		return 1;
-	}
-});
-
-add(sub {
-	return !get "filterstest" || (get "concurrency" == 1 && get "partsize" == 1);
-});
-
+add command => qw/sync/;
 add sub {
-	russian_text => get("filename") eq 'russian' || get("journal_name") eq 'russian';
+	if (command() eq 'sync') {
+		add subcommand => qw/sync-new sync-modified/;# sync-deleted
+		add sub {
+			add filesize => (1, 1024*1024-1, 4*1024*1024+1, 100*1024*1024-156897);#0
+			if (subcommand() eq 'sync-new') {
+
+				add sub { return get "filename" ne 'default' || get "filesize" == 1 };
+
+				add(sub {
+					return !get "filterstest" || get "filesize" == 1;
+				});#0
+
+				add(sub { filebody => qw/normal zero/ });
+				add sub { get "filesize" == 1 || get "filebody" eq 'normal'};
+				#add sub { print "#", get "filebody", "\n"};
+				add(sub { otherfiles => qw/none/ });# many huge
+
+				add(sub { partsize => qw/1 2 4/ });
+				add(sub {
+					return get "partsize" == 1 || get("filesize")/(1024*1024) >= get "partsize";
+				});
+
+
+				add(sub { concurrency => qw/1 2 4 20/ });#match nomatch
+				add(sub {
+					#print "#", get("filesize"), "\t", get("partsize"), "\n";
+					my $r = get("filesize") / (get("partsize")*1024*1024);
+					if ($r < 3 && get "concurrency" > 2) {
+						return 0;
+					} else {
+						return 1;
+					}
+				});
+
+				add(sub {
+					return !get "filterstest" || (get "concurrency" == 1 && get "partsize" == 1);
+				});
+
+				add sub {
+					russian_text => get("filename") eq 'russian' || get("journal_name") eq 'russian';
+				};
+
+				add sub { terminal_encoding_type => qw/utf singlebyte/ };
+				add sub {
+					return get "russian_text" || get "terminal_encoding_type" eq 'utf';
+				};
+
+				add sub {
+					if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+						terminal_encoding => qw/UTF-8 KOI8-R CP1251/;
+					} else {
+						terminal_encoding => "UTF-8"
+					}
+				};
+			} elsif (subcommand() eq 'sync-modified') {
+				add detect => qw/treehash mtime mtime-and-treehash mtime-or-treehash always-positive size-only/;
+				add detect_result => qw/modified notmodified/;
+			} else {
+				return 0;
+			}
+		};
+	}
 };
 
-add sub { terminal_encoding_type => qw/utf singlebyte/ };
-add sub {
-	return get "russian_text" || get "terminal_encoding_type" eq 'utf';
-};
-
-add sub {
-	if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
-		terminal_encoding => qw/UTF-8 KOI8-R CP1251/;
-	} else {
-		terminal_encoding => "UTF-8"
-	}
-};
 
 
 process();
