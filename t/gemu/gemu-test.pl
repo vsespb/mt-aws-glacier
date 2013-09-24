@@ -146,30 +146,27 @@ sub empty_dir
 
 sub process_one
 {
-	my ($data) = @_;
 	empty_dir $DIR;
 
 
-	my $filenames_encoding = 'UTF-8';
+	my $filenames_encoding = get "filenames_encoding";
 
 	my %opts;
 	$opts{vault} = "test".get_uniq_id;
-	my $root_dir = "$DIR/root";
-
-	$opts{dir} = $root_dir;
+	$opts{dir} = my $root_dir = "$DIR/root";
 
 	my @create_files = (do {
-		if ($data->{filename} eq 'zero') {
+		if (get "filename" eq 'zero') {
 			'0';
-		} elsif ($data->{filename} eq 'russian') {
+		} elsif (get "filename" eq 'russian') {
 			"файл"
 		} else {
 			'somefile';
 		}
 	});
 
-	my $filebody = $data->{filebody} or confess;
-	my $filesize = $data->{filesize};
+	my $filebody = get "filebody";
+	my $filesize = get "filesize";
 
 	confess if $filebody eq 'zero' && $filesize != 1;
 
@@ -179,9 +176,9 @@ sub process_one
 	create_files($filenames_encoding, $root_dir, $files);
 
 	my $journal_name = do {
-		if ($data->{journal_name} eq 'default') {
+		if (get "journal_name" eq 'default') {
 			"journal"
-		} elsif ($data->{journal_name} eq 'russian') {
+		} elsif (get "journal_name" eq 'russian') {
 			"журнал";
 		} else {
 			confess "no journal name";
@@ -191,46 +188,42 @@ sub process_one
 	$opts{journal} = $journal_fullname;
 
 
-	my $will_upload = $data->{willupload};
-	if ($data->{journal_match} eq 'match') {
+	my $will_upload = get "willupload";
+	if (get "journal_match" eq 'match') {
 		$_->{already_in_journal} = 1 for @$files;
 	}
 	create_journal($journal_fullname, $files);
 
 	my @filter;
-	if ($data->{match_filter} eq 'match') {
+	if (get "match_filter" eq 'match') {
 		@filter = ((map { "+$_" } @create_files), "-");
-	} elsif ($data->{match_filter} eq 'nomatch') {
+	} elsif (get "match_filter" eq 'nomatch') {
 		@filter = ((map { "-$_" } @create_files));
-	} elsif ($data->{match_filter} eq 'default') {
-
+	} elsif (get "match_filter" eq 'default') {
+		# nothing;
 	} else {
 		confess;
 	}
 
-	if ($data->{sync_mode} eq 'sync-new') {
-	} elsif ($data->{sync_mode} eq 'sync-modified') {
+	if (get "sync_mode" eq 'sync-new') {
+	} elsif (get "sync_mode" eq 'sync-modified') {
 		$opts{'replace-modified'}=undef;
-	} elsif ($data->{sync_mode} eq 'sync-deleted') {
+	} elsif (get "sync_mode" eq 'sync-deleted') {
 		$opts{'delete-removed'}=undef;
 	} else {
-		confess $data->{sync_mode};
+		confess get "sync_mode";
 	}
 	$opts{filter} = \@filter;
 
 
-	$opts{'terminal-encoding'} = my $terminal_encoding = $data->{terminal_encoding};
+	$opts{'terminal-encoding'} = my $terminal_encoding = get "terminal_encoding";
 
-	$opts{concurrency} = $data->{concurrency} or confess Dumper $data;
-	$opts{partsize} = $data->{partsize} or confess;
-
+	$opts{concurrency} = get "concurrency";
+	$opts{partsize} = get "partsize";
 
 	my $config = "$DIR/glacier.cfg";
 	create_config($config, $terminal_encoding);
 	$opts{config} = $config;
-
-	my @opts = map { my $k = $_; ref $opts{$k} ? (map { $k => $_ } @{$opts{$_}}) : ( $k => $opts{$k} )} keys %opts;
-	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
 
 	if ($will_upload) {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
@@ -263,15 +256,16 @@ sub process_one
 sub process_recursive
 {
 	my ($data, @variants) = @_;
+	no warnings 'redefine';
+	local *get = sub($) {
+		$data->{+shift} // confess;
+	};
+	local *before = sub($) {
+		confess "use before $_[0]" if defined $data->{$_[0]};
+	};
+	use warnings 'redefine';
 	if (@variants) {
 		my $v = shift @variants;
-		no warnings 'redefine';
-		local *get = sub($) {
-			$data->{+shift} // confess;
-		};
-		local *before = sub($) {
-			confess "use before $_[0]" if defined $data->{$_[0]};
-		};
 		my ($type, @vals) = $v->($data);
 
 		if (@vals) {
@@ -298,6 +292,7 @@ sub process
 
 add(sub { journal_name => qw/default russian/ });
 add(sub { filename => qw/zero default russian/ });#latin1
+add(sub { filenames_encoding => qw/UTF-8/ });
 add(sub { match_filter => qw/default match nomatch/ });#
 add(sub { journal_match => qw/nomatch match/ });#
 
