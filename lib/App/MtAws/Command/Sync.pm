@@ -133,8 +133,13 @@ sub next_new
 	my ($options, $j) = @_;
 	if (my $rec = shift @{ $j->{listing}{new} }) {
 		my ($absfilename, $relfilename) = ($j->absfilename($rec->{relfilename}), $rec->{relfilename});
-		App::MtAws::JobProxy->new(job =>
-			App::MtAws::Job::FileCreate->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
+		if ($ENV{NEWFSM}) {
+			use App::MtAws::QueueJob::UploadMultipart;
+			App::MtAws::QueueJob::UploadMultipart->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize});
+		} else {
+			App::MtAws::JobProxy->new(job =>
+				App::MtAws::Job::FileCreate->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
+		}
 	} else {
 		return;
 	}
@@ -178,7 +183,12 @@ sub run
 			if ($options->{'dry-run'}) {
 				print_dry_run($itt);
 			} else {
-				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+				if ($ENV{NEWFSM}) {
+					use App::MtAws::QueueJob::Iterator;
+					push @joblist, App::MtAws::QueueJob::Iterator->new(iterator => $itt);
+				} else {
+					push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+				}
 			}
 		}
 
@@ -201,9 +211,18 @@ sub run
 		}
 
 		if (scalar @joblist) {
-			my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
-			my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-			confess unless $R;
+			if ($ENV{NEWFSM}) {
+				confess unless @joblist == 1;
+				my $lt = $joblist[0];
+				my $P = fork_engine->{parent_worker};
+				$P->{journal} = $j;
+				my ($R) = $P->process($lt);
+				confess unless $R;
+			} else {
+				my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
+				my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
+				confess unless $R;
+			}
 		}
 		$j->close_for_write();
 	}
