@@ -66,12 +66,11 @@ sub finish_task
 	my ($self, $task) = @_;
 	if ($self->{raised}) {
 		confess unless defined($task->{result}{match});
-		
 		if ($task->{result}{match}) {
 			return ('done');
 		} else {
 			return ("ok replace", App::MtAws::Job::FileCreate->new(
-				map { $_ => $self->{$_} } qw/filename relfilename partsize/,
+				(map { $_ => $self->{$_} } qw/filename relfilename partsize/),
 				$self->{delete_after_upload} ?
 					(finish_cb => sub {
 						App::MtAws::Job::FileListDelete->new(archives => [{
@@ -92,5 +91,5 @@ sub will_do
 	my ($self) = @_;
 	"Will VERIFY treehash and UPLOAD $self->{filename} if modified";
 }
-	
+
 1;
