@@ -429,7 +429,8 @@ If none of three above mode options provided, `--new` is implied (basically for 
 
 4. `--detect`
 
-	Controls how `--replace-modified` detect modified files. Possible values are: `treehash`, `mtime`,  `mtime-and-treehash`, `mtime-or-treehash`.
+	Controls how `--replace-modified` detect modified files. Possible values are: `treehash`, `mtime`, `mtime-or-treehash`, `mtime-and-treehash`,
+	`always-positive`, `size-only`.
 	Default value is `mtime-and-treehash`
 
 	File is always considered modified if its *size changed* (but not zero)
