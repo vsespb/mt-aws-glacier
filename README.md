@@ -71,12 +71,20 @@ Will NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pret
 3. `sudo yum install openssl-devel`
 4. Install `JSON::XS`, `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
 
+You also can install `mtglacier` prerequisites without CPAN if you have [EPEL](http://fedoraproject.org/wiki/EPEL) repository enabled and if you don't need HTTPS:
+
+`sudo yum install perl-Digest-SHA perl-JSON-XS perl-libwww-perl`
+
 ###### RHEL/CentOS 6
 
 1. `sudo yum install perl-core perl-CGI`
 2. `sudo yum groupinstall "Development Tools"`
 3. `sudo yum install openssl-devel`
 4. Install `JSON::XS`, `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
+
+You also can install `mtglacier` prerequisites without CPAN if you have [EPEL](http://fedoraproject.org/wiki/EPEL) repository enabled and if you don't need HTTPS:
+
+`sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl`
 
 ###### Debian 6
 
