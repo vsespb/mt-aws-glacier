@@ -1,3 +1,20 @@
+### 2013-09-25 v1.055
+
+  * Fixed: sync --replace-modified were not deleting old files in Amazon Glacier in case --detect option causing a check
+  of treehash before upload.
+  Affected workflows:
+   --detect=treehash - when file actually uploaded after check
+   --detect=mtime-and-treehash (i.e. default --detect) - when file actually uploaded after check
+   --detect=mtime-or-treehash when mtime is same but treehash differs and thus file actually uploaded
+  Not affected workflows:
+   when file size differs and thus file uploaded,
+   --detect=mtime-or-treehash - when mtime differs and thus file uploaded
+   anything else not listed above.
+
+  * More fixes to installation instructions
+
+  * Cosmetic fixes to --detect documentation
+
 ### 2013-09-03 v1.051
 
   * Installation instructions reworked

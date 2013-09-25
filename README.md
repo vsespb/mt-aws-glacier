@@ -13,7 +13,7 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 ## Version
 
-* Version 1.051 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 1.055 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -71,12 +71,20 @@ Will NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pret
 3. `sudo yum install openssl-devel`
 4. Install `JSON::XS`, `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
 
+You also can install `mtglacier` prerequisites without CPAN if you have [EPEL](http://fedoraproject.org/wiki/EPEL) repository enabled and if you don't need HTTPS:
+
+`sudo yum install perl-Digest-SHA perl-JSON-XS perl-libwww-perl`
+
 ###### RHEL/CentOS 6
 
 1. `sudo yum install perl-core perl-CGI`
 2. `sudo yum groupinstall "Development Tools"`
 3. `sudo yum install openssl-devel`
 4. Install `JSON::XS`, `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
+
+You also can install `mtglacier` prerequisites without CPAN if you have [EPEL](http://fedoraproject.org/wiki/EPEL) repository enabled and if you don't need HTTPS:
+
+`sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl`
 
 ###### Debian 6
 
@@ -421,7 +429,8 @@ If none of three above mode options provided, `--new` is implied (basically for 
 
 4. `--detect`
 
-	Controls how `--replace-modified` detect modified files. Possible values are: `treehash`, `mtime`,  `mtime-and-treehash`, `mtime-or-treehash`.
+	Controls how `--replace-modified` detect modified files. Possible values are: `treehash`, `mtime`, `mtime-or-treehash`, `mtime-and-treehash`,
+	`always-positive`, `size-only`.
 	Default value is `mtime-and-treehash`
 
 	File is always considered modified if its *size changed* (but not zero)
