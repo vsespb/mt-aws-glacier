@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use v5.10;
 use Carp;
+use Data::Dumper;
 
 require Exporter;
 use base qw/Exporter/;
@@ -40,10 +41,11 @@ sub add
 
 sub process_recursive
 {
-	my ($data, @variants) = @_;
+	my ($exec_cb, $data, @variants) = @_;
 	no warnings 'redefine', 'once';
 	local *_get = sub($) {
-		$data->{+shift} // confess Dumper $data;
+		my $x = shift;
+		$data->{$x} // confess Dumper [$x, $data];
 	};
 	#local *before = sub($) {
 	#	confess "use before $_[0]" if defined $data->{$_[0]};
@@ -64,15 +66,15 @@ sub process_recursive
 		my ($type, @vals) = $v->($data);
 
 		if (@additional) {
-			process_recursive({%$data}, @additional, @variants);
+			process_recursive($exec_cb, {%$data}, @additional, @variants);
 		} else {
 			if (@vals) {
 				for (@vals) {
-					process_recursive({%$data, $type => $_}, @variants);
+					process_recursive($exec_cb, {%$data, $type => $_}, @variants);
 				}
 			} else {
 				if ($type) {
-					process_recursive({%$data}, @variants);
+					process_recursive($exec_cb, {%$data}, @variants);
 				} else {
 					return;
 				}
@@ -80,17 +82,17 @@ sub process_recursive
 		}
 	} else {
 		print join(" ", map { "$_=$data->{$_}" } sort keys %$data), "\n";
-		process_one($data) unless $ENV{GEMU_TEST_LISTONLY};
+		$exec_cb->($data) unless $ENV{GEMU_TEST_LISTONLY};
 	}
 }
 
-sub process(&)
+sub process(&&)
 {
-	my $cb = shift;
+	my ($cb, $exec_cb) = @_;
 	{
 		local @variants;
 		$cb->();
-		process_recursive({}, @variants);
+		process_recursive($exec_cb, {}, @variants);
 	}
 }
 
