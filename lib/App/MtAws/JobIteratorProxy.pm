@@ -61,7 +61,7 @@ sub get_task
 					}
 				} elsif ($status eq 'done') {
 					$self->do_finish($job->{jobid});
-					redo; # TODO: can optimize here..
+					redo OUTER; # TODO: can optimize here..
 				} else {
 					my $newtask = App::MtAws::ProxyTask->new(id => ++$self->{task_autoincrement}, jobid => $job->{jobid}, task => $task);
 					$self->{pending}->{$newtask->{id}} = $newtask;
