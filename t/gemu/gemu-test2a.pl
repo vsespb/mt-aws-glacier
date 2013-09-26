@@ -10,10 +10,25 @@ use Carp;
 use File::Basename;
 use Encode;
 use File::Path qw/mkpath rmtree/;
+use Getopt::Long;
 use App::MtAws::TreeHash;
 
 our $DIR='/dev/shm/mtaws';
 our $GLACIER='../../../src/mtglacier';
+
+our $DRYRUN=0;
+our $FILTER=undef;
+GetOptions ("dry-run" => \$DRYRUN, "filter=s" => \$FILTER);
+
+our %filter;
+map {
+	if (my ($k, $vals) = /^([^=]+)=(.*)$/) {
+		my @vals = split ',', $vals;
+		$filter{$k} = { map { $_ => 1 } @vals };
+	} else {
+		confess $FILTER, $_;
+	}
+} split (' ', $FILTER);
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 
@@ -231,8 +246,17 @@ sub process_sync_new
 
 sub process
 {
+	for (sort keys %$data) {
+		return if ($filter{$_} && !$filter{$_}{$data->{$_}});
+	}
 	print join(" ", map { "$_=$data->{$_}" } sort keys %$data), "\n";
-	process_sync_new();
+	return if $DRYRUN;
+	if (get "command" eq 'sync') {
+		if (subcommand() eq 'sync_new') {
+			process_sync_new();
+		}
+
+	}
 }
 
 
