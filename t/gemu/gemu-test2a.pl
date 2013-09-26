@@ -341,38 +341,63 @@ sub file_sizes
 	}
 }
 
+
+sub roll_russian_encodings
+{
+	my ($encodings_type) = @_;
+	if ($encodings_type eq 'none') {
+		"UTF-8"
+	} elsif ($encodings_type eq 'simple') {
+		qw/UTF-8 KOI8-R/;
+	} elsif ($encodings_type eq 'full') {
+		qw/UTF-8 KOI8-R CP1251/;
+	} else {
+		confess;
+	}
+}
+
+sub file_names
+{
+	my ($cb, $filenames_types, $filename_encodings_type, $terminal_encodings_type) = (pop, @_);
+	gen_filename @$filenames_types,  sub {
+		lfor russian_text => filename_type() eq 'russian', sub {
+			lfor terminal_encoding_type => qw/utf singlebyte/, sub {
+				if (get "russian_text" || get "terminal_encoding_type" eq 'utf') {
+					lfor filenames_encoding => do {
+						if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+							roll_russian_encodings($filename_encodings_type);
+						} else {
+							"UTF-8"
+						}
+					}, sub {
+					lfor terminal_encoding => do {
+						if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+							roll_russian_encodings($terminal_encodings_type);
+						} else {
+							"UTF-8"
+						}
+					}, $cb
+					}
+				}
+			}
+		}
+	}
+}
+
 lfor command => qw/sync/, sub {
 	if (get "command" eq "sync") {
 		lfor subcommand => qw/sync_new/, sub {
 
 			# testing filename stuff
 
-			gen_filename qw/zero russian/,  sub {
 			file_sizes 4, 4, 20, sub {
-
-			lfor russian_text => filename_type() eq 'russian', sub {
-			lfor terminal_encoding_type => qw/utf singlebyte/, sub {
-			if (get "russian_text" || get "terminal_encoding_type" eq 'utf') {
-			lfor filenames_encoding => do {
-				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
-					qw/UTF-8 KOI8-R CP1251/;
-				} else {
-					"UTF-8"
-				}
-			}, sub {
-			lfor terminal_encoding => do {
-				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
-					qw/UTF-8 KOI8-R CP1251/;
-				} else {
-					"UTF-8"
-				}
-			}, sub {
+			file_names [qw/zero russian/], 'full', 'full', sub {
 
 			lfor filebody => qw/normal zero/, sub {
 			if (filesize() == 1 || filebody() eq 'normal') {
 			if (filename_type() eq 'default' || filebody() eq 'normal') {
 				process();
-			}}}}}}}}}}
+			}}}}}
 		}
 	}
 };
