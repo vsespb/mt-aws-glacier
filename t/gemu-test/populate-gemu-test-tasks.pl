@@ -1,2 +1,2 @@
 #!/usr/bin/env perl
-system "$^X gemu-test.pl --dry-run |sort > gemu-test-tasks";
+system "$^X gemu-test.pl  |sort > gemu-test-tasks";
