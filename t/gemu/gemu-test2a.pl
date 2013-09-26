@@ -17,7 +17,7 @@ our $DIR='/dev/shm/mtaws';
 our $GLACIER='../../../src/mtglacier';
 
 our $DRYRUN=0;
-our $FILTER=undef;
+our $FILTER='';
 GetOptions ("dry-run" => \$DRYRUN, "filter=s" => \$FILTER);
 
 our %filter;
@@ -259,10 +259,129 @@ sub process
 	}
 }
 
+sub gen_filename
+{
+	my ($cb, @types) = (pop, @_);
+	lfor filename_type => @types, sub {
+		lfor filename => do {
+			if (filename_type() eq 'zero') {
+				"0"
+			} elsif (filename_type() eq 'default') {
+				"somefile"
+			} elsif (filename_type() eq 'russian') {
+				"файл"
+			} else {
+				confess;
+			}
+		}, $cb;
+	}
+}
+
+sub gen_filesize
+{
+	my ($cb, $type) = (pop, shift);
+	lfor filesize_type => 4, sub {
+		lfor filesize => do {
+			if (filesize_type() eq '1') {
+				1
+			} elsif (filesize_type() eq '4') {
+				1, 1024*1024-1, 4*1024*1024+1
+			} elsif (filesize_type() eq 'big') {
+				1, 1024*1024-1, 4*1024*1024+1, 45*1024*1024-156897
+			}
+
+		}, $cb;
+	}
+}
+
+sub roll_partsize
+{
+	my $partsize = shift;
+	if ($partsize eq '1') {
+		1
+	} elsif ($partsize eq '2') {
+		1, 2
+	} elsif ($partsize eq '4') {
+		1, 2, 4
+	} else {
+		confess $partsize;
+	}
+}
+
+sub roll_concurrency
+{
+	my $concurrency = shift;
+	if ($concurrency eq '1') {
+		1
+	} elsif ($concurrency eq '2') {
+		1, 2
+	} elsif ($concurrency eq '4') {
+		1, 2, 4
+	} elsif ($concurrency eq '20') {
+		1, 2, 4, 20
+	} else {
+		confess $concurrency;
+	}
+}
+
+sub file_sizes
+{
+	my ($cb, $filesize, $partsize, $concurrency) = (pop, @_);
+	gen_filesize $filesize, sub {
+		lfor partsize =>roll_partsize($partsize), sub {
+			lfor concurrency =>roll_concurrency($concurrency), sub {
+				my $r = get("filesize") / (get("partsize")*1024*1024);
+				if ($r < 3 && get "concurrency" > 2) {
+					# nothing
+				} else {
+					$cb->();
+				}
+			}
+		}
+	}
+}
 
 lfor command => qw/sync/, sub {
 	if (get "command" eq "sync") {
 		lfor subcommand => qw/sync_new/, sub {
+
+			# testing filename stuff
+
+			gen_filename qw/zero russian/,  sub {
+			file_sizes 4, 4, 20, sub {
+
+			lfor russian_text => filename_type() eq 'russian', sub {
+			lfor terminal_encoding_type => qw/utf singlebyte/, sub {
+			if (get "russian_text" || get "terminal_encoding_type" eq 'utf') {
+			lfor filenames_encoding => do {
+				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+					qw/UTF-8 KOI8-R CP1251/;
+				} else {
+					"UTF-8"
+				}
+			}, sub {
+			lfor terminal_encoding => do {
+				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+					qw/UTF-8 KOI8-R CP1251/;
+				} else {
+					"UTF-8"
+				}
+			}, sub {
+
+			lfor filebody => qw/normal zero/, sub {
+			if (filesize() == 1 || filebody() eq 'normal') {
+			if (filename_type() eq 'default' || filebody() eq 'normal') {
+				process();
+			}}}}}}}}}}
+		}
+	}
+};
+
+
+
+
+__END__
+
 			lfor filename_type => qw/zero default russian/, sub {
 			lfor filename => do {
 				if (filename_type() eq 'zero') {
@@ -275,8 +394,6 @@ lfor command => qw/sync/, sub {
 					confess;
 				}
 			}, sub {
-
-			lfor filenames_encoding => qw/UTF-8/, sub {
 
 			lfor filesize => 1, 1024*1024-1, 4*1024*1024+1, 45*1024*1024-156897, sub {
 			lfor partsize => qw/1 2 4/, sub {
@@ -294,6 +411,13 @@ lfor command => qw/sync/, sub {
 			lfor russian_text => filename_type() eq 'russian', sub {
 			lfor terminal_encoding_type => qw/utf singlebyte/, sub {
 			if (get "russian_text" || get "terminal_encoding_type" eq 'utf') {
+			lfor filenames_encoding => do {
+				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+					qw/UTF-8 KOI8-R CP1251/;
+				} else {
+					"UTF-8"
+				}
+			}, sub {
 			lfor terminal_encoding => do {
 				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
 					qw/UTF-8 KOI8-R CP1251/;
@@ -307,12 +431,3 @@ lfor command => qw/sync/, sub {
 			if (filename_type() eq 'default' || filebody() eq 'normal') {
 				process();
 			}}}}}}}}}}}}}}}
-		}
-	}
-};
-
-
-
-
-__END__
-
