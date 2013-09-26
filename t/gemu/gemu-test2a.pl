@@ -213,6 +213,7 @@ sub process_sync_new
 	#create_journal($journal_fullname, filename(), $content);
 
 	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = filenames_encoding();
 
 	$opts{concurrency} = concurrency();
 	$opts{partsize} = partsize();
@@ -223,7 +224,7 @@ sub process_sync_new
 
 	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 	{
-		local $ENV{NEWFSM}=1;
+		#local $ENV{NEWFSM}=1;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 	}
 
@@ -232,14 +233,14 @@ sub process_sync_new
 	empty_dir $root_dir;
 
 	$opts{'max-number-of-files'} = 100_000;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault /]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
 	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
 
 	empty_dir $root_dir;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
@@ -352,7 +353,7 @@ sub roll_russian_encodings
 	} elsif ($encodings_type eq 'full') {
 		qw/UTF-8 KOI8-R CP1251/;
 	} else {
-		confess;
+		confess $encodings_type;
 	}
 }
 
@@ -384,20 +385,33 @@ sub file_names
 	}
 }
 
+sub file_body
+{
+	my ($cb, @types) = (pop, @_);
+	lfor filebody => @types, sub {
+		if (filesize() == 1 || filebody() eq 'normal') {
+			if (filename_type() eq 'default' || filebody() eq 'normal') {
+				$cb->();
+			}
+		}
+	}
+}
+
 lfor command => qw/sync/, sub {
 	if (get "command" eq "sync") {
 		lfor subcommand => qw/sync_new/, sub {
-
 			# testing filename stuff
-
-			file_sizes 4, 4, 20, sub {
+			file_sizes 4, 2, 4, sub {
 			file_names [qw/zero russian/], 'full', 'full', sub {
-
-			lfor filebody => qw/normal zero/, sub {
-			if (filesize() == 1 || filebody() eq 'normal') {
-			if (filename_type() eq 'default' || filebody() eq 'normal') {
+			file_body qw/normal/, sub {
 				process();
-			}}}}}
+			}}};
+			# testing FSM stuff
+			file_sizes 4, 4, 20, sub {
+			file_names [qw/default zero russian/], 'simple', 'none', sub {
+			file_body qw/normal zero/, sub {
+				process();
+			}}};
 		}
 	}
 };
