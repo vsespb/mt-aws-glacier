@@ -224,7 +224,7 @@ sub process_sync_new
 
 	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 	{
-		#local $ENV{NEWFSM}=1;
+		local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 	}
 
@@ -281,7 +281,7 @@ sub gen_filename
 sub gen_filesize
 {
 	my ($cb, $type) = (pop, shift);
-	lfor filesize_type => 4, sub {
+	lfor filesize_type => $type, sub {
 		lfor filesize => do {
 			if (filesize_type() eq '1') {
 				1
@@ -289,6 +289,8 @@ sub gen_filesize
 				1, 1024*1024-1, 4*1024*1024+1
 			} elsif (filesize_type() eq 'big') {
 				1, 1024*1024-1, 4*1024*1024+1, 45*1024*1024-156897
+			} else {
+				confess
 			}
 
 		}, $cb;
@@ -407,7 +409,7 @@ lfor command => qw/sync/, sub {
 				process();
 			}}};
 			# testing FSM stuff
-			file_sizes 4, 4, 20, sub {
+			file_sizes 'big', 4, 20, sub {
 			file_names [qw/default zero russian/], 'simple', 'none', sub {
 			file_body qw/normal zero/, sub {
 				process();
