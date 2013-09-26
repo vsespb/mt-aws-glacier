@@ -57,8 +57,8 @@ sub child_worker
 		defined($vault)||croak;
 		my $partsize = $data->{headers}->{'x-amz-part-size'}||croak;
 		croak unless $partsize >=1024 && ($partsize % 1048576 == 0) && (   ($partsize != 0) && (($partsize & ($partsize - 1)) == 0)   );
-		
-		
+
+
 		my $description = $data->{headers}->{'x-amz-archive-description'}||croak;
 		my $upload_id = gen_id(); # TODO: upload ID not archive ID!
 		store($account, $vault, 'upload', $upload_id, archive => { partsize => $partsize, description => $description});
@@ -73,64 +73,64 @@ sub child_worker
 		defined($account)||croak;
 		defined($vault)||croak;
 		defined($upload_id)||croak;
-		
+
 		croak unless $data->{headers}->{'content-type'} eq 'application/octet-stream';
 		croak unless $data->{headers}->{'content-length'} > 0; # TODO: check length equal to partsize!
 		croak unless defined($data->{headers}->{'x-amz-content-sha256'});
 		croak unless defined($data->{headers}->{'x-amz-sha256-tree-hash'});
 		croak unless defined($data->{headers}->{'content-range'});
-		
+
 		croak unless $data->{headers}->{'content-range'} =~ /^bytes (\d+)\-(\d+)\/\*$/;
 		my ($start, $finish) = ($1,$2);
 		croak unless $finish >= $start;
 		my $len = $finish - $start + 1;
-		
+
 		my $archive = fetch($account, $vault, 'upload', $upload_id, 'archive')->{archive};
-		
+
 		croak "$data->{headers}->{'content-length'} != $len" if ($data->{headers}->{'content-length'} != $len);
 		croak "$archive->{partsize} > $len" if ($len > $archive->{partsize});
-		
+
 		croak unless sha256_hex(${$data->{bodyref}}) eq $data->{headers}->{'x-amz-content-sha256'};
-		
+
 		my $part_th = App::MtAws::TreeHash->new();
 		$part_th->eat_data($data->{bodyref});
 		$part_th->calc_tree();
 		my $th = $part_th->get_final_hash();
-		
+
 		croak "$th ne ".$data->{headers}->{'x-amz-sha256-tree-hash'} unless $th eq $data->{headers}->{'x-amz-sha256-tree-hash'};
-		
+
 		store_binary($account, $vault, 'upload', $upload_id, "part_${start}_${finish}", $data->{bodyref});
 		my $resp = HTTP::Response->new(201, "Fine");
 		return $resp;
-	
-	# FINISH MULTIPART UPLOAD	
+
+	# FINISH MULTIPART UPLOAD
 	} elsif (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/multipart-uploads/(.*?)$!)) {
 		my ($account, $vault, $upload_id) = ($1,$2,$3);
 		defined($account)||croak;
 		defined($vault)||croak;
 		defined($upload_id)||croak;
-		
+
 		croak unless defined($data->{headers}->{'x-amz-archive-size'});
 		my $len = $data->{headers}->{'x-amz-archive-size'};
 		croak unless defined($data->{headers}->{'x-amz-sha256-tree-hash'});
 		my $treehash = $data->{headers}->{'x-amz-sha256-tree-hash'};
-		
+
 		my $archive_upload = fetch($account, $vault, 'upload', $upload_id, 'archive')->{archive};
 		my $bpath = basepath($account, $vault, 'upload', $upload_id);
-		
+
 		my $parts = {};
 		while (<$bpath/part_*>) {
 			/part_(\d+)_(\d+)$/;
 			my ($start, $finish) = ($1, $2);
 			my $len = $finish - $start + 1;
-			
+
 			confess "$archive_upload->{partsize} > $len" if ($len > $archive_upload->{partsize});
-			
+
 			$parts->{$start} = { start => $start, finish => $finish, size => $len, filename => $_ };
 		}
-		
+
 		my $currstart = 0;
-		
+
 		my @parts_a;
 		my $last_part = 0;
 		while ($currstart < $len) {
@@ -142,12 +142,12 @@ sub child_worker
 			$currstart = $p->{finish}+1;
 			croak if $currstart > $len;
 		}
-		
+
 		my $archive_id = gen_id();
 		my $archive_path = basepath($account, $vault, 'archive', $archive_id, 'data');
-		
+
 		my $part_th = App::MtAws::TreeHash->new();
-		
+
 		open OUT, ">$archive_path" || croak $archive_path;
 		binmode OUT;
 		for my $f (@parts_a) {
@@ -161,12 +161,12 @@ sub child_worker
 		close OUT;
 		$part_th->calc_tree();
 		my $th = $part_th->get_final_hash();
-		
+
 		# TODO: copy archive metadata as well!
-		
+
 		croak unless $th eq $treehash;
-		
-		store($account, $vault, 'archive', $archive_id, archive => { 
+
+		store($account, $vault, 'archive', $archive_id, archive => {
 			id => $archive_id,
 			creation_timestamp => time(),
 			partsize => $archive_upload->{partsize}||confess,
@@ -174,28 +174,28 @@ sub child_worker
 			treehash => $treehash,
 			archive_size => $len,
 		});
-		
+
 		my $resp = HTTP::Response->new(200, "Fine");
 		$resp->header('x-amz-archive-id', $archive_id);
 		return $resp;
-	
-	# CREATE JOB (to restore file/retrieve inventory)	
+
+	# CREATE JOB (to restore file/retrieve inventory)
 	} elsif (($data->{method} eq 'POST') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs$!)) {
 		my ($account, $vault) = ($1,$2);
 		defined($account)||croak;
 		defined($vault)||croak;
-		
+
 		croak unless defined($data->{headers}->{'content-type'});
 		croak unless $data->{headers}->{'content-type'} eq 'application/x-www-form-urlencoded; charset=utf-8';
-		
+
 		my $json_coder = JSON::XS->new->allow_nonref;
 		my $postdata = $json_coder->decode(${$data->{bodyref}});
-		
+
 		if ($postdata->{Type} eq 'archive-retrieval') {
 			my $archive_id = $postdata->{ArchiveId};
 			defined($archive_id)||croak;
 			croak unless scalar keys %$postdata == 2; # TODO deep comparsion
-			
+
 			my $archive = fetch($account, $vault, 'archive', $archive_id, 'archive')->{archive}||confess;
 			store($account, $vault, 'archive', $archive_id, retrieved => { retrieved => 1}); # TODO: remove
 
@@ -210,15 +210,15 @@ sub child_worker
 				completion_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 				creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 			});
-			
+
 			my $resp = HTTP::Response->new(202, "Accepted");
 			$resp->header('x-amz-job-id', $job_id);
 			return $resp;
-			
+
 		} elsif ($postdata->{Type} eq 'inventory-retrieval') {
 			my $now = time();
-			
-			
+
+
 			my $bpath = basepath($account, $vault, 'archive');
 			my $data = {
 				"VaultARN" => "arn:aws:glacier:us-east-1:$account:vaults/$vault", # TODO: correct string with region
@@ -236,9 +236,9 @@ sub child_worker
 					SHA256TreeHash => $a->{treehash}||confess,
 				};
 			}
-			
+
 			my $output = JSON::XS->new->allow_nonref->ascii->pretty->encode($data);
-			
+
 			my $job_id = gen_id();
 			store($account, $vault, 'jobs', $job_id,
 				job => {
@@ -249,19 +249,19 @@ sub child_worker
 				},
 			);
 			store_binary($account, $vault, 'jobs', $job_id, 'output', \$output); # TODO: by ref
-			
+
 			my $resp = HTTP::Response->new(202, "Accepted");
 			$resp->header('x-amz-job-id', $job_id);
 			return $resp;
 		} else {
 			croak;
 		}
-	# LIST JOBS (to restore file/retrieve inventory)	
+	# LIST JOBS (to restore file/retrieve inventory)
 	} elsif (($data->{method} eq 'GET') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/jobs$!)) {
 		my ($account, $vault) = ($1,$2);
 		defined($account)||croak;
 		defined($vault)||croak;
-		
+
 		my $limit = 50;
 		my @jobs;
 		if (defined($data->{params}->{marker})) {
@@ -271,7 +271,7 @@ sub child_worker
 			my $bpath = basepath($account, $vault, 'jobs');
 			while (<$bpath/*>) { #TODO: sort
 				my $j = fetch_raw("$_/job");
-				
+
 				if ($j->{type} eq 'archive-retrieval') {
 					push @jobs, {
 						Action => 'ArchiveRetrieval',
@@ -328,12 +328,12 @@ sub child_worker
 				my $r = read($in, my $buf, $len);
 				$r == $len or confess "$r != $len";
 				close $in;
-				
+
 				my $treehash = App::MtAws::TreeHash->new();
 				$treehash->eat_data($buf);
 				$treehash->calc_tree();
 				my $th = $treehash->get_final_hash();
-				
+
 				$conn->send_basic_header(206);
 				print $conn header_line('Content-Length', length($buf));
 				print $conn header_line('x-amz-sha256-tree-hash', $th);
@@ -346,14 +346,14 @@ sub child_worker
 				my $total = -s $archive_path;
 				open (my $in, "<", $archive_path)||confess;
 				binmode $in;
-				
+
 				my $chunk_size = 4096;
 
 				$conn->send_basic_header(200);
 				print $conn header_line('Content-Length', $total);
 				print $conn header_line('x-amz-sha256-tree-hash', $archive->{treehash});
 				$conn->send_crlf;
-				
+
 				while(my $res = read($in, my $buf, $chunk_size)) {
 					print $conn $buf;
 				}
@@ -369,7 +369,7 @@ sub child_worker
 		} else {
 			croak;
 		}
-	# DELETE FILE 	
+	# DELETE FILE
 	} elsif (($data->{method} eq 'DELETE') && ($data->{url} =~ m!^/(.*?)/vaults/(.*?)/archives/(.*?)$!)) {
 		my ($account, $vault, $archive_id) = ($1,$2,$3);
 		defined($account)||croak;
@@ -422,7 +422,7 @@ sub get_next_jobs
 			JobList => \@active_jobs,
 		});
 	}
-	
+
 	$response_body;
 }
 
@@ -430,22 +430,22 @@ sub parse_request
 {
 	my ($request) = @_;
 #	print $$.$request->dump;
-	
+
 	my $method = $request->method();
 	my $url = $request->url();
-	
 
-    # AUTH	
+
+    # AUTH
 	my $auth = $request->header('Authorization')||croak;
 	#"AWS4-HMAC-SHA256 Credential=$self->{key}/$credentials, SignedHeaders=$signed_headers, Signature=$signature"
 	croak unless $auth =~ /^AWS4-HMAC-SHA256\s+(.*)$/;
 	my (@pairs) = split(/,\s*/, $1);
 	my %data = map { my ($key, $value) = split('=', $_); $key => $value } @pairs;
-	
-	
+
+
 	# CRED
 	defined($data{'Credential'})||croak;
-	
+
 	#"$datestr/$self->{region}/$self->{service}/aws4_request"
 	croak unless $data{'Credential'} =~ m!^(.*?)/(.*?)/(.*?)/(.*?)/aws4_request$!;
 	my ($key, $datestr, $region, $service) = ($1,$2,$3,$4);
@@ -454,9 +454,9 @@ sub parse_request
 	defined($region)||croak;
 	defined($service)||croak;
 	croak unless $key eq $config->{key};
-	
+
 	my ($kSigning, $kSigning_hex) = get_signature_key($config->{secret}, $datestr, $region, 'glacier');
-	
+
 	# HEADERS
 	defined($data{'SignedHeaders'})||croak;
 	my $signed_headers = $data{'SignedHeaders'};
@@ -464,9 +464,9 @@ sub parse_request
 	my %a = map {  lc($_) => $request->header($_)  } @all_signed_header;
 	my $headers_hash = \%a;
 	my $canonical_headers = join("\n", map { lc($_).":".trim($request->header($_)) } @all_signed_header);
-	
+
 	# PARAMS
-	
+
 	my ($baseurl, $params);
 	if ($url =~ m!^([^\?]+)\?(.*)$!) {
 		$baseurl = $1;
@@ -475,25 +475,25 @@ sub parse_request
 	} else {
 		$baseurl = $url;
 	}
-	
+
 	# MISC
-	
+
 	my $bodyref = \$request->content;
 	my $bodyhash = sha256_hex($$bodyref);
 	my $date8601 = $request->header('x-amz-date');
 	defined($date8601)||croak;
 	defined($headers_hash->{'x-amz-date'})||croak;
-	
+
 	# TODO: check $date8601 vs current time !
 
     # QUERY_STRING
-    	
+
 	my $canonical_query_string = $params ? join ('&', map { "$_=$params->{$_}" } sort keys %{$params}) : ""; # TODO: proper URI encode
 	my $canonical_url = "$method\n$baseurl\n$canonical_query_string\n$canonical_headers\n\n$signed_headers\n$bodyhash";
 	my $canonical_url_hash = sha256_hex($canonical_url);
 
 	my $string_to_sign = "AWS4-HMAC-SHA256\n$date8601\n$datestr/$region/glacier/aws4_request\n$canonical_url_hash";
-	
+
 	my $signature = hmac_hex($kSigning, $string_to_sign);
 	croak unless $signature eq $data{'Signature'};
 
@@ -509,7 +509,7 @@ sub basepath
 	my $path = "$tmp_folder$root_dir";
 	mkpath($path);
 	$path .= "/$vault";
-	confess unless -d $path;
+	confess $path unless -d $path;
 	$path .= "/$idtype";
 	$path .= "/$id" if defined($id);
 	mkpath($path);
@@ -641,5 +641,3 @@ sub trim
 
 1;
 __END__
-
-
