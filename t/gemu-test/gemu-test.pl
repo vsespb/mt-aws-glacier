@@ -14,10 +14,19 @@ use Getopt::Long;
 use App::MtAws::TreeHash;
 
 
+our %task_seen;
+our @priority = qw/command subcommand/;
+our $data;
+our %priority;
+{
+	my $i;
+	map { $priority{$_} = ++$i } @priority;
+}
+our %filter;
+
 our $FILTER='';
 GetOptions ("filter=s" => \$FILTER );
 
-our %filter;
 map {
 	if (my ($k, $vals) = /^([^=]+)=(.*)$/) {
 		my @vals = split ',', $vals;
@@ -27,7 +36,6 @@ map {
 	}
 } split (' ', $FILTER);
 
-
 binmode STDOUT, ":encoding(UTF-8)";
 
 sub bool($)
@@ -35,8 +43,6 @@ sub bool($)
 	$_[0] ? 1 : 0
 }
 
-
-our $data;
 sub lfor(@&)
 {
 	my ($cb, $key, @values) = (pop, @_);
@@ -75,13 +81,23 @@ sub AUTOLOAD
 
 
 
-our %task_seen;
 sub process
 {
 	for (sort keys %$data) {
 		return if ($filter{$_} && !$filter{$_}{$data->{$_}} && !$filter{$_}{$data->{"-$_"}});
 	}
-	my $task = ( join(" ", map { my $v = $data->{$_}; $_ =~ s/^\-//; "$_=$v" } grep {!/\A\-/ } sort keys %$data));
+
+	my $task = ( join(" ",
+		map {
+			my $v = $data->{$_};
+			$_ =~ s/^\-//; "$_=$v"
+		} sort {
+			( ($priority{$a}||100_000) <=> ($priority{$b}||100_000) ) || ($a cmp $b);
+		} grep {
+			!/\A\-/
+		} keys %$data
+	));
+
 	return  if $task_seen{$task};
 	$task_seen{$task}=1;
 	print $task, "\n";
