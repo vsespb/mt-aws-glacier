@@ -214,11 +214,10 @@ sub process_sync_new
 	$opts{journal} = $journal_fullname;
 
 
-	my $will_upload = get "willupload";
-	$file->{already_in_journal} = 1 if (journal_match() eq 'match');
+	$file->{already_in_journal} = 1;# if (journal_match() eq 'match');
 	create_journal($journal_fullname, [$file]);
 
-	$opts{filter} = [get_filter(match_filter_type(), $file->{relfilename})];
+	#$opts{filter} = [get_filter(match_filter_type(), $file->{relfilename})];
 
 	$opts{'terminal-encoding'} = my $terminal_encoding = get "terminal_encoding";
 
@@ -229,7 +228,7 @@ sub process_sync_new
 	create_config($config, $terminal_encoding);
 	$opts{config} = $config;
 
-	if ($will_upload) {
+	if (1) {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 		{
 			local $ENV{NEWFSM}=1;
@@ -275,11 +274,11 @@ sub process_sync_modified
 	$opts{journal} = $journal_fullname;
 
 
-	my $will_upload = get "willupload";
-	$file->{already_in_journal} = 1 if (journal_match() eq 'match');
+	#my $will_upload = get "willupload";
+	$file->{already_in_journal} = 1;#if (journal_match() eq 'match');
 
 
-	$opts{filter} = [get_filter(match_filter_type(), $file->{relfilename})];
+	#$opts{filter} = [get_filter(match_filter_type(), $file->{relfilename})];
 
 	$opts{'terminal-encoding'} = my $terminal_encoding = get "terminal_encoding";
 
@@ -290,7 +289,7 @@ sub process_sync_modified
 	create_config($config, $terminal_encoding);
 	$opts{config} = $config;
 
-	if ($will_upload) {
+	if (1) {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
 		create_journal($journal_fullname, [$first_file]);
 		{
@@ -389,16 +388,6 @@ sub process
 }
 
 
-add journal_name_type => qw/default russian/;
-add sub {
-	if (journal_name_type() eq 'default') {
-		journal_name => "journal"
-	} elsif (journal_name_type() eq 'russian') {
-		journal_name => "журнал";
-	} else {
-		confess "no journal name";
-	}
-};
 add filename => qw/zero default russian/;#latin1
 add sub { filename_str => do {
 	if (filename() eq 'zero') {
@@ -412,30 +401,46 @@ add sub { filename_str => do {
 	}
 }};
 add filenames_encoding => qw/UTF-8/;
+add filesize => (1, 1024*1024-1, 4*1024*1024+1, 100*1024*1024-156897);#0
 
-add match_filter_type => qw/default match nomatch/;#
-add journal_match => qw/nomatch match/;#
+add sub {
+	russian_text => get("filename") eq 'russian';
+};
 
-add(sub {
-	willupload => !(get("journal_match") eq "match" or get("match_filter_type") eq "nomatch");
-});
+add sub { terminal_encoding_type => qw/utf singlebyte/ };
+add sub {
+	return get "russian_text" || get "terminal_encoding_type" eq 'utf';
+};
 
-add(sub {
-	filterstest =>  get("willupload") == 0 || get("match_filter_type") ne "default";
-});
+add sub {
+	if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
+		terminal_encoding => qw/UTF-8 KOI8-R CP1251/;
+	} else {
+		terminal_encoding => "UTF-8"
+	}
+};
+
+add journal_name_type => qw/default russian/;
+add sub {
+	if (journal_name_type() eq 'default') {
+		journal_name => "journal"
+	} elsif (journal_name_type() eq 'russian') {
+		journal_name => "журнал";
+	} else {
+		confess "no journal name";
+	}
+};
 
 
-add command => qw/sync/;
+add command => qw/presync sync/;
 add sub {
 	if (command() eq 'sync') {
-		add subcommand => qw/sync-modified/;# sync-new sync-deleted
+		add subcommand => qw/sync-modified sync-new/;# sync-new sync-deleted
 		add sub {
-			add filesize => (1, 1024*1024-1, 4*1024*1024+1, 100*1024*1024-156897);#0
-			add sub { return get "filename" ne 'default' || get "filesize" == 1 };
 
-			add(sub {
-				return !get "filterstest" || get "filesize" == 1;
-			});#0
+			add sub { return get "filename" ne 'default' || get "filesize" == 1 };
+			add sub { return get "journal_name_type" eq 'default'};
+
 
 			add(sub { filebody => qw/normal zero/ });
 			add sub { get "filesize" == 1 || get "filebody" eq 'normal'};
@@ -459,26 +464,6 @@ add sub {
 				}
 			});
 
-			add(sub {
-				return !get "filterstest" || (get "concurrency" == 1 && get "partsize" == 1);
-			});
-
-			add sub {
-				russian_text => get("filename") eq 'russian' || get("journal_name_type") eq 'russian';
-			};
-
-			add sub { terminal_encoding_type => qw/utf singlebyte/ };
-			add sub {
-				return get "russian_text" || get "terminal_encoding_type" eq 'utf';
-			};
-
-			add sub {
-				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
-					terminal_encoding => qw/UTF-8 KOI8-R CP1251/;
-				} else {
-					terminal_encoding => "UTF-8"
-				}
-			};
 			if (subcommand() eq 'sync-new') {
 
 			} elsif (subcommand() eq 'sync-modified') {
@@ -488,6 +473,20 @@ add sub {
 				return 0;
 			}
 		};
+	} elsif (command() eq 'presync') {
+				add sub { get "filesize" == 1 };
+				add match_filter_type => qw/default match nomatch/;#
+				add journal_match => qw/nomatch match/;#
+
+				add(sub {
+					willupload => !(get("journal_match") eq "match" or get("match_filter_type") eq "nomatch");
+				});
+
+				add(sub {
+					filterstest =>  get("willupload") == 0 || get("match_filter_type") ne "default";
+				});
+
+
 	}
 };
 
@@ -503,3 +502,11 @@ __END__
 	} else {
 		confess get "sync_mode";
 	}
+
+			add(sub {
+				return !get "filterstest" || (get "concurrency" == 1 && get "partsize" == 1);
+			});
+
+			add(sub {
+				return !get "filterstest" || get "filesize" == 1;
+			});#0

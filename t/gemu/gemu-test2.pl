@@ -243,7 +243,7 @@ process sub {
 
 					# size, partsize and concurrency
 					add sub {
-						add filesize => (1, 1024*1024-1, 4*1024*1024+1, 100*1024*1024-156897);
+						add filesize => (1, 1024*1024-1, 4*1024*1024+1, 45*1024*1024-156897);
 						add partsize => qw/1 2 4/;
 						add concurrency => qw/1 2 4 20/;
 						add sub {
