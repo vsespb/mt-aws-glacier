@@ -18,7 +18,7 @@ our $GLACIER='../../../src/mtglacier';
 
 our $DRYRUN=0;
 our $FILTER='';
-GetOptions ("dry-run" => \$DRYRUN, "filter=s" => \$FILTER);
+GetOptions ("dry-run" => \$DRYRUN, "filter=s" => \$FILTER );
 
 our %filter;
 map {
@@ -33,6 +33,11 @@ map {
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 
 binmode STDOUT, ":encoding(UTF-8)";
+
+sub bool($)
+{
+	$_[0] ? 1 : 0
+}
 
 our $increment = 0;
 sub get_uniq_id()
@@ -180,11 +185,33 @@ sub lfor(@&)
 {
 	my ($cb, $key, @values) = (pop, @_);
 	for (@values) {
+		if (my ($mainkey) = $key =~ /\A\-(.*)$/) {
+			confess if defined $data->{$mainkey};
+		} else {
+			confess if defined $data->{"-$key"};
+		}
 		local $data->{$key} = $_;
 		$cb->();
 	}
 }
-sub get($) { $data->{$_[0]} // confess $_[0], Dumper $data };
+our $allow_dash_opts = 1;
+
+sub get($) {
+	my $key = shift;
+	confess unless $key;
+	confess if $key =~ /\A\-/;
+	confess if !$allow_dash_opts && defined $data->{"-$key"};
+	confess if defined $data->{$key} && defined $data->{"-$key"};
+	my $v;
+	if (defined ($v = $data->{$key})) {
+		$v;
+	} elsif (defined ($v = $data->{"-$key"})) {
+		$v;
+	} else {
+		confess [$key, Dumper $data];
+	}
+};
+
 sub AUTOLOAD
 {
 	use vars qw/$AUTOLOAD/;
@@ -245,13 +272,19 @@ sub process_sync_new
 }
 
 
+our %task_seen;
 sub process
 {
 	for (sort keys %$data) {
-		return if ($filter{$_} && !$filter{$_}{$data->{$_}});
+		return if ($filter{$_} && !$filter{$_}{$data->{$_}} && !$filter{$_}{$data->{"-$_"}});
 	}
-	print join(" ", map { "$_=$data->{$_}" } sort keys %$data), "\n";
+	my $task = ( join(" ", map { my $v = $data->{$_}; $_ =~ s/^\-//; "$_=$v" } grep {!/\A\-/ } sort keys %$data));
+	return  if $task_seen{$task};
+	$task_seen{$task}=1;
+	print $task, "\n";
 	return if $DRYRUN;
+
+	local $allow_dash_opts = 0;
 	if (get "command" eq 'sync') {
 		if (subcommand() eq 'sync_new') {
 			process_sync_new();
@@ -263,7 +296,7 @@ sub process
 sub gen_filename
 {
 	my ($cb, @types) = (pop, @_);
-	lfor filename_type => @types, sub {
+	lfor -filename_type => @types, sub {
 		lfor filename => do {
 			if (filename_type() eq 'zero') {
 				"0"
@@ -281,7 +314,7 @@ sub gen_filename
 sub gen_filesize
 {
 	my ($cb, $type) = (pop, shift);
-	lfor filesize_type => $type, sub {
+	lfor -filesize_type => $type, sub {
 		lfor filesize => do {
 			if (filesize_type() eq '1') {
 				1
@@ -363,8 +396,8 @@ sub file_names
 {
 	my ($cb, $filenames_types, $filename_encodings_type, $terminal_encodings_type) = (pop, @_);
 	gen_filename @$filenames_types,  sub {
-		lfor russian_text => filename_type() eq 'russian', sub {
-			lfor terminal_encoding_type => qw/utf singlebyte/, sub {
+		lfor -russian_text => bool(filename_type() eq 'russian'), sub {
+			lfor -terminal_encoding_type => qw/utf singlebyte/, sub {
 				if (get "russian_text" || get "terminal_encoding_type" eq 'utf') {
 					lfor filenames_encoding => do {
 						if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
@@ -422,53 +455,3 @@ lfor command => qw/sync/, sub {
 
 
 __END__
-
-			lfor filename_type => qw/zero default russian/, sub {
-			lfor filename => do {
-				if (filename_type() eq 'zero') {
-					"0"
-				} elsif (filename_type() eq 'default') {
-					"somefile"
-				} elsif (filename_type() eq 'russian') {
-					"файл"
-				} else {
-					confess;
-				}
-			}, sub {
-
-			lfor filesize => 1, 1024*1024-1, 4*1024*1024+1, 45*1024*1024-156897, sub {
-			lfor partsize => qw/1 2 4/, sub {
-			lfor concurrency => qw/1 2 4 20/, sub {
-			if (get "partsize" == 1 || get("filesize")/(1024*1024) >= get "partsize") {
-			if (do {
-				my $r = get("filesize") / (get("partsize")*1024*1024);
-				if ($r < 3 && get "concurrency" > 2) {
-					0;
-				} else {
-					1;
-				}
-			}) {
-
-			lfor russian_text => filename_type() eq 'russian', sub {
-			lfor terminal_encoding_type => qw/utf singlebyte/, sub {
-			if (get "russian_text" || get "terminal_encoding_type" eq 'utf') {
-			lfor filenames_encoding => do {
-				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
-					qw/UTF-8 KOI8-R CP1251/;
-				} else {
-					"UTF-8"
-				}
-			}, sub {
-			lfor terminal_encoding => do {
-				if (get "russian_text" && get "terminal_encoding_type" eq 'singlebyte') {
-					qw/UTF-8 KOI8-R CP1251/;
-				} else {
-					"UTF-8"
-				}
-			}, sub {
-
-			lfor filebody => qw/normal zero/, sub {
-			if (filesize() == 1 || filebody() eq 'normal') {
-			if (filename_type() eq 'default' || filebody() eq 'normal') {
-				process();
-			}}}}}}}}}}}}}}}
