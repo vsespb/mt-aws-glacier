@@ -12,6 +12,8 @@ use File::Path qw/mkpath rmtree/;
 use Getopt::Long;
 use App::MtAws::TreeHash;
 use List::MoreUtils qw(part);
+use Capture::Tiny qw/capture_merged/;
+use Fcntl qw/LOCK_SH LOCK_EX LOCK_NB LOCK_UN/;
 
 our $BASE_DIR='/dev/shm/mtaws';
 our $DIR;
@@ -26,7 +28,17 @@ $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDIN, ":encoding(UTF-8)";
 
+sub lock_screen
+{
+	open my $f, ">", "$BASE_DIR/gemu-test-$$.lock";
+	flock $f, LOCK_EX;
+	shift->();
+	flock $f, LOCK_UN;
+	close $f;
+}
+
 our $data;
+our $current_task;
 
 sub get($) {
 	my $key = shift;
@@ -122,10 +134,17 @@ END
 
 sub cmd
 {
-	print ">>", join(" ", @_), "\n";
-	my $res = system(@_);
-	die if $?==2;
-	$res;
+	my (@args) = @_;
+	print ">>", join(" ", @args), "\n";
+	my ($merged, $res, $exitcode);
+	{
+		local $SIG{__WARN__} = sub {};
+		($merged, $res, $exitcode) = capture_merged {
+			system(@args), $?;
+		};
+	}
+	die if $exitcode==2;
+	return ($res, $merged);
 }
 
 sub run
@@ -143,14 +162,26 @@ sub run
 	cmd($perl, $glacier, $command, @$args, @opts_e);
 }
 
+
+sub terminate
+{
+	my ($out) = @_;
+	lock_screen sub {
+		print "TASK FAILED: $current_task\n******\n$out\n******\n";
+		exit(1);
+	}
+}
+
 sub run_ok
 {
-	confess if run(@_);
+	my ($code, $out) = run(@_);
+	terminate($out) if $code;
 }
 
 sub run_fail
 {
-	confess unless run(@_);
+	my ($code, $out) = run(@_);
+	terminate($out) unless $code;
 }
 
 sub empty_dir
@@ -343,7 +374,11 @@ sub process_task
 {
 	my ($task) = @_;
 	$data = { map { /^([^=]+)=(.+)$/ or confess; $1 => $2; } split ' ', $task };
+	local $current_task = $task;
 	process();
+	lock_screen sub {
+		print "OK $task\n";
+	}
 }
 
 sub get_tasks
@@ -386,39 +421,3 @@ print STDERR ($ok ? "===OK===\n" : "===FAIL===\n");
 exit($ok ? 0 : 1);
 
 __END__
-	if (detect_case() eq 'treehash-matches' ) {
-		create_file(filenames_encoding(), $root_dir, filename(), $first_content);
-		create_journal($journal_fullname, filename(), $first_content);
-	} elsif (detect_case() eq 'treehash-nomatch') {
-		create_file(filenames_encoding(), $root_dir, filename(), $content);
-		create_journal($journal_fullname, filename(), $content);
-	} elsif (detect_case() eq 'mtime-matches') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-nomatch') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-and-treehash-matches-treehashfail') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $first_content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-and-treehash-matches-treehashok') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-and-treehash-nomatch') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-or-treehash-matches') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-or-treehash-nomatch-treehashok') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'mtime-or-treehash-nomatch-treehashfail') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'always-positive') {
-		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content);
-		create_journal($journal_fullname, filename(), $content, mtime => 999);
-	} elsif (detect_case() eq 'size-only-matches') {
-	} elsif (detect_case() eq 'size-only-nomatch') {
-	}
