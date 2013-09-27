@@ -92,6 +92,7 @@ sub create_file
 	binmode $F;
 	print $F $$content;
 	close $F;
+	utime $args{mtime}, $args{mtime}, $binaryfilename or confess if defined($args{mtime});
 }
 
 sub check_file
@@ -109,10 +110,11 @@ sub check_file
 sub create_journal
 {
 	my ($journal_fullname, $relfilename, $content, %args) = (shift, shift, pop, @_);
-	open(my $f, ">", $journal_fullname) or confess;
+	open(my $f, ">encoding(UTF-8)", $journal_fullname) or confess;
 	my $archive_id = gen_archive_id;
 	my $treehash = treehash($content);
-	print $f "A\t456\tCREATED\t$archive_id\t".length($_[0])."\t123\t$treehash\t$relfilename\n";
+	$args{mtime} = 123 unless defined $args{mtime};
+	print $f "A\t456\tCREATED\t$archive_id\t".length($$content)."\t$args{mtime}\t$treehash\t$relfilename\n";
 	close $f;
 }
 
@@ -143,7 +145,7 @@ sub cmd
 			system(@args), $?;
 		};
 	}
-	die if $exitcode==2;
+	die "mtlacier exited after SIGINT" if $exitcode==2;
 	return ($res, $merged);
 }
 
@@ -168,7 +170,7 @@ sub terminate
 	my ($out) = @_;
 	lock_screen sub {
 		print "TASK FAILED: $current_task\n******\n$out\n******\n";
-		exit(1);
+		confess;
 	}
 }
 
@@ -176,12 +178,14 @@ sub run_ok
 {
 	my ($code, $out) = run(@_);
 	terminate($out) if $code;
+	$out
 }
 
 sub run_fail
 {
 	my ($code, $out) = run(@_);
 	terminate($out) unless $code;
+	$out
 }
 
 sub empty_dir
@@ -289,12 +293,13 @@ sub process_sync_modified
 	my $journal_name = 'journal';
 	my $journal_fullname = "$DIR/$journal_name";
 	$opts{journal} = $journal_fullname;
+	my $new_journal_fullname = "$DIR/${journal_name}.new";
 
 	my $content = get_file_body(filebody(), filesize());
 
 	my ($file_mtime, $journal_mtime, $journal_content, $is_treehash, $is_upload, $detect_option) = do {
 		my $first_content = get_first_file_body(filebody(), filesize());
-		my $DSIZE = undef;
+		my $DSIZE = get_first_file_body('normal', filesize()+1);
 		my $WRONG = $first_content;
 		my $RIGHT = $content;
 		use constant A => 1380302319;
@@ -324,40 +329,56 @@ sub process_sync_modified
 		confess unless $cbs->{detect_case()};
 		$cbs->{detect_case()}->();
 	};
-
-	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
-	create_journal($journal_fullname, filename(), $content, mtime => $journal_mtime, $$journal_content);
-	$opts{'detect'} = $detect_option;
-
 	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
 	$opts{'filenames-encoding'} = filenames_encoding();
 
 	$opts{concurrency} = concurrency();
-	$opts{partsize} = partsize();
 
 	my $config = "$DIR/glacier.cfg";
 	create_config($config, $terminal_encoding);
 	$opts{config} = $config;
 
-	$opts{'replace-modified'}=undef;
-
 	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 	empty_dir $root_dir;
-	create_file(filenames_encoding(), $root_dir, filename(), $content);
+
+	# creating wrong file
+	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $journal_content);
+	$opts{partsize} = 64;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+
+	# creating right file
+	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
+	$opts{partsize} = partsize();
+	$opts{'replace-modified'}=undef;
+	$opts{'detect'} = $detect_option;
 	{
 		local $ENV{NEWFSM}=$ENV{USENEWFSM};
-		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+
+		if ($is_upload) {
+			terminate($out) unless ($out =~ / Finished /);
+		} else {
+			terminate($out) if ($out =~ / Finished /);
+		}
+
+		if ($is_treehash) {
+			terminate($out) unless ($out =~ / Checked treehash for /);
+		} else {
+			terminate($out) if ($out =~ / Checked treehash for /);
+		}
+
 	}
 	empty_dir $root_dir;
 	$opts{'max-number-of-files'} = 100_000;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
-
-	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+	if ($is_upload) {
+		confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+	} else {
+		confess unless check_file(filenames_encoding(), $root_dir, filename(), $journal_content);
+	}
 	empty_dir $root_dir;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
 
@@ -366,6 +387,8 @@ sub process
 	if (get "command" eq 'sync') {
 		if (subcommand() eq 'sync_new') {
 			process_sync_new();
+		} elsif (subcommand() eq 'sync_modified') {
+			process_sync_modified();
 		}
 	}
 }
@@ -406,6 +429,7 @@ for my $task (@parts) {
 	}
 }
 
+$SIG{INT} = sub { print STDERR "SIGINT!\n"; };
 my $ok = 1;
 while () {
 	my $p = wait();

@@ -84,6 +84,7 @@ sub AUTOLOAD
 sub process
 {
 	for (sort keys %$data) {
+		no warnings 'uninitialized';
 		return if ($filter{$_} && !$filter{$_}{$data->{$_}} && !$filter{$_}{$data->{"-$_"}});
 	}
 
@@ -244,22 +245,50 @@ sub file_body
 
 lfor command => qw/sync/, sub {
 	if (get "command" eq "sync") {
-		lfor subcommand => qw/sync_new/, sub {
-			# testing filename stuff
-			file_sizes 4, 2, 4, sub {
-			file_names [qw/zero russian/], 'full', 'full', sub {
-			file_body qw/normal/, sub {
-				process();
-			}}};
-			# testing FSM stuff
-			file_sizes 'big', 4, 20, sub {
-			file_names [qw/default zero russian/], 'simple', 'none', sub {
-			file_body qw/normal zero/, sub {
-				process();
-			}}};
+		lfor subcommand => qw/sync_new sync_modified/, sub {
+			if (get "subcommand" eq "sync_new") {
+				# testing filename stuff
+				file_sizes 4, 2, 4, sub {
+				file_names [qw/zero russian/], 'full', 'full', sub {
+				file_body qw/normal/, sub {
+					process();
+				}}};
+				# testing FSM stuff
+				file_sizes 'big', 4, 20, sub {
+				file_names [qw/default zero russian/], 'simple', 'none', sub {
+				file_body qw/normal zero/, sub {
+					process();
+				}}};
+			} elsif (get "subcommand" eq "sync_modified") {
+
+				my @detect_cases = qw/
+					treehash-matches
+					treehash-nomatch
+					mtime-matches
+					mtime-nomatch
+					mtime-and-treehash-matches-treehashfail
+					mtime-and-treehash-matches-treehashok
+					mtime-and-treehash-nomatch
+					mtime-or-treehash-matches
+					mtime-or-treehash-nomatch-treehashok
+					mtime-or-treehash-nomatch-treehashfail
+					always-positive
+					size-only-matches
+					size-only-nomatch
+				/;
+
+				lfor detect_case => @detect_cases, sub {
+				# testing filename stuff
+				file_sizes 4, 2, 4, sub {
+				file_names [qw/zero russian/], 'full', 'full', sub {
+				file_body qw/normal/, sub {
+					process();
+				}}}};
+			}
 		}
 	}
 };
+
 
 
 
