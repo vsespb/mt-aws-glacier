@@ -343,7 +343,7 @@ sub process_sync_modified
 	empty_dir $root_dir;
 
 	# creating wrong file
-	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $journal_content);
+	create_file(filenames_encoding(), $root_dir, filename(), mtime => $journal_mtime, $journal_content);
 	$opts{partsize} = 64;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
