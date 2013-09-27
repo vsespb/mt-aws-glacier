@@ -357,15 +357,15 @@ sub process_sync_modified
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if ($is_upload) {
-			terminate($out) unless ($out =~ / Finished /);
+			terminate($out) unless ($out =~ /\sFinished\s.*\sDeleted\s/s);
 		} else {
-			terminate($out) if ($out =~ / Finished /);
+			terminate($out) if ($out =~ /\s(Finished|Deleted)\s/);
 		}
 
 		if ($is_treehash) {
-			terminate($out) unless ($out =~ / Checked treehash for /);
+			terminate($out) unless ($out =~ /\sChecked treehash for\s/);
 		} else {
-			terminate($out) if ($out =~ / Checked treehash for /);
+			terminate($out) if ($out =~ /\sChecked treehash for\s/);
 		}
 
 	}

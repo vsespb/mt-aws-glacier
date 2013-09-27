@@ -277,7 +277,7 @@ lfor command => qw/sync/, sub {
 					size-only-nomatch
 				/;
 
-				lfor detect_case => @detect_cases, sub {
+				lfor detect_case => @detect_cases, sub { # TODO: also try mtime=zero!
 				# testing filename stuff
 				file_sizes 1, 1, 1, sub {
 				file_names [qw/zero russian/], 'simple', 'none', sub {
