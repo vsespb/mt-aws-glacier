@@ -375,7 +375,8 @@ sub child_worker
 		defined($account)||croak;
 		defined($vault)||croak;
 		defined($archive_id)||croak;
-		my $bpath = basepath($account, $vault, 'archive', $archive_id)||croak;
+		fetch($account, $vault, 'archive', $archive_id, 'archive'); # TEST - WHAT IF THERE IS NO ARCHIVE! WILL CONFESS THEN
+		my $bpath = basepath($account, $vault, 'archive', $archive_id)||croak;# TODO: WE SHOULD NOT CREATE PATH IF IT'S NOT EXISTS ?
 		rmtree($bpath) if -d $bpath && $bpath =~ m!archive/\d!;
 		my $resp = HTTP::Response->new(200, "Fine");
 		return $resp;
@@ -590,9 +591,9 @@ sub fetch_binary
 sub fetch_raw
 {
 	my ($path) = @_;
-	open (F, "<:encoding(UTF-8)", $path);
-	sysread(F, my $buf, -s $path);
-	close F;
+	open (my $f, "<:encoding(UTF-8)", $path) or confess;
+	sysread($f, my $buf, -s $path);
+	close $f;
 	$json_coder->decode($buf);
 }
 
