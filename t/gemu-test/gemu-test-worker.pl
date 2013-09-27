@@ -64,44 +64,42 @@ sub gen_archive_id
 sub treehash
 {
 	my $part_th = App::MtAws::TreeHash->new();
-	$part_th->eat_data($_[0]);
+	$part_th->eat_data(shift);
 	$part_th->calc_tree();
 	$part_th->get_final_hash();
 }
 
-
 sub create_file
 {
-	my ($filenames_encoding, $root, $relfilename) = (shift, shift, shift);
-	confess unless defined $_[0];
+	my ($filenames_encoding, $root, $relfilename, $content, %args) = (shift, shift, shift, pop, @_);
 
 	my $fullname = "$root/$relfilename";
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 	mkpath(dirname($binaryfilename));
 	open (my $F, ">", $binaryfilename) or confess;
 	binmode $F;
-	print $F $_[0];
+	print $F $$content;
 	close $F;
 }
 
 sub check_file
 {
-	my ($filenames_encoding, $root, $relfilename) = (shift, shift, shift);
+	my ($filenames_encoding, $root, $relfilename, $content, %args) = (shift, shift, shift, pop, @_);
 	my $fullname = "$root/$relfilename";
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 	open (my $F, "<", $binaryfilename) or return 0;
 	binmode $F;
 	read $F, my $buf, -s $F;
-	return 0 if $buf ne $_[0];
+	return 0 if $buf ne $$content;
 	return 1;
 }
 
 sub create_journal
 {
-	my ($journal_fullname, $relfilename) = (shift, shift);
+	my ($journal_fullname, $relfilename, $content, %args) = (shift, shift, pop, @_);
 	open(my $f, ">", $journal_fullname) or confess;
 	my $archive_id = gen_archive_id;
-	my $treehash = treehash($_[0]);
+	my $treehash = treehash($content);
 	print $f "A\t456\tCREATED\t$archive_id\t".length($_[0])."\t123\t$treehash\t$relfilename\n";
 	close $f;
 }
@@ -182,13 +180,21 @@ sub get_file_body
 {
 	my ($file_body_type, $filesize) = @_;
 	confess if $file_body_type eq 'zero' && $filesize != 1;
-	$file_body_type eq 'zero' ? '0' : 'x' x $filesize;
+	my $body = $file_body_type eq 'zero' ? '0' : 'x' x $filesize;
+	\$body;
 }
 
 sub get_first_file_body
 {
 	my ($file_body_type, $filesize) = @_;
-	'Z' x $filesize;
+	my $body = 'Z' x $filesize;
+	\$body;
+}
+
+sub set_vault
+{
+	my ($opts) = @_;
+	$opts->{vault} = "test".get_uniq_id;
 }
 
 sub process_sync_new
@@ -196,19 +202,16 @@ sub process_sync_new
 	empty_dir $DIR;
 
 	my %opts;
-	$opts{vault} = "test".get_uniq_id;
+	set_vault \%opts;
 	$opts{dir} = my $root_dir = "$DIR/root";
 
 
 	my $content = get_file_body(filebody(), filesize());
-	#my ($filenames_encoding, $root, $relfilename) = (shift, shift, shift);
 	create_file(filenames_encoding(), $root_dir, filename(), $content);
 
 	my $journal_name = 'journal';
 	my $journal_fullname = "$DIR/$journal_name";
 	$opts{journal} = $journal_fullname;
-
-	#create_journal($journal_fullname, filename(), $content);
 
 	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
 	$opts{'filenames-encoding'} = filenames_encoding();
@@ -233,7 +236,6 @@ sub process_sync_new
 	$opts{'max-number-of-files'} = 100_000;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
-	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
 	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
 
@@ -247,10 +249,8 @@ sub process_sync_modified
 	empty_dir $DIR;
 
 	my %opts;
-	$opts{vault} = "test".get_uniq_id;
+	set_vault \%opts;
 	$opts{dir} = my $root_dir = "$DIR/root";
-
-
 
 
 
@@ -260,53 +260,43 @@ sub process_sync_modified
 	$opts{journal} = $journal_fullname;
 
 	my $content = get_file_body(filebody(), filesize());
-	my $first_content = get_first_file_body(filebody(), filesize());
-	if (detect() eq 'treehash') {
-		if (detect_match()) { # treehash-matches
-			create_file(filenames_encoding(), $root_dir, filename(), $first_content);
-			create_journal($journal_fullname, filename(), $first_content);
-		} else { # treehash-nomatch
-			create_file(filenames_encoding(), $root_dir, filename(), $content);
-			create_journal($journal_fullname, filename(), $content);
-		}
-	} elsif (detect() eq 'mtime') {
-		if (detect_match()) { # mtime-matches
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		} else { #mtime-nomatch
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		}
-	} elsif (detect() eq 'mtime-and-treehash') {
-		if (detect_match()) { # mtime-and-treehash-matches-treehashfail ( mtime-and-treehash-matches-treehashok )
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $first_content);
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		} else { # mtime-and-treehash-nomatch
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		}
-	} elsif (detect() eq 'mtime-or-treehash') {
-		if (detect_match()) { # mtime-or-treehash-matches
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		} else { # mtime-or-treehash-nomatch-treehashok ( mtime-or-treehash-nomatch-treehashfail )
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content); # TODO: another possibility mtime matches, content differs
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		}
-	} elsif (detect() eq 'always-positive') {
-		if (detect_match()) { # always-positive
-			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content);
-			create_journal($journal_fullname, filename(), $content, mtime => 999);
-		} else {
-			confess;
-		}
-	} elsif (detect() eq 'size-only') {
-		if (detect_match()) { # size-only-matches
-			# create file with different size but same mtime
-		} else { # size-only-nomatch
-			# create file with same size but different content and mtime
-		}
-	}
+
+	my ($file_mtime, $journal_mtime, $journal_content, $is_treehash, $is_upload, $detect_option) = do {
+		my $first_content = get_first_file_body(filebody(), filesize());
+		my $DSIZE = undef;
+		my $WRONG = $first_content;
+		my $RIGHT = $content;
+		use constant A => 1380302319;
+		use constant B => A+1;
+		use constant WILL_TREEHASH => 1;
+		use constant   NO_TREEHASH => 0;
+		use constant WILL_UPLOAD => 1;
+		use constant   NO_UPLOAD => 0;
+		my $cbs = {
+			'treehash-matches'                            => sub { (A, A, $WRONG, WILL_TREEHASH, WILL_UPLOAD, 'treehash') },
+			'treehash-nomatch'                            => sub { (A, A, $RIGHT, WILL_TREEHASH,   NO_UPLOAD, 'treehash') },
+			'mtime-matches'                               => sub { (A, B, $RIGHT,   NO_TREEHASH, WILL_UPLOAD, 'mtime') },
+			'mtime-nomatch'                               => sub { (B, B, $WRONG,   NO_TREEHASH,   NO_UPLOAD, 'mtime') },
+			'mtime-and-treehash-matches-treehashfail'     => sub { (A, B, $WRONG, WILL_TREEHASH, WILL_UPLOAD, 'mtime-and-treehash') },
+			'mtime-and-treehash-matches-treehashok'       => sub { (A, B, $RIGHT, WILL_TREEHASH,   NO_UPLOAD, 'mtime-and-treehash') },
+			'mtime-and-treehash-nomatch'                  => sub { (B, B, $WRONG,   NO_TREEHASH,   NO_UPLOAD, 'mtime-and-treehash') },
+			'mtime-or-treehash-matches'                   => sub { (A, B, $RIGHT,   NO_TREEHASH, WILL_UPLOAD, 'mtime-or-treehash') },
+			'mtime-or-treehash-nomatch-treehashok'        => sub { (B, B, $RIGHT, WILL_TREEHASH,   NO_UPLOAD, 'mtime-or-treehash') },
+			'mtime-or-treehash-nomatch-treehashfail'      => sub { (B, B, $WRONG, WILL_TREEHASH, WILL_UPLOAD, 'mtime-or-treehash') },
+			'always-positive'                             => sub { (B, B, $RIGHT,   NO_TREEHASH, WILL_UPLOAD, 'always-positive') },
+			'size-only-matches'                           => sub { (A, A, $DSIZE,   NO_TREEHASH, WILL_UPLOAD, 'size-only') },
+			'size-only-nomatch'                           => sub { (A, A, $WRONG,   NO_TREEHASH,   NO_UPLOAD, 'size-only') },
+
+			''           => sub { () },
+		};
+
+		confess unless $cbs->{detect_case()};
+		$cbs->{detect_case()}->();
+	};
+
+	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
+	create_journal($journal_fullname, filename(), $content, mtime => $journal_mtime, $$journal_content);
+	$opts{'detect'} = $detect_option;
 
 	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
 	$opts{'filenames-encoding'} = filenames_encoding();
@@ -324,7 +314,6 @@ sub process_sync_modified
 	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 	empty_dir $root_dir;
 	create_file(filenames_encoding(), $root_dir, filename(), $content);
-	$opts{'detect'}='treehash';
 	{
 		local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
@@ -361,7 +350,7 @@ sub get_tasks
 {
 	my @tasks = map { chomp; $_ } <STDIN>;
 	my $i = 0;
-    part { my $z = ($i++) % $N; print "$i, $N, $z\n"; $z } @tasks;
+    part { $i++ % $N; } @tasks;
 }
 
 my @parts = get_tasks();
@@ -397,3 +386,39 @@ print STDERR ($ok ? "===OK===\n" : "===FAIL===\n");
 exit($ok ? 0 : 1);
 
 __END__
+	if (detect_case() eq 'treehash-matches' ) {
+		create_file(filenames_encoding(), $root_dir, filename(), $first_content);
+		create_journal($journal_fullname, filename(), $first_content);
+	} elsif (detect_case() eq 'treehash-nomatch') {
+		create_file(filenames_encoding(), $root_dir, filename(), $content);
+		create_journal($journal_fullname, filename(), $content);
+	} elsif (detect_case() eq 'mtime-matches') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-nomatch') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-and-treehash-matches-treehashfail') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $first_content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-and-treehash-matches-treehashok') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-and-treehash-nomatch') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-or-treehash-matches') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-or-treehash-nomatch-treehashok') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'mtime-or-treehash-nomatch-treehashfail') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'always-positive') {
+		create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content);
+		create_journal($journal_fullname, filename(), $content, mtime => 999);
+	} elsif (detect_case() eq 'size-only-matches') {
+	} elsif (detect_case() eq 'size-only-nomatch') {
+	}
