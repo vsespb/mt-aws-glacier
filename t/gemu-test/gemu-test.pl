@@ -279,8 +279,8 @@ lfor command => qw/sync/, sub {
 
 				lfor detect_case => @detect_cases, sub {
 				# testing filename stuff
-				file_sizes 4, 2, 4, sub {
-				file_names [qw/zero russian/], 'full', 'full', sub {
+				file_sizes 1, 1, 1, sub {
+				file_names [qw/zero russian/], 'simple', 'none', sub {
 				file_body qw/normal/, sub {
 					process();
 				}}}};
