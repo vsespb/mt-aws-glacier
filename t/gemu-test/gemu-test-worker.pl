@@ -157,7 +157,7 @@ secret=jhuYh6d73hdhGndk1jdHJHdjHghDjDkkdkKDkdkd
 # eu-west-1, us-east-1 etc
 #region=eu-west-1
 region=us-east-1
-protocol=https
+protocol=http
 END
 		close $f;
 }

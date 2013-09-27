@@ -43,7 +43,7 @@ sub bool($)
 	$_[0] ? 1 : 0
 }
 
-sub lfor(@&)
+sub lfor(@)
 {
 	my ($cb, $key, @values) = (pop, @_);
 	for (@values) {
