@@ -242,6 +242,104 @@ sub process_sync_new
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
+sub process_sync_modified
+{
+	empty_dir $DIR;
+
+	my %opts;
+	$opts{vault} = "test".get_uniq_id;
+	$opts{dir} = my $root_dir = "$DIR/root";
+
+
+
+
+
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+
+	my $content = get_file_body(filebody(), filesize());
+	my $first_content = get_first_file_body(filebody(), filesize());
+	if (detect() eq 'treehash') {
+		if (detect_match()) { # treehash-matches
+			create_file(filenames_encoding(), $root_dir, filename(), $first_content);
+			create_journal($journal_fullname, filename(), $first_content);
+		} else { # treehash-nomatch
+			create_file(filenames_encoding(), $root_dir, filename(), $content);
+			create_journal($journal_fullname, filename(), $content);
+		}
+	} elsif (detect() eq 'mtime') {
+		if (detect_match()) { # mtime-matches
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		} else { #mtime-nomatch
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		}
+	} elsif (detect() eq 'mtime-and-treehash') {
+		if (detect_match()) { # mtime-and-treehash-matches-treehashfail ( mtime-and-treehash-matches-treehashok )
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $first_content);
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		} else { # mtime-and-treehash-nomatch
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $first_content);
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		}
+	} elsif (detect() eq 'mtime-or-treehash') {
+		if (detect_match()) { # mtime-or-treehash-matches
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 888, $content);
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		} else { # mtime-or-treehash-nomatch-treehashok ( mtime-or-treehash-nomatch-treehashfail )
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content); # TODO: another possibility mtime matches, content differs
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		}
+	} elsif (detect() eq 'always-positive') {
+		if (detect_match()) { # always-positive
+			create_file(filenames_encoding(), $root_dir, filename(), mtime => 999, $content);
+			create_journal($journal_fullname, filename(), $content, mtime => 999);
+		} else {
+			confess;
+		}
+	} elsif (detect() eq 'size-only') {
+		if (detect_match()) { # size-only-matches
+			# create file with different size but same mtime
+		} else { # size-only-nomatch
+			# create file with same size but different content and mtime
+		}
+	}
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = filenames_encoding();
+
+	$opts{concurrency} = concurrency();
+	$opts{partsize} = partsize();
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	$opts{'replace-modified'}=undef;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+	empty_dir $root_dir;
+	create_file(filenames_encoding(), $root_dir, filename(), $content);
+	$opts{'detect'}='treehash';
+	{
+		local $ENV{NEWFSM}=$ENV{USENEWFSM};
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	}
+	empty_dir $root_dir;
+	$opts{'max-number-of-files'} = 100_000;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+
+	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+}
+
 
 sub process
 {
