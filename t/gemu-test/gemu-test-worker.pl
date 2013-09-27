@@ -20,13 +20,18 @@ our $DIR;
 our $GLACIER='../../../src/mtglacier';
 our $N;
 
+our $data;
+our $_current_task;
+our $_current_task_stack;
+
 GetOptions ("n=i" => \$N);
-$N or confess $N;
+$N ||= 1;
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDIN, ":encoding(UTF-8)";
+
 
 sub lock_screen
 {
@@ -37,8 +42,32 @@ sub lock_screen
 	close $f;
 }
 
-our $data;
-our $current_task;
+sub with_task
+{
+	local $_current_task_stack = [];
+	local $_current_task = shift;
+	eval {
+		shift->();
+	1; } or do {
+		lock_screen sub {
+			print "# FAILED $_current_task\n";
+			for (@$_current_task_stack) {
+				print "\$ $_->{cmd}\n";
+				print "$_->{output}\n";
+			}
+		};
+		die $@;
+	};
+	lock_screen sub {
+		print "# OK $_current_task\n";
+	};
+}
+
+sub push_command
+{
+	confess unless $_current_task_stack;
+	push @$_current_task_stack, { cmd => shift, output => shift };
+}
 
 sub get($) {
 	my $key = shift;
@@ -137,7 +166,6 @@ END
 sub cmd
 {
 	my (@args) = @_;
-	print ">>", join(" ", @args), "\n";
 	my ($merged, $res, $exitcode);
 	{
 		local $SIG{__WARN__} = sub {};
@@ -145,6 +173,7 @@ sub cmd
 			system(@args), $?;
 		};
 	}
+	push_command(join(" ", @args), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
 	return ($res, $merged);
 }
@@ -165,26 +194,18 @@ sub run
 }
 
 
-sub terminate
-{
-	my ($out) = @_;
-	lock_screen sub {
-		print "TASK FAILED: $current_task\n******\n$out\n******\n";
-		confess;
-	}
-}
-
 sub run_ok
 {
 	my ($code, $out) = run(@_);
-	terminate($out) if $code;
+	confess if $code;
+	confess unless $out =~ /^OK DONE/m;
 	$out
 }
 
 sub run_fail
 {
 	my ($code, $out) = run(@_);
-	terminate($out) unless $code;
+	confess unless $code;
 	$out
 }
 
@@ -357,15 +378,15 @@ sub process_sync_modified
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if ($is_upload) {
-			terminate($out) unless ($out =~ /\sFinished\s.*\sDeleted\s/s);
+			confess unless ($out =~ /\sFinished\s.*\sDeleted\s/s);
 		} else {
-			terminate($out) if ($out =~ /\s(Finished|Deleted)\s/);
+			confess if ($out =~ /\s(Finished|Deleted)\s/);
 		}
 
 		if ($is_treehash) {
-			terminate($out) unless ($out =~ /\sChecked treehash for\s/);
+			confess unless ($out =~ /\sChecked treehash for\s/);
 		} else {
-			terminate($out) if ($out =~ /\sChecked treehash for\s/);
+			confess if ($out =~ /\sChecked treehash for\s/);
 		}
 
 	}
@@ -397,11 +418,9 @@ sub process_task
 {
 	my ($task) = @_;
 	$data = { map { /^([^=]+)=(.+)$/ or confess; $1 => $2; } split ' ', $task };
-	local $current_task = $task;
-	process();
-	lock_screen sub {
-		print "OK $task\n";
-	}
+	with_task $task, sub {
+		process();
+	};
 }
 
 sub get_tasks
@@ -441,7 +460,7 @@ while () {
 		delete $pids{$p};
 	}
 }
-print STDERR ($ok ? "===OK===\n" : "===FAIL===\n");
+print STDERR ($ok ? "\n===\n===OK===\n===\n" : "\n===\n===FAIL===\n===\n");
 exit($ok ? 0 : 1);
 
 __END__
