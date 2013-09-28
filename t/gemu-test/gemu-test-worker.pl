@@ -14,11 +14,15 @@ use App::MtAws::TreeHash;
 use List::MoreUtils qw(part);
 use Capture::Tiny qw/capture_merged/;
 use Fcntl qw/LOCK_SH LOCK_EX LOCK_NB LOCK_UN/;
+use File::Copy;
+use File::Compare;
 
 our $BASE_DIR='/dev/shm/mtaws';
 our $DIR;
 our $GLACIER='../../../src/mtglacier';
 our $N;
+our $PPID = $$;
+our $GLOBAL_DIR = "$BASE_DIR/$PPID";
 
 our $data;
 our $_current_task;
@@ -33,13 +37,25 @@ binmode STDOUT, ":encoding(UTF-8)";
 binmode STDIN, ":encoding(UTF-8)";
 
 
+sub getlock
+{
+	my $filename = "$GLOBAL_DIR/".shift().".lock";
+	open my $f, ">", $filename or confess $filename;
+	flock $f, LOCK_EX or confess;
+	my (@res_a, $res);
+	if (wantarray) {
+		@res_a = shift->();
+	} else {
+		$res = shift->();
+	}
+	flock $f, LOCK_UN or confess;
+	close $f;
+	return wantarray ? @res_a : $res;
+}
+
 sub lock_screen
 {
-	open my $f, ">", "$BASE_DIR/gemu-test-$$.lock";
-	flock $f, LOCK_EX;
-	shift->();
-	flock $f, LOCK_UN;
-	close $f;
+	getlock "screen", shift;
 }
 
 sub with_task
@@ -104,8 +120,14 @@ sub gen_archive_id
 
 sub treehash
 {
+	my $content = shift;
 	my $part_th = App::MtAws::TreeHash->new();
-	$part_th->eat_data(shift);
+
+	my $srcfilename = get_sample_fullname($content);
+	open my $f, "<", $srcfilename or confess;
+	binmode $f;
+	$part_th->eat_file($f);
+	close $f;
 	$part_th->calc_tree();
 	$part_th->get_final_hash();
 }
@@ -117,10 +139,10 @@ sub create_file
 	my $fullname = "$root/$relfilename";
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 	mkpath(dirname($binaryfilename));
-	open (my $F, ">", $binaryfilename) or confess;
-	binmode $F;
-	print $F $$content;
-	close $F;
+
+	my $srcfilename = get_sample_fullname($content);
+	copy($srcfilename, $binaryfilename) or confess;
+	confess if -s $srcfilename != -s $binaryfilename;
 	utime $args{mtime}, $args{mtime}, $binaryfilename or confess if defined($args{mtime});
 }
 
@@ -129,11 +151,10 @@ sub check_file
 	my ($filenames_encoding, $root, $relfilename, $content, %args) = (shift, shift, shift, pop, @_);
 	my $fullname = "$root/$relfilename";
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
-	open (my $F, "<", $binaryfilename) or return 0;
-	binmode $F;
-	read $F, my $buf, -s $F;
-	return 0 if $buf ne $$content;
-	return 1;
+
+
+	my $srcfilename = get_sample_fullname($content);
+	return compare($srcfilename, $binaryfilename) == 0;
 }
 
 sub create_journal
@@ -143,7 +164,7 @@ sub create_journal
 	my $archive_id = gen_archive_id;
 	my $treehash = treehash($content);
 	$args{mtime} = 123 unless defined $args{mtime};
-	print $f "A\t456\tCREATED\t$archive_id\t".length($$content)."\t$args{mtime}\t$treehash\t$relfilename\n";
+	print $f "A\t456\tCREATED\t$archive_id\t".(-s get_sample_fullname($content))."\t$args{mtime}\t$treehash\t$relfilename\n";
 	close $f;
 }
 
@@ -232,19 +253,56 @@ sub get_filter
 	@filter;
 }
 
+sub get_sample_fullname
+{
+	"$GLOBAL_DIR/".shift;
+}
+
+sub write_sample_file
+{
+	my ($name) = @_;
+	my $filename = get_sample_fullname($name);
+	unless (-e $filename) {
+		open my $f, ">", $filename or confess;
+		binmode $f;
+		return $f;
+	} else {
+		return undef;
+	}
+}
 sub get_file_body
 {
 	my ($file_body_type, $filesize) = @_;
 	confess if $file_body_type eq 'zero' && $filesize != 1;
-	my $body = $file_body_type eq 'zero' ? '0' : 'x' x $filesize;
-	\$body;
+	my $name = "ok_${file_body_type}_$filesize";
+	getlock("sample-files", sub {
+		if (my $f = write_sample_file($name)) {
+			if ($file_body_type eq 'zero') {
+				print ($f '0') or confess $!;
+			} else {
+				for (1..$filesize) {
+					print($f "x") or confess $!;
+				}
+			}
+			close $f or confess $!;
+		}
+		$name;
+	});
 }
 
 sub get_first_file_body
 {
 	my ($file_body_type, $filesize) = @_;
-	my $body = 'Z' x $filesize;
-	\$body;
+	my $name = "first_${file_body_type}_$filesize";
+	getlock("sample-files", sub {
+		if (my $f = write_sample_file($name)) {
+			for (1..$filesize) {
+				print($f "Z") or confess $!;
+			}
+			close $f or confess;
+		}
+		$name;
+	});
 }
 
 sub set_vault
@@ -429,6 +487,8 @@ sub get_tasks
 	my $i = 0;
     part { $i++ % $N; } @tasks;
 }
+
+mkpath $GLOBAL_DIR;
 
 my @parts = get_tasks();
 confess if @parts > $N;
