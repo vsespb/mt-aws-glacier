@@ -24,6 +24,8 @@ our $N;
 our $PPID = $$;
 our $GLOBAL_DIR = "$BASE_DIR/$PPID";
 
+our $DEFAULT_PARTSIZE = 64;
+
 our $data;
 our $_current_task;
 our $_current_task_stack;
@@ -423,7 +425,7 @@ sub process_sync_modified
 
 	# creating wrong file
 	create_file(filenames_encoding(), $root_dir, filename(), mtime => $journal_mtime, $journal_content);
-	$opts{partsize} = 64;
+	$opts{partsize} = $DEFAULT_PARTSIZE;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 	# creating right file
@@ -458,6 +460,8 @@ sub process_sync_modified
 		confess unless check_file(filenames_encoding(), $root_dir, filename(), $journal_content);
 	}
 	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
 
@@ -488,6 +492,7 @@ sub get_tasks
     part { $i++ % $N; } @tasks;
 }
 
+empty_dir $BASE_DIR;
 mkpath $GLOBAL_DIR;
 
 my @parts = get_tasks();
