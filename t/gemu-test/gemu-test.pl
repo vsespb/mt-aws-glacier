@@ -243,22 +243,38 @@ sub file_body
 	}
 }
 
+sub heavy_filenames
+{
+	my ($cb) = @_;
+	file_sizes 4, 2, 4, sub {
+	file_names [qw/zero russian/], 'full', 'full', sub {
+	file_body qw/normal/, sub {
+		$cb->();
+	}}};
+}
+
+sub heavy_fsm
+{
+	my ($cb) = @_;
+	file_sizes 'big', 4, 20, sub {
+	file_names [qw/default zero russian/], 'simple', 'none', sub {
+	file_body qw/normal zero/, sub {
+		$cb->();
+	}}};
+}
+
 lfor command => qw/sync/, sub {
-	if (get "command" eq "sync") {
+	if (command() eq "sync") {
 		lfor subcommand => qw/sync_new sync_modified/, sub {
 			if (get "subcommand" eq "sync_new") {
 				# testing filename stuff
-				file_sizes 4, 2, 4, sub {
-				file_names [qw/zero russian/], 'full', 'full', sub {
-				file_body qw/normal/, sub {
+				heavy_filenames sub {
 					process();
-				}}};
+				};
 				# testing FSM stuff
-				file_sizes 'big', 4, 20, sub {
-				file_names [qw/default zero russian/], 'simple', 'none', sub {
-				file_body qw/normal zero/, sub {
+				heavy_fsm sub {
 					process();
-				}}};
+				};
 			} elsif (get "subcommand" eq "sync_modified") {
 
 				my @detect_cases = qw/
