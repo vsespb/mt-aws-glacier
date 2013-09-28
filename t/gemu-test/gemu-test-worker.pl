@@ -65,8 +65,11 @@ sub with_task
 	local $_current_task_stack = [];
 	local $_current_task = shift;
 	eval {
+		alarm 180;
 		shift->();
+		alarm 0;
 	1; } or do {
+		alarm 0;
 		lock_screen sub {
 			print "# FAILED $_current_task\n";
 			for (@$_current_task_stack) {
