@@ -300,6 +300,11 @@ lfor command => qw/sync/, sub {
 				file_body qw/normal/, sub {
 					process();
 				}}}};
+
+				lfor detect_case => qw/treehash-matches mtime-matches/, sub { # TODO: also try mtime=zero!
+				heavy_fsm sub {
+					process();
+				}};
 			}
 		}
 	}
