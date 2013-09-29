@@ -21,6 +21,8 @@ our $BASE_DIR='/dev/shm/mtaws';
 our $DIR;
 our $GLACIER='../../../src/mtglacier';
 our $N;
+our $VERBOSE = 0;
+our $FASTMODE = 0;
 our $PPID = $$;
 our $GLOBAL_DIR = "$BASE_DIR/$PPID";
 
@@ -30,7 +32,7 @@ our $data;
 our $_current_task;
 our $_current_task_stack;
 
-GetOptions ("n=i" => \$N);
+GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE);
 $N ||= 1;
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
@@ -41,8 +43,9 @@ binmode STDIN, ":encoding(UTF-8)";
 
 sub getlock
 {
+	local $@;
 	my $filename = "$GLOBAL_DIR/".shift().".lock";
-	open my $f, ">", $filename or confess $filename;
+	open my $f, ">", $filename or confess "$filename $!";
 	flock $f, LOCK_EX or confess;
 	my (@res_a, $res);
 	if (wantarray) {
@@ -60,6 +63,15 @@ sub lock_screen
 	getlock "screen", shift;
 }
 
+
+sub print_current_task
+{
+	for (@_) {
+		print "\$ $_->{cmd}\n";
+		print "$_->{output}\n";
+	}
+}
+
 sub with_task
 {
 	local $_current_task_stack = [];
@@ -72,15 +84,13 @@ sub with_task
 		alarm 0;
 		lock_screen sub {
 			print "# FAILED $_current_task\n";
-			for (@$_current_task_stack) {
-				print "\$ $_->{cmd}\n";
-				print "$_->{output}\n";
-			}
+			print_current_task @$_current_task_stack;
 		};
 		die $@;
 	};
 	lock_screen sub {
 		print "# OK $_current_task\n";
+		print_current_task @$_current_task_stack if $VERBOSE;
 	};
 }
 
@@ -101,9 +111,15 @@ sub get($) {
 	} elsif (defined ($v = $data->{"-$key"})) {
 		$v;
 	} else {
-		confess [$key, Dumper $data];
+		confess Dumper [$key, $data];
 	}
 };
+
+sub get_or_undef($)
+{
+	eval { get(shift);};
+}
+
 
 sub AUTOLOAD
 {
@@ -123,7 +139,7 @@ sub gen_archive_id
 	sprintf("%s%05d%08d", "x" x 125, $$, ++$increment);
 }
 
-sub treehash
+sub treehash # TODO: cache !
 {
 	my $content = shift;
 	my $part_th = App::MtAws::TreeHash->new();
@@ -196,9 +212,10 @@ sub cmd
 	{
 		local $SIG{__WARN__} = sub {};
 		($merged, $res, $exitcode) = capture_merged {
-			system(@args), $?;
+			(system(@args), $?);
 		};
 	}
+	#print $merged;
 	push_command(join(" ", @args), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
 	return ($res, $merged);
@@ -216,7 +233,7 @@ sub run
 
 	my @opts = map { my $k = $_; ref $opts{$k} ? (map { ("-$k" => $_) } @{$opts{$_}}) : ( defined($opts{$k}) ? ("-$k" => $opts{$k}) : "-$k")} keys %opts;
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
-	cmd($perl, $glacier, $command, @$args, @opts_e);
+	cmd($perl, $glacier, $command, @$args, @opts_e);#'-MDevel::Cover',
 }
 
 
@@ -224,7 +241,7 @@ sub run_ok
 {
 	my ($code, $out) = run(@_);
 	confess if $code;
-	confess unless $out =~ /^OK DONE/m;
+	#confess unless $out =~ /^OK DONE/m;
 	$out
 }
 
@@ -280,7 +297,7 @@ sub get_file_body
 	my ($file_body_type, $filesize) = @_;
 	confess if $file_body_type eq 'zero' && $filesize != 1;
 	my $name = "ok_${file_body_type}_$filesize";
-	getlock("sample-files", sub {
+	getlock("sample-files-$name", sub {
 		if (my $f = write_sample_file($name)) {
 			if ($file_body_type eq 'zero') {
 				print ($f '0') or confess $!;
@@ -299,7 +316,7 @@ sub get_first_file_body
 {
 	my ($file_body_type, $filesize) = @_;
 	my $name = "first_${file_body_type}_$filesize";
-	getlock("sample-files", sub {
+	getlock("sample-files-$name", sub {
 		if (my $f = write_sample_file($name)) {
 			for (1..$filesize) {
 				print($f "Z") or confess $!;
@@ -308,6 +325,17 @@ sub get_first_file_body
 		}
 		$name;
 	});
+}
+
+sub gen_other_files
+{
+	my ($bigfile);
+	return unless get_or_undef('otherfiles');
+	my @sizes = ( (otherfiles_size()) x otherfiles_count());
+	push @sizes, ( (otherfiles_big_size()) x otherfiles_big_count()) if otherfiles_big_count() > 0;
+	map {
+		get_first_file_body('normal', $_)
+	} @sizes;
 }
 
 sub set_vault
@@ -433,7 +461,16 @@ sub process_sync_modified
 
 	# creating right file
 	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
+
+	my @otherfiles = gen_other_files();
+	my $i = 0;
+	for (@otherfiles) {
+		++$i;
+		create_file(filenames_encoding(), $root_dir, "otherfile$i", $_);
+	}
+
 	$opts{partsize} = partsize();
+	$opts{'new'}=undef if @otherfiles;
 	$opts{'replace-modified'}=undef;
 	$opts{'detect'} = $detect_option;
 	{
@@ -453,14 +490,19 @@ sub process_sync_modified
 		}
 
 	}
-	empty_dir $root_dir;
-	$opts{'max-number-of-files'} = 100_000;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
-	if ($is_upload) {
-		confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
-	} else {
-		confess unless check_file(filenames_encoding(), $root_dir, filename(), $journal_content);
+
+	if ($FASTMODE < 10) {
+		empty_dir $root_dir;
+		$opts{'max-number-of-files'} = 100_000;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
+			if @otherfiles && $FASTMODE < 5;
+		if ($is_upload) {
+			confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+		} else {
+			confess unless check_file(filenames_encoding(), $root_dir, filename(), $journal_content);
+		}
 	}
 	empty_dir $root_dir;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
@@ -528,6 +570,7 @@ while () {
 		delete $pids{$p};
 	}
 }
+print STDERR "WARN: PIDs left in list\n" if %pids && $ok;
 print STDERR ($ok ? "\n===\n===OK===\n===\n" : "\n===\n===FAIL===\n===\n");
 exit($ok ? 0 : 1);
 
