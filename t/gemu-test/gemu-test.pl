@@ -12,6 +12,7 @@ use Encode;
 use File::Path qw/mkpath rmtree/;
 use Getopt::Long;
 use App::MtAws::TreeHash;
+use List::Util qw/first/;
 
 
 our %task_seen;
@@ -68,9 +69,11 @@ sub get($) {
 	} elsif (defined ($v = $data->{"-$key"})) {
 		$v;
 	} else {
-		confess [$key, Dumper $data];
+		confess Dumper [$key, $data];
 	}
 };
+
+
 
 sub AUTOLOAD
 {
@@ -83,9 +86,9 @@ sub AUTOLOAD
 
 sub process
 {
-	for (sort keys %$data) {
-		no warnings 'uninitialized';
-		return if ($filter{$_} && !$filter{$_}{$data->{$_}} && !$filter{$_}{$data->{"-$_"}});
+	for my $k1 (keys %filter) {
+		return unless defined $data->{$k1};
+		return unless first { $data->{$k1} eq $_ } keys %{ $filter{$k1} };
 	}
 
 	my $task = ( join(" ",
@@ -243,6 +246,33 @@ sub file_body
 	}
 }
 
+sub other_files
+{
+	my $cb = shift;
+	$cb->();
+	lfor otherfiles => 1, sub {
+	lfor otherfiles_count => qw/0 1 10 100/, sub {
+		if (otherfiles_count() < 20 || filesize() > 10) {
+			lfor otherfiles_size => 1, 1024*1024-1, 4*1024*1024+1, sub {
+				lfor otherfiles_big_count => qw/0 1/, sub {
+					if (otherfiles_big_count() > 0) {
+						lfor otherfiles_big_size =>  4*1024*1024+1, 45*1024*1024-156897, sub {
+							if (otherfiles_big_size() > otherfiles_size()) {
+								if (otherfiles_big_size() < 40*1024*1024 || filesize() > 3*1024*1024) {
+									$cb->();
+								}
+							}
+						}
+					} else {
+						$cb->();
+					}
+				}
+			}
+		}
+	}
+	}
+}
+
 sub heavy_filenames
 {
 	my ($cb) = @_;
@@ -262,6 +292,18 @@ sub heavy_fsm
 		$cb->();
 	}}};
 }
+
+sub heavy_other_files
+{
+	my ($cb) = @_;
+	file_sizes 'big', 4, 20, sub {
+	file_names [qw/default/], 'simple', 'none', sub {
+	file_body qw/normal/, sub {
+	other_files sub {
+		$cb->();
+	}}}};
+}
+
 
 lfor command => qw/sync/, sub {
 	if (command() eq "sync") {
@@ -302,9 +344,14 @@ lfor command => qw/sync/, sub {
 				}}}};
 
 				lfor detect_case => qw/treehash-matches mtime-matches/, sub { # TODO: also try mtime=zero!
-				heavy_fsm sub {
-					process();
-				}};
+					heavy_fsm sub {
+						process();
+					};
+					heavy_other_files sub {
+						process();
+					};
+				};
+
 			}
 		}
 	}
