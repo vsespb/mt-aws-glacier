@@ -280,51 +280,48 @@ sub get_sample_fullname
 	"$GLOBAL_DIR/".shift;
 }
 
-sub write_sample_file
+sub writing_sample_file($&)
 {
-	my ($name) = @_;
+	my ($name, $cb) = @_;
 	my $filename = get_sample_fullname($name);
-	unless (-e $filename) {
-		open my $f, ">", $filename or confess;
-		binmode $f;
-		return $f;
-	} else {
-		return undef;
-	}
+	getlock("sample-files-$name", sub {
+		unless (-e $filename) {
+			open my $f, ">", $filename or confess;
+			binmode $f;
+			$cb->($f);
+			close $f;
+		}
+		return $name;
+	});
 }
+
 sub get_file_body
 {
 	my ($file_body_type, $filesize) = @_;
 	confess if $file_body_type eq 'zero' && $filesize != 1;
 	my $name = "ok_${file_body_type}_$filesize";
-	getlock("sample-files-$name", sub {
-		if (my $f = write_sample_file($name)) {
-			if ($file_body_type eq 'zero') {
-				print ($f '0') or confess $!;
-			} else {
-				for (1..$filesize) {
-					print($f "x") or confess $!;
-				}
+	return writing_sample_file $name, sub {
+		my ($f) = @_;
+		if ($file_body_type eq 'zero') {
+			print ($f '0') or confess $!;
+		} else {
+			for (1..$filesize) {
+				print($f "x") or confess $!;
 			}
-			close $f or confess $!;
 		}
-		$name;
-	});
+	};
 }
 
 sub get_first_file_body
 {
 	my ($file_body_type, $filesize) = @_;
 	my $name = "first_${file_body_type}_$filesize";
-	getlock("sample-files-$name", sub {
-		if (my $f = write_sample_file($name)) {
-			for (1..$filesize) {
-				print($f "Z") or confess $!;
-			}
-			close $f or confess;
+	return writing_sample_file $name, sub {
+		my ($f) = @_;
+		for (1..$filesize) {
+			print($f "Z") or confess $!;
 		}
-		$name;
-	});
+	};
 }
 
 sub gen_other_files
