@@ -31,6 +31,7 @@ our $DEFAULT_PARTSIZE = 64;
 our $data;
 our $_current_task;
 our $_current_task_stack;
+our $_global_cache = {};
 
 GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE);
 $N ||= 1;
@@ -139,18 +140,19 @@ sub gen_archive_id
 	sprintf("%s%05d%08d", "x" x 125, $$, ++$increment);
 }
 
-sub treehash # TODO: cache !
+sub treehash
 {
 	my $content = shift;
-	my $part_th = App::MtAws::TreeHash->new();
-
 	my $srcfilename = get_sample_fullname($content);
-	open my $f, "<", $srcfilename or confess;
-	binmode $f;
-	$part_th->eat_file($f);
-	close $f;
-	$part_th->calc_tree();
-	$part_th->get_final_hash();
+	return cached("$srcfilename.treehash", sub {
+		my $part_th = App::MtAws::TreeHash->new();
+		open my $f, "<", $srcfilename or confess;
+		binmode $f;
+		$part_th->eat_file($f);
+		close $f;
+		$part_th->calc_tree();
+		$part_th->get_final_hash();
+	});
 }
 
 sub create_file
@@ -278,6 +280,43 @@ sub get_filter
 sub get_sample_fullname
 {
 	"$GLOBAL_DIR/".shift;
+}
+
+sub memory_cached
+{
+	my ($id, $cb) = @_;
+	defined $_global_cache->{$id} ? $_global_cache->{$id} : $_global_cache->{$id} = $cb->();
+}
+
+sub file_cached
+{
+	my ($filename, $cb) = @_;
+	getlock("$filename.lock", sub {
+		if (-e $filename) {
+			open my $f, "<", $filename or confess $!;
+			binmode $f;
+			my $data = do { local $/; <$f> }; # BINARY ONLY
+			close $f;
+			return $data;
+		} else {
+			print STDERR "WR $filename\n";
+			open my $f, ">", $filename or confess $!;
+			binmode $f;
+			my $data = $cb->();
+			print $f $data;
+			close $f;
+			return $data;
+		}
+	});
+}
+
+sub cached
+{
+	my ($filename, $cb) = @_;
+	print STDERR "C $filename\n";
+	memory_cached($filename, sub {
+		file_cached($filename, $cb);
+	});
 }
 
 sub writing_sample_file($&)
