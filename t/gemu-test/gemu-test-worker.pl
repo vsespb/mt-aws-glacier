@@ -369,8 +369,10 @@ sub gen_other_files
 	return unless get_or_undef('otherfiles');
 	my @sizes = ( (otherfiles_size()) x otherfiles_count());
 	push @sizes, ( (otherfiles_big_size()) x otherfiles_big_count()) if otherfiles_big_count() > 0;
+	my $i = 0;
 	map {
-		get_first_file_body('normal', $_)
+		++$i;
+		{ file_id => get_first_file_body('normal', $_), dest_filename => "otherfile$i" };
 	} @sizes;
 }
 
@@ -501,8 +503,7 @@ sub process_sync_modified
 	my @otherfiles = gen_other_files();
 	my $i = 0;
 	for (@otherfiles) {
-		++$i;
-		create_file(filenames_encoding(), $root_dir, "otherfile$i", $_);
+		create_file(filenames_encoding(), $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
 	}
 
 	$opts{partsize} = partsize();
