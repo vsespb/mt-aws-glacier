@@ -363,7 +363,7 @@ sub get_first_file_body
 	};
 }
 
-sub gen_other_files
+sub gen_otherfiles
 {
 	my ($bigfile);
 	return unless get_or_undef('otherfiles');
@@ -374,6 +374,16 @@ sub gen_other_files
 		++$i;
 		{ file_id => get_first_file_body('normal', $_), dest_filename => "otherfile$i" };
 	} @sizes;
+}
+
+sub create_otherfiles
+{
+	my ($filenames_encoding, $root_dir) = @_;
+	my @otherfiles = gen_otherfiles();
+	for (@otherfiles) {
+		create_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+	}
+	@otherfiles;
 }
 
 sub set_vault
@@ -409,6 +419,9 @@ sub process_sync_new
 	$opts{config} = $config;
 
 	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
+
 	{
 		local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
@@ -500,18 +513,14 @@ sub process_sync_modified
 	# creating right file
 	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
 
-	my @otherfiles = gen_other_files();
-	my $i = 0;
-	for (@otherfiles) {
-		create_file(filenames_encoding(), $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
-	}
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
 
 	$opts{partsize} = partsize();
 	$opts{'new'}=undef if @otherfiles;
 	$opts{'replace-modified'}=undef;
 	$opts{'detect'} = $detect_option;
 	{
-		local $ENV{NEWFSM}=$ENV{USENEWFSM};
+		#local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if ($is_upload) {
