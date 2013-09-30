@@ -172,9 +172,9 @@ sub create_file
 sub check_file
 {
 	my ($filenames_encoding, $root, $relfilename, $content, %args) = (shift, shift, shift, pop, @_);
+	confess unless $content;
 	my $fullname = "$root/$relfilename";
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
-
 
 	my $srcfilename = get_sample_fullname($content);
 	return compare($srcfilename, $binaryfilename) == 0;
@@ -386,6 +386,14 @@ sub create_otherfiles
 	@otherfiles;
 }
 
+sub check_otherfiles
+{
+	my ($filenames_encoding, $root_dir, @otherfiles) = @_;
+	for (@otherfiles) {
+		confess "$_->{dest_filename} $_->{file_id}" unless check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+	}
+}
+
 sub set_vault
 {
 	my ($opts) = @_;
@@ -435,6 +443,7 @@ sub process_sync_new
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 
+	check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
 	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
 
 	empty_dir $root_dir;
@@ -542,6 +551,8 @@ sub process_sync_modified
 		$opts{'max-number-of-files'} = 100_000;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+
+		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
 			if @otherfiles && $FASTMODE < 5;
 		if ($is_upload) {
