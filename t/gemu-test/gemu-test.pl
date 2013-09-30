@@ -283,16 +283,6 @@ sub heavy_filenames
 	}}};
 }
 
-sub heavy_fsm
-{
-	my ($cb) = @_;
-	file_sizes 'big', 4, 20, sub {
-	file_names [qw/default zero russian/], 'simple', 'none', sub {
-	file_body qw/normal zero/, sub {
-		$cb->();
-	}}};
-}
-
 sub heavy_other_files
 {
 	my ($cb) = @_;
@@ -304,6 +294,18 @@ sub heavy_other_files
 	}}}};
 }
 
+sub heavy_fsm
+{
+	my ($cb) = @_;
+	file_sizes 'big', 4, 20, sub {
+	file_names [qw/default zero russian/], 'simple', 'none', sub {
+	file_body qw/normal zero/, sub {
+		$cb->();
+	}}};
+	heavy_other_files(sub {
+		$cb->();
+	});
+}
 
 lfor command => qw/sync/, sub {
 	if (command() eq "sync") {
@@ -345,9 +347,6 @@ lfor command => qw/sync/, sub {
 
 				lfor detect_case => qw/treehash-matches mtime-matches/, sub { # TODO: also try mtime=zero!
 					heavy_fsm sub {
-						process();
-					};
-					heavy_other_files sub {
 						process();
 					};
 				};
