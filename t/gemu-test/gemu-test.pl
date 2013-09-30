@@ -263,7 +263,7 @@ sub other_files
 								}
 							}
 						}
-					} else {
+					} elsif (otherfiles_count() > 0) {
 						$cb->();
 					}
 				}
