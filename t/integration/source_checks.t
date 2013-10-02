@@ -27,6 +27,6 @@ use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 
 my $basedir = "$FindBin::RealBin/../..";
-all_perl_files_ok( map { "$basedir/$_" } qw!lib t/unit t/integration t/unit/queue_job t/lib t/libtest!);
+all_perl_files_ok( "$basedir/lib", "$basedir/t/unit", "$basedir/t/integration");
 
 1;
