@@ -18,3 +18,4 @@ nytprof.out
 pm_to_blib
 App-MtAws*.tar.gz
 run-*.sh
+t/gemu-test/gemu-test-tasks.txt
