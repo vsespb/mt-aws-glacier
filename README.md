@@ -13,7 +13,7 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 ## Version
 
-* Version 1.051 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 1.055 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
@@ -66,27 +66,25 @@ Will NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pret
 
 ###### RHEL/CentOS 5
 
+1. `sudo yum install perl-Digest-SHA`
+2. `sudo yum groupinstall "Development Tools"`
+3. `sudo yum install openssl-devel`
+4. Install `JSON::XS`, `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
+
+You also can install `mtglacier` prerequisites without CPAN if you have [EPEL](http://fedoraproject.org/wiki/EPEL) repository enabled and if you don't need HTTPS:
+
 `sudo yum install perl-Digest-SHA perl-JSON-XS perl-libwww-perl`
-
-To use HTTPS you also need:
-
-1. `sudo yum groupinstall "Development Tools"`
-
-2. `sudo yum install openssl-devel`
-
-3. install/update `LWP::UserAgent` and `LWP::Protocol::https` via [cpanm]
 
 ###### RHEL/CentOS 6
 
+1. `sudo yum install perl-core perl-CGI`
+2. `sudo yum groupinstall "Development Tools"`
+3. `sudo yum install openssl-devel`
+4. Install `JSON::XS`, `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
+
+You also can install `mtglacier` prerequisites without CPAN if you have [EPEL](http://fedoraproject.org/wiki/EPEL) repository enabled and if you don't need HTTPS:
+
 `sudo yum install perl-core perl-CGI perl-JSON-XS perl-libwww-perl`
-
-To use HTTPS you also need:
-
-1. `sudo yum groupinstall "Development Tools"`
-
-2. `sudo yum install openssl-devel`
-
-3. install/update `LWP::UserAgent` and `LWP::Protocol::https` via [cpanm]
 
 ###### Debian 6
 
@@ -96,7 +94,7 @@ To use HTTPS you also need:
 
 1. `sudo apt-get install build-essential libssl-dev`
 
-3. install/update `LWP::UserAgent` and `LWP::Protocol::https` via [cpanm]
+3. install/update `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
 
 ###### Fedora 18+
 
@@ -108,7 +106,7 @@ To use HTTPS you also need:
 2. `sudo zypper install --type pattern Basis-Devel`
 3. Upgrade openssl to (at least) `0.9.8r` (to check version use `openssl version`), can be found [here](http://download.opensuse.org/repositories/security:/fips/) (more info here [RT#81575](https://rt.cpan.org/Public/Bug/Display.html?id=81575))
 4. Update `ExtUtils::MakeMaker` via [cpanm]
-5. Install `LWP::UserAgent`, `LWP::Protocol::https`, `JSON::XS` via [cpanm]
+5. Install `LWP::UserAgent`, `LWP::Protocol::https`, `JSON::XS` using [cpanm]
 
 ###### Amazon Linux 2013.03
 
@@ -155,7 +153,7 @@ so package named `perl`, which is a part of default installation, is not actuall
 
 4. On newer RHEL distributions (some *Fedora* versions) you need install **perl-LWP-Protocol-https** to use HTTPS.
 
-5. For some RPM packages listed above you need enable [EPEL](http://fedoraproject.org/wiki/EPEL) repository
+5. To inistall `perl-JSON-XS` RPM package on RHEL5/6 you need to enable [EPEL](http://fedoraproject.org/wiki/EPEL) repository
 
 6. If you've used manual installation before "CPAN" installation, it's probably better to remove previously installed `mtglacier` executable from your path.
 
@@ -431,7 +429,8 @@ If none of three above mode options provided, `--new` is implied (basically for 
 
 4. `--detect`
 
-	Controls how `--replace-modified` detect modified files. Possible values are: `treehash`, `mtime`,  `mtime-and-treehash`, `mtime-or-treehash`.
+	Controls how `--replace-modified` detect modified files. Possible values are: `treehash`, `mtime`, `mtime-or-treehash`, `mtime-and-treehash`,
+	`always-positive`, `size-only`.
 	Default value is `mtime-and-treehash`
 
 	File is always considered modified if its *size changed* (but not zero)
