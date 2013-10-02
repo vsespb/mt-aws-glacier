@@ -172,9 +172,9 @@ sub create_file
 sub check_file
 {
 	my ($filenames_encoding, $root, $relfilename, $content, %args) = (shift, shift, shift, pop, @_);
+	confess unless $content;
 	my $fullname = "$root/$relfilename";
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
-
 
 	my $srcfilename = get_sample_fullname($content);
 	return compare($srcfilename, $binaryfilename) == 0;
@@ -363,15 +363,35 @@ sub get_first_file_body
 	};
 }
 
-sub gen_other_files
+sub gen_otherfiles
 {
 	my ($bigfile);
 	return unless get_or_undef('otherfiles');
 	my @sizes = ( (otherfiles_size()) x otherfiles_count());
 	push @sizes, ( (otherfiles_big_size()) x otherfiles_big_count()) if otherfiles_big_count() > 0;
+	my $i = 0;
 	map {
-		get_first_file_body('normal', $_)
+		++$i;
+		{ file_id => get_first_file_body('normal', $_), dest_filename => "otherfile$i" };
 	} @sizes;
+}
+
+sub create_otherfiles
+{
+	my ($filenames_encoding, $root_dir) = @_;
+	my @otherfiles = gen_otherfiles();
+	for (@otherfiles) {
+		create_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+	}
+	@otherfiles;
+}
+
+sub check_otherfiles
+{
+	my ($filenames_encoding, $root_dir, @otherfiles) = @_;
+	for (@otherfiles) {
+		confess "$_->{dest_filename} $_->{file_id}" unless check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+	}
 }
 
 sub set_vault
@@ -407,6 +427,9 @@ sub process_sync_new
 	$opts{config} = $config;
 
 	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
+
 	{
 		local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
@@ -420,6 +443,7 @@ sub process_sync_new
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 
+	check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
 	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
 
 	empty_dir $root_dir;
@@ -498,19 +522,14 @@ sub process_sync_modified
 	# creating right file
 	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
 
-	my @otherfiles = gen_other_files();
-	my $i = 0;
-	for (@otherfiles) {
-		++$i;
-		create_file(filenames_encoding(), $root_dir, "otherfile$i", $_);
-	}
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
 
 	$opts{partsize} = partsize();
 	$opts{'new'}=undef if @otherfiles;
 	$opts{'replace-modified'}=undef;
 	$opts{'detect'} = $detect_option;
 	{
-		local $ENV{NEWFSM}=$ENV{USENEWFSM};
+		#local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if ($is_upload) {
@@ -532,6 +551,8 @@ sub process_sync_modified
 		$opts{'max-number-of-files'} = 100_000;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+
+		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
 			if @otherfiles && $FASTMODE < 5;
 		if ($is_upload) {
