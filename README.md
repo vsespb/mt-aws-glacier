@@ -191,11 +191,9 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 
 * With low "partsize" option you pay a bit more (Amazon charges for each upload request)
 
-* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
-
-* Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
-
 * For backup created with older versions (0.7x) of mt-aws-glacier, Journal file **required to restore backup**.
+
+* Use **one Journal file** only with **one (same) vault** ( more info [here](#what-is-journal) and [here](#how-to-maintain-a-relation-between-my-journal-files-and-my-vaults) )
 
 * When work with CD-ROM/CIFS/other non-Unix/non-POSIX filesystems, you might need set `leaf-optimization` to `0`
 
@@ -796,6 +794,11 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 * Length of relative filenames. Currently limit is about 700 ASCII characters or 350 2-byte UTF-8 character (.. or 230 3-byte characters).
 
 (NOTE: if above requirements are not met, error will be thrown)
+
+* Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
+
+* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
+
 
 ## Test/Play with it
 
