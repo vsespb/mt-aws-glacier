@@ -46,7 +46,6 @@ my $fromchild = new IO::Pipe;
 my $tochild = new IO::Pipe;
 
 sub _flock { flock($_[0], $_[1]); }
-#sub _flock { 1 }
 
 if (fork()) {
 	$fromchild->reader();

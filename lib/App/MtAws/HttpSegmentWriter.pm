@@ -109,7 +109,7 @@ use strict;
 use warnings;
 use utf8;
 use App::MtAws::Utils;
-use Fcntl qw/SEEK_SET LOCK_EX LOCK_UN/;
+use Fcntl qw/SEEK_SET LOCK_EX/;
 use Carp;
 use base qw/App::MtAws::HttpWriter/;
 
@@ -161,8 +161,7 @@ sub _flush
 		$fh->autoflush(1);
 		seek $fh, $self->{position}+$self->{incr_position}, SEEK_SET or delayed_confess "cannot seek() $!";
 		$self->{incr_position} += $self->_flush_buffers($fh);
-		flock $fh, LOCK_UN or delayed_confess;
-		close $fh or delayed_confess;
+		close $fh or delayed_confess; # close will unlock
 	}
 }
 
@@ -182,7 +181,6 @@ use strict;
 use warnings;
 use utf8;
 use App::MtAws::Utils;
-use Fcntl qw/SEEK_SET LOCK_EX LOCK_UN/;
 use Carp;
 use base qw/App::MtAws::HttpWriter/;
 
