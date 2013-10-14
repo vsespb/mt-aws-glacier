@@ -20,6 +20,7 @@
             "Data::Dumper" : "0",
             "DateTime" : "0",
             "HTTP::Daemon" : "1.36",
+            "Module::Build" : "0.36",
             "Scalar::Util" : "1.11",
             "TAP::Harness" : "0",
             "Test::Deep" : "0.092",
@@ -35,7 +36,7 @@
       },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.40"
+            "Module::Build" : "0.36"
          }
       },
       "runtime" : {
