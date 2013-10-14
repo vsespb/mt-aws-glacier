@@ -30,8 +30,8 @@ use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use Carp;
 use POSIX;
 
-use Test::Spec 0.46;
-use Test::More tests => 228;
+use Test::Spec;
+use Test::More tests => 242;
 use Test::Deep;
 
 use Data::Dumper;
@@ -79,7 +79,10 @@ describe "command" => sub {
 		sub expect_read_journal
 		{
 			my ($j, @files) = @_;
-			$j->expects("read_journal")->with(should_exist => 1)->returns_ordered->once;
+			$j->expects("read_journal")->returns_ordered(sub {
+				shift;
+				cmp_deeply({@_}, {should_exist => 1});
+			})->once;
 			$j->{journal_h} = { map { $_->{relfilename} => $_} @files };
 		}
 
@@ -195,7 +198,7 @@ describe "command" => sub {
 					$j->_add_filename({size => 1231, treehash => 'th001', mtime => 4000, relfilename => 'file1'});
 					$j->_add_filename(my $r = {size => 1232, treehash => 'th002', mtime => 4003, relfilename => 'file1'});
 					$j->_add_filename({size => 1233, treehash => 'th003', mtime => 4001, relfilename => 'file1'});
-					App::MtAws::Journal->expects("latest")->with('file1')->returns_ordered($r)->once;
+					App::MtAws::Journal->expects("latest")->returns_ordered(sub{ is $_[1], "file1"; $r})->once;
 					expect_file_exists $r->{relfilename};
 					expect_file_size $r->{relfilename}, $r->{size};
 					expect_file_mtime $r->{relfilename}, $r->{mtime};

@@ -4,7 +4,7 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4006, CPAN::Meta::Converter version 2.131560",
+   "generated_by" : "Module::Build version 0.4007, CPAN::Meta::Converter version 2.132661",
    "license" : [
       "open_source"
    ],
@@ -26,7 +26,7 @@
             "Test::MockModule" : "0",
             "Test::More" : "0.88",
             "Test::Simple" : "0.88",
-            "Test::Spec" : "0.46",
+            "Test::Spec" : "0",
             "Test::Tabs" : "0.003",
             "Time::HiRes" : "0",
             "URI" : "1.10",
