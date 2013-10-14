@@ -4,7 +4,7 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4006, CPAN::Meta::Converter version 2.131560",
+   "generated_by" : "Module::Build version 0.4007, CPAN::Meta::Converter version 2.132661",
    "license" : [
       "open_source"
    ],
@@ -20,13 +20,14 @@
             "Data::Dumper" : "0",
             "DateTime" : "0",
             "HTTP::Daemon" : "1.36",
+            "Module::Build" : "0.36",
             "Scalar::Util" : "1.11",
             "TAP::Harness" : "0",
             "Test::Deep" : "0.092",
             "Test::MockModule" : "0",
             "Test::More" : "0.88",
             "Test::Simple" : "0.88",
-            "Test::Spec" : "0.46",
+            "Test::Spec" : "0",
             "Test::Tabs" : "0.003",
             "Time::HiRes" : "0",
             "URI" : "1.10",
@@ -35,7 +36,7 @@
       },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.40"
+            "Module::Build" : "0.36"
          }
       },
       "runtime" : {

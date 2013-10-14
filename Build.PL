@@ -28,6 +28,8 @@ use lib qw(lib);
 
 die "OS unsupported\n" if ($^O eq 'MSWin32');
 
+our $MB_VERSION = '0.36';
+
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
 	author => 'Victor Efimov <vs@vs-dev.com>',
@@ -126,7 +128,7 @@ my $build = Module::Build->new(
 
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
-		'Test::Spec' => '0.46', # we need with() new in 0.46
+		'Test::Spec' => 0,
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
 		'Test::Tabs' => '0.003',
@@ -137,6 +139,12 @@ my $build = Module::Build->new(
 		'Time::HiRes' => 0,
 		'open' => 0,
 		'Scalar::Util' => '1.11',
+
+		# Specify Module::Build twice
+		'Module::Build' => $MB_VERSION,
+	},
+	configure_requires => {
+		'Module::Build' => $MB_VERSION,
 	},
 	recommends => {
 		'LWP::Protocol::https' => 6,

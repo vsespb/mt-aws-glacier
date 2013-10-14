@@ -31,8 +31,8 @@ use Carp;
 use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
-use Test::Spec 0.46;
-use Test::More tests => 469;
+use Test::Spec;
+use Test::More tests => 490;
 use Test::Deep;
 
 use Data::Dumper;
@@ -296,7 +296,7 @@ describe "command" => sub {
 				$j->_add_filename(my $r = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113, treehash => 'abc'});
 				$j->_add_filename({relfilename => 'file1', archive_id => 'zz3', size => 123, time => 42, mtime => 112, , treehash => 'abc2'});
 				expect_should_upload($options, $j, $r, App::MtAws::Command::Sync::SHOULD_TREEHASH());
-				App::MtAws::Journal->expects("latest")->with('file1')->returns($r)->once;
+				App::MtAws::Journal->expects("latest")->returns(sub{ is $_[1], "file1"; $r})->once;
 				App::MtAws::Command::Sync::next_modified($options, $j);
 			};
 
@@ -431,7 +431,7 @@ describe "command" => sub {
 			$j->{listing}{missing} = [$r];
 			$j->_add_filename({relfilename => 'file1', archive_id => 'zz1', size => 123, time => 42, mtime => 111});
 			$j->_add_filename(my $r2 = {relfilename => 'file1', archive_id => 'zz2', size => 123, time => 42, mtime => 113});
-			App::MtAws::Journal->expects("latest")->with('file1')->returns($r2)->once;
+			App::MtAws::Journal->expects("latest")->returns(sub{ is $_[1], "file1"; $r2})->once;
 			my $rec = App::MtAws::Command::Sync::next_missing($options, $j);
 		};
 	};
@@ -537,7 +537,10 @@ describe "command" => sub {
 		sub expect_journal_init
 		{
 			my ($options, $j, $read_files_mode) = @_;
-			$j->expects("read_journal")->with(should_exist => 0)->returns_ordered->once;#returns(sub{ is ++shift->{_stage}, 1 })
+			$j->expects("read_journal")->returns_ordered(sub{
+				shift;
+				cmp_deeply({@_}, {should_exist => 0});
+			})->once;#returns(sub{ is ++shift->{_stage}, 1 })
 			App::MtAws::Journal->expects("read_files")->returns_ordered(sub {
 				shift;
 				cmp_deeply [@_], [$read_files_mode, $options->{'max-number-of-files'}];
