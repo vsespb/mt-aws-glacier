@@ -73,4 +73,6 @@
 \bApp-MtAws-[\d\.\_]+
 
 ^debian/
+^packaging/
+^scripts/
 run\-.*\.sh

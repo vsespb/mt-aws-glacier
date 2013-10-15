@@ -1,0 +1,5 @@
+#!/usr/bin/make -f
+export MT_DEB_BUILD=1
+
+%:
+	dh $@
