@@ -102,24 +102,8 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
-	entry '1.055', 0, 6, 'Tue, 15 Oct 2013 13:20:30 +0400', << "END";
-  * Polishing debian package files
-END
-
-	entry '1.055', 0, 5, 'Tue, 15 Oct 2013 13:20:30 +0400', << "END";
-  * Polishing build dependencies and fix package name
-END
-
-	entry '1.055', 0, 4, 'Mon, 14 Oct 2013 21:08:30 +0400', << "END";
-  * Fix build dependencies
-END
-
-	entry '1.055', 0, 3, 'Mon, 14 Oct 2013 20:08:30 +0400', << "END";
-  * Fix build dependencies
-END
-
-	entry '1.055', 0, 2, 'Mon, 10 Oct 2013 21:55:30 +0400', << "END";
-  * Initial Release.
+	entry '1.056', 0, 1, 'Tue, 15 Oct 2013 16:20:30 +0400', << "END";
+  * Initial release for launchpad PPA
 END
 
 };
