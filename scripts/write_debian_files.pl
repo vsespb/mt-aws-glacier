@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Carp;
 use File::Copy;
+use File::Path;
 
 my $distro = $ARGV[1]||confess;
 my $BASEDIR = $ARGV[0]||confess;
@@ -16,6 +17,9 @@ our $PACKAGE = 'libapp-mtaws-perl';
 our $CPANDIST = 'App-MtAws';
 our $MAINTAINER = 'Victor Efimov <victor@vsespb.ru>';
 
+
+mkpath $OUTDIR;
+mkpath "$OUTDIR/source";
 
 our $_changelog;
 

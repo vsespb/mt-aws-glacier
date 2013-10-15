@@ -1,0 +1,30 @@
+libapp-mtaws-perl (1.055-0ubuntu6~raring1~ppa1) raring; urgency=low
+
+  * Polishing debian package files
+
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 15 Oct 2013 13:20:30 +0400
+
+libapp-mtaws-perl (1.055-0ubuntu5~raring1~ppa1) raring; urgency=low
+
+  * Polishing build dependencies and fix package name
+
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 15 Oct 2013 13:20:30 +0400
+
+libapp-mtaws-perl (1.055-0ubuntu4~raring1~ppa1) raring; urgency=low
+
+  * Fix build dependencies
+
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 14 Oct 2013 20:08:30 +0400
+
+libapp-mtaws-perl (1.055-0ubuntu3~raring1~ppa1) raring; urgency=low
+
+  * Fix build dependencies
+
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 14 Oct 2013 20:08:30 +0400
+
+libapp-mtaws-perl (1.055-0ubuntu2~raring1~ppa1) raring; urgency=low
+
+  * Initial Release.
+
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 10 Oct 2013 21:55:30 +0400
+
