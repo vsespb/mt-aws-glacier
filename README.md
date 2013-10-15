@@ -59,6 +59,8 @@ Will NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pret
 
 NOTE: If you've used manual installation before, please remove previously installed `mtglacier` executable from your path.
 
+NOTE: If you've used CPAN installation before, please remove previously installed module, ([cpanm] is capable to do that)
+
 ##### Ubuntu 12.04+
 
 Can be installed via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
