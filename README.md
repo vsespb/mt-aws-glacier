@@ -61,9 +61,9 @@ NOTE: If you've used manual installation before, please remove previously instal
 
 ##### Ubuntu 12.04+
 
-Can be installed via PPA  [vsespb:mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
+Can be installed via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
 
-1.	`sudo add-apt-repository ppa:vsespb:mt-aws-glacier`
+1.	`sudo add-apt-repository ppa:vsespb/mt-aws-glacier`
 
 	(GPG key id/fingerprint would be **D2BFA5E4** and **D7F1BC2238569FC447A8D8249E86E8B2D2BFA5E4**)
 
