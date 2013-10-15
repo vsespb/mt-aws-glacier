@@ -2,6 +2,7 @@ t/cover_db
 blib/
 .build/
 _build/
+/debian/
 cover_db/
 inc/
 Build

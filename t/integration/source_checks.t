@@ -22,10 +22,13 @@
 
 use strict;
 use warnings;
-use Test::Tabs;
+use Test::More;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 
+plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
+
+require Test::Tabs;
 my $basedir = "$FindBin::RealBin/../..";
 all_perl_files_ok( map { "$basedir/$_" } qw!lib t/unit t/integration t/unit/queue_job t/lib t/libtest!);
 
