@@ -20,7 +20,7 @@
 
 package App::MtAws::IntermediateFile;
 
-our $VERSION = '1.055';
+our $VERSION = '1.056';
 
 use strict;
 use warnings;
