@@ -29,7 +29,6 @@ use lib qw(lib);
 die "OS unsupported\n" if ($^O eq 'MSWin32');
 
 our $MB_VERSION = '0.36';
-our $IS_DEBUILD = !!$ENV{DEB_BUILD_ARCH};
 
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
@@ -133,10 +132,10 @@ my $build = Module::Build->new(
 		'Test::Spec' => 0,
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
-		$IS_DEBUILD ? () : ('Test::Tabs' => '0.003'),
-		'B' => 0, # test that some scalar IV only to save memory
+		$ENV{MT_DEB_BUILD} ? () : ('Test::Tabs' => '0.003'),
 
 		# CORE MODULES OR DUAL-LIFE MODULES
+		'B' => 0, # test that some scalar IV only to save memory
 		'Data::Dumper' => 0,
 		'Time::HiRes' => 0,
 		'open' => 0,
