@@ -30,6 +30,6 @@ plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
 
 require Test::Tabs;
 my $basedir = "$FindBin::RealBin/../..";
-all_perl_files_ok( map { "$basedir/$_" } qw!lib t/unit t/integration t/unit/queue_job t/lib t/libtest!);
+Test::Tabs::all_perl_files_ok( map { "$basedir/$_" } qw!lib t/unit t/integration t/unit/queue_job t/lib t/libtest!);
 
 1;
