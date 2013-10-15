@@ -95,6 +95,10 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.055', 0, 6, 'Thu, 15 Oct 2013 13:20:30 +0400', << "END";
+  * Polishing debian package files
+END
+
 	entry '1.055', 0, 5, 'Thu, 15 Oct 2013 13:20:30 +0400', << "END";
   * Polishing build dependencies and fix package name
 END
