@@ -22,7 +22,6 @@ mkpath $OUTDIR;
 mkpath "$OUTDIR/source";
 
 our $_changelog;
-
 sub write_changelog($&)
 {
 	my ($distro, $cb) = @_;
@@ -30,6 +29,7 @@ sub write_changelog($&)
 	$cb->();
 	open my $f, ">", $CHANGELOG or confess;
 	for (@{$_changelog}) {
+		next if $_->{re} && $distro !~ $_->{re};
 		print $f "$PACKAGE ($_->{upstream_version}-$_->{debian_version}ubuntu$_->{ubuntu_version}~${distro}1~ppa1) $distro; urgency=low\n\n";
 		print $f $_->{text};
 		print $f "\n";
@@ -38,14 +38,15 @@ sub write_changelog($&)
 	close $f or confess;
 }
 
-sub entry($$$$$)
+sub entry(@)
 {
-	my ($upstream_version, $debian_version, $ubuntu_version, $date, $text) = @_;
+	my ($upstream_version, $debian_version, $ubuntu_version, $date, $text, $re) = (shift, shift, shift, shift, pop, shift);
 	push @{$_changelog}, {
 		upstream_version => $upstream_version,
 		debian_version => $debian_version,
 		ubuntu_version => $ubuntu_version,
 		date => $date,
+		re => $re,
 		text => $text
 	};
 }
@@ -55,12 +56,15 @@ sub write_control
 	my ($distro) = @_;
 	
 	my @build_deps = qw/libtest-deep-perl libtest-mockmodule-perl libtest-spec-perl libhttp-daemon-perl libdatetime-perl libmodule-build-perl/;
+	
+	my $is_lucid = $distro =~ /lucid/i;
+	
 	my @deps = qw/libwww-perl libjson-xs-perl/;
-	my @recommends = qw/liblwp-protocol-https-perl/;
+	my @recommends = $is_lucid ?  () : qw/liblwp-protocol-https-perl/;
 	my $build_deps = join(", ", @deps, @build_deps);
 	my $deps = join(", ", @deps);
 	my $recommends= join(", ", @recommends);
-	
+	my $recommends_line = "Recommends: $recommends\n" if @recommends;
 	open my $f, ">", $CONTROL or confess;
 	
 	print $f <<"END";
@@ -75,8 +79,7 @@ Homepage: http://search.cpan.org/dist/$CPANDIST/
 Package: $PACKAGE
 Architecture: all
 Depends: \${misc:Depends}, \${perl:Depends}, perl, $deps
-Recommends: $recommends
-Description: mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier
+${recommends_line}Description: mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier
 END
 
 	close $f or confess
