@@ -78,7 +78,7 @@ That's it.
 
 Can be installed via custom repository
 
-1.	`wget -O - http://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
+1.	`wget -O - https://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
 
 	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
 	
