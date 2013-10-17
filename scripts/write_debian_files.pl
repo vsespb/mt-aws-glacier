@@ -6,10 +6,13 @@ use Carp;
 use File::Copy;
 use File::Path;
 
-my $distro = $ARGV[1]||confess;
 my $BASEDIR = $ARGV[0]||confess;
+our $DISTRO_TYPE = $ARGV[1]||confess;
+my $distro = $ARGV[2]||confess;
+
+
 our $OUTDIR = "$BASEDIR/$distro/debian";
-our $COMMONDIR = "$BASEDIR/common";
+our $COMMONDIR = "$BASEDIR/common_debian";
 our $CHANGELOG = "$OUTDIR/changelog";
 our $CONTROL= "$OUTDIR/control";
 
@@ -17,6 +20,7 @@ our $PACKAGE = 'libapp-mtaws-perl';
 our $CPANDIST = 'App-MtAws';
 our $MAINTAINER = 'Victor Efimov <victor@vsespb.ru>';
 
+confess unless $DISTRO_TYPE =~ /^(ubuntu|debian)$/;
 
 mkpath $OUTDIR;
 mkpath "$OUTDIR/source";
@@ -30,7 +34,15 @@ sub write_changelog($&)
 	open my $f, ">", $CHANGELOG or confess;
 	for (@{$_changelog}) {
 		next if $_->{re} && $distro !~ $_->{re};
-		print $f "$PACKAGE ($_->{upstream_version}-$_->{debian_version}ubuntu$_->{ubuntu_version}~${distro}1~ppa1) $distro; urgency=low\n\n";
+		my $version;
+		if ($DISTRO_TYPE eq 'ubuntu') {
+		    $version = "$_->{upstream_version}-0ubuntu$_->{package_version}~${distro}1~ppa1";
+		} elsif ($DISTRO_TYPE eq 'debian') {
+		    $version = "$_->{upstream_version}-$_->{package_version}~mt1";
+		} else {
+		    confess;
+		}
+		print $f "$PACKAGE ($version) $distro; urgency=low\n\n";
 		print $f $_->{text};
 		print $f "\n";
 		print $f " -- $MAINTAINER  $_->{date}\n\n";
@@ -40,11 +52,10 @@ sub write_changelog($&)
 
 sub entry(@)
 {
-	my ($upstream_version, $debian_version, $ubuntu_version, $date, $text, $re) = (shift, shift, shift, shift, pop, shift);
+	my ($upstream_version, $package_version, $date, $text, $re) = (shift, shift, shift, shift, pop, shift);
 	push @{$_changelog}, {
 		upstream_version => $upstream_version,
-		debian_version => $debian_version,
-		ubuntu_version => $ubuntu_version,
+		package_version => $package_version,
 		date => $date,
 		re => $re,
 		text => $text
@@ -102,7 +113,7 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
-	entry '1.056', 0, 1, 'Tue, 15 Oct 2013 16:20:30 +0400', << "END";
+	entry '1.056', 1, 'Tue, 15 Oct 2013 16:20:30 +0400', << "END";
   * Initial release for launchpad PPA
 END
 
