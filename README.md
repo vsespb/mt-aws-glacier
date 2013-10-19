@@ -84,9 +84,9 @@ Can be installed via custom repository
 
 2. Add repository
 
-```
-echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
-```
+
+		echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+
 
 3.	`sudo apt-get update`
 4.	`sudo apt-get install libapp-mtaws-perl`
