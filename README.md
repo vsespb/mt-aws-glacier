@@ -74,7 +74,7 @@ Can be installed via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/
 
 That's it.
 
-##### Debian 7 (Wheezy)
+##### Debian 6 (Squeeze), 7 (Wheezy), 8 (Jessie)
 
 Can be installed via custom repository
 
@@ -85,7 +85,7 @@ Can be installed via custom repository
 2. Add repository
 
 ```
-echo "deb http://dl.mt-aws.com/debian/current wheezy main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
 ```
 
 3.	`sudo apt-get update`
