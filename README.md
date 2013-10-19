@@ -74,7 +74,7 @@ Can be installed via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/
 
 That's it.
 
-##### Debian 6 (Squeeze), 7 (Wheezy), 8 (Jessie)
+##### Debian 7 (Wheezy), Debian 8 (Jessie)
 
 Can be installed via custom repository
 
@@ -92,6 +92,31 @@ echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee 
 4.	`sudo apt-get install libapp-mtaws-perl`
 
 That's it.
+
+##### Debian 6 (Squeeze)
+
+Can be installed/updated via custom repository
+
+1.	`wget -O - http://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
+
+	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
+
+2. Add repository
+
+
+		echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+
+
+3.	`sudo apt-get update`
+4.	`sudo apt-get install libapp-mtaws-perl`
+
+
+	(To use HTTPS you also need:)
+
+5. `sudo apt-get install build-essential libssl-dev`
+
+6. install/update `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
+
 
 ### Manual installation
 
