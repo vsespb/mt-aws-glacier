@@ -38,7 +38,14 @@ sub write_changelog($&)
 		if ($DISTRO_TYPE eq 'ubuntu') {
 		    $version = "$_->{upstream_version}-0ubuntu$_->{package_version}~${distro}1~ppa1";
 		} elsif ($DISTRO_TYPE eq 'debian') {
-		    $version = "$_->{upstream_version}-$_->{package_version}~mt1";
+			my $v = do {
+				if ($distro eq 'wheezy') {
+					7
+				} else {
+					confess "unknown $distro for debian";
+				}
+			};
+		    $version = "$_->{upstream_version}-0vdebian$_->{package_version}~v$v~mt1";
 		} else {
 		    confess;
 		}
