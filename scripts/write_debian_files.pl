@@ -39,7 +39,9 @@ sub write_changelog($&)
 		    $version = "$_->{upstream_version}-0ubuntu$_->{package_version}~${distro}1~ppa1";
 		} elsif ($DISTRO_TYPE eq 'debian') {
 			my $v = do {
-				if ($distro eq 'wheezy') {
+				if ($distro eq 'jessie') {
+					8
+				} elsif ($distro eq 'wheezy') {
 					7
 				} elsif ($distro eq 'squeeze') {
 					6
