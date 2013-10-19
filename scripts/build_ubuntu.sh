@@ -7,7 +7,7 @@ for DISTRO in $DISTROS
 do
 rm -rf debian
 mkdir -p debian/source
-scripts/write_debian_files.pl ./packaging ubuntu $DISTRO
+scripts/write_debian_files.pl ./packaging ubuntu $DISTRO || exit 1
 debuild -S
 rm -rf debian
 done

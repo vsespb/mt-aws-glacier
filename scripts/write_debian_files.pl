@@ -41,6 +41,8 @@ sub write_changelog($&)
 			my $v = do {
 				if ($distro eq 'wheezy') {
 					7
+				} elsif ($distro eq 'squeeze') {
+					6
 				} else {
 					confess "unknown $distro for debian";
 				}
@@ -73,9 +75,11 @@ sub write_control
 {
 	my ($distro) = @_;
 	
-	my @build_deps = qw/libtest-deep-perl libtest-mockmodule-perl libtest-spec-perl libhttp-daemon-perl libdatetime-perl libmodule-build-perl/;
+	my @build_deps = qw/libtest-deep-perl libtest-mockmodule-perl libdatetime-perl libmodule-build-perl/;
 	
-	my $is_lucid = $distro =~ /lucid/i;
+	my $is_lucid = $distro =~ /(lucid|squeeze)/i;
+	
+	push @build_deps, 'libtest-spec-perl ', 'libhttp-daemon-perl' unless $is_lucid;
 	
 	my @deps = qw/libwww-perl libjson-xs-perl/;
 	my @recommends = $is_lucid ?  () : qw/liblwp-protocol-https-perl/;
