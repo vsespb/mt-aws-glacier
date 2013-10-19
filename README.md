@@ -63,7 +63,7 @@ NOTE: If you've used CPAN installation before, please remove previously installe
 
 ##### Ubuntu 12.04+
 
-Can be installed via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
+Can be installed/updated via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
 
 1.	`sudo add-apt-repository ppa:vsespb/mt-aws-glacier`
 
@@ -76,7 +76,7 @@ That's it.
 
 ##### Debian 7 (Wheezy), Debian 8 (Jessie)
 
-Can be installed via custom repository
+Can be installed/updated via custom repository
 
 1.	`wget -O - https://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
 
