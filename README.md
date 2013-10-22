@@ -54,6 +54,8 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 	* [restore-completed](#restore-completed)
 
 	* [upload-file](#upload-file)
+	
+	* [other commands](#other-commands)
 
 * [File selection options](#file-selection-options)
 
@@ -671,6 +673,10 @@ NOTES:
 to a single Amazon Glacier vault and single Journal. Simple file versioning will be implemented in the future versions.
 
 2. You can use other optional options with this command (`concurrency`, `partsize`)
+
+### Other commands
+
+See [usage](#usage) for examples of use of the following commands: `purge-vault', `check-local-hash`, `retrieve-inventory`, `download-inventory`, `create-vault`, `delete-vault`.
 
 ## File selection options
 
