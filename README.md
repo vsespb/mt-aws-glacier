@@ -676,7 +676,9 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 ### Other commands
 
-See [usage](#usage) for examples of use of the following commands: `purge-vault`, `check-local-hash`, `retrieve-inventory`, `download-inventory`, `create-vault`, `delete-vault`.
+See [usage](#usage) for examples of use of the following commands: `purge-vault`, `check-local-hash`, `create-vault`, `delete-vault`.
+
+See [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands.
 
 ## File selection options
 
