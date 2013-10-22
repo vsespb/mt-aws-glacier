@@ -19,53 +19,53 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 ## Contents
 
-> [Features](#features)
+* [Features](#features)
 
-> [Important bugs/missing features](#important-bugsmissing-features)
+* [Important bugs/missing features](#important-bugsmissing-features)
 
-> [Production readiness](#production-readiness)
+* [Production readiness](#production-readiness)
 
-> [Installation/System requirements](#installationsystem-requirements)
+* [Installation/System requirements](#installationsystem-requirements)
 
->> [Installation via OS package manager](#installation-via-os-package-manager)
+	* [Installation via OS package manager](#installation-via-os-package-manager)
 
->> [Manual installation](#manual-installation)
+	* [Manual installation](#manual-installation)
 
->> [Installation via CPAN](#or-installation-via-cpan)
+	* [Installation via CPAN](#or-installation-via-cpan)
 
->> [Installation general instructions, troubleshooting, edge cases and misc instructions](#installation-general-instructions-troubleshooting-edge-cases-and-misc-instructions)
+	* [Installation general instructions, troubleshooting, edge cases and misc instructions](#installation-general-instructions-troubleshooting-edge-cases-and-misc-instructions)
 
-> [Warnings ( MUST READ )](#warnings--must-read-)
+* [Warnings ( MUST READ )](#warnings--must-read-)
 
-> [Help/contribute this project](#helpcontribute-this-project)
+* [Help/contribute this project](#helpcontribute-this-project)
 
-> [Usage](#usage)
+* [Usage](#usage)
 
-> [Restoring journal](#restoring-journal)
+* [Restoring journal](#restoring-journal)
 
-> [Journal concept](#journal-concept)
+* [Journal concept](#journal-concept)
 
-> [Specification for some commands](#specification-for-some-commands)
+* [Specification for some commands](#specification-for-some-commands)
 
->> [sync](#sync)
+	* [sync](#sync)
 
->> [restore](#restore)
+	* [restore](#restore)
 
->> [restore-completed](#restore-completed)
+	* [restore-completed](#restore-completed)
 
->> [upload-file](#upload-file)
+	* [upload-file](#upload-file)
 
-> [file-selection-options](#file-selection-options)
+* [file-selection-options](#file-selection-options)
 
-> [Additional command line options](#additional-command-line-options)
+* [Additional command line options](#additional-command-line-options)
 
-> [Configuring Character Encodings](#configuring-character-encodings)
+* [Configuring Character Encodings](#configuring-character-encodings)
 
-> [Limitations](#limitations)
+* [Limitations](#limitations)
 
-> [See also](#see-also)
+* [See also](#see-also)
 
-> [Minimum Amazon Glacier permissions](#minimum-amazon-glacier-permissions)
+* [Minimum Amazon Glacier permissions](#minimum-amazon-glacier-permissions)
 
 
 
