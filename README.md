@@ -55,7 +55,7 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 	* [upload-file](#upload-file)
 
-* [file-selection-options](#file-selection-options)
+* [File selection options](#file-selection-options)
 
 * [Additional command line options](#additional-command-line-options)
 
