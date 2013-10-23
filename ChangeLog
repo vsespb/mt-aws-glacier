@@ -1,3 +1,8 @@
+
+  * Fixed - when deprecated option for command (say, --vault for check-local-hash) was found in config, there was a
+  warning that option deprecated, however that should not happen, because everything that is in config should be
+  read only when such option required (you should be able to put any unneeded option into config)
+
 ### 2013-10-15 v1.056
 
   * mtglacier now can be installed via Ubuntu PPA - install instructions updated.
