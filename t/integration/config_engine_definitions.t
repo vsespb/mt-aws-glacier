@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use open qw/:std :utf8/;
 use Encode;
-use Test::More tests => 381;
+use Test::More tests => 384;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -275,11 +275,25 @@ no warnings 'redefine';
 		command 'mycommand' => sub { optional('myoption'), deprecated('myoption2') };
 	});
 	my $res = $c->parse_options('mycommand', '-myoption2', 31);
-	ok ! defined $res->{errors}, "optional should work";
+	ok ! defined $res->{errors}, "deprecated should work";
 	cmp_deeply $res->{warnings}, [{format => 'option_deprecated_for_command', a => 'myoption2'}];
 	cmp_deeply $res->{options}, { }, "deprecated should work";
 }
 
+
+{
+	local *App::MtAws::ConfigEngine::read_config = sub { return { myoption => '42'} };
+	my $c  = create_engine(ConfigOption => 'config');
+	$c->define(sub {
+		options('myoption');
+		option 'config', binary=>1;
+		command 'mycommand' => sub { deprecated('myoption'), optional('config') };
+	});
+	my $res = $c->parse_options('mycommand', '-config' => 1);
+	ok ! defined $res->{errors}, "optional should work";
+	ok ! defined $res->{warnings}, "deprecated should work without warning when deprecated option is in config";
+	cmp_deeply $res->{options}, { config => 1}, "deprecated should work when deprecated option is in config";
+}
 
 {
 	my $c  = create_engine();

@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 178;
+use Test::More tests => 184;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -269,6 +269,27 @@ for (
 			"$_ warnings text");
 	}
 }
+
+for (qw/vault to-vault/){
+	fake_config key=>'mykey', secret => 'mysecret', region => 'myregion', $_ => 'myvault', sub {
+		my ($errors, $warnings, $command, $result) =
+			config_create_and_parse(split(' ', qq!check-local-hash --config=glacier.cfg --from-dir /data/backup --journal=journal.log!));
+		ok( !$errors && $warnings, "error/warnings when $_ is in config");
+		is_deeply($result, {
+			%misc_opts,
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			config=>'glacier.cfg',
+			dir => '/data/backup',
+			journal => 'journal.log',
+		}, "result when $_ option is in config");
+		cmp_deeply($warnings, set('from-dir deprecated, use dir instead'),
+			"warnings text when $_ is in config");
+	};
+}
+
 
 for (
 	qq!check-local-hash --from-dir /data/backup --to-vault=myvault --journal=journal.log!,

@@ -523,7 +523,7 @@ sub deprecated(@)
 		my $opt = $context->{options}->{ seen() };
 		confess "positional options can't be deprecated" if $opt->{positional};
 		if (defined $opt->{value}) {
-			warning('option_deprecated_for_command', a => _real_option_name $opt);
+			warning('option_deprecated_for_command', a => _real_option_name $opt) if $opt->{source} eq 'option';
 			undef $opt->{value};
 		}
 		$_;

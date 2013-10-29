@@ -695,7 +695,7 @@ describe "deprecated" => sub {
 			localize sub {
 				message 'option_deprecated_for_command';
 				option 'myoption';
-				Context->{options}->{myoption}->{value} = '123';
+				@{Context->{options}->{myoption}}{qw/value source/} = (123, 'option');
 				my ($res) = deprecated 'myoption';
 				ok $res eq 'myoption';
 				ok !defined Context->{errors};
@@ -704,12 +704,24 @@ describe "deprecated" => sub {
 				ok ! defined Context->{options}->{myoption}->{value};
 			}
 		};
+		it "should not warn when deprecated option is in config" => sub {
+			localize sub {
+				message 'option_deprecated_for_command';
+				option 'myoption';
+				@{Context->{options}->{myoption}}{qw/value source/} = (123, 'config');
+				my ($res) = deprecated 'myoption';
+				ok $res eq 'myoption';
+				ok !defined Context->{errors};
+				ok !defined Context->{warnings};
+				ok Context->{options}->{myoption}->{seen};
+				ok ! defined Context->{options}->{myoption}->{value};
+			}
+		};
 		it "should work when deprecated alias option exists" => sub {
 			localize sub {
 				message 'option_deprecated_for_command';
 				option 'myoption', alias => 'old';
-				Context->{options}->{myoption}->{value} = '123';
-				Context->{options}->{myoption}->{original_option} = 'old';
+				@{Context->{options}->{myoption}}{qw/value source original_option/} = (123, 'option', 'old');
 				my ($res) = deprecated 'myoption';
 				ok $res eq 'myoption';
 				ok !defined Context->{errors};
@@ -722,7 +734,7 @@ describe "deprecated" => sub {
 			localize sub {
 				message 'option_deprecated_for_command';
 				positional 'myoption';
-				Context->{options}->{myoption}->{value} = '123';
+				@{Context->{options}->{myoption}}{qw/value source/} = (123, 'option');
 				ok ! defined eval { deprecated 'myoption'; 1; }
 			}
 		};
@@ -753,8 +765,8 @@ describe "deprecated" => sub {
 				message 'option_deprecated_for_command';
 				my @options = ('myoption', 'myoption2');
 				options @options;
-				Context->{options}->{myoption}->{value} = '123';
-				Context->{options}->{myoption2}->{value} = '123';
+				@{Context->{options}->{myoption}}{qw/value source/} = (123, 'option');
+				@{Context->{options}->{myoption2}}{qw/value source/} = (123, 'option');
 				my @res = deprecated @options;
 				cmp_deeply [@res], [@options];
 				ok !defined Context->{errors};
@@ -768,7 +780,7 @@ describe "deprecated" => sub {
 			localize sub {
 				message 'option_deprecated_for_command';
 				options my @options = ('myoption', 'myoption2');
-				Context->{options}->{myoption}->{value} = '123';
+				@{Context->{options}->{myoption}}{qw/value source/} = (123, 'option');
 				my @res = deprecated @options;
 				cmp_deeply [@res], [@options];
 				ok !defined Context->{errors};
