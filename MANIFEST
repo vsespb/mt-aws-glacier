@@ -46,11 +46,15 @@ lib/App/MtAws/ParentWorkerNew.pm
 lib/App/MtAws/ProxyTask.pm
 lib/App/MtAws/QueueEngine.pm
 lib/App/MtAws/QueueJob.pm
+lib/App/MtAws/QueueJob/Delete.pm
 lib/App/MtAws/QueueJob/Iterator.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
 lib/App/MtAws/QueueJob/MultipartFinish.pm
 lib/App/MtAws/QueueJob/MultipartPart.pm
+lib/App/MtAws/QueueJob/Upload.pm
 lib/App/MtAws/QueueJob/UploadMultipart.pm
+lib/App/MtAws/QueueJob/Verify.pm
+lib/App/MtAws/QueueJob/VerifyAndUpload.pm
 lib/App/MtAws/QueueJobResult.pm
 lib/App/MtAws/Task.pm
 lib/App/MtAws/TreeHash.pm
@@ -62,7 +66,6 @@ META.yml
 mtglacier
 mtglacier.pl
 README.md
-t/gemu/gemu.pl
 t/integration/byteenc_journal.t
 t/integration/child_worker.t
 t/integration/cmd_check_local_hash.t

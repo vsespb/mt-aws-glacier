@@ -246,7 +246,7 @@
       },
       "App::MtAws::ParentWorkerNew" : {
          "file" : "lib/App/MtAws/ParentWorkerNew.pm",
-         "version" : "1.051"
+         "version" : "1.056"
       },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
@@ -254,35 +254,51 @@
       },
       "App::MtAws::QueueEngine" : {
          "file" : "lib/App/MtAws/QueueEngine.pm",
-         "version" : "1.051"
+         "version" : "1.056"
       },
       "App::MtAws::QueueJob" : {
          "file" : "lib/App/MtAws/QueueJob.pm",
-         "version" : "1.051"
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::Delete" : {
+         "file" : "lib/App/MtAws/QueueJob/Delete.pm",
+         "version" : "1.056"
       },
       "App::MtAws::QueueJob::Iterator" : {
          "file" : "lib/App/MtAws/QueueJob/Iterator.pm",
-         "version" : "1.051"
+         "version" : "1.056"
       },
       "App::MtAws::QueueJob::MultipartCreate" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartCreate.pm",
-         "version" : "1.051"
+         "version" : "1.056"
       },
       "App::MtAws::QueueJob::MultipartFinish" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartFinish.pm",
-         "version" : "1.051"
+         "version" : "1.056"
       },
       "App::MtAws::QueueJob::MultipartPart" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartPart.pm",
-         "version" : "1.051"
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::Upload" : {
+         "file" : "lib/App/MtAws/QueueJob/Upload.pm",
+         "version" : "1.056"
       },
       "App::MtAws::QueueJob::UploadMultipart" : {
          "file" : "lib/App/MtAws/QueueJob/UploadMultipart.pm",
-         "version" : "1.051"
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::Verify" : {
+         "file" : "lib/App/MtAws/QueueJob/Verify.pm",
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::VerifyAndUpload" : {
+         "file" : "lib/App/MtAws/QueueJob/VerifyAndUpload.pm",
+         "version" : "1.056"
       },
       "App::MtAws::QueueJobResult" : {
          "file" : "lib/App/MtAws/QueueJobResult.pm",
-         "version" : "1.051"
+         "version" : "1.056"
       },
       "App::MtAws::Task" : {
          "file" : "lib/App/MtAws/Task.pm",

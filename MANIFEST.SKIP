@@ -76,3 +76,5 @@
 ^packaging/
 ^scripts/
 run\-.*\.sh
+^t/gemu/
+^t/gemu-test/

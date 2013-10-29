@@ -91,22 +91,41 @@ sub next_modified
 		my $should_upload = should_upload($options, $file, $absfilename);
 
 		if ($should_upload == SHOULD_TREEHASH) {
-			return App::MtAws::JobProxy->new(job=>
-				App::MtAws::Job::FileVerifyAndUpload->new(filename => $absfilename,
-					relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+			if ($ENV{NEWFSM}) {
+				use App::MtAws::QueueJob::VerifyAndUpload;
+				return App::MtAws::QueueJob::VerifyAndUpload->new(
+					filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 					delete_after_upload => 1,
 					archive_id => $file->{archive_id},
 					treehash => $file->{treehash}
-			));
+				);
+			} else {
+				return App::MtAws::JobProxy->new(job=>
+					App::MtAws::Job::FileVerifyAndUpload->new(filename => $absfilename,
+						relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+						delete_after_upload => 1,
+						archive_id => $file->{archive_id},
+						treehash => $file->{treehash}
+				));
+			}
 		} elsif ($should_upload == SHOULD_CREATE) {
-			return App::MtAws::JobProxy->new(job=> App::MtAws::Job::FileCreate->new(
-				filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
-				(finish_cb => sub {
-					App::MtAws::Job::FileListDelete->new(archives => [{
-						archive_id => $file->{archive_id}, relfilename => $relfilename
-					}])
-				})
-			));
+			if ($ENV{NEWFSM}) {
+				use App::MtAws::QueueJob::Upload;
+				return App::MtAws::QueueJob::Upload->new(
+					filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+					delete_after_upload => 1,
+					archive_id => $file->{archive_id},
+				);
+			} else {
+				return App::MtAws::JobProxy->new(job=> App::MtAws::Job::FileCreate->new(
+					filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
+					(finish_cb => sub {
+						App::MtAws::Job::FileListDelete->new(archives => [{
+							archive_id => $file->{archive_id}, relfilename => $relfilename
+						}])
+					})
+				));
+			}
 		} elsif ($should_upload == SHOULD_NOACTION) {
 			next;
 		} else {
@@ -198,7 +217,12 @@ sub run
 			if ($options->{'dry-run'}) {
 				print_dry_run($itt);
 			} else {
-				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+				if ($ENV{NEWFSM}) {
+					use App::MtAws::QueueJob::Iterator;
+					push @joblist, App::MtAws::QueueJob::Iterator->new(iterator => $itt);
+				} else {
+					push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+				}
 			}
 		}
 		if ($options->{'delete-removed'}) {
@@ -212,8 +236,8 @@ sub run
 
 		if (scalar @joblist) {
 			if ($ENV{NEWFSM}) {
-				confess unless @joblist == 1;
-				my $lt = $joblist[0];
+				confess unless @joblist >= 1;
+				my $lt = App::MtAws::QueueJob::Iterator->new(iterator => sub { shift @joblist });
 				my $P = fork_engine->{parent_worker};
 				$P->{journal} = $j;
 				my ($R) = $P->process($lt);
