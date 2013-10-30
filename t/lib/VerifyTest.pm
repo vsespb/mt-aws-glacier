@@ -23,7 +23,6 @@ package VerifyTest;
 use strict;
 use warnings;
 use Test::Deep;
-use Test::More;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Verify;
 use QueueHelpers;
@@ -33,7 +32,7 @@ sub expect_verify
 {
 	my ($j, $filename, $relfilename, $treehash, %args_opts) = @_;
 	
-	my %args = (%args_opts);
+	my %args = (verify_value => 42, %args_opts);
 	
 	
 	cmp_deeply my $res = $j->next,
@@ -52,8 +51,7 @@ sub expect_verify
 		);
 	
 	expect_wait($j);
-	call_callback($res, match => 42);
-	is $j->{match}, 42;
+	call_callback($res, match => $args{verify_value});
 }
 
 

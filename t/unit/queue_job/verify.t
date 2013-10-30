@@ -49,9 +49,9 @@ my %opts = (filename => '/path/somefile', relfilename => 'somefile', treehash =>
 }
 
 my $j = App::MtAws::QueueJob::Verify->new( map { $_ => $opts{$_} } qw/filename relfilename treehash/);
-VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash});
-
+VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash}, verify_value => 42);
 expect_done($j);
+is $j->{match}, 42;
 
 
 1;

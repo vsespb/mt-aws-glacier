@@ -38,8 +38,12 @@ sub init
 	defined($self->{relfilename}) || confess "no relfilename";
 	defined($self->{delete_after_upload}) || confess "delete_after_upload must be defined";
 	$self->{partsize}||confess;
-	$self->{archive_id}||confess;
 	$self->{treehash}||confess;
+	if ($self->{delete_after_upload}) {
+		confess "archive_id must present if you're deleting" unless $self->{archive_id};
+	} else {
+		confess "archive_id not needed here" if $self->{archive_id};
+	}
 	$self->enter("verify");
 	return $self;
 }
@@ -63,7 +67,7 @@ sub on_upload
 	my ($self) = @_;
 	return
 		state("wait"),
-		job( App::MtAws::QueueJob::Upload->new(map { $_ => $self->{$_} } qw/filename relfilename partsize delete_after_upload archive_id/), sub {
+		job( App::MtAws::QueueJob::Upload->new(map { $_ => $self->{$_} } qw/filename relfilename partsize delete_after_upload archive_id/), sub { # archive_id can be undef
 			state("done");
 		});
 }

@@ -45,7 +45,7 @@ sub expect_upload_multipart
 
 
 	cmp_deeply my $create_resp = $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {
-		args => { partsize => 2*1024*1024, mtime => $mtime, relfilename => $relfilename},
+		args => { partsize => $partsize, mtime => $mtime, relfilename => $relfilename},
 		action => 'create_upload', cb=> test_coderef, cb_task_proxy => test_coderef
 	});
 
