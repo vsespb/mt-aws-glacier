@@ -47,7 +47,7 @@ my $testplan = 76;
 
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',
-    ($ARGV[0] && $ARGV[0] eq 'cover') ? (switches	=> '-MDevel::Cover') : (exec => [$Config{'perlpath'}]),
+    ($ENV{MT_COVER}) ? (switches => $ENV{MT_COVER}) : (exec => [$Config{'perlpath'}]),
     merge           => 1,
     color           => 1,
     jobs			=> 8,
