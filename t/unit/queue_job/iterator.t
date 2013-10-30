@@ -29,11 +29,10 @@ use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Iterator;
 use App::MtAws::QueueJob::MultipartPart;
+use QueueHelpers;
 use TestUtils;
 
 warning_fatal();
-
-sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 
 use Data::Dumper;
 

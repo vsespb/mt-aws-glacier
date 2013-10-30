@@ -1,5 +1,3 @@
-#!/usr/bin/env perl
-
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
@@ -20,28 +18,38 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package QueueHelpers;
+
 use strict;
 use warnings;
-use Test::More tests => 19;
 use Test::Deep;
-use FindBin;
-use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
-use UploadMultipartTest;
-use QueueHelpers;
-use App::MtAws::TreeHash;
 use App::MtAws::QueueJobResult;
-use TestUtils;
 
-warning_fatal();
+require Exporter;
+use base qw/Exporter/;
 
-use Data::Dumper;
+our @EXPORT = qw/test_coderef expect_done expect_wait call_callback/;
 
+sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
+
+sub expect_done
 {
-	# TODO: also test that it works with mtime=0
-	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
-	my $j = App::MtAws::QueueJob::UploadMultipart->new(filename => '/somedir/somefile', relfilename => $relfilename, partsize => $partsize );
-	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
-	expect_done($j);
+	my $j = shift;
+	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
+	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE); # twice
+}
+
+sub expect_wait
+{
+	my $j = shift;
+	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
+	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT); # twice
+}
+
+sub call_callback
+{
+	my $res = shift;
+	$res->{task}{cb_task_proxy}->(@_ ? {@_} : @_);
 }
 
 1;

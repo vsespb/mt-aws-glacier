@@ -26,8 +26,7 @@ use Test::Deep;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::UploadMultipart;
 use App::MtAws::TreeHash;
-
-sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
+use QueueHelpers;
 
 
 sub expect_upload_multipart
@@ -50,8 +49,7 @@ sub expect_upload_multipart
 		action => 'create_upload', cb=> test_coderef, cb_task_proxy => test_coderef
 	});
 
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
+	expect_wait($j);
 
 	$create_resp->{task}{cb_task_proxy}->({upload_id => $upload_id});
 
@@ -99,7 +97,7 @@ sub expect_upload_multipart
 	while (my $cb = shift @callbacks) {
 		$cb->();
 		if (@callbacks) {
-			cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
+			expect_wait($j);
 		} else {
 			cmp_deeply my $finish_resp = $j->next,
 				App::MtAws::QueueJobResult->full_new(
@@ -117,7 +115,7 @@ sub expect_upload_multipart
 					},
 					code => JOB_OK,
 				);
-			$finish_resp->{task}{cb_task_proxy}->();
+			call_callback($finish_resp);
 			last;
 		}
 	}
