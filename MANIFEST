@@ -111,8 +111,8 @@ t/lib/MyQueueEngine.pm
 t/lib/QueueHelpers.pm
 t/lib/TestUtils.pm
 t/lib/UploadMultipartTest.pm
+t/lib/VerifyTest.pm
 t/libtest/lcg_random.t
-t/test_cover
 t/unit/cmd_check_local_hash.t
 t/unit/cmd_download_inventory.t
 t/unit/cmd_retrieve.t
@@ -145,6 +145,7 @@ t/unit/queue_job/multipart_finish.t
 t/unit/queue_job/multipart_part.t
 t/unit/queue_job/upload.t
 t/unit/queue_job/upload_multipart.t
+t/unit/queue_job/verify.t
 t/unit/queue_job_result.t
 t/unit/string_escape.t
 t/unit/sysread_syswrite_unit.t
