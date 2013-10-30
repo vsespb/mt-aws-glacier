@@ -107,6 +107,7 @@ t/integration/utf8_line_protocol.t
 t/JournalTest.pm
 t/lib/LCGRandom.pm
 t/lib/MyQueueEngine.pm
+t/lib/UploadMultipartTest.pm
 t/libtest/lcg_random.t
 t/test_cover
 t/TestUtils.pm
@@ -139,6 +140,7 @@ t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_finish.t
 t/unit/queue_job/multipart_part.t
+t/unit/queue_job/upload.t
 t/unit/queue_job/upload_multipart.t
 t/unit/queue_job_result.t
 t/unit/string_escape.t

@@ -38,7 +38,11 @@ sub init
 	defined($self->{relfilename}) || confess "no relfilename";
 	defined($self->{delete_after_upload}) || confess "delete_after_upload must be defined";
 	$self->{partsize}||confess;
-	!$self->{delete_after_upload} || $self->{archive_id} || confess "archive_id must present if you're deleting";
+	if ($self->{delete_after_upload}) {
+		confess "archive_id must present if you're deleting" unless $self->{archive_id};
+	} else {
+		confess "archive_id not needed here" if $self->{archive_id};
+	}
 	$self->enter("multipart_upload");
 	return $self;
 }
