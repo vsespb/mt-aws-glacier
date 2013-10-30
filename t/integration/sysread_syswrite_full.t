@@ -28,7 +28,7 @@ use utf8;
 use Test::More tests => 60;
 use Encode;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Utils;
 use Encode;
 use POSIX;

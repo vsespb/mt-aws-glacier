@@ -25,7 +25,7 @@ use warnings;
 use Test::More tests => 24;
 use Test::Deep;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJob;
 use App::MtAws::QueueJobResult;
 use TestUtils;

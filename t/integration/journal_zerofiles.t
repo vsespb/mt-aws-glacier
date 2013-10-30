@@ -27,7 +27,7 @@ use Test::More tests => 36;
 use Carp;
 use Data::Dumper;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Journal;
 use TestUtils;
 use File::Path;

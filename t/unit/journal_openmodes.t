@@ -27,7 +27,7 @@ use Test::More tests => 28;
 use Test::Deep;
 use File::Path;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Exceptions;
 use Test::MockModule;

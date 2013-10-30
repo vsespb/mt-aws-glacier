@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use Test::More tests => 24;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 use POSIX;
 use App::MtAws::ForkEngine;

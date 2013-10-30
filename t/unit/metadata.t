@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use Test::Spec;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;

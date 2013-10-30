@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use Test::More tests => 276;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Data::Dumper;
 use App::MtAws::ConfigEngine;
 use App::MtAws::Exceptions;

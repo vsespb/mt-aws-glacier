@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use Test::More;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 
 plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
 

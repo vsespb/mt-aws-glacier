@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use Test::Simple tests => 45;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 use Encode;
 use App::MtAws::Utils;

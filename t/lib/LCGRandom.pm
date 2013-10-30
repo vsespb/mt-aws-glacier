@@ -21,7 +21,7 @@
 package LCGRandom;
 
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use strict;
 use warnings;
 

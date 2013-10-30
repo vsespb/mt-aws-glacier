@@ -26,7 +26,7 @@ use utf8;
 use Test::More tests => 53;
 use Test::Deep;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Test::MockModule;
 use Carp;
 use Data::Dumper;

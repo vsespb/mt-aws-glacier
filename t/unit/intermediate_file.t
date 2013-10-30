@@ -27,7 +27,7 @@ use utf8;
 use Test::More tests => 109;
 use FindBin;
 use Carp;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Data::Dumper;
 use TestUtils;
 use App::MtAws::IntermediateFile;

@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use Test::More tests => 10;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Data::Dumper;
 use TestUtils;
 

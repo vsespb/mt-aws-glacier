@@ -26,7 +26,7 @@ use warnings;
 use utf8;
 use Test::More;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Journal;
 use App::MtAws::Utils;
 use App::MtAws::Filter;

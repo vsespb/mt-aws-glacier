@@ -25,7 +25,7 @@ use warnings;
 use Test::More tests => 14;
 use Test::Deep;
 use FindBin;
-use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../lib/", "$FindBin::RealBin/../../../lib";
+use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use UploadMultipartTest;
 use App::MtAws::TreeHash;
 use App::MtAws::QueueJobResult;

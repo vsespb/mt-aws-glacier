@@ -27,7 +27,7 @@ use warnings;
 use utf8;
 use Test::More tests => 35;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../lib", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 use LCGRandom;
 use Digest::SHA qw/sha256_hex/;

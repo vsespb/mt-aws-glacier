@@ -26,7 +26,7 @@ use utf8;
 use Test::More tests => 5;
 use Test::Deep;
 use FindBin;
-use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
+use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Job::FileCreate;
 use App::MtAws::Exceptions;
 use File::Path;

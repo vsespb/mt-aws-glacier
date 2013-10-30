@@ -25,7 +25,7 @@ use warnings;
 use Test::More tests => 57;
 use Test::Deep;
 use FindBin;
-use lib "$FindBin::RealBin/../../", "$FindBin::RealBin/../../lib", "$FindBin::RealBin/../../../lib";
+use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use LCGRandom;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartPart;
