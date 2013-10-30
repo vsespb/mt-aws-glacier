@@ -35,13 +35,13 @@ use Carp;
 
 sub new
 {
-    my ($class, %args) = @_;
-    my $self = \%args;
-    defined($self->{create_journal_version})||confess;
-    $self->{filenames_encoding} ||= 'UTF-8';
-    $self->{journal_encoding} ||= 'UTF-8';
-    bless $self, $class;
-    return $self;
+	my ($class, %args) = @_;
+	my $self = \%args;
+	defined($self->{create_journal_version})||confess;
+	$self->{filenames_encoding} ||= 'UTF-8';
+	$self->{journal_encoding} ||= 'UTF-8';
+	bless $self, $class;
+	return $self;
 }
 
 sub test_all
@@ -71,8 +71,8 @@ sub test_journal
 	for my $cf (@checkfiles) {
 		ok (my $jf = $j->{journal_h}->{$cf->{filename}}, "file $cf->{filename} exists in Journal");
 		ok ($jf->{size} == $cf->{filesize}, "file size match $jf->{size} == $cf->{filesize}");
-		ok ($jf->{treehash} eq $cf->{final_hash}, "treehash matches"	);
-		ok ($jf->{archive_id} eq $cf->{archive_id}, "archive id matches"	);
+		ok ($jf->{treehash} eq $cf->{final_hash}, "treehash matches");
+		ok ($jf->{archive_id} eq $cf->{archive_id}, "archive id matches");
 		is ($j->absfilename($cf->{filename}), File::Spec->rel2abs($cf->{filename}, $self->{dataroot}), "absfilename match"); # actually better test in real
 	}
 	
@@ -180,9 +180,9 @@ sub create_files
 		if ($testfile->{type} eq 'dir') {
 			mkpath(encode($self->{filenames_encoding}, $testfile->{fullname}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 		} elsif (($testfile->{type} eq 'normalfile')  && ( #&& !$testfile->{exclude}
-		     (!defined($mode)) ||
-		     ( ($mode eq 'skip') && !$testfile->{skip} )
-		     ))
+			(!defined($mode)) ||
+			( ($mode eq 'skip') && !$testfile->{skip} )
+			))
 		{
 			open (F, ">:encoding(UTF-8)", encode($self->{filenames_encoding}, $testfile->{fullname}, Encode::DIE_ON_ERR|Encode::LEAVE_SRC));
 			print F $testfile->{content};
