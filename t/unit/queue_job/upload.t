@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 49;
+use Test::More tests => 53;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -47,6 +47,13 @@ my $upload_id = "someuploadid";
 # test args validation
 {
 	ok eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/); 1; };
+
+	# check for zero
+	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/relfilename partsize delete_after_upload/), filename => 0); 1; };
+	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename partsize delete_after_upload/), relfilename => 0); 1; };
+	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename relfilename partsize/), delete_after_upload => 0); 1; };
+	ok !eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename relfilename delete_after_upload/), partsize => 0); 1; };
+
 	ok !eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize/); 1; };
 	ok !eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename delete_after_upload/); 1; };
 	ok !eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename partsize delete_after_upload/); 1; };
