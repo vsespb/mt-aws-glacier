@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 39;
+use Test::More tests => 49;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -30,11 +30,13 @@ use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Upload;
 use UploadMultipartTest;
+use DeleteTest;
+use QueueHelpers;
 use TestUtils;
 
 warning_fatal();
 
-sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
+
 
 use Data::Dumper;
 
@@ -59,30 +61,15 @@ my $upload_id = "someuploadid";
 	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
 	my $j = App::MtAws::QueueJob::Upload->new(filename => '/somedir/somefile', relfilename => $relfilename, partsize => $partsize, delete_after_upload =>0 );
 	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
+	expect_done($j);
 }
 
 {
 	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
 	my $j = App::MtAws::QueueJob::Upload->new(filename => '/somedir/somefile', relfilename => $relfilename, partsize => $partsize, delete_after_upload =>1, archive_id => 'abc' );
 	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, is_finished => 0);
-	cmp_deeply my $res = $j->next,
-		App::MtAws::QueueJobResult->full_new(
-			task => {
-				args => {
-					relfilename => $relfilename,
-					archive_id => 'abc',
-				},
-				action => 'delete_archive',
-				cb => test_coderef,
-				cb_task_proxy => test_coderef,
-			},
-			code => JOB_OK,
-		);
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
-	$res->{task}{cb_task_proxy}->();
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
+	DeleteTest::expect_delete($j, $relfilename, 'abc');
+	expect_done($j);
 }
 
 1;

@@ -104,9 +104,11 @@ t/integration/t_treehash.t
 t/integration/utf8.t
 t/integration/utf8_journal.t
 t/integration/utf8_line_protocol.t
+t/lib/DeleteTest.pm
 t/lib/JournalTest.pm
 t/lib/LCGRandom.pm
 t/lib/MyQueueEngine.pm
+t/lib/QueueHelpers.pm
 t/lib/TestUtils.pm
 t/lib/UploadMultipartTest.pm
 t/libtest/lcg_random.t
@@ -136,6 +138,7 @@ t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
 t/unit/queue_job.t
+t/unit/queue_job/delete.t
 t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_finish.t
