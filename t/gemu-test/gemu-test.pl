@@ -246,17 +246,16 @@ sub file_body
 	}
 }
 
-sub other_files
+sub other_files_base
 {
-	my $cb = shift;
-	$cb->();
+	my ($cb, %opts) = @_;
 	lfor otherfiles => 1, sub {
-	lfor otherfiles_count => qw/0 1 10 100/, sub {
+	lfor otherfiles_count => @{$opts{otherfiles_count}}, sub {
 		if (otherfiles_count() < 20 || filesize() > 10) {
 			lfor otherfiles_size => 1, 1024*1024-1, 4*1024*1024+1, sub {
 				lfor otherfiles_big_count => qw/0 1/, sub {
 					if (otherfiles_big_count() > 0) {
-						lfor otherfiles_big_size =>  4*1024*1024+1, 45*1024*1024-156897, sub {
+						lfor otherfiles_big_size =>  @{$opts{otherfiles_big_size}}, sub {
 							if (otherfiles_big_size() > otherfiles_size()) {
 								if (otherfiles_big_size() < 40*1024*1024 || filesize() > 3*1024*1024) {
 									$cb->();
@@ -273,11 +272,32 @@ sub other_files
 	}
 }
 
+sub other_files
+{
+	other_files_base(@_, otherfiles_count => [qw/0 1 10 100/], otherfiles_big_size =>  [4*1024*1024+1, 45*1024*1024-156897]);
+}
+
+sub light_other_files
+{
+	other_files_base(@_, otherfiles_count => [qw/0 1 10/], otherfiles_big_size =>  [4*1024*1024+1]);
+}
+
+
 sub heavy_filenames
 {
 	my ($cb) = @_;
 	file_sizes 4, 2, 4, sub {
 	file_names [qw/zero russian/], 'full', 'full', sub {
+	file_body qw/normal/, sub {
+		$cb->();
+	}}};
+}
+
+sub light_filenames
+{
+	my ($cb) = @_;
+	file_sizes 1, 1, 1, sub {
+	file_names [qw/zero russian/], 'simple', 'none', sub {
 	file_body qw/normal/, sub {
 		$cb->();
 	}}};
@@ -294,35 +314,6 @@ sub heavy_other_files
 	}}}};
 }
 
-sub light_other_files
-{
-	my ($cb) = @_;
-	file_sizes 1, 4, 20, sub {
-	file_names [qw/default/], 'simple', 'none', sub {
-	file_body qw/normal/, sub {
-	lfor otherfiles => 1, sub {
-	lfor otherfiles_count => qw/0 1 10/, sub {
-		if (otherfiles_count() < 20 || filesize() > 10) {
-			lfor otherfiles_size => 1, 1024*1024-1, 4*1024*1024+1, sub {
-				lfor otherfiles_big_count => qw/0 1/, sub {
-					if (otherfiles_big_count() > 0) {
-						lfor otherfiles_big_size =>  4*1024*1024+1, sub {
-							if (otherfiles_big_size() > otherfiles_size()) {
-								if (otherfiles_big_size() < 40*1024*1024 || filesize() > 3*1024*1024) {
-									$cb->();
-								}
-							}
-						}
-					} elsif (otherfiles_count() > 0) {
-						$cb->();
-					}
-				}
-			}
-		}
-	}
-	}
-	}}};
-}
 
 sub heavy_fsm
 {
@@ -335,6 +326,18 @@ sub heavy_fsm
 	heavy_other_files(sub {
 		$cb->();
 	});
+}
+
+sub light_fsm
+{
+	my ($cb) = @_;
+	file_sizes 1, 4, 20, sub {
+	file_names [qw/default/], 'simple', 'none', sub {
+	file_body qw/normal/, sub {
+	light_other_files(sub {
+		$cb->();
+	});
+	}}}
 }
 
 lfor command => qw/sync/, sub {
@@ -352,16 +355,14 @@ lfor command => qw/sync/, sub {
 			} elsif (get "subcommand" eq "sync_missing") {
 				# testing filename stuff
 				lfor is_missing => 0, 1, sub {
-				file_sizes 1, 1, 1, sub {
-				file_names [qw/zero russian/], 'full', 'full', sub {
-				file_body qw/normal/, sub {
-					process();
-				}}};
-				};
-				lfor is_missing => 1, sub {
-				light_other_files(sub {
-					process();
-				});
+					light_filenames sub {
+						process();
+					};
+					if (is_missing()) {
+						light_fsm sub {
+							process();
+						};
+					}
 				}
 			} elsif (get "subcommand" eq "sync_modified") {
 
@@ -383,11 +384,9 @@ lfor command => qw/sync/, sub {
 
 				lfor detect_case => @detect_cases, sub { # TODO: also try mtime=zero!
 				# testing filename stuff
-				file_sizes 1, 1, 1, sub {
-				file_names [qw/zero russian/], 'simple', 'none', sub {
-				file_body qw/normal/, sub {
+				light_filenames sub {
 					process();
-				}}}};
+				}};
 
 				lfor detect_case => qw/treehash-matches mtime-matches/, sub { # TODO: also try mtime=zero!
 					heavy_fsm sub {
