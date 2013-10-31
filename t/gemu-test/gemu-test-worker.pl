@@ -169,6 +169,15 @@ sub create_file
 	utime $args{mtime}, $args{mtime}, $binaryfilename or confess if defined($args{mtime});
 }
 
+sub delete_file
+{
+	my ($filenames_encoding, $root, $relfilename) = (shift, shift, shift);
+
+	my $fullname = "$root/$relfilename";
+	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+	unlink $binaryfilename or confess; # RACE here?
+}
+
 sub check_file
 {
 	my ($filenames_encoding, $root, $relfilename, $content, %args) = (shift, shift, shift, pop, @_);
@@ -525,7 +534,7 @@ sub process_sync_modified
 	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
 
 	$opts{partsize} = partsize();
-	$opts{'new'}=undef if @otherfiles;
+	$opts{'new'}=undef if @otherfiles; # TODO: different "otherfiles" mode - "new" or "replace-modified"
 	$opts{'replace-modified'}=undef;
 	$opts{'detect'} = $detect_option;
 	{
@@ -566,6 +575,83 @@ sub process_sync_modified
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
+sub process_sync_missing
+{
+	empty_dir $DIR;
+
+	my %opts;
+	set_vault \%opts;
+	$opts{dir} = my $root_dir = "$DIR/root";
+
+
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+	my $new_journal_fullname = "$DIR/${journal_name}.new";
+
+	my $content = get_file_body(filebody(), filesize());
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = filenames_encoding();
+
+	$opts{concurrency} = concurrency();
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+	empty_dir $root_dir;
+	
+	my $file_mtime = 123456;
+
+	# creating file
+	create_file(filenames_encoding(), $root_dir, filename(), mtime => $file_mtime, $content);
+	$opts{partsize} = $DEFAULT_PARTSIZE;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+
+	# delete the file
+	delete_file(filenames_encoding(), $root_dir, filename()) if is_missing();
+
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
+
+	$opts{partsize} = partsize();
+	$opts{'new'}=undef if @otherfiles; # TODO: different "otherfiles" mode - "new" or "replace-modified"
+	$opts{'delete-removed'}=undef;
+	{
+		#local $ENV{NEWFSM}=$ENV{USENEWFSM};
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+
+		if (is_missing()) {
+			confess unless ($out =~ /\sDeleted\s/s);
+		} else {
+			confess if ($out =~ /\sDeleted\s/s);
+		}
+
+	}
+
+	if ($FASTMODE < 10) {
+		empty_dir $root_dir;
+		$opts{'max-number-of-files'} = 100_000;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+
+		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
+			if @otherfiles && $FASTMODE < 5;
+		if (is_missing()) {
+			confess if check_file(filenames_encoding(), $root_dir, filename(), $content);
+		} else {
+			confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+		}
+	}
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+}
+
 
 sub process
 {
@@ -574,6 +660,8 @@ sub process
 			process_sync_new();
 		} elsif (subcommand() eq 'sync_modified') {
 			process_sync_modified();
+		} elsif (subcommand() eq 'sync_missing') {
+			process_sync_missing();
 		}
 	}
 }
