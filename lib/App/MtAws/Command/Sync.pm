@@ -37,7 +37,6 @@ use App::MtAws::QueueJob::Iterator;
 use App::MtAws::QueueJob::VerifyAndUpload;
 use App::MtAws::QueueJob::Upload;
 use App::MtAws::QueueJob::Delete;
-use App::MtAws::QueueJob::UploadMultipart;
 # else
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
@@ -167,7 +166,7 @@ sub next_new
 	if (my $rec = shift @{ $j->{listing}{new} }) {
 		my ($absfilename, $relfilename) = ($j->absfilename($rec->{relfilename}), $rec->{relfilename});
 		if ($ENV{NEWFSM}) {
-			App::MtAws::QueueJob::UploadMultipart->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize});
+			App::MtAws::QueueJob::Upload->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}, delete_after_upload => 0);
 		} else {
 			App::MtAws::JobProxy->new(job =>
 				App::MtAws::Job::FileCreate->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize}));
