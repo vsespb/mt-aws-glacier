@@ -19,7 +19,7 @@ use File::Compare;
 
 our $BASE_DIR='/dev/shm/mtaws';
 our $DIR;
-our $GLACIER='../../../src/mtglacier';
+our $GLACIER='../../mtglacier';
 our $N;
 our $VERBOSE = 0;
 our $FASTMODE = 0;
@@ -115,6 +115,13 @@ sub get($) {
 		confess Dumper [$key, $data];
 	}
 };
+
+
+sub with_newfsm(&)
+{
+	local $ENV{NEWFSM}=$ENV{USENEWFSM};
+	shift->();
+}
 
 sub get_or_undef($)
 {
@@ -601,7 +608,9 @@ sub process_sync_missing
 	create_config($config, $terminal_encoding);
 	$opts{config} = $config;
 
-	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+	with_newfsm {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+	};
 	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 	empty_dir $root_dir;
 	
@@ -620,8 +629,7 @@ sub process_sync_missing
 	$opts{partsize} = partsize();
 	$opts{'new'}=undef if @otherfiles; # TODO: different "otherfiles" mode - "new" or "replace-modified"
 	$opts{'delete-removed'}=undef;
-	{
-		#local $ENV{NEWFSM}=$ENV{USENEWFSM};
+	with_newfsm {
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if (is_missing()) {
@@ -630,7 +638,7 @@ sub process_sync_missing
 			confess if ($out =~ /\sDeleted\s/s);
 		}
 
-	}
+	};
 
 	if ($FASTMODE < 10) {
 		empty_dir $root_dir;
@@ -649,7 +657,9 @@ sub process_sync_missing
 	}
 	empty_dir $root_dir;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+	with_newfsm {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+	};
 }
 
 

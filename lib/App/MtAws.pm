@@ -61,6 +61,12 @@ use Carp;
 use IO::Handle;
 use App::MtAws::Job::CreateVault;
 use App::MtAws::Job::DeleteVault;
+
+# NEWFSM
+use App::MtAws::QueueJob::CreateVault;
+use App::MtAws::QueueJob::DeleteVault;
+# /NEWFSM
+
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use PerlIO::encoding;
@@ -289,14 +295,18 @@ END
 		$options->{concurrency} = 1;
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::CreateVault->new(name => $options->{'vault-name'}));
+			my $ft = $ENV{NEWFSM} ?
+				App::MtAws::QueueJob::CreateVault->new(name => $options->{'vault-name'}) :
+				App::MtAws::JobProxy->new(job => App::MtAws::Job::CreateVault->new(name => $options->{'vault-name'}));
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'delete-vault') {
 		$options->{concurrency} = 1;
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::DeleteVault->new(name => $options->{'vault-name'}));
+			my $ft = $ENV{NEWFSM} ?
+				App::MtAws::QueueJob::DeleteVault->new(name => $options->{'vault-name'}) :
+				App::MtAws::JobProxy->new(job => App::MtAws::Job::DeleteVault->new(name => $options->{'vault-name'}));
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {

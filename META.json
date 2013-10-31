@@ -260,8 +260,16 @@
          "file" : "lib/App/MtAws/QueueJob.pm",
          "version" : "1.056"
       },
+      "App::MtAws::QueueJob::CreateVault" : {
+         "file" : "lib/App/MtAws/QueueJob/CreateVault.pm",
+         "version" : "1.056"
+      },
       "App::MtAws::QueueJob::Delete" : {
          "file" : "lib/App/MtAws/QueueJob/Delete.pm",
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::DeleteVault" : {
+         "file" : "lib/App/MtAws/QueueJob/DeleteVault.pm",
          "version" : "1.056"
       },
       "App::MtAws::QueueJob::Iterator" : {

@@ -46,7 +46,9 @@ lib/App/MtAws/ParentWorkerNew.pm
 lib/App/MtAws/ProxyTask.pm
 lib/App/MtAws/QueueEngine.pm
 lib/App/MtAws/QueueJob.pm
+lib/App/MtAws/QueueJob/CreateVault.pm
 lib/App/MtAws/QueueJob/Delete.pm
+lib/App/MtAws/QueueJob/DeleteVault.pm
 lib/App/MtAws/QueueJob/Iterator.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
 lib/App/MtAws/QueueJob/MultipartFinish.pm
