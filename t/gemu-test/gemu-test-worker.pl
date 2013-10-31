@@ -529,7 +529,7 @@ sub process_sync_modified
 	$opts{'replace-modified'}=undef;
 	$opts{'detect'} = $detect_option;
 	{
-		#local $ENV{NEWFSM}=$ENV{USENEWFSM};
+		local $ENV{NEWFSM}=$ENV{USENEWFSM};
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if ($is_upload) {
