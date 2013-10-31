@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 67;
+use Test::More tests => 124;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -53,7 +53,15 @@ my %opts = (filename => '/path/somefile', relfilename => 'somefile', treehash =>
 	ok eval { App::MtAws::QueueJob::VerifyAndUpload->new( (map { $_ => $opts{$_} } qw/filename relfilename treehash partsize/), delete_after_upload => 0); 1; };
 }
 
-{
+for (0, 1) {
+	if ($_) {
+		$opts{filename} = '/path/somefile';
+		$opts{relfilename} = 'somefile';
+	} else {
+		$opts{filename} = '0';
+		$opts{relfilename} = '0';
+	}
+	
 	my @main_opts = (map { $_ => $opts{$_} } qw/filename relfilename treehash partsize/);
 	{
 		my @opts = (@main_opts, delete_after_upload => 1, archive_id => 'def');
