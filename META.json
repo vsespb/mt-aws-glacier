@@ -4,7 +4,7 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4006, CPAN::Meta::Converter version 2.131560",
+   "generated_by" : "Module::Build version 0.4007, CPAN::Meta::Converter version 2.132661",
    "license" : [
       "open_source"
    ],
@@ -20,13 +20,14 @@
             "Data::Dumper" : "0",
             "DateTime" : "0",
             "HTTP::Daemon" : "1.36",
+            "Module::Build" : "0.36",
             "Scalar::Util" : "1.11",
             "TAP::Harness" : "0",
             "Test::Deep" : "0.092",
             "Test::MockModule" : "0",
             "Test::More" : "0.88",
             "Test::Simple" : "0.88",
-            "Test::Spec" : "0.46",
+            "Test::Spec" : "0",
             "Test::Tabs" : "0.003",
             "Time::HiRes" : "0",
             "URI" : "1.10",
@@ -35,7 +36,7 @@
       },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.40"
+            "Module::Build" : "0.36"
          }
       },
       "runtime" : {
@@ -81,183 +82,183 @@
    "provides" : {
       "App::MtAws" : {
          "file" : "lib/App/MtAws.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::ChildWorker" : {
          "file" : "lib/App/MtAws/ChildWorker.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Command::CheckLocalHash" : {
          "file" : "lib/App/MtAws/Command/CheckLocalHash.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Command::DownloadInventory" : {
          "file" : "lib/App/MtAws/Command/DownloadInventory.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Command::Retrieve" : {
          "file" : "lib/App/MtAws/Command/Retrieve.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Command::Sync" : {
          "file" : "lib/App/MtAws/Command/Sync.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::ConfigDefinition" : {
          "file" : "lib/App/MtAws/ConfigDefinition.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::ConfigEngine" : {
          "file" : "lib/App/MtAws/ConfigEngine.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Exceptions" : {
          "file" : "lib/App/MtAws/Exceptions.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::FileVersions" : {
          "file" : "lib/App/MtAws/FileVersions.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Filter" : {
          "file" : "lib/App/MtAws/Filter.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::ForkEngine" : {
          "file" : "lib/App/MtAws/ForkEngine.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::GlacierRequest" : {
          "file" : "lib/App/MtAws/GlacierRequest.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::HttpFileWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::HttpMemoryWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::HttpSegmentWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::HttpWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::IntermediateFile" : {
          "file" : "lib/App/MtAws/IntermediateFile.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job" : {
          "file" : "lib/App/MtAws/Job.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::CreateVault" : {
          "file" : "lib/App/MtAws/Job/CreateVault.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::DeleteVault" : {
          "file" : "lib/App/MtAws/Job/DeleteVault.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::FileCreate" : {
          "file" : "lib/App/MtAws/Job/FileCreate.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::FileFinish" : {
          "file" : "lib/App/MtAws/Job/FileFinish.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::FileListDelete" : {
          "file" : "lib/App/MtAws/Job/FileListDelete.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::FileListRetrieval" : {
          "file" : "lib/App/MtAws/Job/FileListRetrieval.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::FileUpload" : {
          "file" : "lib/App/MtAws/Job/FileUpload.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::FileVerifyAndUpload" : {
          "file" : "lib/App/MtAws/Job/FileVerifyAndUpload.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::InventoryDownload" : {
          "file" : "lib/App/MtAws/Job/InventoryDownload.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::InventoryFetch" : {
          "file" : "lib/App/MtAws/Job/InventoryFetch.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::RetrievalDownload" : {
          "file" : "lib/App/MtAws/Job/RetrievalDownload.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::RetrievalFetch" : {
          "file" : "lib/App/MtAws/Job/RetrievalFetch.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::RetrieveInventory" : {
          "file" : "lib/App/MtAws/Job/RetrieveInventory.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::SegmentDownload" : {
          "file" : "lib/App/MtAws/Job/SegmentDownload.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Job::SingleDownload" : {
          "file" : "lib/App/MtAws/Job/SingleDownload.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::JobIteratorProxy" : {
          "file" : "lib/App/MtAws/JobIteratorProxy.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::JobListProxy" : {
          "file" : "lib/App/MtAws/JobListProxy.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::JobProxy" : {
          "file" : "lib/App/MtAws/JobProxy.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Journal" : {
          "file" : "lib/App/MtAws/Journal.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::LineProtocol" : {
          "file" : "lib/App/MtAws/LineProtocol.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::MetaData" : {
          "file" : "lib/App/MtAws/MetaData.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::ParentWorker" : {
          "file" : "lib/App/MtAws/ParentWorker.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Task" : {
          "file" : "lib/App/MtAws/Task.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::TreeHash" : {
          "file" : "lib/App/MtAws/TreeHash.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       },
       "App::MtAws::Utils" : {
          "file" : "lib/App/MtAws/Utils.pm",
-         "version" : "1.055"
+         "version" : "1.056"
       }
    },
    "release_status" : "stable",
@@ -273,5 +274,5 @@
          "url" : "https://github.com/vsespb/mt-aws-glacier"
       }
    },
-   "version" : "1.055"
+   "version" : "1.056"
 }

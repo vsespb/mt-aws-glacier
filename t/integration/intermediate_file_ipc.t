@@ -22,13 +22,13 @@
 
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 18;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
 use TestUtils;
 use App::MtAws::IntermediateFile;
 use Carp;
-use Fcntl qw/SEEK_SET LOCK_EX LOCK_UN SEEK_SET/;
+use Fcntl qw/SEEK_SET LOCK_EX SEEK_SET/;
 
 warning_fatal();
 
@@ -47,7 +47,6 @@ with_fork
 		ok open(my $f, ">", $filename), "file opened";
 		ok flock($f, LOCK_EX), "file locked";
 		ok ((print $f $data_sample), "data written");
-		ok (flock($f, LOCK_UN ), "file unlocked");
 		ok (close($f), "file closed");
 
 		ok (open(my $infile, "<", $filename), "file opened for reading");

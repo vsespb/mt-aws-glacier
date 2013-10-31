@@ -13,9 +13,63 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 ## Version
 
-* Version 1.055 (See [ChangeLog][mt-aws glacier changelog])  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
-
+* Version 1.056 (See [ChangeLog][mt-aws glacier changelog] or follow [@mtglacier](https://twitter.com/mtglacier) for updates)  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+ 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
+
+## Contents
+
+* [Features](#features)
+
+* [Important bugs/missing features](#important-bugsmissing-features)
+
+* [Production readiness](#production-readiness)
+
+* [Installation/System requirements](#installationsystem-requirements)
+
+	* [Installation via OS package manager](#installation-via-os-package-manager)
+
+	* [Manual installation](#manual-installation)
+
+	* [Installation via CPAN](#or-installation-via-cpan)
+
+	* [Installation general instructions, troubleshooting, edge cases and misc instructions](#installation-general-instructions-troubleshooting-edge-cases-and-misc-instructions)
+
+* [Warnings ( MUST READ )](#warnings--must-read-)
+
+* [Help/contribute this project](#helpcontribute-this-project)
+
+* [Usage](#usage)
+
+* [Restoring journal](#restoring-journal)
+
+* [Journal concept](#journal-concept)
+
+* [Specification for some commands](#specification-for-some-commands)
+
+	* [sync](#sync)
+
+	* [restore](#restore)
+
+	* [restore-completed](#restore-completed)
+
+	* [upload-file](#upload-file)
+	
+	* [other commands](#other-commands)
+
+* [File selection options](#file-selection-options)
+
+* [Additional command line options](#additional-command-line-options)
+
+* [Configuring Character Encodings](#configuring-character-encodings)
+
+* [Limitations](#limitations)
+
+* [See also](#see-also)
+
+* [Minimum Amazon Glacier permissions](#minimum-amazon-glacier-permissions)
+
+
 
 ## Features
 
@@ -54,6 +108,68 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 Script is made for Unix OS. Tested under Linux. Should work under other POSIX OSes (*BSD, Solaris). Lightly tested under Mac OS X.
 Will NOT work under Windows/Cygwin. Minimum Perl version required is 5.8.8 (pretty old, AFAIK there are no supported distributions with older Perls)
+
+### Installation via OS package manager
+
+NOTE: If you've used manual installation before, please remove previously installed `mtglacier` executable from your path.
+
+NOTE: If you've used CPAN installation before, please remove previously installed module, ([cpanm] is capable to do that)
+
+##### Ubuntu 12.04+
+
+Can be installed/updated via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
+
+1.	`sudo add-apt-repository ppa:vsespb/mt-aws-glacier`
+
+	(GPG key id/fingerprint would be **D2BFA5E4** and **D7F1BC2238569FC447A8D8249E86E8B2D2BFA5E4**)
+
+2.	`sudo apt-get update`
+3.	`sudo apt-get install libapp-mtaws-perl`
+
+That's it.
+
+##### Debian 7 (Wheezy), Debian 8 (Jessie)
+
+Can be installed/updated via custom repository
+
+1.	`wget -O - https://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
+
+	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
+
+2. Add repository
+
+
+		echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+
+
+3.	`sudo apt-get update`
+4.	`sudo apt-get install libapp-mtaws-perl`
+
+That's it.
+
+##### Debian 6 (Squeeze)
+
+Can be installed/updated via custom repository
+
+1.	`wget -O - http://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
+
+	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
+
+2. Add repository
+
+
+		echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+
+
+3.	`sudo apt-get update`
+4.	`sudo apt-get install libapp-mtaws-perl`
+
+
+	(To use HTTPS you also need:)
+
+5. `sudo apt-get install build-essential libssl-dev`
+
+6. install/update `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
 
 
 ### Manual installation
@@ -191,11 +307,9 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 
 * With low "partsize" option you pay a bit more (Amazon charges for each upload request)
 
-* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
-
-* Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
-
 * For backup created with older versions (0.7x) of mt-aws-glacier, Journal file **required to restore backup**.
+
+* Use **one Journal file** only with **one (same) vault** ( more info [here](#what-is-journal) and [here](#how-to-maintain-a-relation-between-my-journal-files-and-my-vaults) )
 
 * When work with CD-ROM/CIFS/other non-Unix/non-POSIX filesystems, you might need set `leaf-optimization` to `0`
 
@@ -560,6 +674,12 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 2. You can use other optional options with this command (`concurrency`, `partsize`)
 
+### Other commands
+
+See [usage](#usage) for examples of use of the following commands: `purge-vault`, `check-local-hash`, `create-vault`, `delete-vault`.
+
+See [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands.
+
 ## File selection options
 
 `filter`, `include`, `exclude` options allow you to construct a list of RULES to select only certain files for the operation.
@@ -796,6 +916,11 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 * Length of relative filenames. Currently limit is about 700 ASCII characters or 350 2-byte UTF-8 character (.. or 230 3-byte characters).
 
 (NOTE: if above requirements are not met, error will be thrown)
+
+* Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
+
+* With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
+
 
 ## Test/Play with it
 

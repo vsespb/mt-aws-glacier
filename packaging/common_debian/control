@@ -1,0 +1,16 @@
+Source: libapp-mtaws-perl
+Section: perl
+Priority: optional
+Maintainer: Victor Efimov <victor@vsespb.ru>
+Build-Depends: debhelper (>= 8), perl, libwww-perl, libjson-xs-perl, libtest-deep-perl, libtest-mockmodule-perl, libtest-spec-perl, libhttp-daemon-perl, libdatetime-perl, libmodule-build-perl
+Standards-Version: 3.9.2
+Homepage: http://search.cpan.org/dist/App-MtAws/
+
+Package: libapp-mtaws-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, perl, libwww-perl, libjson-xs-perl
+Recommends: liblwp-protocol-https-perl
+Description: mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier
+ (no description was found)
+ .
+ This description was automagically extracted from the module by dh-make-perl.

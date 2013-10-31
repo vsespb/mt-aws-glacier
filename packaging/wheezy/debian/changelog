@@ -1,0 +1,12 @@
+libapp-mtaws-perl (1.056-0vdebian2~v7~mt1) wheezy; urgency=low
+
+  * Initial release for Debian 7
+
+ -- Victor Efimov <victor@vsespb.ru>  Tue, 17 Oct 2013 16:40:30 +0400
+
+libapp-mtaws-perl (1.056-0vdebian1~v7~mt1) wheezy; urgency=low
+
+  * Initial release for launchpad PPA
+
+ -- Victor Efimov <victor@vsespb.ru>  Tue, 15 Oct 2013 16:20:30 +0400
+

@@ -72,4 +72,7 @@
 # Avoid archives of this distribution
 \bApp-MtAws-[\d\.\_]+
 
+^debian/
+^packaging/
+^scripts/
 run\-.*\.sh

@@ -1,0 +1,6 @@
+libapp-mtaws-perl (1.056-0ubuntu1~saucy1~ppa1) saucy; urgency=low
+
+  * Initial release for launchpad PPA
+
+ -- Victor Efimov <victor@vsespb.ru>  Tue, 15 Oct 2013 16:20:30 +0400
+

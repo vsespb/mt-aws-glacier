@@ -1,3 +1,7 @@
+### 2013-10-15 v1.056
+
+  * mtglacier now can be installed via Ubuntu PPA - install instructions updated.
+
 ### 2013-09-25 v1.055
 
   * Fixed: sync --replace-modified were not deleting old files in Amazon Glacier in case --detect option causing a check

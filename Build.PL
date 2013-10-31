@@ -18,6 +18,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# APP-MTAWS-ROOT-DIR (marker for scripts to check root dir)
+
 use 5.008008; # minumum perl version is 5.8.8, ancient cpan clients will ignore 'requires/perl' below
 use strict;
 use warnings;
@@ -28,10 +30,13 @@ use lib qw(lib);
 
 die "OS unsupported\n" if ($^O eq 'MSWin32');
 
+our $MB_VERSION = '0.36';
+
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
 	author => 'Victor Efimov <vs@vs-dev.com>',
 	dist_author => 'Victor Efimov <vs@vs-dev.com>',
+	dynamic_config => 1,
 	recursive_test_files=>1,
 	dist_abstract=>'mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier',
 	license     =>'gpl3',
@@ -126,17 +131,23 @@ my $build = Module::Build->new(
 
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
-		'Test::Spec' => '0.46', # we need with() new in 0.46
+		'Test::Spec' => 0,
 		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
-		'Test::Tabs' => '0.003',
-		'B' => 0, # test that some scalar IV only to save memory
+		$ENV{MT_DEB_BUILD} ? () : ('Test::Tabs' => '0.003'),
 
 		# CORE MODULES OR DUAL-LIFE MODULES
+		'B' => 0, # test that some scalar IV only to save memory
 		'Data::Dumper' => 0,
 		'Time::HiRes' => 0,
 		'open' => 0,
 		'Scalar::Util' => '1.11',
+
+		# Specify Module::Build twice
+		'Module::Build' => $MB_VERSION,
+	},
+	configure_requires => {
+		'Module::Build' => $MB_VERSION,
 	},
 	recommends => {
 		'LWP::Protocol::https' => 6,

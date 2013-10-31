@@ -37,7 +37,7 @@ use Test::More ();
 use Test::MockModule ();
 use LWP::UserAgent ();
 use DateTime ();
-use Test::Spec 0.46 ();
+use Test::Spec ();
 use MIME::Base64;
 # for 5.8.x stock perl
 use Digest::SHA ();
