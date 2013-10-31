@@ -140,7 +140,9 @@ t/unit/journal_writejournal.t
 t/unit/metadata.t
 t/unit/open_file.t
 t/unit/queue_job.t
+t/unit/queue_job/create_vault.t
 t/unit/queue_job/delete.t
+t/unit/queue_job/delete_vault.t
 t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_finish.t
