@@ -32,14 +32,20 @@ use constant SHOULD_CREATE => 1;
 use constant SHOULD_TREEHASH => 2;
 use constant SHOULD_NOACTION => 0;
 
+# if NEWFSM
+use App::MtAws::QueueJob::Iterator;
+use App::MtAws::QueueJob::VerifyAndUpload;
+use App::MtAws::QueueJob::Upload;
+use App::MtAws::QueueJob::Delete;
+use App::MtAws::QueueJob::UploadMultipart;
+# else
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
 use App::MtAws::JobIteratorProxy;
 use App::MtAws::Job::FileCreate;
 use App::MtAws::Job::FileListDelete;
 use App::MtAws::Job::FileVerifyAndUpload;
-
-use App::MtAws::QueueJob::Iterator;
+# end
 
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
@@ -95,7 +101,6 @@ sub next_modified
 
 		if ($should_upload == SHOULD_TREEHASH) {
 			if ($ENV{NEWFSM}) {
-				use App::MtAws::QueueJob::VerifyAndUpload;
 				return App::MtAws::QueueJob::VerifyAndUpload->new(
 					filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 					delete_after_upload => 1,
@@ -113,7 +118,6 @@ sub next_modified
 			}
 		} elsif ($should_upload == SHOULD_CREATE) {
 			if ($ENV{NEWFSM}) {
-				use App::MtAws::QueueJob::Upload;
 				return App::MtAws::QueueJob::Upload->new(
 					filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize},
 					delete_after_upload => 1,
@@ -143,7 +147,6 @@ sub next_missing
 	my ($options, $j) = @_;
 	if (my $rec = shift @{ $j->{listing}{missing} }) {
 		if ($ENV{NEWFSM}) {
-			use App::MtAws::QueueJob::Delete;
 			return App::MtAws::QueueJob::Delete->new(
 				relfilename => $rec->{relfilename},
 				archive_id => $j->latest($rec->{relfilename})->{archive_id},
@@ -164,7 +167,6 @@ sub next_new
 	if (my $rec = shift @{ $j->{listing}{new} }) {
 		my ($absfilename, $relfilename) = ($j->absfilename($rec->{relfilename}), $rec->{relfilename});
 		if ($ENV{NEWFSM}) {
-			use App::MtAws::QueueJob::UploadMultipart;
 			App::MtAws::QueueJob::UploadMultipart->new(filename => $absfilename, relfilename => $relfilename, partsize => ONE_MB*$options->{partsize});
 		} else {
 			App::MtAws::JobProxy->new(job =>
