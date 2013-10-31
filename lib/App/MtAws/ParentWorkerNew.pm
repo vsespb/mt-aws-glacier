@@ -76,6 +76,12 @@ sub wait_worker
 	return 0;
 }
 
+sub process_task
+{
+	my ($self, $lt, $j) = @_;
+	$self->{journal} = $j;
+	$self->process($lt);
+}
 
 sub comm_error
 {

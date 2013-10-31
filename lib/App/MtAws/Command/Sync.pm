@@ -249,18 +249,16 @@ sub run
 		}
 
 		if (scalar @joblist) {
-			if ($ENV{NEWFSM}) {
-				confess unless @joblist >= 1;
-				my $lt = App::MtAws::QueueJob::Iterator->new(iterator => sub { shift @joblist });
-				my $P = fork_engine->{parent_worker};
-				$P->{journal} = $j;
-				my ($R) = $P->process($lt);
-				confess unless $R;
-			} else {
-				my $lt = App::MtAws::JobListProxy->new(jobs => \@joblist);
-				my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
-				confess unless $R;
-			}
+			my $lt = do {
+				if ($ENV{NEWFSM}) {
+					confess unless @joblist >= 1;
+					App::MtAws::QueueJob::Iterator->new(iterator => sub { shift @joblist });
+				} else {
+					App::MtAws::JobListProxy->new(jobs => \@joblist);
+				}
+			};
+			my ($R) = fork_engine->{parent_worker}->process_task($lt, $j);
+			confess unless $R;
 		}
 		$j->close_for_write();
 	}
