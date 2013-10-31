@@ -294,6 +294,36 @@ sub heavy_other_files
 	}}}};
 }
 
+sub light_other_files
+{
+	my ($cb) = @_;
+	file_sizes 1, 4, 20, sub {
+	file_names [qw/default/], 'simple', 'none', sub {
+	file_body qw/normal/, sub {
+	lfor otherfiles => 1, sub {
+	lfor otherfiles_count => qw/0 1 10/, sub {
+		if (otherfiles_count() < 20 || filesize() > 10) {
+			lfor otherfiles_size => 1, 1024*1024-1, 4*1024*1024+1, sub {
+				lfor otherfiles_big_count => qw/0 1/, sub {
+					if (otherfiles_big_count() > 0) {
+						lfor otherfiles_big_size =>  4*1024*1024+1, sub {
+							if (otherfiles_big_size() > otherfiles_size()) {
+								if (otherfiles_big_size() < 40*1024*1024 || filesize() > 3*1024*1024) {
+									$cb->();
+								}
+							}
+						}
+					} elsif (otherfiles_count() > 0) {
+						$cb->();
+					}
+				}
+			}
+		}
+	}
+	}
+	}}};
+}
+
 sub heavy_fsm
 {
 	my ($cb) = @_;
@@ -309,7 +339,7 @@ sub heavy_fsm
 
 lfor command => qw/sync/, sub {
 	if (command() eq "sync") {
-		lfor subcommand => qw/sync_new sync_modified/, sub {
+		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
 			if (get "subcommand" eq "sync_new") {
 				# testing filename stuff
 				heavy_filenames sub {
@@ -319,6 +349,20 @@ lfor command => qw/sync/, sub {
 				heavy_fsm sub {
 					process();
 				};
+			} elsif (get "subcommand" eq "sync_missing") {
+				# testing filename stuff
+				lfor is_missing => 0, 1, sub {
+				file_sizes 1, 1, 1, sub {
+				file_names [qw/zero russian/], 'full', 'full', sub {
+				file_body qw/normal/, sub {
+					process();
+				}}};
+				};
+				lfor is_missing => 1, sub {
+				light_other_files(sub {
+					process();
+				});
+				}
 			} elsif (get "subcommand" eq "sync_modified") {
 
 				my @detect_cases = qw/
