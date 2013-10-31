@@ -46,12 +46,21 @@ use constant ONE_MB => 1024*1024;
 
 use App::MtAws::ParentWorker;
 use App::MtAws::ChildWorker;
+
+# if NEWFSM
+use App::MtAws::QueueJob::CreateVault;
+use App::MtAws::QueueJob::DeleteVault;
+# else
 use App::MtAws::JobProxy;
+use App::MtAws::JobListProxy;
 use App::MtAws::Job::FileCreate;
 use App::MtAws::Job::FileListDelete;
 use App::MtAws::Job::RetrievalFetch;
-use App::MtAws::JobListProxy;
 use App::MtAws::Job::RetrieveInventory;
+use App::MtAws::Job::CreateVault;
+use App::MtAws::Job::DeleteVault;
+# end
+
 use File::Find ;
 use File::Spec;
 use App::MtAws::Journal;
@@ -59,13 +68,6 @@ use App::MtAws::ConfigDefinition;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use Carp;
 use IO::Handle;
-use App::MtAws::Job::CreateVault;
-use App::MtAws::Job::DeleteVault;
-
-# NEWFSM
-use App::MtAws::QueueJob::CreateVault;
-use App::MtAws::QueueJob::DeleteVault;
-# /NEWFSM
 
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
