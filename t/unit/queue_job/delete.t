@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 9;
+use Test::More tests => 14;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -46,10 +46,11 @@ my %opts = (relfilename => 'somefile', archive_id => 'abc');
 	ok eval { App::MtAws::QueueJob::Delete->new((map { $_ => $opts{$_} } qw/archive_id/), relfilename => 0); 1; };
 }
 
-my $j = App::MtAws::QueueJob::Delete->new( map { $_ => $opts{$_} } qw/relfilename archive_id/);
-DeleteTest::expect_delete($j, $opts{relfilename}, $opts{archive_id});
-
-expect_done($j);
+for my $relfilename ($opts{relfilename}, 0) {
+	my $j = App::MtAws::QueueJob::Delete->new( relfilename => $relfilename, archive_id => $opts{archive_id});
+	DeleteTest::expect_delete($j, $relfilename, $opts{archive_id});
+	expect_done($j);
+}
 
 
 1;
