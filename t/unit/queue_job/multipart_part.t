@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 57;
+use Test::More tests => 147;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -40,10 +40,10 @@ use Data::Dumper;
 
 sub test_case
 {
-	my ($n, $test_cb) = @_;
+	my ($n, $relfilename, $mtime, $test_cb) = @_;
 	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..$n);
 	my @parts = @orig_parts;
-	my %args = (relfilename => 'somefile', partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => 12345);
+	my %args = (relfilename => $relfilename, partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => $mtime);
 
 	no warnings 'redefine';
 	local *App::MtAws::QueueJob::MultipartPart::read_part = sub {
@@ -60,68 +60,76 @@ sub test_case
 }
 
 
-test_case 15, sub {
-	my ($j, $args, $parts) = @_;
-	my @callbacks;
-	for (@$parts) {
-		my $res = $j->next;
-		cmp_deeply $res,
-			App::MtAws::QueueJobResult->full_new(
-				task => {
-					args => {
-						start => $_->[0],
-						upload_id => $args->{upload_id},
-						part_final_hash => $_->[1],
-						relfilename => $args->{relfilename},
-						mtime => $args->{mtime},
+sub test_with_filename_and_mtime
+{
+	my ($relfilename, $mtime) = @_;
+	test_case 15, $relfilename, $mtime, sub {
+		my ($j, $args, $parts) = @_;
+		my @callbacks;
+		for (@$parts) {
+			my $res = $j->next;
+			cmp_deeply $res,
+				App::MtAws::QueueJobResult->full_new(
+					task => {
+						args => {
+							start => $_->[0],
+							upload_id => $args->{upload_id},
+							part_final_hash => $_->[1],
+							relfilename => $args->{relfilename},
+							mtime => $args->{mtime},
+						},
+						attachment => $_->[2],
+						action => 'upload_part',
+						cb => test_coderef,
+						cb_task_proxy => test_coderef,
 					},
-					attachment => $_->[2],
-					action => 'upload_part',
-					cb => test_coderef,
-					cb_task_proxy => test_coderef,
-				},
-				code => JOB_OK,
-			);
-		push @callbacks, $res->{task}{cb_task_proxy};
-	}
-
-	lcg_srand 444242 => sub {
-		@callbacks = lcg_shuffle @callbacks;
-
-		while (my $cb = shift @callbacks) {
-			$cb->();
-			cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
+					code => JOB_OK,
+				);
+			push @callbacks, $res->{task}{cb_task_proxy};
 		}
-	}
-};
-
-test_case 11, sub {
-	my ($j, $args, $parts) = @_;
-
-	for (@$parts) {
-		my $res = $j->next;
-		cmp_deeply $res,
-			App::MtAws::QueueJobResult->full_new(
-				task => {
-					args => {
-						start => $_->[0],
-						upload_id => $args->{upload_id},
-						part_final_hash => $_->[1],
-						relfilename => $args->{relfilename},
-						mtime => $args->{mtime},
+	
+		lcg_srand 444242 => sub {
+			@callbacks = lcg_shuffle @callbacks;
+	
+			while (my $cb = shift @callbacks) {
+				$cb->();
+				cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
+			}
+		}
+	};
+	
+	test_case 11, $relfilename, $mtime, sub {
+		my ($j, $args, $parts) = @_;
+	
+		for (@$parts) {
+			my $res = $j->next;
+			cmp_deeply $res,
+				App::MtAws::QueueJobResult->full_new(
+					task => {
+						args => {
+							start => $_->[0],
+							upload_id => $args->{upload_id},
+							part_final_hash => $_->[1],
+							relfilename => $args->{relfilename},
+							mtime => $args->{mtime},
+						},
+						attachment => $_->[2],
+						action => 'upload_part',
+						cb => test_coderef,
+						cb_task_proxy => test_coderef,
 					},
-					attachment => $_->[2],
-					action => 'upload_part',
-					cb => test_coderef,
-					cb_task_proxy => test_coderef,
-				},
-				code => JOB_OK,
-			);
-		$res->{task}{cb_task_proxy}->();
-	}
-	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
+					code => JOB_OK,
+				);
+			$res->{task}{cb_task_proxy}->();
+		}
+		cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
+	
+	};
+}
 
-};
+test_with_filename_and_mtime "somefile", 12345;
+test_with_filename_and_mtime "somefile", 0;
+test_with_filename_and_mtime 0, 12345;
 
 {
 	{
@@ -139,7 +147,7 @@ test_case 11, sub {
 	lcg_srand 4672 => sub {
 		for my $n (1, 2, 15) {
 			for my $workers (1, 2, 10, 20) {
-				test_case $n, sub {
+				test_case $n, "somefile", 12345, sub {
 					my ($j, $args, $parts) = @_;
 					my $q = QE->new(n => $workers);
 					$q->process($j);
