@@ -38,6 +38,9 @@ use App::MtAws::JobIteratorProxy;
 use App::MtAws::Job::FileCreate;
 use App::MtAws::Job::FileListDelete;
 use App::MtAws::Job::FileVerifyAndUpload;
+
+use App::MtAws::QueueJob::Iterator;
+
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
 use App::MtAws::Utils;
@@ -139,9 +142,17 @@ sub next_missing
 {
 	my ($options, $j) = @_;
 	if (my $rec = shift @{ $j->{listing}{missing} }) {
-		App::MtAws::Job::FileListDelete->new(archives => [{
-			archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
-		}]);
+		if ($ENV{NEWFSM}) {
+			use App::MtAws::QueueJob::Delete;
+			return App::MtAws::QueueJob::Delete->new(
+				relfilename => $rec->{relfilename},
+				archive_id => $j->latest($rec->{relfilename})->{archive_id},
+			);
+		} else {
+			App::MtAws::Job::FileListDelete->new(archives => [{
+				archive_id => $j->latest($rec->{relfilename})->{archive_id}, relfilename => $rec->{relfilename}
+			}]);
+		}
 	} else {
 		return;
 	}
@@ -203,7 +214,6 @@ sub run
 				print_dry_run($itt);
 			} else {
 				if ($ENV{NEWFSM}) {
-					use App::MtAws::QueueJob::Iterator;
 					push @joblist, App::MtAws::QueueJob::Iterator->new(iterator => $itt);
 				} else {
 					push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
@@ -218,7 +228,6 @@ sub run
 				print_dry_run($itt);
 			} else {
 				if ($ENV{NEWFSM}) {
-					use App::MtAws::QueueJob::Iterator;
 					push @joblist, App::MtAws::QueueJob::Iterator->new(iterator => $itt);
 				} else {
 					push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
@@ -230,7 +239,11 @@ sub run
 			if ($options->{'dry-run'}) {
 				print_dry_run($itt);
 			} else {
-				push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+				if ($ENV{NEWFSM}) {
+					push @joblist, App::MtAws::QueueJob::Iterator->new(iterator => $itt);
+				} else {
+					push @joblist, App::MtAws::JobIteratorProxy->new(iterator => $itt);
+				}
 			}
 		}
 
