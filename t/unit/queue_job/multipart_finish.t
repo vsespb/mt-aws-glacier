@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 7;
+use Test::More tests => 21;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -36,9 +36,11 @@ warning_fatal();
 
 use Data::Dumper;
 
+sub test_case
 {
+	my ($relfilename, $mtime) = @_;
 	my $th = bless { mock => "mytreehash" }, 'App::MtAws::TreeHash';
-	my $j = App::MtAws::QueueJob::MultipartFinish->new(relfilename => 'somefile', upload_id => "someid", filesize => 123, mtime => 456, th => $th );
+	my $j = App::MtAws::QueueJob::MultipartFinish->new(relfilename => $relfilename, upload_id => "someid", filesize => 123, mtime => $mtime, th => $th );
 
 	no warnings 'redefine';
 
@@ -47,7 +49,7 @@ use Data::Dumper;
 
 	cmp_deeply my $res = $j->next,
 		App::MtAws::QueueJobResult->full_new(code => JOB_OK,
-		task => { args => {relfilename => 'somefile', upload_id => "someid", filesize => 123, mtime => 456, final_hash => "my_final_hash" },
+		task => { args => {relfilename => $relfilename, upload_id => "someid", filesize => 123, mtime => $mtime, final_hash => "my_final_hash" },
 		action => 'finish_upload', cb => test_coderef, cb_task_proxy => test_coderef});
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
@@ -55,5 +57,9 @@ use Data::Dumper;
 	call_callback($res);
 	expect_done($j);
 }
+
+test_case "somefile", 123456;
+test_case "0", 123456;
+test_case "somefile2", 0;
 
 1;
