@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 18;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -48,11 +48,17 @@ my %opts = (filename => '/path/somefile', relfilename => 'somefile', treehash =>
 	ok eval { App::MtAws::QueueJob::Verify->new((map { $_ => $opts{$_} } qw/filename treehash/), relfilename => 0); 1; };
 }
 
-my $j = App::MtAws::QueueJob::Verify->new( map { $_ => $opts{$_} } qw/filename relfilename treehash/);
-VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash}, verify_value => 42);
-expect_done($j);
-is $j->{match}, 42;
+sub test_case
+{
+	my ($filename, $relfilename) = @_;
+	my $j = App::MtAws::QueueJob::Verify->new( treehash => $opts{treehash}, filename => $filename, relfilename => $relfilename);
+	VerifyTest::expect_verify($j, $filename, $relfilename, $opts{treehash}, verify_value => 42);
+	expect_done($j);
+	is $j->{match}, 42;
+}
 
+test_case $opts{filename}, $opts{relfilename};
+test_case 0, 0;
 
 1;
 
