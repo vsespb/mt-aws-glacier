@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 53;
+use Test::More tests => 135;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -64,20 +64,28 @@ my $upload_id = "someuploadid";
 	ok !eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename relfilename partsize/), delete_after_upload =>0, archive_id => 'abc' ); 1; };
 }
 
+sub test_case
 {
-	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
-	my $j = App::MtAws::QueueJob::Upload->new(filename => '/somedir/somefile', relfilename => $relfilename, partsize => $partsize, delete_after_upload =>0 );
-	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
-	expect_done($j);
+	my ($filename, $relfilename, $mtime) = @_;
+	{
+		my ($partsize, $upload_id) = (2*1024*1024, 'someid');
+		my $j = App::MtAws::QueueJob::Upload->new(filename => $filename, relfilename => $relfilename, partsize => $partsize, delete_after_upload =>0 );
+		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
+		expect_done($j);
+	}
+	
+	{
+		my ($partsize, $upload_id) = (2*1024*1024, 'someid');
+		my $j = App::MtAws::QueueJob::Upload->new(filename => $filename, relfilename => $relfilename, partsize => $partsize, delete_after_upload =>1, archive_id => 'abc' );
+		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, is_finished => 0);
+		DeleteTest::expect_delete($j, $relfilename, 'abc');
+		expect_done($j);
+	}
 }
 
-{
-	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
-	my $j = App::MtAws::QueueJob::Upload->new(filename => '/somedir/somefile', relfilename => $relfilename, partsize => $partsize, delete_after_upload =>1, archive_id => 'abc' );
-	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, is_finished => 0);
-	DeleteTest::expect_delete($j, $relfilename, 'abc');
-	expect_done($j);
-}
+test_case '/path/somefile', 'somefile', 123456;
+test_case '/path/somefile', 'somefile', 0;
+test_case '0', 0, 123456;
 
 1;
 
