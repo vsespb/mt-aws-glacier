@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 7;
+use Test::More tests => 21;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -35,18 +35,18 @@ warning_fatal();
 
 use Data::Dumper;
 
+sub test_case
 {
+	my ($filename, $relfilename, $mtime, $partsize) = @_;
 	no warnings 'redefine';
 	local *App::MtAws::QueueJob::MultipartCreate::init_file = sub {
 		$_[0]->{fh} = 'filehandle';
-		$_[0]->{mtime} = 123456;
+		$_[0]->{mtime} = $mtime;
 	};
-
-	my $partsize = 2*1024*1024;
-	my $j = App::MtAws::QueueJob::MultipartCreate->new(filename => '/somedir/somefile', relfilename => 'somefile', partsize => $partsize);
+	my $j = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => $partsize);
 	cmp_deeply my $res = $j->next,
 		App::MtAws::QueueJobResult->full_new(code => JOB_OK,
-		task => { args => {partsize => $partsize, relfilename => 'somefile', mtime => 123456},
+		task => { args => {partsize => $partsize, relfilename => $relfilename, mtime => $mtime},
 		action => 'create_upload', cb => test_coderef, cb_task_proxy => test_coderef});
 	cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_WAIT);
 	expect_wait($j);
@@ -54,5 +54,10 @@ use Data::Dumper;
 	expect_done($j);
 	is $j->{upload_id}, "someuploadid";
 }
+
+test_case('/path/somefile', 'somefile', 123456, 2*1024*1024);
+test_case('/path/somefile', 'somefile', 0, 2*1024*1024);
+test_case('0', '0', 123456, 2*1024*1024);
+
 
 1;
