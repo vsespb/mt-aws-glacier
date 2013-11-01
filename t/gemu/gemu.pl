@@ -14,7 +14,8 @@ use lib qw{.. ../..};
 use App::MtAws::TreeHash;
 use Digest::SHA qw(hmac_sha256 hmac_sha256_hex sha256_hex sha256);
 use Time::Local;
-use Fcntl;
+use Fcntl qw/LOCK_EX/;
+
 
 my $proto = $ARGV[0]||die "Specify http|https";
 my $tmp_folder = $ARGV[1]||die "Specify temporary folder";
@@ -26,6 +27,8 @@ my $json_coder = JSON::XS->new->utf8->allow_nonref;
 my $config = { key=>'AKIAJ2QN54K3SOFABCDE', secret => 'jhuYh6d73hdhGndk1jdHJHdjHghDjDkkdkKDkdkd'};
 my $seq_n = 0;
 
+
+init_seq_number();
 
 for my $n (1..$children_count) {
 	if (!fork()) {
@@ -269,7 +272,10 @@ sub child_worker
 			@jobs = @$jobsref;
 		} else {
 			my $bpath = basepath($account, $vault, 'jobs');
-			while (<$bpath/*>) { #TODO: sort
+			my @listing = sort <$bpath/*>;
+			local $_;
+			while (@listing) {
+				$_ = shift @listing;
 				my $j = fetch_raw("$_/job");
 
 				if ($j->{type} eq 'archive-retrieval') {
@@ -597,9 +603,42 @@ sub fetch_raw
 	$json_coder->decode($buf);
 }
 
+sub init_seq_number
+{
+	my $countfile = "$tmp_folder/seq.count";
+	open my $count_write, ">", $countfile or confess "$!";
+	print ($count_write "1\n") or confess "$!";
+	close $count_write or confess "$!";
+}
+
+sub seq_number
+{
+	my $lockfile = "$tmp_folder/seq.lock";
+	my $countfile = "$tmp_folder/seq.count";
+	open my $lock, ">", $lockfile or confess "$!";
+	flock $lock, LOCK_EX or confess "$!";
+	
+	open my $count_read, "<", $countfile or confess "$!";
+	my $cnt = <$count_read>;
+	confess unless $cnt;
+	chomp $cnt;
+	close $count_read or confess "$!";
+	
+	$cnt++;
+	
+	open my $count_write, ">", $countfile or confess "$!";
+	print ($count_write $cnt, "\n") or confess "$!";
+	close $count_write or confess "$!";
+	
+	
+	close $lock or confess "$!";
+	
+	$cnt;
+}
+
 sub gen_id
 {
-	sprintf("%011d_%05d_%05d_%s", time(), ++$seq_n, $$, substr(rand(), 2,10));
+	sprintf("%011d_%011d_%05d_%05d_%s", seq_number(), time(), ++$seq_n, $$, substr(rand(), 2,10));
 }
 
 
