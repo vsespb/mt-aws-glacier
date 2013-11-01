@@ -340,7 +340,7 @@ sub light_fsm
 	}}}
 }
 
-lfor command => qw/sync/, sub {
+lfor command => qw/sync retrieve_inventory/, sub {
 	if (command() eq "sync") {
 		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
 			if (get "subcommand" eq "sync_new") {
@@ -395,6 +395,21 @@ lfor command => qw/sync/, sub {
 				};
 
 			}
+		}
+	} elsif (command() eq "retrieve_inventory") {
+		my @filecounts = (0, 1, 2, 10, 60);
+		lfor inventory_count => 0, 1, 2, sub {
+		lfor before_files => @filecounts, sub {
+			if (inventory_count()) {
+				lfor after_files => @filecounts, sub {
+					process();
+				};
+			} else {
+				lfor after_files => 0, sub {
+					process();
+				}
+			}
+		};
 		}
 	}
 };

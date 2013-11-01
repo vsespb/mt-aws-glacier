@@ -27,6 +27,7 @@ our $PPID = $$;
 our $GLOBAL_DIR = "$BASE_DIR/$PPID";
 
 our $DEFAULT_PARTSIZE = 64;
+our $DEFAULT_CONCURRENCY = 30;
 
 our $data;
 our $_current_task;
@@ -467,6 +468,102 @@ sub process_sync_new
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
+sub process_retrieve_inventory
+{
+	empty_dir $DIR;
+
+	my %opts;
+	set_vault \%opts;
+	$opts{dir} = my $root_dir = "$DIR/root";
+
+	mkpath $opts{dir};
+	
+	my $content = get_file_body('normal', 1);
+	my $filenames_encoding = 'UTF-8';
+	
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = $filenames_encoding;
+	$opts{'filenames-encoding'} = $filenames_encoding;
+
+	$opts{concurrency} = $DEFAULT_CONCURRENCY;
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+	for (1..before_files()) {
+		create_file($filenames_encoding, $root_dir, "before_file_$_", $content);
+	}
+	with_newfsm {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	};
+	empty_dir $root_dir;
+
+	$opts{'max-number-of-files'} = 100_000;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	
+
+	with_newfsm {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/config terminal-encoding vault filenames-encoding/]) if inventory_count() >= 1;
+	};
+	
+	empty_dir $root_dir;
+
+	for (1..after_files()) {
+		create_file($filenames_encoding, $root_dir, "after_file_$_", $content);
+	}
+	with_newfsm {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	};
+	
+	$opts{'max-number-of-files'} = 100_000;
+	{
+		local $opts{filter} = '+after_files* -';
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	}
+	
+	with_newfsm {
+		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/config terminal-encoding vault filenames-encoding/]) if inventory_count() >= 2;
+	};
+	
+	my $new_journal = "$journal_fullname.new";
+	with_newfsm {
+		local $opts{'new-journal'} = $new_journal;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'download-inventory', \%opts, [qw/config new-journal terminal-encoding vault filenames-encoding/]);
+	};
+	
+	my ($is_before, $is_after) = (0, 0);
+	
+	if (inventory_count()) {
+		open my $f, "<", $new_journal or confess;
+		while (<$f>) {
+			$is_before++ if /\tbefore_file/;
+			$is_after++ if /\tafter_file/;
+		}
+		close $f;
+	} else {
+		confess if -s $new_journal; # TODO: -s or -e ?
+	}
+	
+	if (inventory_count() == 2) {
+		confess unless $is_before == before_files();
+		confess if $is_after;# TODO: THAt's a bug. line above is correct
+	} elsif (inventory_count() == 2) {
+		confess unless $is_before == before_files();
+		confess if $is_after;
+	}
+	
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+}
+
 sub process_sync_modified
 {
 	empty_dir $DIR;
@@ -673,6 +770,8 @@ sub process
 		} elsif (subcommand() eq 'sync_missing') {
 			process_sync_missing();
 		}
+	} elsif (get "command" eq 'retrieve_inventory') {
+		process_retrieve_inventory();
 	}
 }
 

@@ -50,6 +50,7 @@ use App::MtAws::ChildWorker;
 # if NEWFSM
 use App::MtAws::QueueJob::CreateVault;
 use App::MtAws::QueueJob::DeleteVault;
+use App::MtAws::QueueJob::RetrieveInventory;
 # else
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
@@ -284,7 +285,9 @@ END
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrieveInventory->new());
+			my $ft = $ENV{NEWFSM} ?
+				App::MtAws::QueueJob::RetrieveInventory->new() :
+				App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrieveInventory->new());
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'download-inventory') {
