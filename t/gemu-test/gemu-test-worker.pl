@@ -503,10 +503,14 @@ sub process_retrieve_inventory
 	with_newfsm {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 	};
+	
 	empty_dir $root_dir;
-
 	$opts{'max-number-of-files'} = 100_000;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	{
+		local $opts{filter} = '+before_file* -';
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding filter/]);
+		confess unless $out =~ /Retrieved Archive/ || !before_files();
+	}
 	
 
 	with_newfsm {
@@ -521,11 +525,13 @@ sub process_retrieve_inventory
 	with_newfsm {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 	};
-	
+
+	empty_dir $root_dir;
 	$opts{'max-number-of-files'} = 100_000;
 	{
-		local $opts{filter} = '+after_files* -';
-		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+		local $opts{filter} = '+after_file* -';
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding filter/]);
+		confess unless $out =~ /Retrieved Archive/ || !after_files();
 	}
 	
 	with_newfsm {

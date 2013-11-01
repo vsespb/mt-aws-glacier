@@ -42,7 +42,7 @@ sub on_download
 	my ($self) = @_;
 	return state "wait", task "inventory_download_job", { job_id => $self->{job_id} } => sub {
 		my ($args, $attachment) = @_;
-		$self->{inventory_raw_ref} = $attachment || confess; # we don't expect undef here!
+		$self->{inventory_raw_ref} = $attachment || confess; # we don't expect undef/FALSE here. only scalar ref
 		state("done")
 	}
 }

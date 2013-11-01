@@ -397,7 +397,7 @@ lfor command => qw/sync retrieve_inventory/, sub {
 			}
 		}
 	} elsif (command() eq "retrieve_inventory") {
-		my @filecounts = (0, 1, 2, 10, 60);
+		my @filecounts = (0, 1, 2, 10, 60, 110);
 		lfor inventory_count => 0, 1, 2, sub {
 		lfor before_files => @filecounts, sub {
 			if (inventory_count()) {
