@@ -110,6 +110,7 @@ t/integration/utf8.t
 t/integration/utf8_journal.t
 t/integration/utf8_line_protocol.t
 t/lib/DeleteTest.pm
+t/lib/JobListEmulator.pm
 t/lib/JournalTest.pm
 t/lib/LCGRandom.pm
 t/lib/MyQueueEngine.pm
@@ -117,11 +118,13 @@ t/lib/QueueHelpers.pm
 t/lib/TestUtils.pm
 t/lib/UploadMultipartTest.pm
 t/lib/VerifyTest.pm
+t/libtest/job_list_emulator_test.t
 t/libtest/lcg_random.t
 t/unit/cmd_check_local_hash.t
 t/unit/cmd_download_inventory.t
 t/unit/cmd_retrieve.t
 t/unit/cmd_sync.t
+t/unit/cmd_sync_old.t
 t/unit/config_engine_new.t
 t/unit/config_engine_parse.t
 t/unit/exceptions.t
@@ -147,6 +150,7 @@ t/unit/queue_job/create_vault.t
 t/unit/queue_job/delete.t
 t/unit/queue_job/delete_vault.t
 t/unit/queue_job/download_inventory.t
+t/unit/queue_job/fetch_and_download_inventory.t
 t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_finish.t
