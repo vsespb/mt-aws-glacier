@@ -32,7 +32,7 @@ use List::Util qw/first/;
 use Scalar::Util qw/looks_like_number/;
 
 use Test::Spec;
-use Test::More tests => 490;
+use Test::More;
 use Test::Deep;
 
 use Data::Dumper;
@@ -42,6 +42,9 @@ use App::MtAws::Journal;
 require App::MtAws::Command::Sync;
 
 warning_fatal();
+
+plan skip_all => 'Skipping this test for old FSM' unless $ENV{NEWFSM};
+plan tests => 490;
 
 describe "command" => sub {
 	my $j;

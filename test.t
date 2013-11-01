@@ -43,7 +43,7 @@ use MIME::Base64;
 use Digest::SHA ();
 # /build requirements
 
-my $testplan = 82;
+my $testplan = 83;
 
 my $harness = TAP::Harness->new({
     formatter_class => 'TAP::Formatter::Console',
