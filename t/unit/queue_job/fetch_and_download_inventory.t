@@ -62,7 +62,7 @@ sub add_archive_fixture
 				ArchiveId => "archive$_",
 				ArchiveSizeInBytes => 123+$_,
 				ArchiveSHA256TreeHash => "hash$_",
-				Completed => 'true',
+				Completed => JSON_XS_TRUE,
 				CompletionDate => 'somedate$_',
 				CreationDate => 'somedate$_',
 				StatusCode => 'Succeeded',
@@ -80,7 +80,7 @@ sub add_inventory_fixture
 		map {
 			{
 				Action => 'InventoryRetrieval',
-				Completed => 'true',
+				Completed => JSON_XS_TRUE,
 				CompletionDate => 'somedate$_',
 				CreationDate => 'somedate$_',
 				StatusCode => 'Succeeded',

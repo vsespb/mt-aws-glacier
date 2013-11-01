@@ -42,7 +42,7 @@ sub add_page_fixture
 		map {
 			{
 				Action => 'InventoryRetrieval',
-				Completed => 'true',
+				Completed => JSON_XS_TRUE,
 				CompletionDate => 'somedate$_',
 				CreationDate => 'somedate$_',
 				StatusCode => 'Succeeded',

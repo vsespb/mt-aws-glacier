@@ -25,7 +25,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 27;
+use Test::More tests => 31;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
@@ -218,6 +218,20 @@ warning_fatal();
 		ok ( (!! is_posix_root()) == (!! ($>==0)) ); # double check, as it's cached
 	}
 
+}
+
+{
+	use JSON::XS;
+	
+	my $json = JSON::XS->new->utf8->allow_nonref;
+	
+	my $s = $json->encode({myfield => JSON_XS_TRUE});
+	like $s, qr/\:\s*true\s*\}/;
+	ok $json->decode($s)->{myfield};
+	
+	$s = $json->encode({myfield => JSON_XS_FALSE});
+	like $s, qr/\:\s*false\s*\}/;
+	ok !$json->decode($s)->{myfield};
 }
 
 1;

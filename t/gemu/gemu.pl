@@ -284,7 +284,7 @@ sub child_worker
 						ArchiveId => $j->{archive_id}||confess("1 archive_id"),
 						ArchiveSizeInBytes => $j->{archive_size}||confess("2 archive size"),
 						ArchiveSHA256TreeHash => $j->{treehash}||confess("3 treehash"),
-						Completed => 'true',
+						Completed => \1,
 						CompletionDate => $j->{completion_date}||confess("4 completion date"),
 						CreationDate => $j->{creation_date}||confess("5 creation date"),
 						StatusCode => "Succeeded",
@@ -293,7 +293,7 @@ sub child_worker
 				} elsif ($j->{type} eq 'inventory-retrieval') {
 					push @jobs, {
 						Action => 'InventoryRetrieval',
-						Completed => 'true',
+						Completed => \1,
 						CompletionDate => $j->{completion_date}||confess("4 completion date"),
 						CreationDate => $j->{creation_date}||confess("5 creation date"),
 						StatusCode => "Succeeded",
