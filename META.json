@@ -272,6 +272,14 @@
          "file" : "lib/App/MtAws/QueueJob/DeleteVault.pm",
          "version" : "1.056"
       },
+      "App::MtAws::QueueJob::DownloadInventory" : {
+         "file" : "lib/App/MtAws/QueueJob/DownloadInventory.pm",
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::FetchAndDownloadInventory" : {
+         "file" : "lib/App/MtAws/QueueJob/FetchAndDownloadInventory.pm",
+         "version" : "1.056"
+      },
       "App::MtAws::QueueJob::Iterator" : {
          "file" : "lib/App/MtAws/QueueJob/Iterator.pm",
          "version" : "1.056"
@@ -286,6 +294,10 @@
       },
       "App::MtAws::QueueJob::MultipartPart" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartPart.pm",
+         "version" : "1.056"
+      },
+      "App::MtAws::QueueJob::RetrieveInventory" : {
+         "file" : "lib/App/MtAws/QueueJob/RetrieveInventory.pm",
          "version" : "1.056"
       },
       "App::MtAws::QueueJob::Upload" : {

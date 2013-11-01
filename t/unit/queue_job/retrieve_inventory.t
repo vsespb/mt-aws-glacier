@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2013  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
@@ -18,33 +20,39 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package App::MtAws::QueueJob::DownloadInventory;
-
-our $VERSION = '1.056';
-
 use strict;
 use warnings;
-use Carp;
-use File::stat;
-
+use Test::More tests => 5;
+use Test::Deep;
+use FindBin;
+use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
-use base 'App::MtAws::QueueJob';
+use App::MtAws::QueueJob::RetrieveInventory;
+use DeleteTest;
+use QueueHelpers;
+use TestUtils;
 
-sub init
-{
-	my ($self) = @_;
-	$self->{job_id} || confess;
-	$self->enter('download');
-}
+warning_fatal();
 
-sub on_download
-{
-	my ($self) = @_;
-	return state "wait", task "inventory_download_job", { job_id => $self->{job_id} } => sub {
-		my ($args, $attachment) = @_;
-		$self->{inventory_raw_ref} = $attachment || confess "no attachment"; # we don't expect undef/FALSE here. only scalar ref
-		state("done")
-	}
-}
+use Data::Dumper;
+
+my $j = App::MtAws::QueueJob::RetrieveInventory->new();
+cmp_deeply my $res = $j->next,
+	App::MtAws::QueueJobResult->full_new(
+		task => {
+			args => {
+			},
+			action => 'retrieve_inventory_job',
+			cb => test_coderef,
+			cb_task_proxy => test_coderef,
+		},
+		code => JOB_OK,
+	);
+
+expect_wait($j);
+call_callback($res);
+expect_done($j);
+
 
 1;
+

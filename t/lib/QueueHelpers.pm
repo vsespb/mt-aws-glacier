@@ -28,7 +28,7 @@ use App::MtAws::QueueJobResult;
 require Exporter;
 use base qw/Exporter/;
 
-our @EXPORT = qw/test_coderef expect_done expect_wait call_callback/;
+our @EXPORT = qw/test_coderef expect_done expect_wait call_callback call_callback_with_attachment/;
 
 sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 
@@ -50,6 +50,12 @@ sub call_callback
 {
 	my $res = shift;
 	$res->{task}{cb_task_proxy}->(@_ ? {@_} : @_);
+}
+
+sub call_callback_with_attachment
+{
+	my ($res, $data, $attachment) = @_;
+	$res->{task}{cb_task_proxy}->($data, $attachment);
 }
 
 1;
