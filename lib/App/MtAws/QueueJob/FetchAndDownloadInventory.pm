@@ -44,7 +44,10 @@ sub _get_inventory_entries
 	my $json = JSON::XS->new->allow_nonref;
 	my $scalar = $json->decode($response);
 	return $scalar->{Marker}, map {
-		$_->{Completed} = !! $_->{Completed}; # get rid of JSON::XS boolean object, just in case
+		# get rid of JSON::XS boolean object, just in case.
+		# also JSON::XS between versions 1.0 and 2.1 (inclusive) do not allow to modify this field
+		# (modification of read only error thrown)
+		$_->{Completed} = !!(delete $_->{Completed});
 		if ($_->{Action} eq 'InventoryRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded') {
 			$_
 		} else {
