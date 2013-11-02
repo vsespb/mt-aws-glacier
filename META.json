@@ -61,7 +61,7 @@
             "IO::Handle" : "0",
             "IO::Pipe" : "0",
             "IO::Select" : "0",
-            "JSON::XS" : "0",
+            "JSON::XS" : "1",
             "LWP" : "5.803",
             "List::Util" : "1.11",
             "POSIX" : "0",

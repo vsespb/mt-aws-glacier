@@ -221,7 +221,7 @@ warning_fatal();
 }
 
 {
-	use JSON::XS;
+	use JSON::XS 1;
 	
 	my $json = JSON::XS->new->utf8->allow_nonref;
 	

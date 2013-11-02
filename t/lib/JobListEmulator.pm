@@ -22,7 +22,7 @@ package JobListEmulator;
 use strict;
 use warnings;
 use Carp;
-use JSON::XS;
+use JSON::XS 1;
 
 sub new
 {

@@ -57,7 +57,7 @@ my $build = Module::Build->new(
 
 		'LWP' => '5.803', # ancient CentOS 5.x version
 		'HTTP::Request' => 0, # either shipped with LWP, or prereq by LWP, does not contain correct version, sometimes
-		'JSON::XS' => 0,
+		'JSON::XS' => '1',
 
 
 		# core modules for Perl > 5.8.x
