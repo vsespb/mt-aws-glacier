@@ -22,13 +22,14 @@ package QueueHelpers;
 
 use strict;
 use warnings;
-use Test::Deep;
 use App::MtAws::QueueJobResult;
 
 require Exporter;
 use base qw/Exporter/;
 
 our @EXPORT = qw/test_coderef expect_done expect_wait call_callback call_callback_with_attachment/;
+
+use Test::Deep; # should be last line, after EXPORT stuff, otherwise versions ^(0\.089|0\.09[0-9].*) do something nastly with exports
 
 sub test_coderef { code sub { ref $_[0] eq 'CODE' } }
 
