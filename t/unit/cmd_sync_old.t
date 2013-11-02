@@ -24,6 +24,8 @@ use strict;
 use warnings;
 use utf8;
 
+BEGIN { $ENV{NEWFSM} = 0 };
+
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 
@@ -43,7 +45,6 @@ require App::MtAws::Command::Sync;
 
 warning_fatal();
 
-plan skip_all => 'Skipping this test for new FSM' if $ENV{NEWFSM};
 plan tests => 490;
 
 describe "command" => sub {
