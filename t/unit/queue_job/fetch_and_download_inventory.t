@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 226;
+use Test::More tests => 244;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -37,6 +37,80 @@ use TestUtils;
 warning_fatal();
 
 use Data::Dumper;
+
+
+# testing JSON parsing with real Amazon data
+
+{
+	my $sample1 = <<'END';
+	{"JobList":[
+	{"Action":"InventoryRetrieval","ArchiveId":null,"ArchiveSHA256TreeHash":null,"ArchiveSizeInBytes":null,"Completed":true,
+	"CompletionDate":"2013-11-01T22:57:23.968Z",
+	"CreationDate":"2013-11-01T19:01:19.997Z","InventorySizeInBytes":45012,"JobDescription":null,"JobId":
+	"nx-OpZomma5IAaZTlW4L6pYufG6gLhqRrSC1WN-VJFJyr3qKasY8gduswiIOzGQjfrvYiI8o7NvWmghBaMi-Mh3n_xzq",
+	"RetrievalByteRange":null,"SHA256TreeHash":null,"SNSTopic":null,"StatusCode":"Succeeded","StatusMessage":"Succeeded",
+	"VaultARN":"arn:aws:glacier:eu-west-1:112345678901:vaults/xyz"}],"Marker":null}
+END
+	
+	my ($marker, $first, @others) = App::MtAws::QueueJob::FetchAndDownloadInventory::_get_inventory_entries($sample1);
+	
+	ok ! defined $marker;
+	ok ! @others;
+	
+	ok ! defined $first->{RetrievalByteRange};
+	ok ! defined $first->{JobDescription};
+	ok ! defined $first->{ArchiveSHA256TreeHash};
+	ok ! defined $first->{ArchiveSizeInBytes};
+	ok ! defined $first->{ArchiveId};
+	ok ! defined $first->{SHA256TreeHash};
+	ok ! defined $first->{SNSTopic};
+	is $first->{InventorySizeInBytes}, 45012;
+	is $first->{CompletionDate}, '2013-11-01T22:57:23.968Z';
+	is $first->{CreationDate}, '2013-11-01T19:01:19.997Z';
+	ok $first->{Completed};
+	ok !!$first->{Completed};
+	is $first->{JobId}, 'nx-OpZomma5IAaZTlW4L6pYufG6gLhqRrSC1WN-VJFJyr3qKasY8gduswiIOzGQjfrvYiI8o7NvWmghBaMi-Mh3n_xzq';
+	is $first->{VaultARN}, 'arn:aws:glacier:eu-west-1:112345678901:vaults/xyz';
+	
+}
+
+
+# testing that booleans work
+{
+	my $sample1 = <<'END';
+	{"JobList":[
+	{"Action":"InventoryRetrieval","ArchiveId":null,"ArchiveSHA256TreeHash":null,"ArchiveSizeInBytes":null,"Completed":false,
+	"CompletionDate":"2013-11-01T22:57:23.968Z",
+	"CreationDate":"2013-11-01T19:01:19.997Z","InventorySizeInBytes":45012,"JobDescription":null,"JobId":
+	"nx-OpZomma5IAaZTlW4L6pYufG6gLhqRrSC1WN-VJFJyr3qKasY8gduswiIOzGQjfrvYiI8o7NvWmghBaMi-Mh3n_xzq",
+	"RetrievalByteRange":null,"SHA256TreeHash":null,"SNSTopic":null,"StatusCode":"Succeeded","StatusMessage":"Succeeded",
+	"VaultARN":"arn:aws:glacier:eu-west-1:112345678901:vaults/xyz"}],"Marker":null}
+END
+	
+	my ($marker, $first, @others) = App::MtAws::QueueJob::FetchAndDownloadInventory::_get_inventory_entries($sample1);
+	
+	ok !$first->{Completed};
+}
+
+# testing that marker works
+{
+	my $sample1 = <<'END';
+	{"JobList":[
+	{"Action":"InventoryRetrieval","ArchiveId":null,"ArchiveSHA256TreeHash":null,"ArchiveSizeInBytes":null,"Completed":true,
+	"CompletionDate":"2013-11-01T22:57:23.968Z",
+	"CreationDate":"2013-11-01T19:01:19.997Z","InventorySizeInBytes":45012,"JobDescription":null,"JobId":
+	"nx-OpZomma5IAaZTlW4L6pYufG6gLhqRrSC1WN-VJFJyr3qKasY8gduswiIOzGQjfrvYiI8o7NvWmghBaMi-Mh3n_xzq",
+	"RetrievalByteRange":null,"SHA256TreeHash":null,"SNSTopic":null,"StatusCode":"Succeeded","StatusMessage":"Succeeded",
+	"VaultARN":"arn:aws:glacier:eu-west-1:112345678901:vaults/xyz"}],"Marker":"somemarker"}
+END
+	
+	my ($marker, $first, @others) = App::MtAws::QueueJob::FetchAndDownloadInventory::_get_inventory_entries($sample1);
+	
+	is $marker, "somemarker";
+}
+
+
+# integration testing
 
 sub add_archive_fixture
 {

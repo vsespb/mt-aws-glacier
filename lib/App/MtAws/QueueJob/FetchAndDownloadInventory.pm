@@ -38,29 +38,39 @@ sub init
 	$self->enter("list");
 }
 
+sub _get_inventory_entries
+{
+	my ($response) = @_;
+	my $json = JSON::XS->new->allow_nonref;
+	my $scalar = $json->decode($response);
+	return $scalar->{Marker}, map {
+		$_->{Completed} = !! $_->{Completed}; # get rid of JSON::XS boolean object, just in case
+		if ($_->{Action} eq 'InventoryRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded') {
+			$_
+		} else {
+			();
+		}
+	} @{$scalar->{JobList}};
+}
+
 sub on_list
 {
 	my ($self) = @_;
 	return state "wait", task "inventory_fetch_job", {  marker => $self->{marker} } => sub {
 		my ($args) = @_;
 
-		my $json = JSON::XS->new->allow_nonref;
-		my $scalar = $json->decode( $args->{response} || confess);
-
-		for my $job (@{$scalar->{JobList}}) {
-			if ($job->{Action} eq 'InventoryRetrieval' && $job->{Completed} && $job->{StatusCode} eq 'Succeeded') {
-				# we found inventory on current job listing page
-				$self->{found_job} = $job->{JobId} || confess;
-				return state("download");
-			}
+		my ($marker, @jobs) = _get_inventory_entries ( $args->{response} || confess );
+		if (@jobs) {
+			my $j = shift @jobs;
+			$self->{found_job} = $j->{JobId} || confess;
+			return state 'download';
 		}
-		
-		if ($scalar->{Marker}) {
-			$self->{marker} = $scalar->{Marker};
-			return state("list");
+		if ($marker) {
+			$self->{marker} = $marker;
+			return state 'list';
 		} else {
 			$self->{inventory_raw_ref} = undef;
-			return state "done";
+			return state 'done';
 		}
 		
 	}
