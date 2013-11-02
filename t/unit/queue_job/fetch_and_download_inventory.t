@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 235;
+use Test::More tests => 226;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -37,20 +37,6 @@ use TestUtils;
 warning_fatal();
 
 use Data::Dumper;
-
-for (1, 0) {
-	my $j = App::MtAws::QueueJob::FetchAndDownloadInventory->new();
-	my $res = $j->next,
-	expect_wait($j);
-	ok eval { call_callback($res, response => $_); 1; }, "should accept any defined() response"
-}
-
-for (undef) {
-	my $j = App::MtAws::QueueJob::FetchAndDownloadInventory->new();
-	my $res = $j->next,
-	expect_wait($j);
-	ok !eval { call_callback($res, response => $_); 1; }, "should not accept undef response"
-}
 
 sub add_archive_fixture
 {
@@ -131,6 +117,10 @@ sub expect_job_id
 	}
 	
 }
+
+# that pretty complex test was invented when old FetchAndDownloadInventory implementation was alive
+# (example in revision 87eff2b3290008448b2a2eb352964666a91a6ac8 )
+# it's possible that some tested cases look now unneede
 
 for my $before_archives (0, 1, 2, 3) {
 	for my $after_archives (0, 1, 2, 3) {
