@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 244;
+use Test::More tests => 245;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -68,6 +68,7 @@ END
 	is $first->{CompletionDate}, '2013-11-01T22:57:23.968Z';
 	is $first->{CreationDate}, '2013-11-01T19:01:19.997Z';
 	ok $first->{Completed};
+	is ref($first->{Completed}), ''; # test that it's not overloaded boolean obj
 	ok !!$first->{Completed};
 	is $first->{JobId}, 'nx-OpZomma5IAaZTlW4L6pYufG6gLhqRrSC1WN-VJFJyr3qKasY8gduswiIOzGQjfrvYiI8o7NvWmghBaMi-Mh3n_xzq';
 	is $first->{VaultARN}, 'arn:aws:glacier:eu-west-1:112345678901:vaults/xyz';
@@ -87,9 +88,9 @@ END
 	"VaultARN":"arn:aws:glacier:eu-west-1:112345678901:vaults/xyz"}],"Marker":null}
 END
 	
-	my ($marker, $first, @others) = App::MtAws::QueueJob::FetchAndDownloadInventory::_get_inventory_entries($sample1);
+	my ($marker, @others) = App::MtAws::QueueJob::FetchAndDownloadInventory::_get_inventory_entries($sample1);
 	
-	ok !$first->{Completed};
+	ok ! @others;
 }
 
 # testing that marker works

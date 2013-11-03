@@ -47,7 +47,7 @@ sub _get_inventory_entries
 		# get rid of JSON::XS boolean object, just in case.
 		# also JSON::XS between versions 1.0 and 2.1 (inclusive) do not allow to modify this field
 		# (modification of read only error thrown)
-		$_->{Completed} = !!(delete $_->{Completed}); # TODO: test that we actually do convert to simple scalar
+		$_->{Completed} = !!(delete $_->{Completed});
 		if ($_->{Action} eq 'InventoryRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded') {
 			$_
 		} else {
