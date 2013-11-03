@@ -24,12 +24,30 @@ use strict;
 use warnings;
 use Test::More;
 use FindBin;
+use Carp;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 
 plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
 
-require Test::Tabs;
 my $basedir = "$FindBin::RealBin/../..";
-Test::Tabs::all_perl_files_ok( map { "$basedir/$_" } qw!lib t/unit t/integration t/unit/queue_job t/lib t/libtest!);
+my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/unit/queue_job t/lib t/libtest!;
+
+for my $dir (@dirs) {
+	for my $filename (<$dir/*>) {
+		open my $f, "<", $filename or die $!;
+		my $str = '';
+		local $_;
+		while (<$f>) {
+			$str .= 'E' if /\bExporter\b|\@EXPORT/;
+			$str .= 'D' if /use\s+Test::Deep/;
+		}
+		close $f;
+		$str =~ /D.*E/ and confess
+			"$filename ($str) - ERROR: Test::Deep should never appear before use of Exporter - some bugs in T::D 0.089|0.09[0-9]"
+	}
+}
+
+require Test::Tabs;
+Test::Tabs::all_perl_files_ok(@dirs);
 
 1;
