@@ -23,6 +23,7 @@ our $GLACIER='../../mtglacier';
 our $N;
 our $VERBOSE = 0;
 our $FASTMODE = 0;
+our $STATE_FILE = undef;
 our $PPID = $$;
 our $GLOBAL_DIR = "$BASE_DIR/$PPID";
 
@@ -34,7 +35,7 @@ our $_current_task;
 our $_current_task_stack;
 our $_global_cache = {};
 
-GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE);
+GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE);
 $N ||= 1;
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
@@ -78,6 +79,7 @@ sub with_task
 {
 	local $_current_task_stack = [];
 	local $_current_task = shift;
+	
 	eval {
 		alarm 180;
 		shift->();
@@ -94,6 +96,13 @@ sub with_task
 		print "# OK $_current_task\n";
 		print_current_task @$_current_task_stack if $VERBOSE;
 	};
+	if (defined $STATE_FILE) {
+		getlock "state_file", sub {
+			open my $f, ">>", $STATE_FILE or confess $!;
+			print $f $_current_task, "\n";
+			close $f or confess $!;
+		}
+	}
 }
 
 sub push_command
@@ -792,7 +801,13 @@ sub process_task
 
 sub get_tasks
 {
-	my @tasks = map { chomp; $_ } <STDIN>;
+	my %existing_tasks;
+	if (defined $STATE_FILE && -e $STATE_FILE) {
+		open my $f, "<", $STATE_FILE or confess "cannot open $STATE_FILE $!";
+		%existing_tasks = map { $_ => 1 } map { chomp; $_ } <$f>;
+		close $f or confess $!;
+	}
+	my @tasks = grep { !$existing_tasks{$_} } map { chomp; $_ } <STDIN>;
 	my $i = 0;
     part { $i++ % $N; } @tasks;
 }
