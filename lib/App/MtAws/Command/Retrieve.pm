@@ -28,7 +28,23 @@ use utf8;
 use Carp;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use App::MtAws::Utils;
+
+# if NEWFSM
+use App::MtAws::QueueJob::Retrieve;
+use App::MtAws::QueueJob::Iterator;
+# else
 use App::MtAws::Job::FileListRetrieval;
+# end
+
+sub next_retrieve
+{
+	my ($filelistref) = @_;
+	if (my $rec = shift @{ $filelistref }) {
+		return App::MtAws::QueueJob::Retrieve->new(map { $_ => $rec->{$_}} qw/archive_id filename relfilename/ );
+	} else {
+		return;
+	}
+}
 
 sub run
 {
@@ -45,8 +61,13 @@ sub run
 					print "Will RETRIEVE archive $_->{archive_id} (filename $_->{relfilename})\n"
 				}
 			} else {
+				my $ft;
+				if ($ENV{NEWFSM}) {
+					$ft = App::MtAws::QueueJob::Iterator->new(iterator => sub { next_retrieve(\@filelist) });
+				} else {
+					$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListRetrieval->new(archives => \@filelist ));
+				}
 				$j->open_for_write();
-				my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListRetrieval->new(archives => \@filelist ));
 				my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 				die unless $R;
 				$j->close_for_write();
@@ -57,7 +78,7 @@ sub run
 	}
 }
 
-sub get_file_list
+sub get_file_list # TODO: optimize as lazy code
 {
 	my ($options, $j) = @_;
 	my $files = $j->{journal_h};

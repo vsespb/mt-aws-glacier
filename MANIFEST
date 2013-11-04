@@ -49,12 +49,17 @@ lib/App/MtAws/QueueJob.pm
 lib/App/MtAws/QueueJob/CreateVault.pm
 lib/App/MtAws/QueueJob/Delete.pm
 lib/App/MtAws/QueueJob/DeleteVault.pm
+lib/App/MtAws/QueueJob/Download.pm
 lib/App/MtAws/QueueJob/DownloadInventory.pm
+lib/App/MtAws/QueueJob/DownloadSegments.pm
+lib/App/MtAws/QueueJob/DownloadSingle.pm
+lib/App/MtAws/QueueJob/FetchAndDownload.pm
 lib/App/MtAws/QueueJob/FetchAndDownloadInventory.pm
 lib/App/MtAws/QueueJob/Iterator.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
 lib/App/MtAws/QueueJob/MultipartFinish.pm
 lib/App/MtAws/QueueJob/MultipartPart.pm
+lib/App/MtAws/QueueJob/Retrieve.pm
 lib/App/MtAws/QueueJob/RetrieveInventory.pm
 lib/App/MtAws/QueueJob/Upload.pm
 lib/App/MtAws/QueueJob/UploadMultipart.pm

@@ -51,6 +51,7 @@ use App::MtAws::ChildWorker;
 use App::MtAws::QueueJob::CreateVault;
 use App::MtAws::QueueJob::DeleteVault;
 use App::MtAws::QueueJob::RetrieveInventory;
+use App::MtAws::QueueJob::FetchAndDownload;
 # else
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
@@ -268,7 +269,12 @@ END
 						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n" for ($j->latest($_));
 					}
 				} else {
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrievalFetch->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
+					my $ft;
+					if ($ENV{NEWFSM}) {
+						$ft = App::MtAws::QueueJob::FetchAndDownload->new('segment-size' => $options->{file_downloads}{'segment-size'}, archives => \%filelist);
+					} else {
+						$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrievalFetch->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
+					}
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 				}
