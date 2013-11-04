@@ -399,7 +399,7 @@ sub gen_otherfiles
 	my $i = 0;
 	map {
 		++$i;
-		{ file_id => get_first_file_body('normal', $_), dest_filename => "otherfile$i" };
+		{ file_id => get_first_file_body('normal', $_), dest_filename => "otherfile$i" }; # "otherfile" is special name, used in regexps
 	} @sizes;
 }
 
