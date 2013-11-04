@@ -43,7 +43,6 @@ $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDIN, ":encoding(UTF-8)";
 
-
 sub getlock
 {
 	local $@;
@@ -98,7 +97,7 @@ sub with_task
 	};
 	if (defined $STATE_FILE) {
 		getlock "state_file", sub {
-			open my $f, ">>", $STATE_FILE or confess $!;
+			open my $f, ">>:encoding(UTF-8)", $STATE_FILE or confess $!;
 			print $f $_current_task, "\n";
 			close $f or confess $!;
 		}
@@ -325,7 +324,6 @@ sub file_cached
 			close $f;
 			return $data;
 		} else {
-			print STDERR "WR $filename\n";
 			open my $f, ">", $filename or confess $!;
 			binmode $f;
 			my $data = $cb->();
@@ -339,7 +337,6 @@ sub file_cached
 sub cached
 {
 	my ($filename, $cb) = @_;
-	print STDERR "C $filename\n";
 	memory_cached($filename, sub {
 		file_cached($filename, $cb);
 	});
@@ -371,8 +368,10 @@ sub get_file_body
 			print ($f '0') or confess $!;
 		} else {
 			for (1..$filesize) {
-				print($f "x") or confess $!;
+				print($f chr(int rand(256))) or confess $!;
 			}
+			$f->flush();
+			confess(-s $f, ",", $filesize) unless -s $f == $filesize;
 		}
 	};
 }
@@ -384,8 +383,10 @@ sub get_first_file_body
 	return writing_sample_file $name, sub {
 		my ($f) = @_;
 		for (1..$filesize) {
-			print($f "Z") or confess $!;
+			print($f chr(int rand(256))) or confess $!;
 		}
+		$f->flush();
+		confess(-s $f, ",", $filesize) unless -s $f == $filesize;
 	};
 }
 
@@ -425,6 +426,83 @@ sub set_vault
 	my ($opts) = @_;
 	$opts->{vault} = "test".get_uniq_id;
 }
+
+sub process_download
+{
+	empty_dir $DIR;
+
+	my %opts;
+	set_vault \%opts;
+	$opts{dir} = my $root_dir = "$DIR/root";
+
+
+	my $content = get_file_body(filebody(), filesize());
+	create_file(filenames_encoding(), $root_dir, filename(), $content);
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = filenames_encoding();
+
+	$opts{concurrency} = concurrency();
+	$opts{'segment-size'} = segment_size();
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
+
+	{
+		$opts{partsize} = $DEFAULT_PARTSIZE;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding partsize/]);
+	}
+
+	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
+
+	empty_dir $root_dir;
+
+	with_newfsm {
+		$opts{'max-number-of-files'} = 100_000;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/,
+			$opts{'segment-size'} ? ('segment-size') : ()]);
+
+		my ($parts, $full) = (0, 0);
+		for (split ("\n", $out)) {
+			unless (/otherfile/) {
+				if (/Downloaded part of archive/) {
+					$parts++
+				} elsif (/Downloaded archive/) {
+					$full++
+				} else {
+					# other lines
+				}
+			}
+		}
+		if ($opts{'segment-size'} && $opts{'segment-size'}*1024*1024 < filesize()) {
+			use POSIX qw/ceil/;
+			my $part_count = ceil(filesize()/($opts{'segment-size'}*1024*1024));
+			confess unless $parts == $part_count;
+			confess if $full;
+		} else {
+			confess if $parts;
+			confess unless $full;
+		}
+	};
+
+	check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
+	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+}
+
 
 sub process_sync_new
 {
@@ -787,6 +865,10 @@ sub process
 		}
 	} elsif (get "command" eq 'retrieve_inventory') {
 		process_retrieve_inventory();
+	} elsif (get "command" eq 'download') {
+		process_download();
+	} else {
+		confess;
 	}
 }
 
@@ -803,7 +885,7 @@ sub get_tasks
 {
 	my %existing_tasks;
 	if (defined $STATE_FILE && -e $STATE_FILE) {
-		open my $f, "<", $STATE_FILE or confess "cannot open $STATE_FILE $!";
+		open my $f, "<:encoding(UTF-8)", $STATE_FILE or confess "cannot open $STATE_FILE $!";
 		%existing_tasks = map { $_ => 1 } map { chomp; $_ } <$f>;
 		close $f or confess $!;
 	}
