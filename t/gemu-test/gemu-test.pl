@@ -146,16 +146,19 @@ sub gen_filesize
 
 sub roll_partsize
 {
-	my $partsize = shift;
-	if ($partsize eq '1') {
-		1
-	} elsif ($partsize eq '2') {
-		1, 2
-	} elsif ($partsize eq '4') {
-		1, 2, 4
-	} else {
-		confess $partsize;
-	}
+	my $size = shift;
+	my @values = do {
+		if ($size eq '1') {
+			1
+		} elsif ($size eq '2') {
+			1, 2
+		} elsif ($size eq '4') {
+			1, 2, 4
+		} else {
+			confess $size;
+		}
+	};
+	chunk_size_type() eq 'segment_size' ? ('segment_size' => 0, @values) : ('partsize' => @values);
 }
 
 sub roll_concurrency
@@ -178,9 +181,9 @@ sub file_sizes
 {
 	my ($cb, $filesize, $partsize, $concurrency) = (pop, @_);
 	gen_filesize $filesize, sub {
-		lfor partsize =>roll_partsize($partsize), sub {
+		lfor roll_partsize($partsize), sub {
 			lfor concurrency =>roll_concurrency($concurrency), sub {
-				my $r = get("filesize") / (get("partsize")*1024*1024);
+				my $r = get(chunk_size_type()) ? get("filesize") / (get(chunk_size_type())*1024*1024) : 1;
 				if ($r < 3 && get "concurrency" > 2) {
 					# nothing
 				} else {
@@ -340,8 +343,9 @@ sub light_fsm
 	}}}
 }
 
-lfor command => qw/sync retrieve_inventory/, sub {
+lfor command => qw/sync retrieve_inventory download/, sub {
 	if (command() eq "sync") {
+		lfor -chunk_size_type => 'partsize', sub {
 		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
 			if (get "subcommand" eq "sync_new") {
 				# testing filename stuff
@@ -395,7 +399,7 @@ lfor command => qw/sync retrieve_inventory/, sub {
 				};
 
 			}
-		}
+		}}
 	} elsif (command() eq "retrieve_inventory") {
 		my @filecounts = (0, 1, 2, 10, 60, 110);
 		lfor inventory_count => 0, 1, 2, sub {
@@ -411,6 +415,19 @@ lfor command => qw/sync retrieve_inventory/, sub {
 			}
 		};
 		}
+	} elsif (command() eq "download") {
+		lfor -chunk_size_type => 'segment_size', sub {
+		# testing filename stuff
+		heavy_filenames sub {
+			process();
+		};
+		# testing FSM stuff
+		heavy_fsm sub {
+			process();
+		};
+		};
+	} else {
+		confess;
 	}
 };
 
