@@ -102,9 +102,8 @@ sub process
 		} keys %$data
 	));
 
-	return  if $task_seen{$task};
+	return if $task_seen{$task};
 	$task_seen{$task}=1;
-	print $task, "\n";
 }
 
 sub gen_filename
@@ -432,7 +431,9 @@ lfor command => qw/sync retrieve_inventory download/, sub {
 };
 
 
-
+for (sort keys %task_seen) {
+	print $_, "\n";
+}
 
 
 __END__
