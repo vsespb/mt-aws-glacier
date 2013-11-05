@@ -115,6 +115,7 @@ t/integration/utf8.t
 t/integration/utf8_journal.t
 t/integration/utf8_line_protocol.t
 t/lib/DeleteTest.pm
+t/lib/DownloadSingleTest.pm
 t/lib/JobListEmulator.pm
 t/lib/JournalTest.pm
 t/lib/LCGRandom.pm
@@ -155,6 +156,7 @@ t/unit/queue_job/create_vault.t
 t/unit/queue_job/delete.t
 t/unit/queue_job/delete_vault.t
 t/unit/queue_job/download_inventory.t
+t/unit/queue_job/download_single.t
 t/unit/queue_job/fetch_and_download_inventory.t
 t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
