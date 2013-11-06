@@ -36,7 +36,7 @@ sub init
 {
 	my ($self) = @_;
 	$self->{archives}||confess;
-	exists($self->{'segment-size'})||confess;
+	$self->{file_downloads}||confess;
 	$self->{downloads} = [];
 	$self->{marker} = undef;
 	$self->enter("list");
@@ -90,7 +90,7 @@ sub next_download
 	my ($self) = @_;
 	if (my $rec = shift @{ $self->{downloads}}) {
 		return App::MtAws::QueueJob::Download->new( (map { $_ => $rec->{$_}} qw/archive_id filename relfilename size jobid mtime treehash/),
-			'segment-size' => $self->{'segment-size'} );
+			file_downloads => $self->{file_downloads} );
 	} else {
 		return;
 	}

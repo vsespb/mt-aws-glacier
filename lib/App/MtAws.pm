@@ -271,7 +271,7 @@ END
 				} else {
 					my $ft;
 					if ($ENV{NEWFSM}) {
-						$ft = App::MtAws::QueueJob::FetchAndDownload->new('segment-size' => $options->{file_downloads}{'segment-size'}, archives => \%filelist);
+						$ft = App::MtAws::QueueJob::FetchAndDownload->new(file_downloads => $options->{file_downloads}||{}, archives => \%filelist);
 					} else {
 						$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrievalFetch->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
 					}

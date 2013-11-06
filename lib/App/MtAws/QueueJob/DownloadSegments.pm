@@ -37,7 +37,7 @@ sub init
 	$self->{size}||confess;
 	$self->{archive_id}||confess;
 	$self->{jobid}||confess;
-	$self->{'segment-size'}||confess;
+	$self->{file_downloads}{'segment-size'}||confess;
 	defined($self->{relfilename})||confess;
 	defined($self->{filename})||confess;
 	defined($self->{mtime})||confess;
@@ -64,7 +64,7 @@ sub on_download
 	
 	if ($self->{position} < $self->{size}) {
 		my $download_size = $self->{size} - $self->{position};
-		my $segment_size = $self->{'segment-size'}*1048576 or confess;
+		my $segment_size = $self->{file_downloads}{'segment-size'}*1048576 or confess;
 		$download_size = $segment_size if $download_size > $segment_size;
 		
 		my $position_now = $self->{position}; # self->position will change, unlike position_now

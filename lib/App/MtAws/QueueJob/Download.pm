@@ -37,7 +37,7 @@ sub init
 	$self->{archive_id}||confess;
 	defined($self->{relfilename})||confess;
 	defined($self->{filename})||confess;
-	exists($self->{'segment-size'})||confess;
+	$self->{file_downloads}||confess;
 	$self->{jobid}||confess;
 	$self->{size}||confess;
 	defined($self->{mtime})||confess;
@@ -50,8 +50,8 @@ sub on_download
 {
 	my ($self) = @_;
 	
-	my $job = ($self->{'segment-size'} && $self->{size} > $self->{'segment-size'}*1048576) ?
-		App::MtAws::QueueJob::DownloadSegments->new(map { $_ => $self->{$_} } qw/size archive_id jobid segment-size relfilename filename mtime/) :
+	my $job = ($self->{file_downloads}{'segment-size'} && $self->{size} > $self->{file_downloads}{'segment-size'}*1048576) ?
+		App::MtAws::QueueJob::DownloadSegments->new(map { $_ => $self->{$_} } qw/size archive_id jobid file_downloads relfilename filename mtime/) :
 		App::MtAws::QueueJob::DownloadSingle->new(map { $_ => $self->{$_} } qw/archive_id relfilename filename jobid size mtime treehash/);
 	return state("wait"), job($job, sub { state("done") });
 }
