@@ -28,14 +28,15 @@ our %filter;
 our $FILTER='';
 GetOptions ("filter=s" => \$FILTER );
 
-map {
+for (split (' ', $FILTER)) {
 	if (my ($k, $vals) = /^([^=]+)=(.*)$/) {
 		my @vals = split ',', $vals;
 		$filter{$k} = { map { $_ => 1 } @vals };
 	} else {
 		confess $FILTER, $_;
 	}
-} split (' ', $FILTER);
+};
+
 
 binmode STDOUT, ":encoding(UTF-8)";
 
