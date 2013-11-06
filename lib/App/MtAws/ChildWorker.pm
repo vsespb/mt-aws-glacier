@@ -50,17 +50,14 @@ sub process
 
 	my $tochild = $self->{tochild};
 	my $fromchild = $self->{fromchild};
-	my $disp_select = IO::Select->new();
-	$disp_select->add($tochild);
-	do { while (my @ready = $disp_select->can_read()) {
-		for my $fh (@ready) {
-			my ($remote_pid, $action, $taskid, $data, $attachmentref) = get_data($fh);
-			$remote_pid or comm_error();
-			my ($result, $result_attachmentref, $console_out) = $self->process_task($action, $data, $attachmentref);
-			$result->{console_out}=$console_out;
-			send_data($fromchild, 'response', $taskid, $result, $result_attachmentref) or comm_error();
-		}
-	} } until $! != EINTR;
+	while (1) {
+	    my ($remote_pid, $action, $taskid, $data, $attachmentref) = get_data($tochild);
+	    $remote_pid or comm_error(); # we exit() if eof or socket error. we don't distinct
+	    my ($result, $result_attachmentref, $console_out) = $self->process_task($action, $data, $attachmentref);
+	    $result->{console_out}=$console_out;
+	    send_data($fromchild, 'response', $taskid, $result, $result_attachmentref) or comm_error();
+	};
+	# unreachable
 }
 
 sub process_task
