@@ -57,7 +57,7 @@ sub with_forks($$&)
 		$FE = App::MtAws::ForkEngine->new(options => $options);
 		$FE->start_children();
 		if (defined eval {$cb->(); 1;}) {
-			$FE->terminate_children(); # actually, unreachable
+			$FE->terminate_children();
 		} else {
 			dump_error(q{parent});
 			$FE->terminate_children();
