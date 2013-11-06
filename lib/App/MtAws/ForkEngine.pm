@@ -214,8 +214,8 @@ sub terminate_children
 	# close all pipes, just in case select() in child is not interruptable (seems it is under 5.14.2?)
 	# https://rt.perl.org/Ticket/Display.html?id=93428
 	for (values %{$self->{children}}) {
-	    close $_->{fromchild};
-	    close $_->{tochild};
+		close $_->{fromchild};
+		close $_->{tochild};
 	}
 	kill (POSIX::SIGUSR2, keys %{$self->{children}}); # TODO: we terminate all children with SIGUSR2 even on normal exit
 	$SIG{TERM} = 'DEFAULT';
