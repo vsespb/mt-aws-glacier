@@ -1,3 +1,6 @@
+  * Fixed - when downloading inventory there could be Perl warning message ("use initialized ..") in case when some
+  specific metadata (x-amz-archive-description) strings (like empty strings) met. Such metadata can appear if
+  archives were uploaded by 3rd party apps.
 
   * Fixed possible deadlock before process termination (after success run), related to issue
   https://rt.perl.org/Ticket/Display.html?id=93428 - select() is not always interruptable. Issue was reproducible
