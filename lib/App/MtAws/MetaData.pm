@@ -107,12 +107,14 @@ my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
 sub meta_decode
 {
 	my ($str) = @_;
-	my ($marker, $b64) = split(' ', $str);
-	if ($marker eq 'mt1') {
-		return (undef, undef) unless length($b64) <= MAX_SIZE;
+	return (undef, undef) unless defined $str; # protect from undef $str
+	
+	my ($marker, $b64) = split(' ', $str); # split will return empty list if string is empty or contains spaces only
+	if (defined($marker) && $marker eq 'mt1') {
+		return (undef, undef) if !defined $b64 || length($b64) > MAX_SIZE;
 		return _decode_json(_decode_utf8(_decode_b64($b64)));
-	} elsif ($marker eq 'mt2') {
-		return (undef, undef) unless length($b64) <= MAX_SIZE;
+	} elsif (defined($marker) && $marker eq 'mt2') {
+		return (undef, undef) if !defined $b64 || length($b64) > MAX_SIZE;
 		return _decode_json(_decode_b64($b64));
 	} else {
 		return (undef, undef);
