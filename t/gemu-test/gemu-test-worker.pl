@@ -896,7 +896,7 @@ sub get_tasks
 
 empty_dir $BASE_DIR;
 mkpath $GLOBAL_DIR;
-
+$SIG{INT} = sub { die "SIGINT!\n";  };
 my @parts = get_tasks();
 confess if @parts > $N;
 my %pids;
@@ -915,7 +915,7 @@ for my $task (@parts) {
 	}
 }
 
-$SIG{INT} = sub { print STDERR "SIGINT!\n"; };
+
 my $ok = 1;
 while () {
 	my $p = wait();
