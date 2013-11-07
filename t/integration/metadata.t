@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 952;
+use Test::More tests => 963;
 use Test::Deep;
 use FindBin;
 use lib "$FindBin::RealBin/../", "$FindBin::RealBin/../../lib";
@@ -242,15 +242,30 @@ no warnings 'redefine';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
 
+	ok !defined App::MtAws::MetaData::meta_decode(''), 'should return undef, without warning, if input is empty string';
+	ok !defined App::MtAws::MetaData::meta_decode(' '), 'should return undef, without warning, if input is space';
+	ok !defined App::MtAws::MetaData::meta_decode('  '), 'should return undef, without warning, if input is multiple spaces';
+	ok !defined App::MtAws::MetaData::meta_decode(undef), 'should return undef, without warning, if input is undef';
+	ok !defined App::MtAws::MetaData::meta_decode(), 'should return undef, without warning, if input is empty list';
+	
+	for (qw/mt1 mt2/) {
+		ok !defined App::MtAws::MetaData::meta_decode("$_"), 'should return undef, without warning, if input is marker plus empty string';
+		ok !defined App::MtAws::MetaData::meta_decode("$_ "), 'should return undef, without warning, if input is marker plus space';
+		ok !defined App::MtAws::MetaData::meta_decode("$_ "), 'should return undef, without warning, if input is marker plus multiple spaces';
+	}
+
 	ok defined App::MtAws::MetaData::meta_decode('mt2   '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow few spaces';
 	ok defined App::MtAws::MetaData::meta_decode("mt2\t\t"._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow tabs';
 	ok defined App::MtAws::MetaData::meta_decode(" \tmt2\t\t "._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}')), 'should allow leading spaces';
 
 	eval { App::MtAws::MetaData::meta_decode('zzz') };
-	ok $@ eq '', 'should not override eval code';
+	ok $@ eq '', 'should not override eval code'; # it looks now that those tests are broken
 
 	eval { App::MtAws::MetaData::meta_decode('mt2 zzz') };
-	ok $@ eq '', 'should not override eval code';
+	ok $@ eq '', 'should not override eval code'; # it looks now that those tests are broken
+	
+	
+	
 
 }
 
