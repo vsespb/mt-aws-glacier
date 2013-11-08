@@ -9,6 +9,6 @@ do
 rm -rf debian
 mkdir -p debian/source
 scripts/write_debian_files.pl ./packaging debian $DISTRO || exit 1
-debuild 
+debuild -b
 rm -rf debian
 done
