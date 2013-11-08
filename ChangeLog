@@ -1,10 +1,12 @@
+### 2013-11-08 v1.058
+
   * Fixed - when downloading inventory there could be Perl warning message ("use initialized ..") in case when some
   specific metadata (x-amz-archive-description) strings (like empty strings) met. Such metadata can appear if
   archives were uploaded by 3rd party apps.
 
-  * Fixed possible deadlock before process termination (after success run), related to issue
-  https://rt.perl.org/Ticket/Display.html?id=93428 - select() is not always interruptable. Issue was reproducible
-  only under heavy load, under perl 5.14
+  * Fixed possible deadlock before process termination (after success run or after Ctrl-C), related to issue
+  https://rt.perl.org/Ticket/Display.html?id=93428 - select() is not always interruptable. Issue seen
+  under heavy load, under perl 5.14, with concurrency=1 (unlikely affects concurrency modes > 1 )
 
   * Fixed - when deprecated option for command (say, --vault for check-local-hash) was found in config, there was a
   warning that option deprecated, however that should not happen, because everything that is in config should be

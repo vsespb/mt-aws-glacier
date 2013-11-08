@@ -126,6 +126,20 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.058', 1, 'Fri, 8 Nov 2013 21:50:00 +0400', << "END";
+  * Fixed - when downloading inventory there could be Perl warning message ("use initialized ..") in case when some
+  specific metadata (x-amz-archive-description) strings (like empty strings) met. Such metadata can appear if
+  archives were uploaded by 3rd party apps.
+
+  * Fixed possible deadlock before process termination (after success run or after Ctrl-C), related to issue
+  https://rt.perl.org/Ticket/Display.html?id=93428 - select() is not always interruptable. Issue seen
+  under heavy load, under perl 5.14, with concurrency=1 (unlikely affects concurrency modes > 1 )
+
+  * Fixed - when deprecated option for command (say, --vault for check-local-hash) was found in config, there was a
+  warning that option deprecated, however that should not happen, because everything that is in config should be
+  read only when such option required (you should be able to put any unneeded option into config)
+END
+
 	entry '1.056', 2, 'Tue, 17 Oct 2013 16:40:30 +0400', << "END";
   * Initial release for Debian 7
 END
