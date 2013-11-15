@@ -63,6 +63,9 @@ sub test_case
 sub test_with_filename_and_mtime
 {
 	my ($relfilename, $mtime) = @_;
+	
+	# late finish (callbacks called in the end)
+	
 	test_case 15, $relfilename, $mtime, sub {
 		my ($j, $args, $parts) = @_;
 		my @callbacks;
@@ -89,7 +92,7 @@ sub test_with_filename_and_mtime
 		}
 	
 		lcg_srand 444242 => sub {
-			@callbacks = lcg_shuffle @callbacks;
+			@callbacks = lcg_shuffle @callbacks; # late finish, but in random order
 	
 			while (my $cb = shift @callbacks) {
 				$cb->();
@@ -97,6 +100,8 @@ sub test_with_filename_and_mtime
 			}
 		}
 	};
+	
+	# early finish (early calls of callbacks)
 	
 	test_case 11, $relfilename, $mtime, sub {
 		my ($j, $args, $parts) = @_;
@@ -130,6 +135,8 @@ sub test_with_filename_and_mtime
 test_with_filename_and_mtime "somefile", 12345;
 test_with_filename_and_mtime "somefile", 0;
 test_with_filename_and_mtime 0, 12345;
+
+# test case with early/late/random finish
 
 {
 	{

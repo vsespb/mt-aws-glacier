@@ -211,6 +211,8 @@ sub test_case_early_finish
 	};
 }
 
+# TODO: test case with early/late/random finish with MyQueueEngine
+
 sub test_case_full
 {
 	my ($size, $segment_size, $expected_sizes) = @_;
