@@ -1,4 +1,3 @@
-.travis.yml
 bin/mtglacier
 Build.PL
 ChangeLog
@@ -156,6 +155,7 @@ t/unit/queue_job/create_vault.t
 t/unit/queue_job/delete.t
 t/unit/queue_job/delete_vault.t
 t/unit/queue_job/download_inventory.t
+t/unit/queue_job/download_segments.t
 t/unit/queue_job/download_single.t
 t/unit/queue_job/fetch_and_download_inventory.t
 t/unit/queue_job/iterator.t
