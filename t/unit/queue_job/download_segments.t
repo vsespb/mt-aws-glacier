@@ -76,7 +76,7 @@ sub verify_parts
 		$expect_position += $part->{download_size};
 		
 		# manual check that position that we're got are correct
-		is($part->{download_size}, shift @expected, "size matches next size in list") if $expected_sizes;
+		is($part->{download_size}, shift @expected, "size matches next size in list") if $expected_sizes; # _original_ sizes
 		
 		if ($part->{download_size} != $segment_size * ONE_MB) {
 			ok !$odd_size_seen, "current size down not match segment-size, but it's first time";
@@ -118,7 +118,7 @@ sub test_case_lite
 	
 		my $i = 0;
 		while() {
-			confess if $i++ > 1000;
+			confess if $i++ > 1000; # protection
 			my $res = $j->next;
 			if ($res->{code} eq JOB_OK) {
 				push @parts, { download_size => $res->{task}{args}{download_size}, position => $res->{task}{args}{position} };

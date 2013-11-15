@@ -159,7 +159,10 @@ sub expect_job_id
 	my $is_ok = 0;
 	my $job_id = undef;
 	my $ourdata = \"ourdata";
-	for (1..1000) {
+	my $i = 0;
+	while() {
+		confess if $i++ > 1000; # protection
+		
 		my $res = $j->next;
 		if ($res->{code} eq JOB_OK) {
 			if ($res->{task}{action} eq 'inventory_fetch_job') {
