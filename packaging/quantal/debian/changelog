@@ -18,7 +18,7 @@ libapp-mtaws-perl (1.056-0ubuntu2~quantal1~ppa1) quantal; urgency=low
 
   * Initial release for Debian 7
 
- -- Victor Efimov <victor@vsespb.ru>  Tue, 17 Oct 2013 16:40:30 +0400
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 17 Oct 2013 16:40:30 +0400
 
 libapp-mtaws-perl (1.056-0ubuntu1~quantal1~ppa1) quantal; urgency=low
 

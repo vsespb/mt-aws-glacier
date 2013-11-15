@@ -88,7 +88,7 @@ sub write_control
 	my $build_deps = join(", ", @deps, @build_deps);
 	my $deps = join(", ", @deps);
 	my $recommends= join(", ", @recommends);
-	my $recommends_line = "Recommends: $recommends\n" if @recommends;
+	my $recommends_line = @recommends ? "Recommends: $recommends\n" : "";
 	open my $f, ">", $CONTROL or confess;
 	
 	print $f <<"END";
@@ -140,7 +140,7 @@ write_changelog $distro, sub {
   read only when such option required (you should be able to put any unneeded option into config)
 END
 
-	entry '1.056', 2, 'Tue, 17 Oct 2013 16:40:30 +0400', << "END";
+	entry '1.056', 2, 'Thu, 17 Oct 2013 16:40:30 +0400', << "END";
   * Initial release for Debian 7
 END
 
