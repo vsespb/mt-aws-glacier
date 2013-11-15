@@ -60,8 +60,6 @@ sub on_download
 {
 	my ($self) = @_;
 	
-	#$self->{i_tmp} = App::MtAws::IntermediateFile->new(target_file => $self->{filename}, mtime => $self->{mtime}) unless $self->{i_tmp};
-	
 	if ($self->{position} < $self->{size}) {
 		my $download_size = $self->{size} - $self->{position};
 		my $segment_size = $self->{file_downloads}{'segment-size'}*1048576 or confess;

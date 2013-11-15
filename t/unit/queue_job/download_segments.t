@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 669;
+use Test::More tests => 754;
 use Test::Deep;
 use Data::Dumper;
 use Carp;
@@ -76,7 +76,7 @@ sub verify_parts
 		$expect_position += $part->{download_size};
 		
 		# manual check that position that we're got are correct
-		is($part->{download_size}, shift @expected, "size matches next size in list") if @expected;
+		is($part->{download_size}, shift @expected, "size matches next size in list") if $expected_sizes;
 		
 		if ($part->{download_size} != $segment_size * ONE_MB) {
 			ok !$odd_size_seen, "current size down not match segment-size, but it's first time";
@@ -84,6 +84,7 @@ sub verify_parts
 		}
 	}
 	is $expect_position, $size;
+	is scalar @expected, 0;
 }
 
 sub verify_res
@@ -218,6 +219,7 @@ sub test_case_full
 }
 
 # manual testing segment sizes
+
 
 test_case_full ONE_MB, 1, [ONE_MB];
 test_case_full ONE_MB+1, 1, [ONE_MB, 1];
