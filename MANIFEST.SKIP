@@ -78,3 +78,7 @@
 run\-.*\.sh
 ^t/gemu/
 ^t/gemu-test/
+
+^*\.komodoproject
+^\.komodotools/
+^\.travis.yml
