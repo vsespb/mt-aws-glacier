@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 812;
+use Test::More tests => 867;
 use Test::Deep;
 use Data::Dumper;
 use Carp;
@@ -30,6 +30,7 @@ use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::DownloadSegments;
+use DownloadSingleTest;
 use QueueHelpers;
 use LCGRandom;
 use TestUtils;
@@ -40,8 +41,32 @@ warning_fatal();
 
 my $prep = \&prepare_download;
 
-# testing how Download.pm acts like DownloadSegments
+#
+# testing how Download.pm acts like DownloadSingle
+#
+{
+	sub test_case_single
+	{
+		my ($size, $segment_size) = @_;
+		my %opts = (relfilename => 'somefile', archive_id => 'abc', filename => '/tmp/notapath/somefile', jobid => 'somejob',
+			size => $size, mtime => 456, treehash => 'sometreehash' ); # /tmp/notapath/somefile because if code is broken, it'll try create it
+	
+		my $j = App::MtAws::QueueJob::Download->new(%opts, file_downloads => { 'segment-size' => $segment_size });
+		DownloadSingleTest::expect_download_single($j, %opts);
+		expect_done($j);
+	}
+	for my $delta (-30, -2, -1, 0) {
+		test_case_single ONE_MB+$delta, 1;
+		for my $factor (-1, +1) {
+			next if !$delta && $factor < 0; # skip -0, we already have +0
+			test_case_single ONE_MB+$delta*$factor, 2;
+		}
+	}
+}
 
+#
+# testing how Download.pm acts like DownloadSegments
+#
 lcg_srand 667887 => sub {
 	# manual testing segment sizes
 	
