@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 3334;
+use Test::More tests => 812;
 use Test::Deep;
 use Data::Dumper;
 use Carp;
@@ -33,27 +33,23 @@ use App::MtAws::QueueJob::DownloadSegments;
 use QueueHelpers;
 use LCGRandom;
 use TestUtils;
-use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB prepare_download_segments/;
+use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB prepare_download/;
 
 warning_fatal();
 
 
-my $prep = \&prepare_download_segments;
+my $prep = \&prepare_download;
 
-lcg_srand 467287 => sub {
+# testing how Download.pm acts like DownloadSegments
+
+lcg_srand 667887 => sub {
 	# manual testing segment sizes
 	
-	test_case_full $prep, ONE_MB, 1, [ONE_MB];
 	test_case_full $prep, ONE_MB+1, 1, [ONE_MB, 1];
-	test_case_full $prep, ONE_MB-1, 1, [ONE_MB-1];
 	
 	
-	test_case_full $prep, 2*ONE_MB, 2, [2*ONE_MB];
 	test_case_full $prep, 2*ONE_MB+1, 2, [2*ONE_MB, 1];
 	test_case_full $prep, 2*ONE_MB+2, 2, [2*ONE_MB, 2];
-	test_case_full $prep, 2*ONE_MB-1, 2, [2*ONE_MB-1];
-	test_case_full $prep, 2*ONE_MB-2, 2, [2*ONE_MB-2];
-	
 	
 	test_case_full $prep, 4*ONE_MB, 2, [2*ONE_MB, 2*ONE_MB];
 	test_case_full $prep, 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
@@ -61,12 +57,12 @@ lcg_srand 467287 => sub {
 
 	# auto testing segment sizes
 
-	for my $segment (1, 2, 8, 16) {
-		for my $size (2, 3, 15) {
-			if ($size*ONE_MB >= 2*$segment*ONE_MB) { # avoid some unneeded testing
-				for my $delta (-30, -2, -1, 0, 1, 2, 27) {
+	for my $segment (1, 8, 16) {
+		for my $size (2, 15) {
+			if ($size*ONE_MB >= 2*$segment*ONE_MB) { # test only when there should be segments
+				for my $delta (-2, 0, 3) {
 					test_case_lite $prep, $size*ONE_MB+$delta, $segment;
-					test_case_random_finish($prep, $size*ONE_MB+$delta, $segment, $_) for (1..4);
+					test_case_random_finish($prep, $size*ONE_MB+$delta, $segment, $_) for (1, 4);
 				}
 			}
 		}

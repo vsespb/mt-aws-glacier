@@ -25,7 +25,7 @@ use warnings;
 
 require Exporter;
 use base qw/Exporter/;
-our @EXPORT_OK=qw/test_case_full test_case_lite test_case_random_finish ONE_MB/;
+our @EXPORT_OK=qw/test_case_full test_case_lite test_case_random_finish prepare_download_segments prepare_download ONE_MB/;
 
 
 use Test::More;
@@ -34,15 +34,15 @@ use Data::Dumper;
 use Carp;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::DownloadSegments;
+use App::MtAws::QueueJob::Download;
 use QueueHelpers;
 use LCGRandom;
 use TestUtils;
 
 use constant ONE_MB => 1024*1024;
 
-sub test_case
+sub prepare_mock
 {
-	my ($size, $segment_size, $test_cb) = @_;
 	no warnings 'redefine';
 	local *App::MtAws::IntermediateFile::new = sub {
 		bless { _mock => 1, data => \@_}, 'App::MtAws::IntermediateFile';
@@ -55,13 +55,33 @@ sub test_case
 		ok $_[0]->{_mock};
 		$_[0]->{_mock_permanent} = 1;
 	};
-	
-	my %args = (size => $size, archive_id => 'abc', jobid => 'somejob', file_downloads => { 'segment-size' => $segment_size},
-		relfilename => 'def', filename => '/path/def', mtime => 456);
-	
-	my $j = App::MtAws::QueueJob::DownloadSegments->new(%args);
-	
-	$test_cb->($j, { %args, tempfile => "sometempfilename" });
+	shift->();
+}
+
+sub prepare_download_segments
+{
+	my ($size, $segment_size, $test_cb) = @_;
+	prepare_mock sub {
+		my %args = (size => $size, archive_id => 'abc', jobid => 'somejob', file_downloads => { 'segment-size' => $segment_size},
+			relfilename => 'def', filename => '/path/def', mtime => 456);
+		
+		my $j = App::MtAws::QueueJob::DownloadSegments->new(%args);
+		
+		$test_cb->($j, 1, { %args, tempfile => "sometempfilename" });
+	};
+}
+
+sub prepare_download
+{
+	my ($size, $segment_size, $test_cb) = @_;
+	prepare_mock sub {
+		my %args = (size => $size, archive_id => 'abc', jobid => 'somejob', file_downloads => { 'segment-size' => $segment_size},
+			relfilename => 'def', filename => '/path/def', mtime => 456, treehash => 'wedontneedit');
+		
+		my $j = App::MtAws::QueueJob::Download->new(%args);
+		
+		$test_cb->($j, 0, { %args, tempfile => "sometempfilename" });
+	}
 }
 
 
@@ -113,9 +133,9 @@ sub verify_res
 # only test part sizes
 sub test_case_lite
 {
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
+	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
+	$prepare_cb->($size, $segment_size, sub {
+		my ($j, undef, $args) = @_;
 		
 		my @parts;
 	
@@ -132,17 +152,17 @@ sub test_case_lite
 			}
 		}
 		verify_parts(\@parts, $size, $segment_size, $expected_sizes);
-	};
+	});
 }
 
 
 sub test_case_late_finish
 {
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
+	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
+	$prepare_cb->($size, $segment_size, sub {
+		my ($j, $check_tmpfile, $args) = @_;
 		
-		ok !defined($j->{i_tmp}), "tempfile object is not yet defined";
+		ok !defined($j->{i_tmp}), "tempfile object is not yet defined" if $check_tmpfile;
 		
 		my @parts;
 	
@@ -151,7 +171,8 @@ sub test_case_late_finish
 			confess if $i++ > 1000;
 			
 			my $res = $j->next;
-			ok $j->{i_tmp}, "tempfile object is defined";
+			
+			ok $j->{i_tmp}, "tempfile object is defined" if $check_tmpfile;
 			
 			if ($res->{code} eq JOB_OK) {
 				verify_res($res, $args);
@@ -165,23 +186,28 @@ sub test_case_late_finish
 
 		verify_parts(\@parts, $size, $segment_size, $expected_sizes);
 
-		my $remember_tempfile = $j->{i_tmp};
-		ok $remember_tempfile, "tempfile object is defined";
+		my $remember_tempfile;
+		if ($check_tmpfile) {
+			$remember_tempfile = $j->{i_tmp};
+			ok $remember_tempfile, "tempfile object is defined";
+		}
 		expect_wait($j); # again, wait
 		$_->{cb}->() for (@parts);
 		expect_done($j);
-		ok $remember_tempfile->{_mock_permanent}, "tempfile now permanent"; # it's undef in $j, but we remembered it
+		if ($check_tmpfile) {
+			ok $remember_tempfile->{_mock_permanent}, "tempfile now permanent"; # it's undef in $j, but we remembered it
+		}
 		ok ! defined $j->{i_tmp}, "tempfile removed from job";
-	};
+	});
 }
 
 sub test_case_early_finish
 {
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
+	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
+	$prepare_cb->($size, $segment_size, sub {
+		my ($j, $check_tmpfile, $args) = @_;
 		
-		ok !defined($j->{i_tmp}), "tempfile object is not yet defined";
+		ok !defined($j->{i_tmp}), "tempfile object is not yet defined" if $check_tmpfile;
 		
 		my @parts;
 	
@@ -192,7 +218,7 @@ sub test_case_early_finish
 			
 			my $res = $j->next;
 
-			unless ($remember_tempfile) {
+			if ($check_tmpfile && !$remember_tempfile) {
 				ok $j->{i_tmp}, "tempfile object is defined";
 				$remember_tempfile = $j->{i_tmp};
 			}
@@ -209,9 +235,9 @@ sub test_case_early_finish
 		}
 
 		verify_parts(\@parts, $size, $segment_size, $expected_sizes);
-		ok $remember_tempfile->{_mock_permanent}, "tempfile now permanent"; # it's undef in $j, but we remembered it
+		ok $remember_tempfile->{_mock_permanent}, "tempfile now permanent" if $check_tmpfile; # it's undef in $j, but we remembered it
 		ok ! defined $j->{i_tmp}, "tempfile removed from job";
-	};
+	});
 }
 
 # TODO: test case with early/late/random finish with MyQueueEngine
@@ -230,23 +256,23 @@ sub test_case_early_finish
 
 sub test_case_random_finish
 {
-	my ($size, $segment_size, $workers, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
+	my ($prepare_cb, $size, $segment_size, $workers, $expected_sizes) = @_;
+	$prepare_cb->($size, $segment_size, sub {
 		my ($j, $args) = @_;
 		my $q = QE->new(n => $workers);
 		$q->process($j);
 		verify_parts([ sort { $a->{position} <=> $b->{position} } @{ $q->{res} } ], $size, $segment_size, $expected_sizes);
-	};
+	});
 }
 
 
 
 sub test_case_full
 {
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case_late_finish($size, $segment_size,  $expected_sizes);
-	test_case_early_finish($size, $segment_size, $expected_sizes);
-	test_case_random_finish($size, $segment_size, $_, $expected_sizes) for (1..4);
+	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
+	test_case_late_finish($prepare_cb, $size, $segment_size,  $expected_sizes);
+	test_case_early_finish($prepare_cb, $size, $segment_size, $expected_sizes);
+	test_case_random_finish($prepare_cb, $size, $segment_size, $_, $expected_sizes) for (1..4);
 }
 
 

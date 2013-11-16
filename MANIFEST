@@ -155,6 +155,7 @@ t/unit/queue_job.t
 t/unit/queue_job/create_vault.t
 t/unit/queue_job/delete.t
 t/unit/queue_job/delete_vault.t
+t/unit/queue_job/download.t
 t/unit/queue_job/download_inventory.t
 t/unit/queue_job/download_segments.t
 t/unit/queue_job/download_single.t
