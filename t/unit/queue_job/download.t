@@ -41,6 +41,8 @@ warning_fatal();
 
 my $prep = \&prepare_download;
 
+# TODO: move to lib test
+
 #
 # testing how Download.pm acts like DownloadSingle
 #

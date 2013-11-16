@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 3334;
+use Test::More tests => 3353;
 use Test::Deep;
 use Data::Dumper;
 use Carp;
@@ -33,10 +33,59 @@ use App::MtAws::QueueJob::DownloadSegments;
 use QueueHelpers;
 use LCGRandom;
 use TestUtils;
-use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB prepare_download_segments/;
+use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB prepare_download_segments prepare_mock/;
 
 warning_fatal();
 
+#
+# test validation
+#
+
+{
+	my %opts = (relfilename => 'somefile', archive_id => 'abc', filename => '/path/somefile', jobid => 'somejob',
+		size => 123, mtime => 456, file_downloads => {'segment-size' => 2});
+	
+	# test args validation
+	{
+		ok eval { App::MtAws::QueueJob::DownloadSegments->new( %opts ); 1; };
+
+		for my $exclude_opt (sort keys %opts) {
+			ok ! eval { App::MtAws::QueueJob::DownloadSegments->new( map { $_ => $opts{$_} } grep { $_ ne $exclude_opt } keys %opts ); 1; },
+				"should not work without $exclude_opt";
+		}
+
+		for my $zero_opt (qw/relfilename filename mtime/) {
+			local $opts{$zero_opt} = 0;
+			ok eval { App::MtAws::QueueJob::DownloadSegments->new( %opts ); 1; }, "should work with $zero_opt=0";
+			
+		}
+	}
+
+	for (undef, qw/relfilename filename mtime/) {
+		local $opts{$_} = 0 if defined;
+		my $j = App::MtAws::QueueJob::DownloadSegments->new(%opts);
+		
+		# TODO: move to DownloadSegmentsTest, make similar to DownloadSingleTest::expect_download_single
+		prepare_mock sub {
+			my $res = $j->next;
+			cmp_deeply $res,
+				App::MtAws::QueueJobResult->full_new(
+					task => {
+						args => {
+							(map { $_ => $opts{$_} } qw/filename jobid relfilename archive_id tempfile/),
+							download_size => code(sub{ shift > 0 }),
+							position => code(sub{ defined shift }),
+							tempfile => 'sometempfilename'
+						},
+						action => 'segment_download_job',
+						cb => test_coderef,
+						cb_task_proxy => test_coderef,
+					},
+					code => JOB_OK,
+				);
+		}
+	}
+}
 
 my $prep = \&prepare_download_segments;
 

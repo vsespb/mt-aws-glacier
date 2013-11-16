@@ -25,7 +25,7 @@ use warnings;
 
 require Exporter;
 use base qw/Exporter/;
-our @EXPORT_OK=qw/test_case_full test_case_lite test_case_random_finish prepare_download_segments prepare_download ONE_MB/;
+our @EXPORT_OK=qw/test_case_full test_case_lite test_case_random_finish prepare_download_segments prepare_download prepare_mock ONE_MB/;
 
 
 use Test::More;
