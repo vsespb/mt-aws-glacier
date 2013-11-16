@@ -228,13 +228,13 @@ sub test_case_early_finish
 
 sub test_case_random_finish
 {
-    my ($size, $segment_size, $workers, $expected_sizes) = @_;
-    test_case $size, $segment_size, sub {
-	my ($j, $args) = @_;
-	my $q = QE->new(n => $workers);
-	$q->process($j);
-	verify_parts([ sort { $a->{position} <=> $b->{position} } @{ $q->{res} } ], $size, $segment_size, $expected_sizes);
-    };
+	my ($size, $segment_size, $workers, $expected_sizes) = @_;
+	test_case $size, $segment_size, sub {
+		my ($j, $args) = @_;
+		my $q = QE->new(n => $workers);
+		$q->process($j);
+		verify_parts([ sort { $a->{position} <=> $b->{position} } @{ $q->{res} } ], $size, $segment_size, $expected_sizes);
+	};
 }
 
 
@@ -250,37 +250,37 @@ sub test_case_full
 
 
 lcg_srand 467287 => sub {
-    # manual testing segment sizes
-    
-    test_case_full ONE_MB, 1, [ONE_MB];
-    test_case_full ONE_MB+1, 1, [ONE_MB, 1];
-    test_case_full ONE_MB-1, 1, [ONE_MB-1];
-    
-    
-    test_case_full 2*ONE_MB, 2, [2*ONE_MB];
-    test_case_full 2*ONE_MB+1, 2, [2*ONE_MB, 1];
-    test_case_full 2*ONE_MB+2, 2, [2*ONE_MB, 2];
-    test_case_full 2*ONE_MB-1, 2, [2*ONE_MB-1];
-    test_case_full 2*ONE_MB-2, 2, [2*ONE_MB-2];
-    
-    
-    test_case_full 4*ONE_MB, 2, [2*ONE_MB, 2*ONE_MB];
-    test_case_full 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
-    test_case_full 4*ONE_MB-1, 2, [2*ONE_MB, 2*ONE_MB-1];
-    
-    # auto testing segment sizes
+	# manual testing segment sizes
+	
+	test_case_full ONE_MB, 1, [ONE_MB];
+	test_case_full ONE_MB+1, 1, [ONE_MB, 1];
+	test_case_full ONE_MB-1, 1, [ONE_MB-1];
+	
+	
+	test_case_full 2*ONE_MB, 2, [2*ONE_MB];
+	test_case_full 2*ONE_MB+1, 2, [2*ONE_MB, 1];
+	test_case_full 2*ONE_MB+2, 2, [2*ONE_MB, 2];
+	test_case_full 2*ONE_MB-1, 2, [2*ONE_MB-1];
+	test_case_full 2*ONE_MB-2, 2, [2*ONE_MB-2];
+	
+	
+	test_case_full 4*ONE_MB, 2, [2*ONE_MB, 2*ONE_MB];
+	test_case_full 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
+	test_case_full 4*ONE_MB-1, 2, [2*ONE_MB, 2*ONE_MB-1];
 
-    for my $segment (1, 2, 8, 16) {
-	for my $size (2, 3, 15) {
-		if ($size*ONE_MB >= 2*$segment*ONE_MB) { # avoid some unneeded testing
-			for my $delta (-30, -2, -1, 0, 1, 2, 27) {
-				test_case_lite $size*ONE_MB+$delta, $segment;
-				test_case_random_finish($size*ONE_MB+$delta, $segment, $_) for (1..4);
+# auto testing segment sizes
+
+	for my $segment (1, 2, 8, 16) {
+		for my $size (2, 3, 15) {
+			if ($size*ONE_MB >= 2*$segment*ONE_MB) { # avoid some unneeded testing
+				for my $delta (-30, -2, -1, 0, 1, 2, 27) {
+					test_case_lite $size*ONE_MB+$delta, $segment;
+					test_case_random_finish($size*ONE_MB+$delta, $segment, $_) for (1..4);
+				}
 			}
 		}
-	}
-    }
-};
+		}
+	};
 
 1;
 
