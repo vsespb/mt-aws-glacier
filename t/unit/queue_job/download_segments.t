@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 754;
+use Test::More tests => 3334;
 use Test::Deep;
 use Data::Dumper;
 use Carp;
@@ -31,6 +31,7 @@ use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::DownloadSegments;
 use QueueHelpers;
+use LCGRandom;
 use TestUtils;
 
 use constant ONE_MB => 1024*1024;
@@ -213,43 +214,73 @@ sub test_case_early_finish
 
 # TODO: test case with early/late/random finish with MyQueueEngine
 
+{
+	package QE;
+	use MyQueueEngine;
+	use base q{MyQueueEngine};
+
+	sub on_segment_download_job
+	{
+		my ($self, %args) = @_;
+		push @{$self->{res}}, { download_size => $args{download_size}, position => $args{position} };
+	}
+};
+
+sub test_case_random_finish
+{
+    my ($size, $segment_size, $workers, $expected_sizes) = @_;
+    test_case $size, $segment_size, sub {
+	my ($j, $args) = @_;
+	my $q = QE->new(n => $workers);
+	$q->process($j);
+	verify_parts([ sort { $a->{position} <=> $b->{position} } @{ $q->{res} } ], $size, $segment_size, $expected_sizes);
+    };
+}
+
+
+
 sub test_case_full
 {
 	my ($size, $segment_size, $expected_sizes) = @_;
 	test_case_late_finish($size, $segment_size,  $expected_sizes);
 	test_case_early_finish($size, $segment_size, $expected_sizes);
+	test_case_random_finish($size, $segment_size, $_, $expected_sizes) for (1..4);
 }
 
-# manual testing segment sizes
 
 
-test_case_full ONE_MB, 1, [ONE_MB];
-test_case_full ONE_MB+1, 1, [ONE_MB, 1];
-test_case_full ONE_MB-1, 1, [ONE_MB-1];
+lcg_srand 467287 => sub {
+    # manual testing segment sizes
+    
+    test_case_full ONE_MB, 1, [ONE_MB];
+    test_case_full ONE_MB+1, 1, [ONE_MB, 1];
+    test_case_full ONE_MB-1, 1, [ONE_MB-1];
+    
+    
+    test_case_full 2*ONE_MB, 2, [2*ONE_MB];
+    test_case_full 2*ONE_MB+1, 2, [2*ONE_MB, 1];
+    test_case_full 2*ONE_MB+2, 2, [2*ONE_MB, 2];
+    test_case_full 2*ONE_MB-1, 2, [2*ONE_MB-1];
+    test_case_full 2*ONE_MB-2, 2, [2*ONE_MB-2];
+    
+    
+    test_case_full 4*ONE_MB, 2, [2*ONE_MB, 2*ONE_MB];
+    test_case_full 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
+    test_case_full 4*ONE_MB-1, 2, [2*ONE_MB, 2*ONE_MB-1];
+    
+    # auto testing segment sizes
 
-
-test_case_full 2*ONE_MB, 2, [2*ONE_MB];
-test_case_full 2*ONE_MB+1, 2, [2*ONE_MB, 1];
-test_case_full 2*ONE_MB+2, 2, [2*ONE_MB, 2];
-test_case_full 2*ONE_MB-1, 2, [2*ONE_MB-1];
-test_case_full 2*ONE_MB-2, 2, [2*ONE_MB-2];
-
-
-test_case_full 4*ONE_MB, 2, [2*ONE_MB, 2*ONE_MB];
-test_case_full 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
-test_case_full 4*ONE_MB-1, 2, [2*ONE_MB, 2*ONE_MB-1];
-
-# auto testing segment sizes
-
-for my $segment (1, 2, 8, 16) {
+    for my $segment (1, 2, 8, 16) {
 	for my $size (2, 3, 15) {
-		if ($size*ONE_MB <= 2*$segment*ONE_MB) { # avoid some unneeded testing
+		if ($size*ONE_MB >= 2*$segment*ONE_MB) { # avoid some unneeded testing
 			for my $delta (-30, -2, -1, 0, 1, 2, 27) {
 				test_case_lite $size*ONE_MB+$delta, $segment;
+				test_case_random_finish($size*ONE_MB+$delta, $segment, $_) for (1..4);
 			}
 		}
 	}
-}
+    }
+};
 
 1;
 
