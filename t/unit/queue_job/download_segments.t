@@ -33,220 +33,9 @@ use App::MtAws::QueueJob::DownloadSegments;
 use QueueHelpers;
 use LCGRandom;
 use TestUtils;
-
-use constant ONE_MB => 1024*1024;
+use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB/;
 
 warning_fatal();
-
-sub test_case
-{
-	my ($size, $segment_size, $test_cb) = @_;
-	no warnings 'redefine';
-	local *App::MtAws::IntermediateFile::new = sub {
-		bless { _mock => 1, data => \@_}, 'App::MtAws::IntermediateFile';
-	};
-	local *App::MtAws::IntermediateFile::tempfilename = sub {
-		ok shift->{_mock};
-		"sometempfilename";
-	};
-	local *App::MtAws::IntermediateFile::make_permanent = sub {
-		ok $_[0]->{_mock};
-		$_[0]->{_mock_permanent} = 1;
-	};
-	
-	my %args = (size => $size, archive_id => 'abc', jobid => 'somejob', file_downloads => { 'segment-size' => $segment_size},
-		relfilename => 'def', filename => '/path/def', mtime => 456);
-	
-	my $j = App::MtAws::QueueJob::DownloadSegments->new(%args);
-	
-	$test_cb->($j, { %args, tempfile => "sometempfilename" });
-}
-
-
-sub verify_parts
-{
-	my ($parts, $size, $segment_size, $expected_sizes) = @_;
-	
-	my @expected = $expected_sizes ? @$expected_sizes : ();
-	
-	# auto check that position that we're got are correct
-	my $expect_position = 0;
-	my $odd_size_seen = 0;
-	for my $part (@$parts) {
-		is $part->{position}, $expect_position;
-		$expect_position += $part->{download_size};
-		
-		# manual check that position that we're got are correct
-		is($part->{download_size}, shift @expected, "size matches next size in list") if $expected_sizes; # _original_ sizes
-		
-		if ($part->{download_size} != $segment_size * ONE_MB) {
-			ok !$odd_size_seen, "current size down not match segment-size, but it's first time";
-			$odd_size_seen = 1;
-		}
-	}
-	is $expect_position, $size;
-	is scalar @expected, 0;
-}
-
-sub verify_res
-{
-	my ($res, $args) = @_;
-	cmp_deeply $res,
-		App::MtAws::QueueJobResult->full_new(
-			task => {
-				args => {
-					(map { $_ => $args->{$_} } qw/filename jobid relfilename archive_id tempfile/),
-					download_size => code(sub{ shift > 0 }),
-					position => code(sub{ defined shift }),
-				},
-				action => 'segment_download_job',
-				cb => test_coderef,
-				cb_task_proxy => test_coderef,
-			},
-			code => JOB_OK,
-		);
-	
-}
-
-# only test part sizes
-sub test_case_lite
-{
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
-		
-		my @parts;
-	
-		my $i = 0;
-		while() {
-			confess if $i++ > 1000; # protection
-			my $res = $j->next;
-			if ($res->{code} eq JOB_OK) {
-				push @parts, { download_size => $res->{task}{args}{download_size}, position => $res->{task}{args}{position} };
-			} elsif ($res->{code} eq JOB_WAIT) {
-				last;
-			} else {
-				confess;
-			}
-		}
-		verify_parts(\@parts, $size, $segment_size, $expected_sizes);
-	};
-}
-
-
-sub test_case_late_finish
-{
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
-		
-		ok !defined($j->{i_tmp}), "tempfile object is not yet defined";
-		
-		my @parts;
-	
-		my $i = 0;
-		while() {
-			confess if $i++ > 1000;
-			
-			my $res = $j->next;
-			ok $j->{i_tmp}, "tempfile object is defined";
-			
-			if ($res->{code} eq JOB_OK) {
-				verify_res($res, $args);
-				push @parts, { download_size => $res->{task}{args}{download_size}, position => $res->{task}{args}{position}, cb => $res->{task}{cb_task_proxy} };
-			} elsif ($res->{code} eq JOB_WAIT) {
-				last;
-			} else {
-				confess;
-			}
-		}
-
-		verify_parts(\@parts, $size, $segment_size, $expected_sizes);
-
-		my $remember_tempfile = $j->{i_tmp};
-		ok $remember_tempfile, "tempfile object is defined";
-		expect_wait($j); # again, wait
-		$_->{cb}->() for (@parts);
-		expect_done($j);
-		ok $remember_tempfile->{_mock_permanent}, "tempfile now permanent"; # it's undef in $j, but we remembered it
-		ok ! defined $j->{i_tmp}, "tempfile removed from job";
-	};
-}
-
-sub test_case_early_finish
-{
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
-		
-		ok !defined($j->{i_tmp}), "tempfile object is not yet defined";
-		
-		my @parts;
-	
-		my $i = 0;
-		my $remember_tempfile;
-		while() {
-			confess if $i++ > 1000;
-			
-			my $res = $j->next;
-
-			unless ($remember_tempfile) {
-				ok $j->{i_tmp}, "tempfile object is defined";
-				$remember_tempfile = $j->{i_tmp};
-			}
-
-			if ($res->{code} eq JOB_OK) {
-				verify_res($res, $args);
-				push @parts, { download_size => $res->{task}{args}{download_size}, position => $res->{task}{args}{position} };
-				$res->{task}{cb_task_proxy}->();
-			} elsif ($res->{code} eq JOB_DONE) {
-				last;
-			} else {
-				confess;
-			}
-		}
-
-		verify_parts(\@parts, $size, $segment_size, $expected_sizes);
-		ok $remember_tempfile->{_mock_permanent}, "tempfile now permanent"; # it's undef in $j, but we remembered it
-		ok ! defined $j->{i_tmp}, "tempfile removed from job";
-	};
-}
-
-# TODO: test case with early/late/random finish with MyQueueEngine
-
-{
-	package QE;
-	use MyQueueEngine;
-	use base q{MyQueueEngine};
-
-	sub on_segment_download_job
-	{
-		my ($self, %args) = @_;
-		push @{$self->{res}}, { download_size => $args{download_size}, position => $args{position} };
-	}
-};
-
-sub test_case_random_finish
-{
-	my ($size, $segment_size, $workers, $expected_sizes) = @_;
-	test_case $size, $segment_size, sub {
-		my ($j, $args) = @_;
-		my $q = QE->new(n => $workers);
-		$q->process($j);
-		verify_parts([ sort { $a->{position} <=> $b->{position} } @{ $q->{res} } ], $size, $segment_size, $expected_sizes);
-	};
-}
-
-
-
-sub test_case_full
-{
-	my ($size, $segment_size, $expected_sizes) = @_;
-	test_case_late_finish($size, $segment_size,  $expected_sizes);
-	test_case_early_finish($size, $segment_size, $expected_sizes);
-	test_case_random_finish($size, $segment_size, $_, $expected_sizes) for (1..4);
-}
-
 
 
 lcg_srand 467287 => sub {
@@ -268,7 +57,7 @@ lcg_srand 467287 => sub {
 	test_case_full 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
 	test_case_full 4*ONE_MB-1, 2, [2*ONE_MB, 2*ONE_MB-1];
 
-# auto testing segment sizes
+	# auto testing segment sizes
 
 	for my $segment (1, 2, 8, 16) {
 		for my $size (2, 3, 15) {
@@ -279,8 +68,8 @@ lcg_srand 467287 => sub {
 				}
 			}
 		}
-		}
-	};
+	}
+};
 
 1;
 

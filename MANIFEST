@@ -114,6 +114,7 @@ t/integration/utf8.t
 t/integration/utf8_journal.t
 t/integration/utf8_line_protocol.t
 t/lib/DeleteTest.pm
+t/lib/DownloadSegmentsTest.pm
 t/lib/DownloadSingleTest.pm
 t/lib/JobListEmulator.pm
 t/lib/JournalTest.pm
