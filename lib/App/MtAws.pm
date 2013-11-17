@@ -114,6 +114,15 @@ sub load_all_dynamic_modules
 
 sub main
 {
+	$|=1;
+	STDERR->autoflush(1);
+	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
+
+	print STDERR "**NOT RECOMMENDED FOR PRODUCTION USE UNDER CYGWIN**\n\n" if ($^O eq 'cygwin');
+	die "**DEVELOPMENT VERSION, NOT FOR PRODUCTION USE. EXITING**\n\n" if ($VERSION =~ /_/);
+	print STDERR "**NOT TESTED UNDER PERLIO=stdio**\n\n" if (defined $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/);
+	die "Will *not* work under Win32\n" if ($^O eq 'MSWin32');
+
 	check_module_versions();
 	unless (defined eval {process(); 1;}) {
 		dump_error(q{});
@@ -125,14 +134,6 @@ sub main
 
 sub process
 {
-	$|=1;
-	STDERR->autoflush(1);
-	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
-
-	print STDERR "**NOT RECOMMENDED FOR PRODUCTION USE UNDER CYGWIN**\n\n" if ($^O eq 'cygwin');
-	print STDERR "**NOT TESTED UNDER PERLIO=stdio**\n\n" if (defined $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/);
-	die "Will *not* work under Win32\n" if ($^O eq 'MSWin32');
-
 	my ($P) = @_;
 	my ($src, $vault, $journal);
 	my $maxchildren = 4;
