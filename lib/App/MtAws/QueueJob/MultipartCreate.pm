@@ -25,7 +25,6 @@ our $VERSION = '1.058';
 use strict;
 use warnings;
 use Carp;
-use File::stat;
 
 use App::MtAws::QueueJobResult;
 use App::MtAws::Exceptions;
@@ -48,15 +47,13 @@ sub init_file
 		$self->{mtime} = time(); # should be as close as possible to upload process time
 		$self->{fh} = *STDIN;
 	} else {
-		my $binaryfilename = binaryfilename $self->{filename};
-		my $filesize = -s $binaryfilename;
+		my $filesize = file_size($self->{filename});
 
 		die exception file_is_zero => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
 			filename => $self->{filename}
 				unless $filesize;
 
-		# should be as close as possible to upload process time
-		$self->{mtime} = stat($binaryfilename)->mtime; # TODO: how could we assure file not modified when uploading btw?
+		file_mtime($self->{filename}); # TODO: how could we assure file not modified when uploading btw?
 
 		die exception too_many_parts =>
 			"With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
