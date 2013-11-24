@@ -50,5 +50,12 @@ sub wait_worker
 	$task->{cb_task_proxy}->(@r);
 }
 
+sub process
+{
+	my $self = shift;
+	alarm 60; # protecting in case test fail and all stuck
+	$self->SUPER::process(@_);
+	alarm 0;
+}
 
 1;
