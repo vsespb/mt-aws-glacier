@@ -161,6 +161,7 @@ t/unit/queue_job/download.t
 t/unit/queue_job/download_inventory.t
 t/unit/queue_job/download_segments.t
 t/unit/queue_job/download_single.t
+t/unit/queue_job/fetch_and_download.t
 t/unit/queue_job/fetch_and_download_inventory.t
 t/unit/queue_job/iterator.t
 t/unit/queue_job/multipart_create.t
