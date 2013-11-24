@@ -25,7 +25,6 @@ our $VERSION = '1.058';
 use strict;
 use warnings;
 use Carp;
-use JSON::XS 1;
 
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Download;
@@ -52,7 +51,7 @@ sub on_list
 		my ($marker, @jobs) = App::MtAws::Glacier::ListJobs->new( $args->{response} || confess )->get_archive_entries();
 		for (@jobs) {
 			if (my $a = $self->{archives}{ $_->{ArchiveId} }) {
-				unless ($a->{seen}++) {
+				unless ($a->{seen}++) { # TODO: better take latest archives in case of duplicates
 					$a->{jobid} = $_->{JobId};
 					push @{ $self->{downloads} }, $a;
 				}

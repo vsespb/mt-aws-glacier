@@ -25,7 +25,6 @@ our $VERSION = '1.058';
 use strict;
 use warnings;
 use Carp;
-use JSON::XS 1;
 
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::DownloadInventory;
