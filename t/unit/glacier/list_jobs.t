@@ -22,10 +22,11 @@
 
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 29;
 use Test::Deep;
 use Carp;
 use FindBin;
+use JSON::XS;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::Glacier::ListJobs;
 
@@ -35,7 +36,74 @@ warning_fatal();
 
 use Data::Dumper;
 
+#
+# Unit testing
+#
+
+sub create_json
+{
+	JSON::XS->new()->encode({JobList => [ {
+		Action => 'InventoryRetrieval',
+		ArchiveId => "somearchiveid",
+		ArchiveSHA256TreeHash => "sometreehash",
+		Completed => JSON_XS_TRUE,
+		CompletionDate => "2013-11-01T22:57:23.968Z",
+		CreationDate => "2013-11-01T19:01:19.997Z",
+		InventorySizeInBytes => 45012,
+		JobDescription => undef,
+		JobId => "MyJobId",
+		RetrievalByteRange => undef,
+		SHA256TreeHash => undef,
+		SNSTopic => undef,
+		StatusCode => 'Succeeded',
+		StatusMessage => 'Succeeded',
+		VaultARN => "arn:aws:glacier:eu-west-1:112345678901:vaults/xyz",
+		@_
+	} ], Marker => "MyMarker"});
+}
+
+sub get_list_jobs
+{
+	App::MtAws::Glacier::ListJobs->new(create_json(@_));
+}
+
+{
+	my ($marker, $first);
+	
+	($marker, $first) = get_list_jobs()->get_inventory_entries;
+	is $first->{JobId}, "MyJobId", "inventory_entries should work";
+	is ref($first->{Completed}), '';
+
+	($marker, $first) = get_list_jobs(Completed => JSON_XS_FALSE)->get_inventory_entries;
+	ok !defined $first, "inventory_entries should not work with Completed=false";
+
+	($marker, $first) = get_list_jobs(StatusCode => "SomeStatus")->get_inventory_entries;
+	ok !defined $first, "inventory_entries should not work with StatusCode not Succeeded";
+
+	($marker, $first) = get_list_jobs(StatusMessage => "somemessage")->get_inventory_entries;
+	is $first->{JobId}, "MyJobId", "inventory_entries should work with different StatusMessage";
+}
+
+{
+	my ($marker, $first);
+	
+	($marker, $first) = get_list_jobs(Action => 'ArchiveRetrieval')->get_archive_entries;
+	is $first->{JobId}, "MyJobId", "archive_entries should work";
+	is ref($first->{Completed}), '';
+
+	($marker, $first) = get_list_jobs(Action => 'ArchiveRetrieval', Completed => JSON_XS_FALSE)->get_archive_entries;
+	ok !defined $first, "archive_entries should not work with Completed=false";
+
+	($marker, $first) = get_list_jobs(Action => 'ArchiveRetrieval', StatusCode => "SomeStatus")->get_archive_entries;
+	ok !defined $first, "archive_entries should not work with StatusCode not Succeeded";
+
+	($marker, $first) = get_list_jobs(Action => 'ArchiveRetrieval', StatusMessage => "somemessage")->get_archive_entries;
+	is $first->{JobId}, "MyJobId", "archive_entries should work with different StatusMessage";
+}
+
+#
 # testing JSON parsing with real Amazon data
+#
 
 {
 	my $sample1 = <<'END';
