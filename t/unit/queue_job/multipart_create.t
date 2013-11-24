@@ -122,7 +122,7 @@ unlink $filename;
 		for my $size ($edge_size - 100, $edge_size - 1, $edge_size, $edge_size + 1, $edge_size + 27) {
 			my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => $partsize);
 			no warnings 'redefine';
-			local *App::MtAws::QueueJob::MultipartCreate::file_size = sub {	$size };
+			local *App::MtAws::QueueJob::MultipartCreate::file_size = sub { $size };
 
 			if ($size > $edge_size) {
 				ok ! eval { $job->init_file(); 1 };
