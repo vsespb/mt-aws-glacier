@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 26;
+use Test::More tests => 28;
 use Test::Deep;
 use FindBin;
 use POSIX;
@@ -83,7 +83,7 @@ unlink $filename;
 {
 	create($filename, '');
 	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => 2);
-	ok ! defined eval { $job->init_file(); 1; };
+	ok ! eval { $job->init_file(); 1; };
 	my $err = $@;
 	cmp_deeply $err, superhashof { code => 'file_is_zero',
 		message => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
@@ -97,7 +97,7 @@ SKIP: {
 	create($filename, 'x');
 	chmod 0000, $filename;
 	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => 2);
-	ok ! defined eval { $job->init_file(); 1; };
+	ok ! eval { $job->init_file(); 1; };
 	my $err = $@;
 	cmp_deeply $err, superhashof { code => 'upload_file_open_error',
 		message => "Unable to open task file %string filename% for reading, errno=%errno%",
@@ -112,5 +112,12 @@ chmod 0744, $filename;
 unlink $filename;
 
 
+{
+	my $job = App::MtAws::QueueJob::MultipartCreate->new(stdin => 1, relfilename => $relfilename, partsize => 2);
+	no warnings 'redefine', 'once';
+	$job->init_file();
+	cmp_deeply $job->{fh}, *STDIN;
+	ok abs(time() - $job->{mtime}) < 10; # test that mtime is current time
+}
 
 1;
