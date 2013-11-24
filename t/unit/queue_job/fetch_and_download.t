@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 24;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -90,15 +90,21 @@ sub test_case
 lcg_srand 112234, sub {
 	for my $before_archives (0, 2) {
 		for my $after_archives (3, 5) {
-			for my $nworkers (1, 2, 4) {
-				my $E = JobListEmulator->new();
-				$E->add_archive_fixture(2000+$_) for (1..$before_archives);
-				$E->add_inventory_fixture(1000);
-				$E->add_archive_fixture( 500+$_) for (1..$after_archives);
-				test_case($E, 1,
-					[qw/archive_501_1 archive_503_1 archive_503_2 archive_503_7/],
-					[qw/j_501_1 j_503_1 j_503_2 j_503_7/]
-				);
+			for my $duplicates (0, 1) {
+				for my $nworkers (1, 2, 4) {
+					my $E = JobListEmulator->new();
+					$E->add_archive_fixture(2000+$_) for (1..$before_archives);
+					$E->add_inventory_fixture(1000);
+					$E->add_archive_fixture( 500+$_) for (1..$after_archives);
+					if ($duplicates) {
+						$E->add_archive_fixture( 500+$_) for (1..$after_archives);
+					}
+					
+					test_case($E, 1,
+						[qw/archive_501_1 archive_503_1 archive_503_2 archive_503_7/],
+						[qw/j_501_1 j_503_1 j_503_2 j_503_7/]
+					);
+				}
 			}
 		}
 	}
