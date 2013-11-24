@@ -30,6 +30,7 @@ use JSON::XS 1;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Download;
 use App::MtAws::QueueJob::Iterator;
+use App::MtAws::Glacier::ListJobs;
 use base 'App::MtAws::QueueJob';
 
 sub init
@@ -42,31 +43,13 @@ sub init
 	$self->enter("list");
 }
 
-sub _get_archive_entries
-{
-	my ($response) = @_;
-	my $json = JSON::XS->new->allow_nonref;
-	my $scalar = $json->decode($response);
-	return $scalar->{Marker}, map {
-		# get rid of JSON::XS boolean object, just in case.
-		# also JSON::XS between versions 1.0 and 2.1 (inclusive) do not allow to modify this field
-		# (modification of read only error thrown)
-		$_->{Completed} = !!(delete $_->{Completed});
-		if ($_->{Action} eq 'ArchiveRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded') {
-			$_
-		} else {
-			();
-		}
-	} @{$scalar->{JobList}};
-}
-
 sub on_list
 {
 	my ($self) = @_;
 	return state "wait", task "retrieval_fetch_job", {  marker => $self->{marker} } => sub {
 		my ($args) = @_;
 
-		my ($marker, @jobs) = _get_archive_entries ( $args->{response} || confess );
+		my ($marker, @jobs) = App::MtAws::Glacier::ListJobs->new( $args->{response} || confess )->get_archive_entries();
 		for (@jobs) {
 			if (my $a = $self->{archives}{ $_->{ArchiveId} }) {
 				unless ($a->{seen}++) {
