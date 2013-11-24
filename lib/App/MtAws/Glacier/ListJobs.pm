@@ -43,7 +43,13 @@ sub new
 sub _parse
 {
 	my ($self) = @_;
-	$self->{data} ||= JSON::XS->new->allow_nonref->decode(${ delete $self->{rawdata} || confess });
+	return if $self->{data};
+	$self->{data} = JSON::XS->new->allow_nonref->decode(${ delete $self->{rawdata} || confess });
+	
+	# get rid of JSON::XS boolean object, just in case.
+	# also JSON::XS between versions 1.0 and 2.1 (inclusive) do not allow to modify this field
+	# (modification of read only error thrown)
+	$_->{Completed} = !!(delete $_->{Completed}) for @{$self->{data}{JobList}};
 }
 
 #
@@ -54,16 +60,8 @@ sub get_inventory_entries
 {
 	my ($self) = @_;
 	$self->_parse;
-	return $self->{data}{Marker}, map {
-		# get rid of JSON::XS boolean object, just in case.
-		# also JSON::XS between versions 1.0 and 2.1 (inclusive) do not allow to modify this field
-		# (modification of read only error thrown)
-		$_->{Completed} = !!(delete $_->{Completed});
-		if ($_->{Action} eq 'InventoryRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded') {
-			$_
-		} else {
-			();
-		}
+	return $self->{data}{Marker}, grep {
+		$_->{Action} eq 'InventoryRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded'
 	} @{$self->{data}{JobList}};
 }
 
