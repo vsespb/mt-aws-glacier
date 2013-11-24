@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 28;
+use Test::More tests => 49;
 use Test::Deep;
 use FindBin;
 use POSIX;
@@ -113,8 +113,37 @@ unlink $filename;
 
 
 {
+	create($filename, 'x');
+
+	for my $partsize_mb (1, 2, 4) {
+		my $partsize = $partsize_mb*1024*1024;
+		my $edge_size = $partsize*10_000;
+
+		for my $size ($edge_size - 100, $edge_size - 1, $edge_size, $edge_size + 1, $edge_size + 27) {
+			my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => $partsize);
+			no warnings 'redefine';
+			local *App::MtAws::QueueJob::MultipartCreate::file_size = sub {	$size };
+
+			if ($size > $edge_size) {
+				ok ! eval { $job->init_file(); 1 };
+				my $err = $@;
+				cmp_deeply $err, superhashof { code => 'too_many_parts',
+					message => "With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
+					partsize => $partsize, filename => $filename, size => $size
+				};
+			} else {
+				ok eval { $job->init_file(); 1 };
+			}
+
+		}
+	}
+
+	unlink $filename;
+}
+
+
+{
 	my $job = App::MtAws::QueueJob::MultipartCreate->new(stdin => 1, relfilename => $relfilename, partsize => 2);
-	no warnings 'redefine', 'once';
 	$job->init_file();
 	cmp_deeply $job->{fh}, *STDIN;
 	ok abs(time() - $job->{mtime}) < 10; # test that mtime is current time
