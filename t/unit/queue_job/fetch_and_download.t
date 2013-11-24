@@ -110,6 +110,8 @@ lcg_srand 112234, sub {
 	}
 };
 
+# TODO: test validation, test that arguments passed correctly
+
 1;
 
 __END__
