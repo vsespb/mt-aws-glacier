@@ -52,17 +52,28 @@ sub _parse
 	$_->{Completed} = !!(delete $_->{Completed}) for @{$self->{data}{JobList}};
 }
 
-#
-# Input: ListJobs output
-# Output: entries for Inventory retrieval
-#
+
+sub _completed
+{
+	$_->{Completed} && $_->{StatusCode} eq 'Succeeded' 
+}
+
+sub _filter_and_return_entries
+{
+	my ($self, $filter_cb) = @_;
+	$self->_parse;
+	my $x = \&inventory;
+	return $self->{data}{Marker}, grep { $filter_cb->() } @{$self->{data}{JobList}};
+}
+
 sub get_inventory_entries
 {
-	my ($self) = @_;
-	$self->_parse;
-	return $self->{data}{Marker}, grep {
-		$_->{Action} eq 'InventoryRetrieval' && $_->{Completed} && $_->{StatusCode} eq 'Succeeded'
-	} @{$self->{data}{JobList}};
+	shift->_filter_and_return_entries(sub { _completed() && $_->{Action} eq 'InventoryRetrieval' });
+}
+
+sub get_archive_entries
+{
+	shift->_filter_and_return_entries(sub { _completed() && $_->{Action} eq 'ArchiveRetrieval' });
 }
 
 1;
