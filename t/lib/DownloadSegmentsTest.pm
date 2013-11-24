@@ -240,8 +240,6 @@ sub test_case_early_finish
 	});
 }
 
-# TODO: test case with early/late/random finish with MyQueueEngine
-
 {
 	package QE;
 	use MyQueueEngine;
