@@ -39,45 +39,6 @@ warning_fatal();
 
 use Data::Dumper;
 
-
-sub add_archive_fixture
-{
-	my ($E, $id) = @_;
-	$E->add_page(
-		map {
-			{
-				Action => 'ArchiveRetrieval',
-				ArchiveId => "archive_${id}_$_",
-				ArchiveSizeInBytes => 123+$_,
-				ArchiveSHA256TreeHash => "hash$_",
-				Completed => JSON_XS_TRUE,
-				CompletionDate => 'somedate$_',
-				CreationDate => 'somedate$_',
-				StatusCode => 'Succeeded',
-				JobId => "j_${id}_$_"
-			},
-		} (1..10)
-	);
-}
-
-
-sub add_inventory_fixture
-{
-	my ($E, $id) = @_;
-	$E->add_page(
-		map {
-			{
-				Action => 'InventoryRetrieval',
-				Completed => JSON_XS_TRUE,
-				CompletionDate => 'somedate$_',
-				CreationDate => 'somedate$_',
-				StatusCode => 'Succeeded',
-				JobId => "j_${id}_$_"
-			},
-		} (1..10)
-	);
-}
-
 {
 	package QE;
 	use MyQueueEngine;
@@ -107,7 +68,7 @@ sub add_inventory_fixture
 };
 
 
-sub expect_job_id
+sub test_case
 {
 	my ($E, $nworkers, $archives, $jobs) = @_;
 	
@@ -131,10 +92,10 @@ lcg_srand 112234, sub {
 		for my $after_archives (3, 5) {
 			for my $nworkers (1, 2, 4) {
 				my $E = JobListEmulator->new();
-				add_archive_fixture($E, 2000+$_) for (1..$before_archives);
-				add_inventory_fixture($E, 1000);
-				add_archive_fixture($E, 500+$_) for (1..$after_archives);
-				expect_job_id($E, 1,
+				$E->add_archive_fixture(2000+$_) for (1..$before_archives);
+				$E->add_inventory_fixture(1000);
+				$E->add_archive_fixture( 500+$_) for (1..$after_archives);
+				test_case($E, 1,
 					[qw/archive_501_1 archive_503_1 archive_503_2 archive_503_7/],
 					[qw/j_501_1 j_503_1 j_503_2 j_503_7/]
 				);

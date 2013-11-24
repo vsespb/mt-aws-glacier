@@ -38,45 +38,6 @@ warning_fatal();
 
 use Data::Dumper;
 
-
-sub add_archive_fixture
-{
-	my ($E, $id) = @_;
-	$E->add_page(
-		map {
-			{
-				Action => 'ArchiveRetrieval',
-				ArchiveId => "archive$_",
-				ArchiveSizeInBytes => 123+$_,
-				ArchiveSHA256TreeHash => "hash$_",
-				Completed => JSON_XS_TRUE,
-				CompletionDate => 'somedate$_',
-				CreationDate => 'somedate$_',
-				StatusCode => 'Succeeded',
-				JobId => "j_${id}_$_"
-			},
-		} (1..10)
-	);
-}
-
-
-sub add_inventory_fixture
-{
-	my ($E, $id) = @_;
-	$E->add_page(
-		map {
-			{
-				Action => 'InventoryRetrieval',
-				Completed => JSON_XS_TRUE,
-				CompletionDate => 'somedate$_',
-				CreationDate => 'somedate$_',
-				StatusCode => 'Succeeded',
-				JobId => "j_${id}_$_"
-			},
-		} (1..10)
-	);
-}
-
 sub expect_job_id
 {
 	my ($E, $expected_job_id) = @_;
@@ -129,16 +90,16 @@ sub expect_job_id
 for my $before_archives (0, 1, 2, 3) {
 	for my $after_archives (0, 1, 2, 3) {
 		my $E = JobListEmulator->new();
-		add_archive_fixture($E, $_) for (1..$before_archives);
-		add_inventory_fixture($E, 1000);
-		add_archive_fixture($E, 2000+$_) for (1..$after_archives);
+		$E->add_archive_fixture($_) for (1..$before_archives);
+		$E->add_inventory_fixture(1000);
+		$E->add_archive_fixture(2000+$_) for (1..$after_archives);
 		expect_job_id($E, "j_1000_1");
 	}
 }
 
 for my $before_archives (0, 1, 2, 3) {
 	my $E = JobListEmulator->new();
-	add_archive_fixture($E, $_) for (1..$before_archives);
+	$E->add_archive_fixture($_) for (1..$before_archives);
 	expect_job_id($E, undef);
 }
 

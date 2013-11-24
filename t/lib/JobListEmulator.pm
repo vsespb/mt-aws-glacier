@@ -22,7 +22,8 @@ package JobListEmulator;
 use strict;
 use warnings;
 use Carp;
-use JSON::XS 1;
+use TestUtils;
+use JSON::XS 1.00;
 
 sub new
 {
@@ -79,5 +80,44 @@ sub fetch_page
 		Marker => $new_marker,
 	});
 }
+
+sub add_archive_fixture
+{
+	my ($self, $id) = @_;
+	$self->add_page(
+		map {
+			{
+				Action => 'ArchiveRetrieval',
+				ArchiveId => "archive_${id}_$_",
+				ArchiveSizeInBytes => 123+$_,
+				ArchiveSHA256TreeHash => "hash$_",
+				Completed => JSON_XS_TRUE,
+				CompletionDate => 'somedate$_',
+				CreationDate => 'somedate$_',
+				StatusCode => 'Succeeded',
+				JobId => "j_${id}_$_"
+			},
+		} (1..10)
+	);
+}
+
+
+sub add_inventory_fixture
+{
+	my ($self, $id) = @_;
+	$self->add_page(
+		map {
+			{
+				Action => 'InventoryRetrieval',
+				Completed => JSON_XS_TRUE,
+				CompletionDate => 'somedate$_',
+				CreationDate => 'somedate$_',
+				StatusCode => 'Succeeded',
+				JobId => "j_${id}_$_"
+			},
+		} (1..10)
+	);
+}
+
 
 1;
