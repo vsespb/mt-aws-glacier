@@ -55,7 +55,7 @@ sub _parse
 
 sub _completed
 {
-	$_->{Completed} && $_->{StatusCode} eq 'Succeeded' 
+	$_->{Completed} && $_->{StatusCode} eq 'Succeeded'
 }
 
 sub _filter_and_return_entries
