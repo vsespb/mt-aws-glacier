@@ -309,7 +309,7 @@ does not define any new layer of abstraction over Amazon Glacier entities.
 
 * For backup created with older versions (0.7x) of mt-aws-glacier, Journal file **required to restore backup**.
 
-* Use **one Journal file** only with **one (same) vault** ( more info [here](#what-is-journal) and [here](#how-to-maintain-a-relation-between-my-journal-files-and-my-vaults) )
+* Use a **Journal file** only with **same vault** ( more info [here](#what-is-journal) and [here](#how-to-maintain-a-relation-between-my-journal-files-and-my-vaults) and [here](https://github.com/vsespb/mt-aws-glacier/issues/50))
 
 * When work with CD-ROM/CIFS/other non-Unix/non-POSIX filesystems, you might need set `leaf-optimization` to `0`
 
