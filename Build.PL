@@ -149,9 +149,12 @@ my $build = Module::Build->new(
 	configure_requires => {
 		'Module::Build' => $MB_VERSION,
 	},
-	recommends => {
-		'LWP::Protocol::https' => 6,
-	},
+	$Module::Build::VERSION < 0.42 ?
+	(
+		recommends => {
+			'LWP::Protocol::https' => 6,
+		}
+	) : (),
 	$ENV{MT_NO_HARNESS} ?
 		() :
 		(use_tap_harness    => 1, tap_harness_args   => {

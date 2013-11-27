@@ -4,9 +4,9 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4008, CPAN::Meta::Converter version 2.132661",
+   "generated_by" : "Module::Build version 0.4202",
    "license" : [
-      "open_source"
+      "gpl_3"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
@@ -40,9 +40,6 @@
          }
       },
       "runtime" : {
-         "recommends" : {
-            "LWP::Protocol::https" : "6"
-         },
          "requires" : {
             "Carp" : "0",
             "Digest::SHA" : "0",
