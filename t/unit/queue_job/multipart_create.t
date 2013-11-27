@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 49;
+use Test::More tests => 21;
 use Test::Deep;
 use FindBin;
 use POSIX;
@@ -61,92 +61,5 @@ test_case('/path/somefile', 'somefile', 123456, 2*1024*1024);
 test_case('/path/somefile', 'somefile', 0, 2*1024*1024);
 test_case('0', '0', 123456, 2*1024*1024);
 
-# integration tests with real FS
-
-
-sub create
-{
-	my ($file, $content) = @_;
-	open F, ">", $file;
-	print F $content if defined $content;
-	close F;
-
-}
-
-my $mtroot = get_temp_dir();
-my $relfilename = 'multipart_create';
-my $filename = "$mtroot/$relfilename";
-
-chmod 0744, $filename;
-unlink $filename;
-
-{
-	create($filename, '');
-	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => 2);
-	ok ! eval { $job->init_file(); 1; };
-	my $err = $@;
-	cmp_deeply $err, superhashof { code => 'file_is_zero',
-		message => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
-		filename => $filename };
-	unlink $filename;
-}
-
-SKIP: {
-	skip "Cannot run under root", 3 if is_posix_root;
-
-	create($filename, 'x');
-	chmod 0000, $filename;
-	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => 2);
-	ok ! eval { $job->init_file(); 1; };
-	my $err = $@;
-	cmp_deeply $err, superhashof { code => 'upload_file_open_error',
-		message => "Unable to open task file %string filename% for reading, errno=%errno%",
-		filename => $filename };
-
-	is $err->{errno}, get_errno(POSIX::strerror(EACCES));
-	chmod 0744, $filename;
-	unlink $filename;
-}
-
-chmod 0744, $filename;
-unlink $filename;
-
-
-{
-	create($filename, 'x');
-
-	for my $partsize_mb (1, 2, 4) {
-		my $partsize = $partsize_mb*1024*1024;
-		my $edge_size = $partsize*10_000;
-
-		for my $size ($edge_size - 100, $edge_size - 1, $edge_size, $edge_size + 1, $edge_size + 27) {
-			my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => $partsize);
-			no warnings 'redefine';
-			local *App::MtAws::QueueJob::MultipartCreate::file_size = sub { $size };
-
-			if ($size > $edge_size) {
-				ok ! eval { $job->init_file(); 1 };
-				my $err = $@;
-				cmp_deeply $err, superhashof { code => 'too_many_parts',
-					message => "With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
-					partsize => $partsize, filename => $filename, size => $size
-				};
-			} else {
-				ok eval { $job->init_file(); 1 };
-			}
-
-		}
-	}
-
-	unlink $filename;
-}
-
-
-{
-	my $job = App::MtAws::QueueJob::MultipartCreate->new(stdin => 1, relfilename => $relfilename, partsize => 2);
-	$job->init_file();
-	cmp_deeply $job->{fh}, *STDIN;
-	ok abs(time() - $job->{mtime}) < 10; # test that mtime is current time
-}
 
 1;
