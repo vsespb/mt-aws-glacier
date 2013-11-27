@@ -32,6 +32,9 @@ die "OS unsupported\n" if ($^O eq 'MSWin32');
 
 our $MB_VERSION = '0.36';
 
+#https://github.com/Perl-Toolchain-Gang/Module-Build/issues/40
+our $MB_BROKEN_RECOMMENDS = ($Module::Build::VERSION >= 0.42) && ($Module::Build::VERSION < 0.4203);
+
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
 	author => 'Victor Efimov <vs@vs-dev.com>',
@@ -149,12 +152,12 @@ my $build = Module::Build->new(
 	configure_requires => {
 		'Module::Build' => $MB_VERSION,
 	},
-	$Module::Build::VERSION < 0.42 ?
+	$MB_BROKEN_RECOMMENDS ? () :
 	(
 		recommends => {
 			'LWP::Protocol::https' => 6,
 		}
-	) : (),
+	),
 	$ENV{MT_NO_HARNESS} ?
 		() :
 		(use_tap_harness    => 1, tap_harness_args   => {
