@@ -56,7 +56,7 @@ sub find_next_job
 {
 	my ($self) = @_;
 	my $maxcnt = $self->{maxcnt}||30;
-	for my $job_id (keys %{$self->{jobs}}) {
+	for my $job_id (keys %{$self->{jobs}}) { # Random order of jobs
 		my $job = $self->{jobs}{$job_id};
 		my $res = $job->next();
 		if ($res->{code} eq JOB_WAIT) {
@@ -102,7 +102,7 @@ sub on_itt_and_jobs
 {
 	my ($self) = @_;
 	my $maxcnt = $self->{maxcnt}||30;
-	if (my @r = find_next_job) { # try to process one pending job
+	if (my @r = $self->find_next_job) { # try to process one pending job
 		return @r;
 	} elsif ($self->get_next_itt) {
 		return JOB_RETRY # otherwise, get new job from iteartor and retry
