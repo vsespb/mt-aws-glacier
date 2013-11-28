@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 857;
+use Test::More tests => 464;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -35,6 +35,7 @@ use TestUtils;
 use LCGRandom;
 
 warning_fatal();
+
 
 use Data::Dumper;
 
@@ -75,25 +76,33 @@ use Data::Dumper;
 
 sub create_iterator
 {
-	my ($maxcnt, $cnt) = @_;
+	my ($maxcnt, $cnt, $cb) = @_;
+	my $counter = 0;
 	my @orig_parts = map { SimpleJob->new(n => $_) } (1..$cnt);
-	App::MtAws::QueueJob::Iterator->new(maxcnt => $maxcnt, iterator => sub { @orig_parts ? shift @orig_parts : () });
+	App::MtAws::QueueJob::Iterator->new(maxcnt => $maxcnt, iterator => sub {
+		$cb->() if $cb;
+		@orig_parts ? shift @orig_parts : ()
+	});
 }
 
 sub test_case_early_finish
 {
 	my ($maxcnt, $cnt) = @_;
 
-	my $itt = create_iterator($maxcnt, $cnt);
+	my $live_counter = 0;
+	my @live_counter_log;
+	my $itt = create_iterator($maxcnt, $cnt, sub { ++$live_counter });
 	my @actions;
 	while (1) {
 		my $r = $itt->next;
+		push @live_counter_log, $live_counter;
 		ok $r->{code} eq JOB_OK || $r->{code} eq JOB_DONE;
 		last if $r->{code} eq JOB_DONE;
 		push @actions, $r->{task}{action};
 		$r->{task}{cb_task_proxy}->("somedata1");
 	}
 
+	cmp_deeply [@live_counter_log], [map { $_ } 1..$cnt+1], "should not call itterator for all jobs at once";
 	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt], "test it works when callback called immediately";
 
 }
@@ -101,8 +110,10 @@ sub test_case_early_finish
 sub test_late_finish
 {
 	my ($maxcnt, $cnt) = @_;
-	my $itt = create_iterator($maxcnt, $cnt);
 
+	my $live_counter = 0;
+	my @live_counter_log;
+	my $itt = create_iterator($maxcnt, $cnt, sub { ++$live_counter });
 	my @actions = ();
 	my @passes;
 	while (@actions < $cnt) {
@@ -110,6 +121,7 @@ sub test_late_finish
 		my $r;
 		while (1) {
 			$r = $itt->next;
+			push @live_counter_log, $live_counter;
 			ok $r->{code} eq JOB_OK || $r->{code} eq JOB_WAIT;
 			last if $r->{code} eq JOB_WAIT;
 			push @actions, $r->{task}{action};
@@ -122,9 +134,19 @@ sub test_late_finish
 		}
 	}
 	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt];
+	#print Dumper $maxcnt, $cnt, \@live_counter_log;
+
+	if ($cnt % $maxcnt) {
+		cmp_deeply {map { $_ => 1 } @live_counter_log}, {map { $_ => 1 } 1..$cnt+1}, "should not call itterator for all jobs at once";
+	} else {
+		cmp_deeply {map { $_ => 1 } @live_counter_log}, {map { $_ => 1 } 1..$cnt  }, "should not call itterator for all jobs at once";
+	}
+
 	is pop @passes, $cnt % $maxcnt, "last pass should contain cnt mod maxcnt items" if ($cnt % $maxcnt);
 	is $_, $maxcnt, "all passes excapt last should contain maxcnt items (if more than one pass)" for (@passes);
 	is $itt->next->{code}, JOB_DONE, "test it works when callback called later";
+
+	is $live_counter, $cnt+1;
 }
 
 sub test_random_finish
@@ -143,18 +165,13 @@ sub test_random_finish
 
 my $maxcnt = 7;
 lcg_srand 777654 => sub {
-	for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, 20) {
+	for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
 		test_case_early_finish($maxcnt, $n);
 		test_late_finish($maxcnt, $n);
-		test_random_finish($maxcnt, $n, $_) for (1, 2, 3, 4);
-		if ($n > 4) {
-			test_random_finish($maxcnt, $n, $n - 1);
-			test_random_finish($maxcnt, $n, $n);
-			test_random_finish($maxcnt, $n, $n + 1);
-		}
+	}
+	for my $n (1, 2, 3, 4, 5) {
+		test_random_finish($maxcnt, $n, $_) for (1..$n+1);
 	}
 };
-
-# TODO: test that on_itt_and_jobs won't eat up all memory
 
 1;
