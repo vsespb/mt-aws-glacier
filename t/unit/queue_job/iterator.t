@@ -163,7 +163,7 @@ sub test_random_finish
 	cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { "abc$_" } 1..$cnt];
 }
 
-tests 464 => sub {
+plan_tests 464 => sub {
 	my $maxcnt = 7;
 	lcg_srand 777654 => sub {
 		for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
