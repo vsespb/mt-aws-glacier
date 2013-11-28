@@ -4,7 +4,7 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4202",
+   "generated_by" : "Module::Build version 0.4203",
    "license" : [
       "gpl_3"
    ],
@@ -40,6 +40,9 @@
          }
       },
       "runtime" : {
+         "recommends" : {
+            "LWP::Protocol::https" : "6"
+         },
          "requires" : {
             "Carp" : "0",
             "Digest::SHA" : "0",
