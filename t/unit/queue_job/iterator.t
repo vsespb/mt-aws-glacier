@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 464;
+use Test::More;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -163,15 +163,17 @@ sub test_random_finish
 	cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { "abc$_" } 1..$cnt];
 }
 
-my $maxcnt = 7;
-lcg_srand 777654 => sub {
-	for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
-		test_case_early_finish($maxcnt, $n);
-		test_late_finish($maxcnt, $n);
-	}
-	for my $n (1, 2, 3, 4, 5) {
-		test_random_finish($maxcnt, $n, $_) for (1..$n+1);
-	}
+tests 464 => sub {
+	my $maxcnt = 7;
+	lcg_srand 777654 => sub {
+		for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
+			test_case_early_finish($maxcnt, $n);
+			test_late_finish($maxcnt, $n);
+		}
+		for my $n (1, 2, 3, 4, 5) {
+			test_random_finish($maxcnt, $n, $_) for (1..$n+1);
+		}
+	};
 };
 
 1;
