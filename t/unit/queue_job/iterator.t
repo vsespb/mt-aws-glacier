@@ -184,7 +184,7 @@ sub test_random_finish
 	}
 }
 
-plan_tests 918 => sub {
+plan_tests 928 => sub {
 
 	ok ! eval { App::MtAws::QueueJob::Iterator->new(maxcnt => 30); 1; };
 	like $@, qr/iterator required/;
@@ -201,13 +201,13 @@ plan_tests 918 => sub {
 	lcg_srand 777654 => sub {
 
 		alarm 180;
-		for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
+		for my $n (0, 1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
 			test_case_early_finish($maxcnt, $n, 1);
 			test_late_finish($maxcnt, $n, 1);
 		}
 		alarm 0;
 
-		for my $n (1, 2, 3, 4, 5) {
+		for my $n (0, 1, 2, 3, 4, 5) {
 			# this already protected by alarm
 			test_random_finish($maxcnt, $n, 1, $_) for (1..$n+1);
 			test_random_finish($maxcnt, $n, 2, $n+1);
