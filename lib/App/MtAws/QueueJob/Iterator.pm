@@ -66,7 +66,6 @@ sub find_next_job
 			return JOB_RETRY;
 		} elsif ($res->{code} eq JOB_OK) {
 			return task($res->{task}, sub {
-				# TODO: test that this line does no present here: delete $self->{jobs}{$job_id} or confess;
 				$res->{task}{cb_task_proxy}->(@_);
 				return;
 			});
@@ -94,7 +93,6 @@ sub on_itt_only
 sub on_itt_and_jobs
 {
 	my ($self) = @_;
-	my $maxcnt = $self->{maxcnt}||30;
 	if (my @r = $self->find_next_job) { # try to process one pending job
 		return @r;
 	} elsif ($self->get_next_itt) {

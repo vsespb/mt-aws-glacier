@@ -84,9 +84,13 @@ sub create_iterator
 
 	my @orig_parts  = do {
 		if ($jobs_count == 1) {
-			map { SimpleJob->new(action => action_str(@actions, $_), n => $_) } (1..$cnt);
+			map {
+				my $a = action_str(@actions, $_);
+				my $x = "x$a";
+				SimpleJob->new(action => $a, n => $x)
+			} (1..$cnt);
 		} else {
-			map {	create_iterator($jobs_count+1, $jobs_count, 1, @actions, $_)	} (1..$cnt);
+			map { create_iterator($jobs_count+1, $jobs_count, 1, undef, @actions, $_) } (1..$cnt);
 		}
 
 	};
@@ -168,13 +172,19 @@ sub test_random_finish
 	$q->process($itt);
 
 	for (@{ $q->{res} }) {
-		ok $_->{action} =~ /^abc(\d+)/;
-		cmp_deeply $_->{data}, [x => $1+0];
+		ok $_->{action} =~ /^abc(\d{4})/;
+		is $_->{data}[0], 'x';
+		ok $_->{data}[1] =~ /^xabc$1/;
+		is scalar @{ $_->{data} }, 2;
 	}
-	cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { action_str($_) } 1..$cnt];
+	if ($jobs_count == 1) {
+		cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { action_str($_) } 1..$cnt];
+	} else {
+		is scalar @{ $q->{res} }, $cnt*$jobs_count;
+	}
 }
 
-plan_tests 468 => sub {
+plan_tests 918 => sub {
 
 	ok ! eval { App::MtAws::QueueJob::Iterator->new(maxcnt => 30); 1; };
 	like $@, qr/iterator required/;
@@ -189,12 +199,19 @@ plan_tests 468 => sub {
 
 	my $maxcnt = 7;
 	lcg_srand 777654 => sub {
+
+		alarm 180;
 		for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
 			test_case_early_finish($maxcnt, $n, 1);
 			test_late_finish($maxcnt, $n, 1);
 		}
+		alarm 0;
+
 		for my $n (1, 2, 3, 4, 5) {
+			# this already protected by alarm
 			test_random_finish($maxcnt, $n, 1, $_) for (1..$n+1);
+			test_random_finish($maxcnt, $n, 2, $n+1);
+			test_random_finish($maxcnt, $n, 3, $n+1);
 		}
 	};
 };
