@@ -24,6 +24,7 @@ our $N;
 our $VERBOSE = 0;
 our $FASTMODE = 0;
 our $STATE_FILE = undef;
+our $HARDLINKS = 0;
 our $PPID = $$;
 our $GLOBAL_DIR = "$BASE_DIR/$PPID";
 
@@ -35,7 +36,7 @@ our $_current_task;
 our $_current_task_stack;
 our $_global_cache = {};
 
-GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE);
+GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE, 'hardlinks' => $HARDLINKS);
 $N ||= 1;
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
@@ -78,7 +79,7 @@ sub with_task
 {
 	local $_current_task_stack = [];
 	local $_current_task = shift;
-	
+
 	eval {
 		alarm 180;
 		shift->();
@@ -180,7 +181,11 @@ sub create_file
 	mkpath(dirname($binaryfilename));
 
 	my $srcfilename = get_sample_fullname($content);
-	copy($srcfilename, $binaryfilename) or confess;
+	if ($HARDLINKS) {
+		link($srcfilename, $binaryfilename) or confess;
+	} else {
+		copy($srcfilename, $binaryfilename) or confess;
+	}
 	confess if -s $srcfilename != -s $binaryfilename;
 	utime $args{mtime}, $args{mtime}, $binaryfilename or confess if defined($args{mtime});
 }
@@ -421,6 +426,32 @@ sub check_otherfiles
 	}
 }
 
+sub check_otherfiles_filenames
+{
+	my ($out, $filename, $otherfiles_ref, $lines_re) = @_;
+
+	my $is_ascii = $filename =~ /^[\x01-\x7f]+$/;
+
+	my $files = 0;
+	my @otherfileids;
+	for (split ("\n", $out)) {
+		print "ZZZ $_\n";
+		if (my ($fullfilename) = $_ =~ $lines_re) {#/^Will UPLOAD (.*)$/
+			$files++;
+			if ($fullfilename =~ m{/otherfile(\d+)$}) {
+				push @otherfileids, $1;
+			} elsif ($is_ascii) {
+				my ($shortname) = $fullfilename =~ m{/([^/]+)$};
+				die unless $shortname eq $filename;
+			}
+		}
+	};
+	confess unless $files == @$otherfiles_ref + 1;
+	my %othefileids = map { $_ => 1 } @otherfileids;
+	delete $othefileids{$_} for (1..@$otherfiles_ref);
+	die if %othefileids;
+}
+
 sub set_vault
 {
 	my ($opts) = @_;
@@ -530,29 +561,36 @@ sub process_sync_new
 	create_config($config, $terminal_encoding);
 	$opts{config} = $config;
 
-	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}])
+		unless dryrun();
 
 	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
 
 	{
 		local $ENV{NEWFSM}=$ENV{USENEWFSM};
-		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+		local $opts{'dry-run'} = undef if dryrun();
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+
+		check_otherfiles_filenames($out, filename(), \@otherfiles, qr/^Will UPLOAD (.*)$/) if (dryrun());
 	}
 
 	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
 	empty_dir $root_dir;
+	unless (dryrun()) {
+		$opts{'max-number-of-files'} = 100_000;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 
-	$opts{'max-number-of-files'} = 100_000;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
+		confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
 
-	check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
-	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+		empty_dir $root_dir;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/])
+			unless dryrun();
+		run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+	}
 
-	empty_dir $root_dir;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
-	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
 sub process_retrieve_inventory
@@ -564,10 +602,10 @@ sub process_retrieve_inventory
 	$opts{dir} = my $root_dir = "$DIR/root";
 
 	mkpath $opts{dir};
-	
+
 	my $content = get_file_body('normal', 1);
 	my $filenames_encoding = 'UTF-8';
-	
+
 
 	my $journal_name = 'journal';
 	my $journal_fullname = "$DIR/$journal_name";
@@ -590,7 +628,7 @@ sub process_retrieve_inventory
 	with_newfsm {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 	};
-	
+
 	empty_dir $root_dir;
 	$opts{'max-number-of-files'} = 100_000;
 	{
@@ -598,12 +636,12 @@ sub process_retrieve_inventory
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding filter/]);
 		confess unless $out =~ /Retrieved Archive/ || !before_files();
 	}
-	
+
 
 	with_newfsm {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/config terminal-encoding vault filenames-encoding/]) if inventory_count() >= 1;
 	};
-	
+
 	empty_dir $root_dir;
 
 	for (1..after_files()) {
@@ -620,19 +658,19 @@ sub process_retrieve_inventory
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding filter/]);
 		confess unless $out =~ /Retrieved Archive/ || !after_files();
 	}
-	
+
 	with_newfsm {
 		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/config terminal-encoding vault filenames-encoding/]) if inventory_count() >= 2;
 	};
-	
+
 	my $new_journal = "$journal_fullname.new";
 	with_newfsm {
 		local $opts{'new-journal'} = $new_journal;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'download-inventory', \%opts, [qw/config new-journal terminal-encoding vault filenames-encoding/]);
 	};
-	
+
 	my ($is_before, $is_after) = (0, 0);
-	
+
 	if (inventory_count()) {
 		open my $f, "<", $new_journal or confess;
 		while (<$f>) {
@@ -643,7 +681,7 @@ sub process_retrieve_inventory
 	} else {
 		confess if -s $new_journal; # TODO: -s or -e ?
 	}
-	
+
 	if (inventory_count() == 2) {
 		confess unless $is_before == before_files();
 		confess if $is_after;# TODO: THAt's a bug. line above is correct
@@ -651,7 +689,7 @@ sub process_retrieve_inventory
 		confess unless $is_before == before_files();
 		confess if $is_after;
 	}
-	
+
 	empty_dir $root_dir;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
@@ -803,7 +841,7 @@ sub process_sync_missing
 	};
 	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 	empty_dir $root_dir;
-	
+
 	my $file_mtime = 123456;
 
 	# creating file

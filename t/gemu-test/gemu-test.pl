@@ -343,6 +343,7 @@ sub light_fsm
 	}}}
 }
 
+lfor dryrun => 0, 1, sub {
 lfor command => qw/sync retrieve_inventory download/, sub {
 	if (command() eq "sync") {
 		lfor -chunk_size_type => 'partsize', sub {
@@ -430,7 +431,7 @@ lfor command => qw/sync retrieve_inventory download/, sub {
 		confess;
 	}
 };
-
+};
 
 for (sort keys %task_seen) {
 	print $_, "\n";
