@@ -36,8 +36,7 @@ sub init
 	$self->{iterator}||confess "iterator required";
 	$self->{maxcnt} ||= 30;
 	$self->{jobs} = {};
-	$self->{pending} = {};
-	$self->{task_autoincrement} = $self->{job_autoincrement} = 0;
+	$self->{job_autoincrement} = 0;
 	$self->enter('itt_only');
 }
 
@@ -66,10 +65,7 @@ sub find_next_job
 			delete $self->{jobs}{$job_id};
 			return JOB_RETRY;
 		} elsif ($res->{code} eq JOB_OK) {
-			my $task_id = ++$self->{task_autoincrement};
-			$self->{pending}{$task_id} = 1;
 			return task($res->{task}, sub {
-				delete $self->{pending}{$task_id} or confess;
 				# TODO: test that this line does no present here: delete $self->{jobs}{$job_id} or confess;
 				$res->{task}{cb_task_proxy}->(@_);
 				return;
