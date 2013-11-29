@@ -75,19 +75,18 @@ use Data::Dumper;
 
 sub action_str
 {
-	my ($n, $oldaction) = @_;
-	sprintf("abc%04d", $n)
+	"abc".join('', (map { sprintf("%04d", $_)  } @_));
 }
 
 sub create_iterator
 {
-	my ($maxcnt, $cnt, $jobs_count, $cb) = @_;
+	my ($maxcnt, $cnt, $jobs_count, $cb, @actions) = @_;
 
 	my @orig_parts  = do {
 		if ($jobs_count == 1) {
-			map { SimpleJob->new(action => action_str($_), n => $_) } (1..$cnt);
+			map { SimpleJob->new(action => action_str(@actions, $_), n => $_) } (1..$cnt);
 		} else {
-			map {	create_iterator($jobs_count+1, $jobs_count, 1)	} (1..$cnt);
+			map {	create_iterator($jobs_count+1, $jobs_count, 1, @actions, $_)	} (1..$cnt);
 		}
 
 	};
