@@ -435,8 +435,8 @@ sub check_otherfiles_filenames
 	my $files = 0;
 	my @otherfileids;
 	for (split ("\n", $out)) {
-		print "ZZZ $_\n";
 		if (my ($fullfilename) = $_ =~ $lines_re) {#/^Will UPLOAD (.*)$/
+			die if $is_ascii && !-f $fullfilename;
 			$files++;
 			if ($fullfilename =~ m{/otherfile(\d+)$}) {
 				push @otherfileids, $1;
@@ -774,35 +774,54 @@ sub process_sync_modified
 	$opts{'detect'} = $detect_option;
 	{
 		local $ENV{NEWFSM}=$ENV{USENEWFSM};
+		local $opts{'dry-run'}= undef if dryrun();
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
-		if ($is_upload) {
-			confess unless ($out =~ /\sFinished\s.*\sDeleted\s/s);
-		} else {
-			confess if ($out =~ /\s(Finished|Deleted)\s/);
-		}
+		#
 
-		if ($is_treehash) {
-			confess unless ($out =~ /\sChecked treehash for\s/);
+		if (dryrun()) {
+			if ($is_upload) {
+				if ($is_treehash) {
+					check_otherfiles_filenames($out, filename(), [], qr/^Will VERIFY treehash and UPLOAD (.*) if modified/);
+				} else {
+					check_otherfiles_filenames($out, filename(), \@otherfiles, qr/^Will UPLOAD (.*)$/);
+				}
+			} else {
+				my $filename = filename();
+				my $is_ascii = $filename =~ /^[\x01-\x7f]+$/;
+				confess if ($is_ascii && $out =~ /Will.*\Q$filename.*\n/);
+			}
 		} else {
-			confess if ($out =~ /\sChecked treehash for\s/);
+			if ($is_upload) {
+				confess unless ($out =~ /\sFinished\s.*\sDeleted\s/s);
+			} else {
+				confess if ($out =~ /\s(Finished|Deleted)\s/);
+			}
+
+			if ($is_treehash) {
+				confess unless ($out =~ /\sChecked treehash for\s/);
+			} else {
+				confess if ($out =~ /\sChecked treehash for\s/);
+			}
 		}
 
 	}
 
 	if ($FASTMODE < 10) {
-		empty_dir $root_dir;
-		$opts{'max-number-of-files'} = 100_000;
-		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
-		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+		unless (dryrun()) {
+			empty_dir $root_dir;
+			$opts{'max-number-of-files'} = 100_000;
+			run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+			run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 
-		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
-		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
-			if @otherfiles && $FASTMODE < 5;
-		if ($is_upload) {
-			confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
-		} else {
-			confess unless check_file(filenames_encoding(), $root_dir, filename(), $journal_content);
+			check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
+			run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
+				if @otherfiles && $FASTMODE < 5;
+			if ($is_upload) {
+				confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+			} else {
+				confess unless check_file(filenames_encoding(), $root_dir, filename(), $journal_content);
+			}
 		}
 	}
 	empty_dir $root_dir;
