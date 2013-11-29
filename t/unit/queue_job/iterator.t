@@ -48,7 +48,7 @@ use Data::Dumper;
 
 	sub on_default
 	{
-		state 'wait', task("abc$_[0]->{n}", {x => $_[0]->{n}}, sub {
+		state 'wait', task($_[0]->{action}, {x => $_[0]->{n}}, sub {
 			confess unless $_[0] && $_[0] =~ /^somedata\d$/;
 			state 'done'
 		});
@@ -73,12 +73,24 @@ use Data::Dumper;
 	}
 };
 
+sub action_str
+{
+	my ($n, $oldaction) = @_;
+	sprintf("abc%04d", $n)
+}
 
 sub create_iterator
 {
-	my ($maxcnt, $cnt, $cb) = @_;
-	my $counter = 0;
-	my @orig_parts = map { SimpleJob->new(n => $_) } (1..$cnt);
+	my ($maxcnt, $cnt, $jobs_count, $cb) = @_;
+
+	my @orig_parts  = do {
+		if ($jobs_count == 1) {
+			map { SimpleJob->new(action => action_str($_), n => $_) } (1..$cnt);
+		} else {
+			map {	create_iterator($jobs_count+1, $jobs_count, 1)	} (1..$cnt);
+		}
+
+	};
 	App::MtAws::QueueJob::Iterator->new(maxcnt => $maxcnt, iterator => sub {
 		$cb->() if $cb;
 		@orig_parts ? shift @orig_parts : ()
@@ -87,11 +99,11 @@ sub create_iterator
 
 sub test_case_early_finish
 {
-	my ($maxcnt, $cnt) = @_;
+	my ($maxcnt, $cnt, $jobs_count) = @_;
 
 	my $live_counter = 0;
 	my @live_counter_log;
-	my $itt = create_iterator($maxcnt, $cnt, sub { ++$live_counter });
+	my $itt = create_iterator($maxcnt, $cnt, $jobs_count, sub { ++$live_counter });
 	my @actions;
 	while (1) {
 		my $r = $itt->next;
@@ -103,17 +115,17 @@ sub test_case_early_finish
 	}
 
 	cmp_deeply [@live_counter_log], [map { $_ } 1..$cnt+1], "should not call itterator for all jobs at once";
-	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt], "test it works when callback called immediately";
+	cmp_deeply [sort @actions], [sort map { action_str($_) } 1..$cnt], "test it works when callback called immediately";
 
 }
 
 sub test_late_finish
 {
-	my ($maxcnt, $cnt) = @_;
+	my ($maxcnt, $cnt, $jobs_count) = @_;
 
 	my $live_counter = 0;
 	my @live_counter_log;
-	my $itt = create_iterator($maxcnt, $cnt, sub { ++$live_counter });
+	my $itt = create_iterator($maxcnt, $cnt, $jobs_count, sub { ++$live_counter });
 	my @actions = ();
 	my @passes;
 	while (@actions < $cnt) {
@@ -133,7 +145,7 @@ sub test_late_finish
 			next;
 		}
 	}
-	cmp_deeply [sort @actions], [sort map { "abc$_" } 1..$cnt];
+	cmp_deeply [sort @actions], [sort map { action_str($_) } 1..$cnt];
 	#print Dumper $maxcnt, $cnt, \@live_counter_log;
 
 	if ($cnt % $maxcnt) {
@@ -151,16 +163,16 @@ sub test_late_finish
 
 sub test_random_finish
 {
-	my ($maxcnt, $cnt, $nworkers) = @_;
-	my $itt = create_iterator($maxcnt, $cnt);
+	my ($maxcnt, $cnt, $jobs_count, $nworkers) = @_;
+	my $itt = create_iterator($maxcnt, $cnt, $jobs_count);
 	my $q = QE->new(n => $nworkers);
 	$q->process($itt);
 
 	for (@{ $q->{res} }) {
 		ok $_->{action} =~ /^abc(\d+)/;
-		cmp_deeply $_->{data}, [x => $1];
+		cmp_deeply $_->{data}, [x => $1+0];
 	}
-	cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { "abc$_" } 1..$cnt];
+	cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { action_str($_) } 1..$cnt];
 }
 
 plan_tests 468 => sub {
@@ -179,11 +191,11 @@ plan_tests 468 => sub {
 	my $maxcnt = 7;
 	lcg_srand 777654 => sub {
 		for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
-			test_case_early_finish($maxcnt, $n);
-			test_late_finish($maxcnt, $n);
+			test_case_early_finish($maxcnt, $n, 1);
+			test_late_finish($maxcnt, $n, 1);
 		}
 		for my $n (1, 2, 3, 4, 5) {
-			test_random_finish($maxcnt, $n, $_) for (1..$n+1);
+			test_random_finish($maxcnt, $n, 1, $_) for (1..$n+1);
 		}
 	};
 };
