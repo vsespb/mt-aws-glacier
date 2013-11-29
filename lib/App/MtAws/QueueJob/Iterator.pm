@@ -33,7 +33,8 @@ sub init
 {
 	my ($self) = @_;
 
-	$self->{iterator}||confess;
+	$self->{iterator}||confess "iterator required";
+	$self->{maxcnt} ||= 30;
 	$self->{jobs} = {};
 	$self->{pending} = {};
 	$self->{task_autoincrement} = $self->{job_autoincrement} = 0;
@@ -55,16 +56,12 @@ sub get_next_itt
 sub find_next_job
 {
 	my ($self) = @_;
-	my $maxcnt = $self->{maxcnt}||30;
+	my $maxcnt = $self->{maxcnt};
 	for my $job_id (keys %{$self->{jobs}}) { # Random order of jobs
 		my $job = $self->{jobs}{$job_id};
 		my $res = $job->next();
 		if ($res->{code} eq JOB_WAIT) {
-			if ($self->{one_by_one}) {
-				return JOB_WAIT;
-			} else {
-				return JOB_WAIT unless --$maxcnt;
-			}
+			return JOB_WAIT unless --$maxcnt;
 		} elsif ($res->{code} eq JOB_DONE) {
 			delete $self->{jobs}{$job_id};
 			return JOB_RETRY;

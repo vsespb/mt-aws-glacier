@@ -163,7 +163,19 @@ sub test_random_finish
 	cmp_deeply [sort map { $_->{action} } @{ $q->{res} }], [sort map { "abc$_" } 1..$cnt];
 }
 
-plan_tests 464 => sub {
+plan_tests 468 => sub {
+
+	ok ! eval { App::MtAws::QueueJob::Iterator->new(maxcnt => 30); 1; };
+	like $@, qr/iterator required/;
+
+	{
+		my $itt = App::MtAws::QueueJob::Iterator->new(maxcnt => 20, iterator => sub {});
+		is $itt->{maxcnt}, 20, "one should be able to override maxcnt";
+		$itt = App::MtAws::QueueJob::Iterator->new(iterator => sub {});
+		is $itt->{maxcnt}, 30, "default maxcnt should be 30";
+	}
+
+
 	my $maxcnt = 7;
 	lcg_srand 777654 => sub {
 		for my $n (1, 2, 5, $maxcnt - 1, $maxcnt, $maxcnt+1, $maxcnt*2, $maxcnt*2+1, $maxcnt*3, $maxcnt*3-1) {
