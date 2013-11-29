@@ -59,17 +59,21 @@ sub find_next_job
 	for my $job_id (keys %{$self->{jobs}}) { # Random order of jobs
 		my $job = $self->{jobs}{$job_id};
 		my $res = $job->next();
+		
+		# uncoverable branch false count:3
 		if ($res->{code} eq JOB_WAIT) {
 			return JOB_WAIT unless --$maxcnt;
 		} elsif ($res->{code} eq JOB_DONE) {
 			delete $self->{jobs}{$job_id};
 			return JOB_RETRY;
+
 		} elsif ($res->{code} eq JOB_OK) {
 			return task($res->{task}, sub {
 				$res->{task}{cb_task_proxy}->(@_);
 				return;
 			});
 		} else {
+			# uncoverable statement
 			confess;
 		}
 	}

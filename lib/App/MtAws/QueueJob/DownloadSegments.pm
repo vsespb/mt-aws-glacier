@@ -33,7 +33,7 @@ use App::MtAws::IntermediateFile;
 sub init
 {
 	my ($self) = @_;
-	
+
 	$self->{size}||confess;
 	$self->{archive_id}||confess;
 	$self->{jobid}||confess;
@@ -41,10 +41,10 @@ sub init
 	defined($self->{relfilename})||confess;
 	defined($self->{filename})||confess;
 	defined($self->{mtime})||confess;
-	
+
 	$self->{position} = 0;
 	$self->{segments} = {};
-	
+
 	$self->enter("tempfile");
 	return $self;
 }
@@ -59,14 +59,18 @@ sub on_tempfile
 sub on_download
 {
 	my ($self) = @_;
-	
+
+	# uncoverable branch false count:3
 	if ($self->{position} < $self->{size}) {
 		my $download_size = $self->{size} - $self->{position};
 		my $segment_size = $self->{file_downloads}{'segment-size'}*1048576 or confess;
 		$download_size = $segment_size if $download_size > $segment_size;
-		
+
 		my $position_now = $self->{position}; # self->position will change, unlike position_now
+
+		# uncoverable branch true
 		confess if $self->{segments}{ $position_now }++;
+
 		my @result = task "segment_download_job", {
 			(map { $_ => $self->{$_} } qw/archive_id relfilename filename jobid/),
 			position => $self->{position}, download_size => $download_size, tempfile => $self->{i_tmp}->tempfilename
@@ -74,14 +78,14 @@ sub on_download
 			delete $self->{segments}{ $position_now } or confess;
 			return;
 		};
-		
+
 		$self->{position} += $download_size;
-		
+
 		return @result;
 	} elsif ($self->{position} == $self->{size}) {
 		return state 'finishing';
 	} else {
-		confess;
+		confess; # uncoverable statement
 	}
 }
 
@@ -98,4 +102,3 @@ sub on_finishing
 }
 
 1;
-
