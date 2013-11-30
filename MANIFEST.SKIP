@@ -76,3 +76,7 @@
 ^packaging/
 ^scripts/
 run\-.*\.sh
+
+^*\.komodoproject
+^\.komodotools/
+^\.travis.yml

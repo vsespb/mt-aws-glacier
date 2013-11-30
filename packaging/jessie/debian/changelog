@@ -1,3 +1,12 @@
+libapp-mtaws-perl (1.059-0vdebian1~v8~mt1) jessie; urgency=low
+
+  * Fixed: Dry-run with restore completed was crashing.
+  Fixed a bug introduced in v0.971
+  dry-run and restore-completed used archive_id instead of relative filename and thus was crashing with message:
+  UNEXPECTED ERROR: SOMEARCHIVEID not found in journal at ... /lib/App/MtAws/Journal.pm line 247.
+
+ -- Victor Efimov <victor@vsespb.ru>  Sat, 30 Nov 2013 13:54:00 +0400
+
 libapp-mtaws-perl (1.058-0vdebian1~v8~mt1) jessie; urgency=low
 
   * Fixed - when downloading inventory there could be Perl warning message ("use initialized ..") in case when some

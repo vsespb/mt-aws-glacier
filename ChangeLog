@@ -1,3 +1,10 @@
+### 2013-11-08 v1.059
+
+  * Fixed: Dry-run with restore completed was crashing.
+  Fixed a bug introduced in v0.971
+  dry-run and restore-completed used archive_id instead of relative filename and thus was crashing with message:
+  UNEXPECTED ERROR: SOMEARCHIVEID not found in journal at ... /lib/App/MtAws/Journal.pm line 247.
+
 ### 2013-11-08 v1.058
 
   * Fixed - when downloading inventory there could be Perl warning message ("use initialized ..") in case when some
