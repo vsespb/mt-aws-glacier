@@ -89,7 +89,7 @@ sub process
 {
 	for my $k1 (keys %filter) {
 		return unless defined $data->{$k1};
-		return unless first { $data->{$k1} eq $_ } keys %{ $filter{$k1} };
+		return unless defined first { $data->{$k1} eq $_ } keys %{ $filter{$k1} };
 	}
 
 	my $task = ( join(" ",
