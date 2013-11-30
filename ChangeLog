@@ -1,4 +1,4 @@
-### 2013-11-08 v1.059
+### 2013-11-30 v1.059
 
   * Fixed: Dry-run with restore completed was crashing.
   Fixed a bug introduced in v0.971
