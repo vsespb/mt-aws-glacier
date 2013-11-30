@@ -428,7 +428,7 @@ sub check_otherfiles
 
 sub check_otherfiles_filenames
 {
-	my ($out, $filename, $otherfiles_ref, $lines_re) = @_;
+	my ($out, $filename, $otherfiles_ref, $lines_re, $is_relative) = @_;
 
 	my $is_ascii = $filename =~ /^[\x01-\x7f]+$/;
 
@@ -436,13 +436,17 @@ sub check_otherfiles_filenames
 	my @otherfileids;
 	for (split ("\n", $out)) {
 		if (my ($fullfilename) = $_ =~ $lines_re) {#/^Will UPLOAD (.*)$/
-			die if $is_ascii && !-f $fullfilename;
+			die if $is_ascii && !$is_relative & !-f $fullfilename;
 			$files++;
 			if ($fullfilename =~ m{/otherfile(\d+)$}) {
 				push @otherfileids, $1;
 			} elsif ($is_ascii) {
-				my ($shortname) = $fullfilename =~ m{/([^/]+)$};
-				die unless $shortname eq $filename;
+				if ($is_relative) {
+					die "[$fullfilename] eq [$filename]" unless $fullfilename eq $filename;
+				} else {
+					my ($shortname) = $fullfilename =~ m{/([^/]+)$};
+					die "$shortname eq $filename" unless $shortname eq $filename;
+				}
 			}
 		}
 	};
@@ -877,29 +881,40 @@ sub process_sync_missing
 	$opts{'new'}=undef if @otherfiles; # TODO: different "otherfiles" mode - "new" or "replace-modified"
 	$opts{'delete-removed'}=undef;
 	with_newfsm {
+		local $opts{'dry-run'}=undef if dryrun();
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
 
 		if (is_missing()) {
-			confess unless ($out =~ /\sDeleted\s/s);
+			if (dryrun()) {
+				check_otherfiles_filenames($out, filename(), [], qr/Will DELETE archive [A-Za-z0-9_-]+\s*\(\s*filename\s+(.*)\)/, 1);
+			} else {
+				confess unless ($out =~ /\sDeleted\s/s);
+			}
 		} else {
-			confess if ($out =~ /\sDeleted\s/s);
+			if (dryrun()) {
+				confess if ($out =~ /Will DELETE/s);
+			} else {
+				confess if ($out =~ /\sDeleted\s/s);
+			}
 		}
 
 	};
 
 	if ($FASTMODE < 10) {
-		empty_dir $root_dir;
-		$opts{'max-number-of-files'} = 100_000;
-		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
-		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+		unless (dryrun()) {
+			empty_dir $root_dir;
+			$opts{'max-number-of-files'} = 100_000;
+			run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+			run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 
-		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
-		run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
-			if @otherfiles && $FASTMODE < 5;
-		if (is_missing()) {
-			confess if check_file(filenames_encoding(), $root_dir, filename(), $content);
-		} else {
-			confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+			check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
+			run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding filenames-encoding/])
+				if @otherfiles && $FASTMODE < 5;
+			if (is_missing()) {
+				confess if check_file(filenames_encoding(), $root_dir, filename(), $content);
+			} else {
+				confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+			}
 		}
 	}
 	empty_dir $root_dir;
