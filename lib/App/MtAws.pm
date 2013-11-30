@@ -255,8 +255,8 @@ END
 				keys %{$files};
 			if (keys %filelist) {
 				if ($options->{'dry-run'}) {
-					for (keys %filelist) {
-						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n" for ($j->latest($_));
+					for (values %filelist) {
+						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n";
 					}
 				} else {
 					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrievalFetch->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
