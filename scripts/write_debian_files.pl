@@ -76,13 +76,13 @@ sub entry(@)
 sub write_control
 {
 	my ($distro) = @_;
-	
+
 	my @build_deps = qw/libtest-deep-perl libtest-mockmodule-perl libdatetime-perl libmodule-build-perl/;
-	
+
 	my $is_lucid = $distro =~ /(lucid|squeeze)/i;
-	
+
 	push @build_deps, 'libtest-spec-perl ', 'libhttp-daemon-perl' unless $is_lucid;
-	
+
 	my @deps = qw/libwww-perl libjson-xs-perl/;
 	my @recommends = $is_lucid ?  () : qw/liblwp-protocol-https-perl/;
 	my $build_deps = join(", ", @deps, @build_deps);
@@ -90,7 +90,7 @@ sub write_control
 	my $recommends= join(", ", @recommends);
 	my $recommends_line = @recommends ? "Recommends: $recommends\n" : "";
 	open my $f, ">", $CONTROL or confess;
-	
+
 	print $f <<"END";
 Source: $PACKAGE
 Section: perl
@@ -126,6 +126,14 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+
+	entry '1.059', 1, 'Sat, 30 Nov 2013 13:54:00 +0400', <<"END";
+  * Fixed: Dry-run with restore completed was crashing.
+  Fixed a bug introduced in v0.971
+  dry-run and restore-completed used archive_id instead of relative filename and thus was crashing with message:
+  UNEXPECTED ERROR: SOMEARCHIVEID not found in journal at ... /lib/App/MtAws/Journal.pm line 247.
+END
+
 	entry '1.058', 1, 'Fri, 8 Nov 2013 21:50:00 +0400', << "END";
   * Fixed - when downloading inventory there could be Perl warning message ("use initialized ..") in case when some
   specific metadata (x-amz-archive-description) strings (like empty strings) met. Such metadata can appear if
