@@ -255,7 +255,7 @@ sub other_files_base
 	lfor otherfiles => 1, sub {
 	lfor otherfiles_count => @{$opts{otherfiles_count}}, sub {
 		if (otherfiles_count() < 20 || filesize() > 10) {
-			lfor otherfiles_size => 1, 1024*1024-1, 4*1024*1024+1, sub {
+			lfor otherfiles_size => @{$opts{otherfiles_size}}, sub {
 				lfor otherfiles_big_count => qw/0 1/, sub {
 					if (otherfiles_big_count() > 0) {
 						lfor otherfiles_big_size =>  @{$opts{otherfiles_big_size}}, sub {
@@ -277,12 +277,20 @@ sub other_files_base
 
 sub other_files
 {
-	other_files_base(@_, otherfiles_count => [qw/0 1 10 100/], otherfiles_big_size =>  [4*1024*1024+1, 45*1024*1024-156897]);
+	other_files_base(@_, otherfiles_count => [qw/0 1 10 100/], otherfiles_size => [1, 1024*1024-1, 4*1024*1024+1],
+		otherfiles_big_size =>  [4*1024*1024+1, 45*1024*1024-156897]);
 }
 
 sub light_other_files
 {
-	other_files_base(@_, otherfiles_count => [qw/0 1 10/], otherfiles_big_size =>  [4*1024*1024+1]);
+	other_files_base(@_, otherfiles_count => [qw/0 1 10/], otherfiles_size => [1, 1024*1024-1, 4*1024*1024+1],
+		otherfiles_big_size =>  [4*1024*1024+1]);
+}
+
+sub light_and_tiny_other_files
+{
+	other_files_base(@_, otherfiles_count => [qw/0 1 10/], otherfiles_size => [1],
+		otherfiles_big_size =>  [4*1024*1024+1]);
 }
 
 
@@ -344,7 +352,7 @@ sub light_fsm
 }
 
 lfor dryrun => 0, 1, sub {
-lfor command => qw/sync retrieve_inventory download/, sub {
+lfor command => qw/sync retrieve_inventory download retrieve/, sub {
 	if (command() eq "sync") {
 		lfor -chunk_size_type => 'partsize', sub {
 		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
@@ -427,6 +435,15 @@ lfor command => qw/sync retrieve_inventory download/, sub {
 			process();
 		};
 		};
+	} elsif (command() eq "retrieve") {
+		lfor filebody => "normal", sub {
+		lfor filesize => "1", sub {
+		file_names [qw/zero russian/], 'full', 'full', sub {
+		light_and_tiny_other_files sub {
+		lfor concurrency => 1, 2, 3, sub {
+			process();
+
+		}}}}};
 	} else {
 		confess;
 	}

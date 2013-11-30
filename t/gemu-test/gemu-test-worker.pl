@@ -438,7 +438,7 @@ sub check_otherfiles_filenames
 		if (my ($fullfilename) = $_ =~ $lines_re) {#/^Will UPLOAD (.*)$/
 			die if $is_ascii && !$is_relative & !-f $fullfilename;
 			$files++;
-			if ($fullfilename =~ m{/otherfile(\d+)$}) {
+			if ($fullfilename =~ m{otherfile(\d+)}) {
 				push @otherfileids, $1;
 			} elsif ($is_ascii) {
 				if ($is_relative) {
@@ -450,7 +450,7 @@ sub check_otherfiles_filenames
 			}
 		}
 	};
-	confess unless $files == @$otherfiles_ref + 1;
+	confess $files unless $files == @$otherfiles_ref + 1;
 	my %othefileids = map { $_ => 1 } @otherfileids;
 	delete $othefileids{$_} for (1..@$otherfiles_ref);
 	die if %othefileids;
@@ -546,6 +546,67 @@ sub process_download
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 
+
+sub process_retrieve
+{
+	empty_dir $DIR;
+
+	my %opts;
+	set_vault \%opts;
+	$opts{dir} = my $root_dir = "$DIR/root";
+
+
+	my $content = get_file_body(filebody(), filesize());
+	create_file(filenames_encoding(), $root_dir, filename(), $content);
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = filenames_encoding();
+
+	$opts{concurrency} = concurrency();
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
+
+	{
+		$opts{partsize} = $DEFAULT_PARTSIZE;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding partsize/]);
+	}
+
+
+	empty_dir $root_dir;
+
+	with_newfsm {
+		$opts{'max-number-of-files'} = 100_000;
+		local $opts{'dry-run'}=undef if dryrun();
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/,
+			dryrun() ? ('dry-run') : ()]);
+
+		my ($parts, $full) = (0, 0);
+		if (dryrun()) {
+			check_otherfiles_filenames($out, filename(), \@otherfiles, qr/^Will RETRIEVE archive [A-Za-z0-9_-]+ \(\s*filename\s+(.*)\)$/, 1);
+		} else {
+			for (split ("\n", $out)) {
+				if (/Retrieved Archive/) {
+					$parts++
+				}
+			}
+			die unless $parts == @otherfiles + 1;
+		}
+	};
+
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+}
 
 sub process_sync_new
 {
@@ -947,6 +1008,8 @@ sub process
 		process_retrieve_inventory();
 	} elsif (get "command" eq 'download') {
 		process_download();
+	} elsif (get "command" eq 'retrieve') {
+		process_retrieve();
 	} else {
 		confess;
 	}
