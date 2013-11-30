@@ -351,12 +351,13 @@ sub light_fsm
 	}}}
 }
 
-lfor dryrun => 0, 1, sub {
+
 lfor command => qw/sync retrieve_inventory download retrieve/, sub {
 	if (command() eq "sync") {
 		lfor -chunk_size_type => 'partsize', sub {
 		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
 			if (get "subcommand" eq "sync_new") {
+				lfor dryrun => 0, sub {
 				# testing filename stuff
 				heavy_filenames sub {
 					process();
@@ -365,17 +366,38 @@ lfor command => qw/sync retrieve_inventory download retrieve/, sub {
 				heavy_fsm sub {
 					process();
 				};
+				};
+				lfor dryrun => 1, sub {
+				lfor filebody => "normal", sub {
+				lfor filesize => "1", sub {
+				file_names [qw/zero russian/], 'full', 'full', sub {
+				light_and_tiny_other_files sub {
+				lfor concurrency => 1, 2, 3, sub {
+				lfor partsize => 1, sub {
+						process();
+				}}}}}}};
 			} elsif (get "subcommand" eq "sync_missing") {
 				# testing filename stuff
 				lfor is_missing => 0, 1, sub {
-					light_filenames sub {
-						process();
-					};
-					if (is_missing()) {
-						light_fsm sub {
+					lfor dryrun => 0, sub {
+						light_filenames sub {
 							process();
 						};
-					}
+						if (is_missing()) {
+							light_fsm sub {
+								process();
+							};
+						}
+					};
+					lfor dryrun => 1, sub {
+					lfor filebody => "normal", sub {
+					lfor filesize => "1", sub {
+					file_names [qw/zero russian/], 'full', 'full', sub {
+					light_and_tiny_other_files sub {
+					lfor concurrency => 1, 2, 3, sub {
+					lfor partsize => 1, sub {
+							process();
+					}}}}}}};
 				}
 			} elsif (get "subcommand" eq "sync_modified") {
 
@@ -398,12 +420,25 @@ lfor command => qw/sync retrieve_inventory download retrieve/, sub {
 				lfor detect_case => @detect_cases, sub { # TODO: also try mtime=zero!
 				# testing filename stuff
 				light_filenames sub {
-					process();
+					lfor dryrun => 0, 1, sub {
+					    process();
+					}
 				}};
 
 				lfor detect_case => qw/treehash-matches mtime-matches/, sub { # TODO: also try mtime=zero!
+					lfor dryrun => 0, sub {
 					heavy_fsm sub {
 						process();
+					};
+					lfor dryrun => 1, sub {
+					lfor filebody => "normal", sub {
+					lfor filesize => "1", sub {
+					file_names [qw/zero russian/], 'full', 'full', sub {
+					light_and_tiny_other_files sub {
+					lfor concurrency => 1, 2, 3, sub {
+					lfor partsize => 1, sub {
+							process();
+					}}}}}}};
 					};
 				};
 
@@ -425,30 +460,42 @@ lfor command => qw/sync retrieve_inventory download retrieve/, sub {
 		};
 		}
 	} elsif (command() eq "download") {
-		lfor -chunk_size_type => 'segment_size', sub {
-		# testing filename stuff
-		heavy_filenames sub {
-			process();
+		lfor dryrun => 0, sub {
+			lfor -chunk_size_type => 'segment_size', sub {
+			# testing filename stuff
+			heavy_filenames sub {
+				process();
+			};
+			# testing FSM stuff
+			heavy_fsm sub {
+				process();
+			};
 		};
-		# testing FSM stuff
-		heavy_fsm sub {
-			process();
-		};
-		};
-	} elsif (command() eq "retrieve") {
+		lfor dryrun => 1, sub {
+		lfor segment_size => 1, sub {
 		lfor filebody => "normal", sub {
 		lfor filesize => "1", sub {
 		file_names [qw/zero russian/], 'full', 'full', sub {
 		light_and_tiny_other_files sub {
 		lfor concurrency => 1, 2, 3, sub {
-			process();
+				process();
+		}}}}}}};
+		};
+	} elsif (command() eq "retrieve") {
+	    lfor dryrun => 0, 1, sub {
+	    lfor filebody => "normal", sub {
+	    lfor filesize => "1", sub {
+	    file_names [qw/zero russian/], 'full', 'full', sub {
+	    light_and_tiny_other_files sub {
+	    lfor concurrency => 1, 2, 3, sub {
+		    process();
 
-		}}}}};
+	    }}}}}};
 	} else {
 		confess;
 	}
 };
-};
+
 
 for (sort keys %task_seen) {
 	print $_, "\n";
