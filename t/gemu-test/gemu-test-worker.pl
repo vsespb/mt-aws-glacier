@@ -504,34 +504,42 @@ sub process_download
 	with_newfsm {
 		$opts{'max-number-of-files'} = 100_000;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+
+		local $opts{'dry-run'}=undef if dryrun();
 		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/,
-			$opts{'segment-size'} ? ('segment-size') : ()]);
+			$opts{'segment-size'} ? ('segment-size') : (), dryrun() ? ('dry-run') : ()]);
 
 		my ($parts, $full) = (0, 0);
-		for (split ("\n", $out)) {
-			unless (/otherfile/) {
-				if (/Downloaded part of archive/) {
-					$parts++
-				} elsif (/Downloaded archive/) {
-					$full++
-				} else {
-					# other lines
+		if (dryrun()) {
+			check_otherfiles_filenames($out, filename(), \@otherfiles, qr/^Will DOWNLOAD \(if available\) archive [A-Za-z0-9_-]+ \(\s*filename\s+(.*)\)$/, 1);
+		} else {
+			for (split ("\n", $out)) {
+				unless (/otherfile/) {
+					if (/Downloaded part of archive/) {
+						$parts++
+					} elsif (/Downloaded archive/) {
+						$full++
+					} else {
+						# other lines
+					}
 				}
 			}
-		}
-		if ($opts{'segment-size'} && $opts{'segment-size'}*1024*1024 < filesize()) {
-			use POSIX qw/ceil/;
-			my $part_count = ceil(filesize()/($opts{'segment-size'}*1024*1024));
-			confess unless $parts == $part_count;
-			confess if $full;
-		} else {
-			confess if $parts;
-			confess unless $full;
+			if ($opts{'segment-size'} && $opts{'segment-size'}*1024*1024 < filesize()) {
+				use POSIX qw/ceil/;
+				my $part_count = ceil(filesize()/($opts{'segment-size'}*1024*1024));
+				confess unless $parts == $part_count;
+				confess if $full;
+			} else {
+				confess if $parts;
+				confess unless $full;
+			}
 		}
 	};
 
-	check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
-	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+	unless (dryrun()) {
+		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
+		confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+	}
 
 	empty_dir $root_dir;
 	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
