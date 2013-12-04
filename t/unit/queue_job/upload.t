@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 135;
+use Test::More tests => 136;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -73,7 +73,7 @@ sub test_case
 		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
 		expect_done($j);
 	}
-	
+
 	{
 		my ($partsize, $upload_id) = (2*1024*1024, 'someid');
 		my $j = App::MtAws::QueueJob::Upload->new(filename => $filename, relfilename => $relfilename, partsize => $partsize, delete_after_upload =>1, archive_id => 'abc' );
@@ -86,6 +86,13 @@ sub test_case
 test_case '/path/somefile', 'somefile', 123456;
 test_case '/path/somefile', 'somefile', 0;
 test_case '0', 0, 123456;
+
+# test dry-run
+
+{
+	my $j = App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/);
+	is $j->will_do(), "Will UPLOAD $opts{filename}"
+}
 
 1;
 

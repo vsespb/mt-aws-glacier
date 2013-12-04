@@ -34,7 +34,7 @@ use base 'App::MtAws::QueueJob';
 sub init
 {
 	my ($self) = @_;
-	defined($self->{filename})||confess "no filename nor stdin";
+	defined($self->{filename})||confess "no filename";
 	defined($self->{relfilename}) || confess "no relfilename";
 	defined($self->{delete_after_upload}) || confess "delete_after_upload must be defined";
 	$self->{partsize}||confess;
@@ -67,6 +67,18 @@ sub on_delete
 		job( App::MtAws::QueueJob::Delete->new(map { $_ => $self->{$_} } qw/relfilename archive_id/), sub {
 			state("done");
 		});
+}
+
+sub will_do
+{
+	my ($self) = @_;
+	if (defined($self->{filename})) {
+		"Will UPLOAD $self->{filename}";
+	} elsif ($self->{stdin}) {
+		# "Will UPLOAD stream from STDIN";
+	} else {
+		confess;
+	}
 }
 
 1;

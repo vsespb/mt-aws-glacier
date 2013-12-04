@@ -46,4 +46,10 @@ sub on_delete
 	}
 }
 
+sub will_do
+{
+	my ($self) = @_;
+	"Will DELETE archive $self->{archive_id} (filename $self->{relfilename})";
+}
+
 1;

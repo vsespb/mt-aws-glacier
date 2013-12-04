@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 124;
+use Test::More tests => 125;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -39,11 +39,11 @@ warning_fatal();
 use Data::Dumper;
 
 my %opts = (filename => '/path/somefile', relfilename => 'somefile', treehash => 'abc', archive_id => 'def', partsize => 4*1024*1024, delete_after_upload => 1);
+my @all = keys %opts;
 
 # test args validation
 {
-	my @all = keys %opts;
-	ok eval { App::MtAws::QueueJob::Verify->new( map { $_ => $opts{$_} } @all); 1; };
+	ok eval { App::MtAws::QueueJob::VerifyAndUpload->new( map { $_ => $opts{$_} } @all); 1; };
 	for my $exclude (@all) {
 		ok !eval { App::MtAws::QueueJob::VerifyAndUpload->new( map { $_ => $opts{$_} } grep { $_ ne $exclude} @all); 1; }, $exclude;
 	}
@@ -61,7 +61,7 @@ for (0, 1) {
 		$opts{filename} = '0';
 		$opts{relfilename} = '0';
 	}
-	
+
 	my @main_opts = (map { $_ => $opts{$_} } qw/filename relfilename treehash partsize/);
 	{
 		my @opts = (@main_opts, delete_after_upload => 1, archive_id => 'def');
@@ -70,7 +70,7 @@ for (0, 1) {
 			VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash}, verify_value => 1);
 			expect_done($j);
 		}
-		
+
 		{
 			my $j = App::MtAws::QueueJob::VerifyAndUpload->new(@opts);
 			VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash}, verify_value => 0);
@@ -86,7 +86,7 @@ for (0, 1) {
 			VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash}, verify_value => 1);
 			expect_done($j);
 		}
-		
+
 		{
 			my $j = App::MtAws::QueueJob::VerifyAndUpload->new(@opts);
 			VerifyTest::expect_verify($j, $opts{filename}, $opts{relfilename}, $opts{treehash}, verify_value => 0);
@@ -96,5 +96,11 @@ for (0, 1) {
 	}
 }
 
-1;
+# test dry-run
 
+{
+	my $j = App::MtAws::QueueJob::VerifyAndUpload->new( map { $_ => $opts{$_} } @all);
+	is $j->will_do(), "Will VERIFY treehash and UPLOAD $opts{filename} if modified";;
+}
+
+1;

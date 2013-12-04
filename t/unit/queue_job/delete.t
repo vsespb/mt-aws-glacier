@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 14;
+use Test::More tests => 15;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -52,6 +52,11 @@ for my $relfilename ($opts{relfilename}, 0) {
 	expect_done($j);
 }
 
+# test dry-run
+
+{
+	my $j = App::MtAws::QueueJob::Delete->new( map { $_ => $opts{$_} } qw/relfilename archive_id/);
+	is $j->will_do(), "Will DELETE archive $opts{archive_id} (filename $opts{relfilename})";;
+}
 
 1;
-
