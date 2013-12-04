@@ -253,9 +253,10 @@ sub cmd
 	return ($res, $merged);
 }
 
-sub run
+sub get_run_array
 {
 	my ($terminal_encoding, $perl, $glacier, $command, $opts, $optlist, $args) = @_;
+	$args ||= [];
 	my %opts;
 	if ($optlist) {
 		$opts{$_} = $opts->{$_} for (@$optlist);
@@ -265,9 +266,32 @@ sub run
 
 	my @opts = map { my $k = $_; ref $opts{$k} ? (map { ("-$k" => $_) } @{$opts{$_}}) : ( defined($opts{$k}) ? ("-$k" => $opts{$k}) : "-$k")} keys %opts;
 	my @opts_e = map { encode($terminal_encoding, $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC) } @opts;
-	cmd($perl, $glacier, $command, @$args, @opts_e);#'-MDevel::Cover',
+	($perl, $glacier, $command, @$args, @opts_e);
 }
 
+sub run
+{
+	cmd(get_run_array(@_));
+}
+
+sub run_with_pipe
+{
+	my $cb = shift;
+	my @a = get_run_array(@_);
+
+	my ($merged, $res, $exitcode);
+	{
+		local $SIG{__WARN__} = sub {};
+		($merged, $res, $exitcode) = capture_merged {
+			open (my $f, "|-", @a);
+			$cb->($f);
+			(close($f), $?)
+		};
+	}
+	push_command(join(" ", @a), $merged);
+	die "mtlacier exited after SIGINT" if $exitcode==2;
+	return ($res, $merged);
+}
 
 sub run_ok
 {
@@ -994,6 +1018,87 @@ sub process_sync_missing
 }
 
 
+sub process_upload_file
+{
+	empty_dir $DIR;
+
+	my %opts;
+	set_vault \%opts;
+	my $root_dir = "$DIR/root";
+
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = filenames_encoding();
+
+	$opts{concurrency} = concurrency();
+	$opts{partsize} = partsize();
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}])
+		unless dryrun();
+
+	my $content = get_file_body(filebody(), filesize());
+	my $real_filename = do {
+		if (upload_file_type() eq 'normal') {
+			create_file(filenames_encoding(), $root_dir, filename(), $content);
+			"$root_dir/".filename()
+		} elsif (upload_file_type() =~ /^(relfilename|stdin)$/) {
+			my $dummyfile = "dummyfile";
+			create_file(filenames_encoding(), $root_dir, $dummyfile, $content);
+			"$root_dir/$dummyfile";
+		} else {
+			confess;
+		}
+	};
+
+	with_newfsm sub {
+		my $out;
+		if (upload_file_type() eq 'normal') {
+			local $opts{dir} = $root_dir;
+			local $opts{filename} = $real_filename;
+			$out = run_ok($terminal_encoding, $^X, $GLACIER, 'upload-file', \%opts);
+		} elsif (upload_file_type() eq 'relfilename') {
+			local $opts{filename} = $real_filename;
+			local $opts{'set-rel-filename'} = filename();
+			$out = run_ok($terminal_encoding, $^X, $GLACIER, 'upload-file', \%opts);
+		} elsif (upload_file_type() eq 'stdin') {
+			local $opts{'stdin'} = undef;
+			local $opts{'set-rel-filename'} = filename();
+			local $opts{'check-max-file-size'} = 1_000;
+			$out = run_with_pipe(sub {
+				my ($f) = @_;
+				copy($real_filename, $f);
+			}, $terminal_encoding, $^X, $GLACIER, 'upload-file', \%opts);
+		} else {
+			confess;
+		}
+	};
+
+	empty_dir $root_dir;
+
+	$opts{'max-number-of-files'} = 100_000;
+	$opts{dir} = $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+
+	confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/])
+		unless dryrun();
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+
+}
+
+
 sub process
 {
 	if (get "command" eq 'sync') {
@@ -1010,6 +1115,8 @@ sub process
 		process_download();
 	} elsif (get "command" eq 'retrieve') {
 		process_retrieve();
+	} elsif (get "command" eq 'upload_file') {
+		process_upload_file();
 	} else {
 		confess;
 	}

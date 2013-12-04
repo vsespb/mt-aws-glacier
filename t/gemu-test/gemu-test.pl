@@ -352,7 +352,7 @@ sub light_fsm
 }
 
 
-lfor command => qw/sync retrieve_inventory download retrieve/, sub {
+lfor command => qw/sync retrieve_inventory download retrieve upload_file/, sub {
 	if (command() eq "sync") {
 		lfor -chunk_size_type => 'partsize', sub {
 		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
@@ -491,6 +491,17 @@ lfor command => qw/sync retrieve_inventory download retrieve/, sub {
 		    process();
 
 	    }}}}}};
+	} elsif (command() eq 'upload_file') {
+		lfor -chunk_size_type => 'partsize', sub {
+		lfor upload_file_type => qw/normal relfilename stdin/ => sub {
+		lfor dryrun => 0, sub {
+			# testing filename stuff
+			file_sizes 4, 2, 4, sub {
+			file_names [qw/default zero russian/], 'full', 'full', sub {
+			file_body qw/normal zero/, sub {
+				process();
+			}}};
+		}}};
 	} else {
 		confess;
 	}
