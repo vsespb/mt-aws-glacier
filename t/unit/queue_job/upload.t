@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 166;
+use Test::More tests => 169;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -48,11 +48,6 @@ my $upload_id = "someuploadid";
 {
 	ok eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/); 1; };
 
-	# stdin stuff
-	ok !eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload stdin/); 1; };
-	like "$@", qr/filename xor stdin/;
-	ok eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/relfilename partsize delete_after_upload stdin/); 1; };
-
 	# check for zero
 	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/relfilename partsize delete_after_upload/), filename => 0); 1; };
 	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename partsize delete_after_upload/), relfilename => 0); 1; };
@@ -67,6 +62,25 @@ my $upload_id = "someuploadid";
 	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename relfilename partsize/), delete_after_upload =>1, archive_id => 'abc' ); 1; };
 	ok !eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename relfilename partsize/), delete_after_upload =>1 ); 1; };
 	ok !eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/filename relfilename partsize/), delete_after_upload =>0, archive_id => 'abc' ); 1; };
+
+	# stdin stuff
+	{
+		my %o = map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload stdin/;
+		for (qw/stdin filename/) {
+			delete local $o{$_};
+			ok eval { App::MtAws::QueueJob::Upload->new(%o); 1; };
+		}
+		{
+			ok ! eval { App::MtAws::QueueJob::Upload->new(%o); 1; };
+			like "$@", qr/filename xor stdin/;
+		}
+		{
+			delete local $o{stdin};
+			delete local $o{filename};
+			ok ! eval { App::MtAws::QueueJob::Upload->new(%o); 1; };
+			like "$@", qr/filename xor stdin/;
+		}
+	}
 }
 
 sub test_case
