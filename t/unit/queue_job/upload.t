@@ -67,7 +67,7 @@ my $upload_id = "someuploadid";
 	{
 		my %o = map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload stdin/;
 		for (qw/stdin filename/) {
-			delete local $o{$_};
+			local $o{$_}; delete $o{$_}; # perl 5.8/10 compat.
 			ok eval { App::MtAws::QueueJob::Upload->new(%o); 1; };
 		}
 		{
@@ -75,8 +75,8 @@ my $upload_id = "someuploadid";
 			like "$@", qr/filename xor stdin/;
 		}
 		{
-			delete local $o{stdin};
-			delete local $o{filename};
+			delete $o{stdin};
+			delete $o{filename};
 			ok ! eval { App::MtAws::QueueJob::Upload->new(%o); 1; };
 			like "$@", qr/filename xor stdin/;
 		}
