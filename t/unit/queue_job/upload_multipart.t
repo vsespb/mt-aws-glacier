@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 40;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -40,7 +40,14 @@ use Data::Dumper;
 	# TODO: also test that it works with mtime=0
 	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
 	my $j = App::MtAws::QueueJob::UploadMultipart->new(filename => '/somedir/somefile', relfilename => $relfilename, partsize => $partsize );
-	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
+	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, expect_stdin => 0);
+	expect_done($j);
+}
+
+{
+	my ($mtime, $partsize, $relfilename, $upload_id) = (123456, 2*1024*1024, 'somefile', 'someid');
+	my $j = App::MtAws::QueueJob::UploadMultipart->new(stdin => 1, relfilename => $relfilename, partsize => $partsize );
+	UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, expect_stdin => 1);
 	expect_done($j);
 }
 

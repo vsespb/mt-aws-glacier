@@ -32,13 +32,17 @@ use QueueHelpers;
 sub expect_upload_multipart
 {
 	my ($j, $mtime, $partsize, $relfilename, $upload_id, %args_opts) = @_;
-	
+
 	my %args = (%args_opts);
-	
+
 	# TODO: also test that it works with mtime=0
 
 	no warnings 'redefine';
+
+	my $stdin_state = undef;
+
 	local *App::MtAws::QueueJob::MultipartCreate::init_file = sub {
+		$stdin_state = $_[0]->{stdin};
 		$_[0]->{fh} = 'filehandle';
 		$_[0]->{mtime} = $mtime;
 	};
@@ -120,7 +124,7 @@ sub expect_upload_multipart
 		}
 	}
 
-
+	cmp_deeply $stdin_state, bool($args{expect_stdin}) if defined $args{expect_stdin};
 }
 
 

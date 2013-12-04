@@ -48,7 +48,7 @@ sub on_create
 	my ($self) = @_;
 	return
 		state("wait"),
-		job( App::MtAws::QueueJob::MultipartCreate->new(map { $_ => $self->{$_} } qw/filename relfilename partsize/), sub {
+		job( App::MtAws::QueueJob::MultipartCreate->new(map { $_ => $self->{$_} } qw/filename stdin relfilename partsize/), sub {
 			my $j = shift;
 			defined($self->{$_} = $j->{$_}) or confess for qw/fh upload_id mtime/;
 			state("part")
