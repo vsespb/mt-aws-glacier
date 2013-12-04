@@ -285,7 +285,8 @@ sub run_with_pipe
 		($merged, $res, $exitcode) = capture_merged {
 			open (my $f, "|-", @a);
 			$cb->($f);
-			(close($f), $?)
+			close($f);
+			($?, $?)
 		};
 	}
 	push_command(join(" ", @a), $merged);
@@ -1072,10 +1073,11 @@ sub process_upload_file
 			local $opts{'stdin'} = undef;
 			local $opts{'set-rel-filename'} = filename();
 			local $opts{'check-max-file-size'} = 1_000;
-			$out = run_with_pipe(sub {
+			(my $code, $out) = run_with_pipe(sub {
 				my ($f) = @_;
 				copy($real_filename, $f);
 			}, $terminal_encoding, $^X, $GLACIER, 'upload-file', \%opts);
+			confess if $code;
 		} else {
 			confess;
 		}
