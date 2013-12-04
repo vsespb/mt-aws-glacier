@@ -34,7 +34,7 @@ use base 'App::MtAws::QueueJob';
 sub init
 {
 	my ($self) = @_;
-	defined($self->{filename})||confess "no filename";
+	defined($self->{filename}) xor $self->{stdin} or confess "filename xor stdin should be specified";
 	defined($self->{relfilename}) || confess "no relfilename";
 	defined($self->{delete_after_upload}) || confess "delete_after_upload must be defined";
 	$self->{partsize}||confess;
@@ -53,7 +53,7 @@ sub on_multipart_upload
 	my ($self) = @_;
 	return
 		state("wait"),
-		job( App::MtAws::QueueJob::UploadMultipart->new(map { $_ => $self->{$_} } qw/filename relfilename partsize/), sub {
+		job( App::MtAws::QueueJob::UploadMultipart->new(map { $_ => $self->{$_} } qw/filename stdin relfilename partsize/), sub {
 			$self->{delete_after_upload} ? state("delete") : state("done");
 		});
 }
@@ -75,7 +75,7 @@ sub will_do
 	if (defined($self->{filename})) {
 		"Will UPLOAD $self->{filename}";
 	} elsif ($self->{stdin}) {
-		# "Will UPLOAD stream from STDIN";
+		"Will UPLOAD stream from STDIN";
 	} else {
 		confess;
 	}

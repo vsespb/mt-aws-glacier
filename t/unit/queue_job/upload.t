@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 136;
+use Test::More tests => 166;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -40,13 +40,18 @@ warning_fatal();
 
 use Data::Dumper;
 
-my %opts = (filename => '/path/somefile', relfilename => 'somefile', delete_after_upload => 0, partsize => 1024*1024);
+my %opts = (filename => '/path/somefile', relfilename => 'somefile', delete_after_upload => 0, partsize => 1024*1024, stdin=>1);
 my $mtime = 123456;
 my $upload_id = "someuploadid";
 
 # test args validation
 {
 	ok eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/); 1; };
+
+	# stdin stuff
+	ok !eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload stdin/); 1; };
+	like "$@", qr/filename xor stdin/;
+	ok eval { App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/relfilename partsize delete_after_upload stdin/); 1; };
 
 	# check for zero
 	ok eval { App::MtAws::QueueJob::Upload->new((map { $_ => $opts{$_} } qw/relfilename partsize delete_after_upload/), filename => 0); 1; };
@@ -70,14 +75,14 @@ sub test_case
 	{
 		my ($partsize, $upload_id) = (2*1024*1024, 'someid');
 		my $j = App::MtAws::QueueJob::Upload->new(filename => $filename, relfilename => $relfilename, partsize => $partsize, delete_after_upload =>0 );
-		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id);
+		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, expect_stdin => 0);
 		expect_done($j);
 	}
 
 	{
 		my ($partsize, $upload_id) = (2*1024*1024, 'someid');
 		my $j = App::MtAws::QueueJob::Upload->new(filename => $filename, relfilename => $relfilename, partsize => $partsize, delete_after_upload =>1, archive_id => 'abc' );
-		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, is_finished => 0);
+		UploadMultipartTest::expect_upload_multipart($j, $mtime, $partsize, $relfilename, $upload_id, expect_stdin => 0, is_finished => 0);
 		DeleteTest::expect_delete($j, $relfilename, 'abc');
 		expect_done($j);
 	}
@@ -87,11 +92,22 @@ test_case '/path/somefile', 'somefile', 123456;
 test_case '/path/somefile', 'somefile', 0;
 test_case '0', 0, 123456;
 
-# test dry-run
+# test stdin
+{
+	my ($partsize, $upload_id) = (2*1024*1024, 'someid');
+	my $j = App::MtAws::QueueJob::Upload->new(relfilename => "somefile", stdin => 1, partsize => $partsize, delete_after_upload =>0 );
+	UploadMultipartTest::expect_upload_multipart($j, 12345, 2*1024*1024, "somefile", "someid", expect_stdin => 1);
+	expect_done($j);
+}
 
+# test dry-run
 {
 	my $j = App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/);
 	is $j->will_do(), "Will UPLOAD $opts{filename}"
+}
+{
+	my $j = App::MtAws::QueueJob::Upload->new( map { $_ => $opts{$_} } qw/stdin relfilename partsize delete_after_upload/);
+	is $j->will_do(), "Will UPLOAD stream from STDIN"
 }
 
 1;
