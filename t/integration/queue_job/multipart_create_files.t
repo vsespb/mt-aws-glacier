@@ -22,10 +22,11 @@
 
 use strict;
 use warnings;
-use Test::More tests => 28;
+use Test::More tests => 29;
 use Test::Deep;
 use FindBin;
 use POSIX;
+use File::stat;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJob::MultipartCreate;
 use App::MtAws::Exceptions;
@@ -60,6 +61,14 @@ unlink $filename;
 	cmp_deeply $err, superhashof { code => 'file_is_zero',
 		message => "File size is zero (and it was not when we read directory listing). Filename: %string filename%",
 		filename => $filename };
+	unlink $filename;
+}
+
+{
+	create($filename, 'abc');
+	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => 2);
+	$job->init_file();
+	is $job->{mtime}, stat($filename)->mtime; # TODO: also test for different encodings or unit tests
 	unlink $filename;
 }
 

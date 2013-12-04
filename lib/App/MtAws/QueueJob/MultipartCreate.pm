@@ -53,7 +53,7 @@ sub init_file
 			filename => $self->{filename}
 				unless $filesize;
 
-		file_mtime($self->{filename}); # TODO: how could we assure file not modified when uploading btw?
+		$self->{mtime} = file_mtime($self->{filename}); # TODO: how could we assure file not modified when uploading btw?
 
 		die exception too_many_parts =>
 			"With current partsize=%d partsize%MiB we will exceed 10000 parts limit for the file %string filename% (file size %size%)",
