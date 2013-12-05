@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 40;
+use Test::More tests => 53;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -35,6 +35,42 @@ use TestUtils;
 warning_fatal();
 
 use Data::Dumper;
+
+# test args validation
+my %opts = (filename => '/path/somefile', relfilename => 'somefile', partsize => 1024*1024, stdin=>1);
+
+{
+	ok eval { App::MtAws::QueueJob::UploadMultipart->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/); 1; };
+
+	# check for zero
+	ok eval { App::MtAws::QueueJob::UploadMultipart->new((map { $_ => $opts{$_} } qw/relfilename partsize/), filename => 0); 1; };
+	ok eval { App::MtAws::QueueJob::UploadMultipart->new((map { $_ => $opts{$_} } qw/filename partsize/), relfilename => 0); 1; };
+	ok !eval { App::MtAws::QueueJob::UploadMultipart->new((map { $_ => $opts{$_} } qw/filename relfilename/), partsize => 0); 1; };
+
+	ok !eval { App::MtAws::QueueJob::UploadMultipart->new( map { $_ => $opts{$_} } qw/relfilename partsize/); 1; };
+	ok !eval { App::MtAws::QueueJob::UploadMultipart->new( map { $_ => $opts{$_} } qw/filename partsize/); 1; };
+	ok !eval { App::MtAws::QueueJob::UploadMultipart->new( map { $_ => $opts{$_} } qw/filename relfilename/); 1; };
+
+	# stdin stuff
+	{
+		my %o = map { $_ => $opts{$_} } qw/filename relfilename partsize stdin/;
+		for (qw/stdin filename/) {
+			local $o{$_}; delete $o{$_}; # perl 5.8/10 compat.
+			ok eval { App::MtAws::QueueJob::UploadMultipart->new(%o); 1; };
+		}
+		{
+			ok ! eval { App::MtAws::QueueJob::UploadMultipart->new(%o); 1; };
+			like "$@", qr/filename xor stdin/;
+		}
+		{
+			delete $o{stdin};
+			delete $o{filename};
+			ok ! eval { App::MtAws::QueueJob::UploadMultipart->new(%o); 1; };
+			like "$@", qr/filename xor stdin/;
+		}
+	}
+}
+
 
 {
 	# TODO: also test that it works with mtime=0

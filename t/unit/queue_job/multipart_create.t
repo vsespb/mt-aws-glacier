@@ -38,10 +38,8 @@ warning_fatal();
 use Data::Dumper;
 
 # test args validation
-
 my %opts = (filename => '/path/somefile', relfilename => 'somefile', partsize => 1024*1024, stdin=>1);
 
-# test args validation
 {
 	ok eval { App::MtAws::QueueJob::MultipartCreate->new( map { $_ => $opts{$_} } qw/filename relfilename partsize delete_after_upload/); 1; };
 
