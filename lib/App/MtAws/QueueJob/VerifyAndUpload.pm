@@ -34,7 +34,7 @@ use base 'App::MtAws::QueueJob';
 sub init
 {
 	my ($self) = @_;
-	defined($self->{filename})||confess "no filename nor stdin";
+	defined($self->{filename})||confess "no filename";
 	defined($self->{relfilename}) || confess "no relfilename";
 	defined($self->{delete_after_upload}) || confess "delete_after_upload must be defined";
 	$self->{partsize}||confess;
