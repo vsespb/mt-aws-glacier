@@ -52,6 +52,7 @@ use App::MtAws::QueueJob::CreateVault;
 use App::MtAws::QueueJob::DeleteVault;
 use App::MtAws::QueueJob::RetrieveInventory;
 use App::MtAws::QueueJob::FetchAndDownload;
+use App::MtAws::QueueJob::Upload;
 # else
 use App::MtAws::JobProxy;
 use App::MtAws::JobListProxy;
@@ -200,15 +201,26 @@ END
 
 			$j->open_for_write();
 
-			my $ft = ($options->{'data-type'} eq 'filename') ?
-				App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
-					filename => $options->{filename},
-					relfilename => $relfilename,
-					partsize => ONE_MB*$partsize)) :
-				App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
-					stdin => 1,
-					relfilename => $relfilename,
-					partsize => ONE_MB*$partsize));
+			my $ft;
+			if ($ENV{NEWFSM}) {
+				$ft = ($options->{'data-type'} eq 'filename') ?
+					App::MtAws::QueueJob::Upload->new(
+						filename => $options->{filename}, relfilename => $relfilename,
+						partsize => ONE_MB*$partsize, delete_after_upload => 0) :
+					App::MtAws::QueueJob::Upload->new(
+						stdin => 1, relfilename => $relfilename,
+						partsize => ONE_MB*$partsize, delete_after_upload => 0);
+			} else {
+				$ft = ($options->{'data-type'} eq 'filename') ?
+					App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
+						filename => $options->{filename},
+						relfilename => $relfilename,
+						partsize => ONE_MB*$partsize)) :
+					App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
+						stdin => 1,
+						relfilename => $relfilename,
+						partsize => ONE_MB*$partsize));
+			}
 
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 			die unless $R;
