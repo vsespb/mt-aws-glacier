@@ -34,9 +34,9 @@ use base 'App::MtAws::QueueJob';
 sub init
 {
 	my ($self) = @_;
-	defined($self->{filename}) || $self->{stdin} || confess "no filename nor stdin";
+	defined($self->{filename}) xor $self->{stdin} or confess "filename xor stdin should be specified";
 	defined($self->{relfilename}) || confess "no relfilename";
-	$self->{partsize}||die;
+	$self->{partsize}||confess "no partsize";
 	$self->enter('create');
 }
 
