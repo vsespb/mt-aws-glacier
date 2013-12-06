@@ -1101,6 +1101,85 @@ sub process_upload_file
 }
 
 
+sub process_purge_vault
+{
+	empty_dir $DIR;
+
+	my %opts;
+	set_vault \%opts;
+	$opts{dir} = my $root_dir = "$DIR/root";
+
+
+	my $content = get_file_body(filebody(), filesize());
+	create_file(filenames_encoding(), $root_dir, filename(), $content);
+
+	my $journal_name = 'journal';
+	my $journal_fullname = "$DIR/$journal_name";
+	$opts{journal} = $journal_fullname;
+
+	$opts{'terminal-encoding'} = my $terminal_encoding = terminal_encoding();
+	$opts{'filenames-encoding'} = my $filenames_encoding = filenames_encoding();
+
+	$opts{concurrency} = concurrency();
+
+	my $config = "$DIR/glacier.cfg";
+	create_config($config, $terminal_encoding);
+	$opts{config} = $config;
+
+	run_ok($terminal_encoding, $^X, $GLACIER, 'create-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+	my @otherfiles = create_otherfiles(filenames_encoding(), $root_dir);
+
+	create_file($filenames_encoding, $root_dir, "before_file_1", $content) if filtering();
+
+	{
+		local $opts{concurrency} = $DEFAULT_CONCURRENCY;
+		run_ok($terminal_encoding, $^X, $GLACIER, 'sync', \%opts);
+	}
+
+	with_newfsm sub {
+		local $opts{filter} = '-before_file* +' if filtering();
+		local $opts{dir};
+		delete $opts{dir};
+		local $opts{'dry-run'} = undef if dryrun();
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts);
+
+		if (dryrun()) {
+			confess unless $out =~ /Will DELETE archive/;
+		} else {
+			confess unless $out =~ /Deleted\s/;
+		}
+
+	};
+
+	empty_dir $root_dir;
+	$opts{'max-number-of-files'} = 100_000;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
+	if (dryrun()) {
+		for (@otherfiles) {
+			confess unless check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+		}
+		confess unless check_file($filenames_encoding, $root_dir, filename(), $content);
+		if (filtering()){
+			confess unless check_file($filenames_encoding, $root_dir, "before_file_1", $content);
+		}
+	} else {
+		for (@otherfiles) {
+			confess if check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+		}
+		confess if check_file($filenames_encoding, $root_dir, filename(), $content);
+		if (filtering()){
+			confess unless check_file($filenames_encoding, $root_dir, "before_file_1", $content);
+		}
+	}
+	empty_dir $root_dir;
+	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
+
+}
+
+
 sub process
 {
 	if (get "command" eq 'sync') {
@@ -1119,6 +1198,8 @@ sub process
 		process_retrieve();
 	} elsif (get "command" eq 'upload_file') {
 		process_upload_file();
+	} elsif (get "command" eq 'purge_vault') {
+		process_purge_vault();
 	} else {
 		confess;
 	}

@@ -352,7 +352,7 @@ sub light_fsm
 }
 
 
-lfor command => qw/sync retrieve_inventory download retrieve upload_file/, sub {
+lfor command => qw/sync retrieve_inventory download retrieve upload_file purge_vault/, sub {
 	if (command() eq "sync") {
 		lfor -chunk_size_type => 'partsize', sub {
 		lfor subcommand => qw/sync_new sync_modified sync_missing/, sub {
@@ -502,6 +502,27 @@ lfor command => qw/sync retrieve_inventory download retrieve upload_file/, sub {
 				process();
 			}}};
 		}}};
+	} elsif (command() eq 'purge_vault') {
+		lfor dryrun => 0, 1, sub {
+		lfor filtering => 0, 1, sub {
+		lfor concurrency => 1, sub {
+		light_and_tiny_other_files sub {
+		file_names [qw/default zero russian/], 'full', 'full', sub {
+		lfor filesize => 1, sub {
+		file_body qw/normal/, sub {
+			process();
+		}}
+		}}}}};
+		lfor dryrun => 0, sub {
+		lfor filtering => 0, sub {
+		lfor concurrency => 2,3,4, sub {
+		light_and_tiny_other_files sub {
+		file_names [qw/default/], 'full', 'full', sub {
+		lfor filesize => 1, sub {
+		file_body qw/normal/, sub {
+			process();
+		}}
+		}}}}};
 	} else {
 		confess;
 	}
