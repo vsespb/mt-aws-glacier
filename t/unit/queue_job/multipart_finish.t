@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 21;
+use Test::More tests => 42;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -35,6 +35,37 @@ use TestUtils;
 warning_fatal();
 
 use Data::Dumper;
+
+# test args validation
+{
+	my %opts = (
+		relfilename => 'somefile',
+		mtime => 456,
+		upload_id => 'abc',
+		filesize => 123,
+		th => { mock=> 1 }
+	);
+
+	ok eval { my $j = App::MtAws::QueueJob::MultipartFinish->new(%opts); 1 };
+
+	for my $exclude_opt (sort keys %opts) {
+		ok exists $opts{$exclude_opt};
+		ok ! eval { App::MtAws::QueueJob::MultipartFinish->new( map { $_ => $opts{$_} } grep { $_ ne $exclude_opt } keys %opts ); 1; },
+			"should not work without $exclude_opt";
+	}
+
+	for my $non_zero_opt (qw/filesize upload_id th/) {
+		ok exists $opts{$non_zero_opt};
+		ok ! eval { App::MtAws::QueueJob::MultipartFinish->new(%opts, $non_zero_opt => 0); 1; },
+	}
+
+	for my $zero_opt (qw/relfilename mtime/) {
+		ok exists $opts{$zero_opt};
+		local $opts{$zero_opt} = 0;
+		ok eval { App::MtAws::QueueJob::MultipartFinish->new( %opts ); 1; }, "should work with $zero_opt=0";
+	}
+}
+
 
 sub test_case
 {
