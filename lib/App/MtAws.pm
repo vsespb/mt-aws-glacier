@@ -247,7 +247,7 @@ END
 						$ft = App::MtAws::QueueJob::Iterator->new(iterator => sub {
 							if (my $rec = shift @filelist) {
 								return App::MtAws::QueueJob::Delete->new(
-									relfilename => $rec->{relfilename},	archive_id => $rec->{archive_id},
+									relfilename => $rec->{relfilename}, archive_id => $rec->{archive_id},
 								);
 							} else {
 								return;
