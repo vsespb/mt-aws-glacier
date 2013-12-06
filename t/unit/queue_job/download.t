@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 867;
+use Test::More tests => 898;
 use Test::Deep;
 use Data::Dumper;
 use Carp;
@@ -41,6 +41,34 @@ warning_fatal();
 
 my $prep = \&prepare_download;
 
+#
+# test args validation
+#
+{
+	my %opts = (relfilename => 'somefile', archive_id => 'abc', filename => '/path/somefile', jobid => 'somejob',
+		size => 123, mtime => 456, treehash => 'sometreehash', file_downloads => {'segment-size' => 1 });
+
+	ok eval { my $j = App::MtAws::QueueJob::Download->new(%opts); 1 };
+
+	for my $exclude_opt (qw/relfilename filename archive_id file_downloads jobid size mtime treehash/) {
+		ok exists $opts{$exclude_opt};
+		ok ! eval { App::MtAws::QueueJob::Download->new( map { $_ => $opts{$_} } grep { $_ ne $exclude_opt } keys %opts ); 1; },
+			"should not work without $exclude_opt";
+	}
+
+	for my $non_zero_opt (qw/archive_id jobid size treehash/) {
+		ok exists $opts{$non_zero_opt};
+		ok ! eval { App::MtAws::QueueJob::Download->new(%opts, $non_zero_opt => 0); 1; },
+	}
+
+	for my $zero_opt (qw/relfilename filename mtime/) {
+		ok exists $opts{$zero_opt};
+		local $opts{$zero_opt} = 0;
+		ok eval { App::MtAws::QueueJob::Download->new( %opts ); 1; }, "should work with $zero_opt=0";
+	}
+}
+
+
 # TODO: move to lib test
 
 #
@@ -52,7 +80,7 @@ my $prep = \&prepare_download;
 		my ($size, $segment_size) = @_;
 		my %opts = (relfilename => 'somefile', archive_id => 'abc', filename => '/tmp/notapath/somefile', jobid => 'somejob',
 			size => $size, mtime => 456, treehash => 'sometreehash' ); # /tmp/notapath/somefile because if code is broken, it'll try create it
-	
+
 		my $j = App::MtAws::QueueJob::Download->new(%opts, file_downloads => { 'segment-size' => $segment_size });
 		DownloadSingleTest::expect_download_single($j, %opts);
 		expect_done($j);
@@ -71,13 +99,13 @@ my $prep = \&prepare_download;
 #
 lcg_srand 667887 => sub {
 	# manual testing segment sizes
-	
+
 	test_case_full $prep, ONE_MB+1, 1, [ONE_MB, 1];
-	
-	
+
+
 	test_case_full $prep, 2*ONE_MB+1, 2, [2*ONE_MB, 1];
 	test_case_full $prep, 2*ONE_MB+2, 2, [2*ONE_MB, 2];
-	
+
 	test_case_full $prep, 4*ONE_MB, 2, [2*ONE_MB, 2*ONE_MB];
 	test_case_full $prep, 4*ONE_MB+1, 2, [2*ONE_MB, 2*ONE_MB, 1];
 	test_case_full $prep, 4*ONE_MB-1, 2, [2*ONE_MB, 2*ONE_MB-1];
