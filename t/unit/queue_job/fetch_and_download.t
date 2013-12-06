@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 24;
+use Test::More tests => 27;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -39,6 +39,14 @@ warning_fatal();
 
 use Data::Dumper;
 
+# test args validation
+
+{
+	ok eval { App::MtAws::QueueJob::FetchAndDownload->new(archives => [], file_downloads => {'segment-size' => 512 }); 1 };
+	ok !eval { App::MtAws::QueueJob::FetchAndDownload->new(file_downloads => {'segment-size' => 512 }); 1 };
+	ok !eval { App::MtAws::QueueJob::FetchAndDownload->new(archives => []); 1 };
+}
+
 {
 	package QE;
 	use MyQueueEngine;
@@ -52,14 +60,14 @@ use Data::Dumper;
 		$self->{_E} = $E;
 		$self;
 	}
-	
+
 	sub on_retrieval_fetch_job
 	{
 		my ($self, %args) = @_;
 		my $page = $self->{_E}->fetch_page($args{marker});
 		{ response => $page };
 	}
-	
+
 	sub on_retrieval_download_job
 	{
 		my ($self, %args) = @_;
@@ -71,8 +79,8 @@ use Data::Dumper;
 sub test_case
 {
 	my ($E, $nworkers, $archives, $jobs) = @_;
-	
-	
+
+
 	my $j = App::MtAws::QueueJob::FetchAndDownload->new(
 		archives => {  map { $_ => {
 			archive_id => $_, relfilename => "filename_$_", filename => "/tmp/path/filename_$_",
@@ -80,7 +88,7 @@ sub test_case
 		} } @$archives  },
 		file_downloads => {'segment-size' => 512 },
 	);
-	
+
 	my $q = QE->new($E, n => $nworkers);
 	$q->process($j);
 
@@ -99,7 +107,7 @@ lcg_srand 112234, sub {
 					if ($duplicates) {
 						$E->add_archive_fixture( 500+$_) for (1..$after_archives);
 					}
-					
+
 					test_case($E, 1,
 						[qw/archive_501_1 archive_503_1 archive_503_2 archive_503_7/],
 						[qw/j_501_1 j_503_1 j_503_2 j_503_7/]
