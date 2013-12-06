@@ -63,9 +63,9 @@ sub test_case
 sub test_with_filename_and_mtime
 {
 	my ($relfilename, $mtime) = @_;
-	
+
 	# late finish (callbacks called in the end)
-	
+
 	test_case 15, $relfilename, $mtime, sub {
 		my ($j, $args, $parts) = @_;
 		my @callbacks;
@@ -90,22 +90,22 @@ sub test_with_filename_and_mtime
 				);
 			push @callbacks, $res->{task}{cb_task_proxy};
 		}
-	
+
 		lcg_srand 444242 => sub {
 			@callbacks = lcg_shuffle @callbacks; # late finish, but in random order
-	
+
 			while (my $cb = shift @callbacks) {
 				$cb->();
 				cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => @callbacks ? JOB_WAIT : JOB_DONE);
 			}
 		}
 	};
-	
+
 	# early finish (early calls of callbacks)
-	
+
 	test_case 11, $relfilename, $mtime, sub {
 		my ($j, $args, $parts) = @_;
-	
+
 		for (@$parts) {
 			my $res = $j->next;
 			cmp_deeply $res,
@@ -128,7 +128,7 @@ sub test_with_filename_and_mtime
 			$res->{task}{cb_task_proxy}->();
 		}
 		cmp_deeply $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_DONE);
-	
+
 	};
 }
 
