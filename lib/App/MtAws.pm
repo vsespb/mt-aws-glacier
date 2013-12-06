@@ -240,10 +240,25 @@ END
 					}
 				} else {
 					$j->open_for_write();
+
 					my @filelist = map { {archive_id => $_, relfilename =>$archives->{$_}->{relfilename} } } keys %{$archives};
-					my $ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListDelete->new(archives => \@filelist ));
+					my $ft;
+					if ($ENV{NEWFSM}) {
+						$ft = App::MtAws::QueueJob::Iterator->new(iterator => sub {
+							if (my $rec = shift @filelist) {
+								return App::MtAws::QueueJob::Delete->new(
+									relfilename => $rec->{relfilename},	archive_id => $rec->{archive_id},
+								);
+							} else {
+								return;
+							}
+						});
+					} else {
+						$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListDelete->new(archives => \@filelist ));
+					}
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
+
 					$j->close_for_write();
 				}
 			} else {
