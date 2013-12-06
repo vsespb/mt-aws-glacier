@@ -19,7 +19,7 @@ use File::Compare;
 
 our $BASE_DIR='/dev/shm/mtaws';
 our $DIR;
-our $GLACIER='../../mtglacier';
+our $GLACIER_BIN;
 our $N;
 our $VERBOSE = 0;
 our $FASTMODE = 0;
@@ -36,10 +36,23 @@ our $_current_task;
 our $_current_task_stack;
 our $_global_cache = {};
 
-GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE, 'hardlinks' => $HARDLINKS);
+GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE, 'hardlinks' => $HARDLINKS, 'glacierbin=s' => \$GLACIER_BIN);
 $N ||= 1;
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
+
+our $GLACIER;
+if ( !defined($GLACIER_BIN) ) {
+	confess "specify --glacierbin";
+} elsif ($GLACIER_BIN eq 'prod') {
+	$GLACIER='/opt/mt/mtglacier';
+} elsif ($GLACIER_BIN eq 'dev') {
+	$GLACIER='../../mtglacier';
+} else {
+	confess "unknown glacierbin $GLACIER_BIN";
+}
+
+
 
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDIN, ":encoding(UTF-8)";
