@@ -25,7 +25,6 @@ our $VERSION = '1.059';
 use strict;
 use warnings;
 use Carp;
-use File::stat;
 
 use App::MtAws::QueueJobResult;
 use base 'App::MtAws::QueueJob';
