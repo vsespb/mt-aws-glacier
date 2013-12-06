@@ -82,17 +82,3 @@ sub on_finish
 1;
 
 __END__
-add sub {
-	my ($self) = @_;
-	App::MtAws::QueueJob::MultipartCreate(a, b, c)
-} => sub {
-	my $j = shift;
-	$self->{$_} = $j->{$_} or confess for qw/fh upload_id mtime/;
-}
-
-
-add sub {
-	App::MtAws::QueueJob::MultipartCreate(a, b, c)
-} => sub {
-	$self->{$_} = $j->{$_} or confess for qw/fh upload_id mtime/;
-}
