@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 29;
+use Test::More tests => 32;
 use Test::Deep;
 use FindBin;
 use POSIX;
@@ -31,6 +31,9 @@ use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJob::MultipartCreate;
 use App::MtAws::Exceptions;
 use TestUtils;
+use App::MtAws::Utils;
+use Encode;
+use utf8;
 
 warning_fatal();
 
@@ -70,6 +73,22 @@ unlink $filename;
 	$job->init_file();
 	is $job->{mtime}, stat($filename)->mtime; # TODO: also test for different encodings or unit tests
 	unlink $filename;
+}
+
+SKIP: {
+	skip "Test cannot be performed on character-oriented filesyste", 3 unless can_work_with_non_utf8_files;
+
+	my $filename = "тест42";
+	my $fullfilename = "$mtroot/$filename";
+	my $koi_filename = encode("KOI8-R", $fullfilename);
+	create($koi_filename, 'abc');
+	ok !-e $fullfilename;
+	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
+	is get_filename_encoding, 'KOI8-R', "assume encoding is set";
+	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $fullfilename, relfilename => $relfilename, partsize => 2);
+	$job->init_file();
+	is $job->{mtime}, stat($koi_filename)->mtime;
+	unlink $koi_filename;
 }
 
 SKIP: {
