@@ -43,7 +43,7 @@ sub init
 	$self->{all_raised} = 0;
 	$self->{position} = 0;
 	$self->{th} = App::MtAws::TreeHash->new();
-	$self->{uploadparts} ||= {};
+	$self->{uploadparts} = {};
 
 	$self->enter('fist_part');
 }
