@@ -71,7 +71,7 @@ unlink $filename;
 	create($filename, 'abc');
 	my $job = App::MtAws::QueueJob::MultipartCreate->new(filename => $filename, relfilename => $relfilename, partsize => 2);
 	$job->init_file();
-	is $job->{mtime}, stat($filename)->mtime; # TODO: also test for different encodings or unit tests
+	is $job->{mtime}, stat($filename)->mtime;
 	unlink $filename;
 }
 
