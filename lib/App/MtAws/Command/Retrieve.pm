@@ -29,12 +29,8 @@ use Carp;
 use App::MtAws::ForkEngine qw/with_forks fork_engine/;
 use App::MtAws::Utils;
 
-# if NEWFSM
 use App::MtAws::QueueJob::Retrieve;
 use App::MtAws::QueueJob::Iterator;
-# else
-use App::MtAws::Job::FileListRetrieval;
-# end
 
 sub next_retrieve
 {

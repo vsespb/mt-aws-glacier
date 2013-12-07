@@ -32,11 +32,7 @@ use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::Journal;
 
-# if NEWFSM
 use App::MtAws::QueueJob::FetchAndDownloadInventory;
-# else
-use App::MtAws::Job::InventoryFetch;
-# end
 
 sub run
 {

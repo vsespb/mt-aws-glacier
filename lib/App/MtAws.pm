@@ -47,22 +47,11 @@ use constant ONE_MB => 1024*1024;
 use App::MtAws::ParentWorker;
 use App::MtAws::ChildWorker;
 
-# if NEWFSM
 use App::MtAws::QueueJob::CreateVault;
 use App::MtAws::QueueJob::DeleteVault;
 use App::MtAws::QueueJob::RetrieveInventory;
 use App::MtAws::QueueJob::FetchAndDownload;
 use App::MtAws::QueueJob::Upload;
-# else
-use App::MtAws::JobProxy;
-use App::MtAws::JobListProxy;
-use App::MtAws::Job::FileCreate;
-use App::MtAws::Job::FileListDelete;
-use App::MtAws::Job::RetrievalFetch;
-use App::MtAws::Job::RetrieveInventory;
-use App::MtAws::Job::CreateVault;
-use App::MtAws::Job::DeleteVault;
-# end
 
 use File::Find ;
 use File::Spec;

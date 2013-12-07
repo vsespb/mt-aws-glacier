@@ -32,19 +32,10 @@ use constant SHOULD_CREATE => 1;
 use constant SHOULD_TREEHASH => 2;
 use constant SHOULD_NOACTION => 0;
 
-# if NEWFSM
 use App::MtAws::QueueJob::Iterator;
 use App::MtAws::QueueJob::VerifyAndUpload;
 use App::MtAws::QueueJob::Upload;
 use App::MtAws::QueueJob::Delete;
-# else
-use App::MtAws::JobProxy;
-use App::MtAws::JobListProxy;
-use App::MtAws::JobIteratorProxy;
-use App::MtAws::Job::FileCreate;
-use App::MtAws::Job::FileListDelete;
-use App::MtAws::Job::FileVerifyAndUpload;
-# end
 
 use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::Journal;
