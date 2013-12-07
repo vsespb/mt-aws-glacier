@@ -201,7 +201,7 @@ sub check_max_size
 	if (present('check-max-file-size')) {
 		if (value('check-max-file-size')/value('partsize') > 10_000) {
 			seen('check-max-file-size'), error(message('partsize_vs_maxsize',
-				"With current partsize %d partsizevalue%MiB and maximum allowed file size %d maxsizevalue%MiB, upload might exceed 10 000 parts.".
+				"With current partsize %d partsizevalue%MiB and maximum allowed file size %d maxsizevalue%MiB, upload might exceed 10 000 parts. ".
 				"Increase %option partsize% or decrease %option maxsize%"),
 				partsize => 'partsize', maxsize => 'check-max-file-size', partsizevalue => value('partsize'), maxsizevalue => value('check-max-file-size'));
 		} else {
@@ -297,8 +297,6 @@ sub get_config
 		my $invalid_format = message('invalid_format', 'Invalid format of "%a%"');
 		my $must_be_an_integer = message('must_be_an_integer', '%option a% must be positive integer number');
 
-
-
 		option('new', type=>'');
 		option('replace-modified', type=>'');
 		option('delete-removed', type=>'');
@@ -329,7 +327,8 @@ sub get_config
 		for (option('check-max-file-size', type => 'i')) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('check-max-file-size should be greater than 0'), stop => 1, sub { $_ > 0 }; # TODO: %option .. %
-			validation $_, message('check-max-file-size should be less than or equal to 40 000 000'), stop => 1, sub { $_ <= 40_000_000 };
+			validation $_, message('maxsize_too_big', '%option a% should be less than or equal to 40960000 (and you have %value%)'),
+				stop => 1, sub { $_ <= 10_000 * 4096 };
 		}
 
 		for (option('partsize', type => 'i', default => 16)) {

@@ -1,3 +1,6 @@
+
+  * Fixed: --check-max-file-size option validation upper limit was wrong. Was: 40 000 000 Mb; Fixed: 4 096 0000 Mb
+
 ### 2013-12-07 v1.100
 
   * Nothing new for end users (I hope so ). Huge internal refactoring of FSM (task queue engine) + unit
