@@ -43,13 +43,10 @@ sub run
 	my ($options, $j) = @_;
 	with_forks 1, $options, sub {
 
-		my $ft =  $ENV{NEWFSM} ?
-			App::MtAws::QueueJob::FetchAndDownloadInventory->new() :
-			App::MtAws::JobProxy->new(job => App::MtAws::Job::InventoryFetch->new());
-		my ($R, $attachmentref) = fork_engine->{parent_worker}->process_task($ft, undef);
-		
-		$attachmentref = $R->{inventory_raw_ref} if $ENV{NEWFSM};
-		
+		my $ft =  App::MtAws::QueueJob::FetchAndDownloadInventory->new();
+		my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
+		my $attachmentref = $R->{inventory_raw_ref};
+
 		# here we can have response from both JobList or Inventory output..
 		# JobList looks like 'response' => '{"JobList":[],"Marker":null}'
 		# Inventory retriebal has key 'ArchiveList'

@@ -201,26 +201,13 @@ END
 
 			$j->open_for_write();
 
-			my $ft;
-			if ($ENV{NEWFSM}) {
-				$ft = ($options->{'data-type'} eq 'filename') ?
-					App::MtAws::QueueJob::Upload->new(
-						filename => $options->{filename}, relfilename => $relfilename,
-						partsize => ONE_MB*$partsize, delete_after_upload => 0) :
-					App::MtAws::QueueJob::Upload->new(
-						stdin => 1, relfilename => $relfilename,
-						partsize => ONE_MB*$partsize, delete_after_upload => 0);
-			} else {
-				$ft = ($options->{'data-type'} eq 'filename') ?
-					App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
-						filename => $options->{filename},
-						relfilename => $relfilename,
-						partsize => ONE_MB*$partsize)) :
-					App::MtAws::JobProxy->new(job => App::MtAws::Job::FileCreate->new(
-						stdin => 1,
-						relfilename => $relfilename,
-						partsize => ONE_MB*$partsize));
-			}
+			my $ft = ($options->{'data-type'} eq 'filename') ?
+				App::MtAws::QueueJob::Upload->new(
+					filename => $options->{filename}, relfilename => $relfilename,
+					partsize => ONE_MB*$partsize, delete_after_upload => 0) :
+				App::MtAws::QueueJob::Upload->new(
+					stdin => 1, relfilename => $relfilename,
+					partsize => ONE_MB*$partsize, delete_after_upload => 0);
 
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 			die unless $R;
@@ -242,20 +229,15 @@ END
 					$j->open_for_write();
 
 					my @filelist = map { {archive_id => $_, relfilename =>$archives->{$_}->{relfilename} } } keys %{$archives};
-					my $ft;
-					if ($ENV{NEWFSM}) {
-						$ft = App::MtAws::QueueJob::Iterator->new(iterator => sub {
-							if (my $rec = shift @filelist) {
-								return App::MtAws::QueueJob::Delete->new(
-									relfilename => $rec->{relfilename}, archive_id => $rec->{archive_id},
-								);
-							} else {
-								return;
-							}
-						});
-					} else {
-						$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListDelete->new(archives => \@filelist ));
-					}
+					my $ft = App::MtAws::QueueJob::Iterator->new(iterator => sub {
+						if (my $rec = shift @filelist) {
+							return App::MtAws::QueueJob::Delete->new(
+								relfilename => $rec->{relfilename}, archive_id => $rec->{archive_id},
+							);
+						} else {
+							return;
+						}
+					});
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 
@@ -297,12 +279,7 @@ END
 						print "Will DOWNLOAD (if available) archive $_->{archive_id} (filename $_->{relfilename})\n";
 					}
 				} else {
-					my $ft;
-					if ($ENV{NEWFSM}) {
-						$ft = App::MtAws::QueueJob::FetchAndDownload->new(file_downloads => $options->{file_downloads}||{}, archives => \%filelist);
-					} else {
-						$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrievalFetch->new(file_downloads => $options->{file_downloads}, archives => \%filelist ));
-					}
+					my $ft = App::MtAws::QueueJob::FetchAndDownload->new(file_downloads => $options->{file_downloads}||{}, archives => \%filelist);
 					my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 					die unless $R;
 				}
@@ -319,9 +296,7 @@ END
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 
 		with_forks 1, $options, sub {
-			my $ft = $ENV{NEWFSM} ?
-				App::MtAws::QueueJob::RetrieveInventory->new() :
-				App::MtAws::JobProxy->new(job => App::MtAws::Job::RetrieveInventory->new());
+			my $ft = App::MtAws::QueueJob::RetrieveInventory->new();
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'download-inventory') {
@@ -334,18 +309,14 @@ END
 		$options->{concurrency} = 1;
 
 		with_forks 1, $options, sub {
-			my $ft = $ENV{NEWFSM} ?
-				App::MtAws::QueueJob::CreateVault->new(name => $options->{'vault-name'}) :
-				App::MtAws::JobProxy->new(job => App::MtAws::Job::CreateVault->new(name => $options->{'vault-name'}));
+			my $ft = App::MtAws::QueueJob::CreateVault->new(name => $options->{'vault-name'});
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'delete-vault') {
 		$options->{concurrency} = 1;
 
 		with_forks 1, $options, sub {
-			my $ft = $ENV{NEWFSM} ?
-				App::MtAws::QueueJob::DeleteVault->new(name => $options->{'vault-name'}) :
-				App::MtAws::JobProxy->new(job => App::MtAws::Job::DeleteVault->new(name => $options->{'vault-name'}));
+			my $ft = App::MtAws::QueueJob::DeleteVault->new(name => $options->{'vault-name'});
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'help') {

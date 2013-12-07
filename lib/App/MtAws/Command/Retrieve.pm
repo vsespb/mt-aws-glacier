@@ -61,12 +61,7 @@ sub run
 					print "Will RETRIEVE archive $_->{archive_id} (filename $_->{relfilename})\n"
 				}
 			} else {
-				my $ft;
-				if ($ENV{NEWFSM}) {
-					$ft = App::MtAws::QueueJob::Iterator->new(iterator => sub { next_retrieve(\@filelist) });
-				} else {
-					$ft = App::MtAws::JobProxy->new(job => App::MtAws::Job::FileListRetrieval->new(archives => \@filelist ));
-				}
+				my $ft = App::MtAws::QueueJob::Iterator->new(iterator => sub { next_retrieve(\@filelist) });
 				$j->open_for_write();
 				my ($R) = fork_engine->{parent_worker}->process_task($ft, $j);
 				die unless $R;
