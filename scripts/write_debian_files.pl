@@ -127,6 +127,10 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
+	entry '1.100', 1, '', <<'END';
+  * Nothing new for end users (I hope so ). Huge internal refactoring of FSM (task queue engine) + unit
+  tests for all new FSM + integration testing for all mtglacier commands.
+END
 	entry '1.059', 1, 'Sat, 30 Nov 2013 13:54:00 +0400', <<"END";
   * Fixed: Dry-run with restore completed was crashing.
   Fixed a bug introduced in v0.971

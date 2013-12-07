@@ -20,7 +20,7 @@
 
 package App::MtAws::ConfigEngine;
 
-our $VERSION = '1.059';
+our $VERSION = '1.100';
 
 use Getopt::Long 2.24 qw/:config no_ignore_case/ ;
 use Encode;

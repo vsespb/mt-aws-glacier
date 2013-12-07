@@ -1,3 +1,8 @@
+### 2013-12-07 v1.100
+
+  * Nothing new for end users (I hope so ). Huge internal refactoring of FSM (task queue engine) + unit
+  tests for all new FSM + integration testing for all mtglacier commands.
+
 ### 2013-11-30 v1.059
 
   * Fixed: Dry-run with restore completed was crashing.

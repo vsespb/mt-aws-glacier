@@ -20,7 +20,7 @@
 
 package App::MtAws::Glacier::ListJobs;
 
-our $VERSION = '1.059';
+our $VERSION = '1.100';
 
 use strict;
 use warnings;
