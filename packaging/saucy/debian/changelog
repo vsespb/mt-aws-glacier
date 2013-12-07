@@ -1,3 +1,10 @@
+libapp-mtaws-perl (1.100-0ubuntu1~saucy1~ppa1) saucy; urgency=low
+
+  * Nothing new for end users (I hope so ). Huge internal refactoring of FSM (task queue engine) + unit
+  tests for all new FSM + integration testing for all mtglacier commands.
+
+ -- Victor Efimov <victor@vsespb.ru>  Sat, 7 Dec 2013 15:30:00 +0400
+
 libapp-mtaws-perl (1.059-0ubuntu1~saucy1~ppa1) saucy; urgency=low
 
   * Fixed: Dry-run with restore completed was crashing.

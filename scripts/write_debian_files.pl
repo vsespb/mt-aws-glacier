@@ -127,7 +127,7 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
-	entry '1.100', 1, '', <<'END';
+	entry '1.100', 1, 'Sat, 7 Dec 2013 15:30:00 +0400', <<'END';
   * Nothing new for end users (I hope so ). Huge internal refactoring of FSM (task queue engine) + unit
   tests for all new FSM + integration testing for all mtglacier commands.
 END
