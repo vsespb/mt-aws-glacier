@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 82;
+use Test::More tests => 234;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -68,7 +68,7 @@ sub assert_passes($$%)
 	fake_config sub {
 		disable_validations qw/journal secret key filename dir/ => sub {
 			my $res = config_create_and_parse(split(' ', $query));
-			#print Dumper $res;
+			print Dumper $res->{errors} if $res->{errors};
 			ok !($res->{errors}||$res->{warnings}), $msg;
 			is $res->{command}, 'upload-file', $msg;
 			is_deeply($res->{options}, {
@@ -157,7 +157,7 @@ sub assert_fails($$%)
 			ok $res->{errors}, $msg;
 			ok !defined $res->{warnings}, $msg;
 			ok !defined $res->{command}, $msg;
-			is_deeply $res->{errors}, [{%opts, format => $error}], $msg;
+			cmp_deeply [grep { $_->{format} eq $error } @{ $res->{errors} }], [{%opts, format => $error}], $msg;
 		}
 	}
 }
@@ -217,12 +217,33 @@ assert_fails "check-max-file-size should be used with stdin",
 	['dir'],
 	'mandatory_with', a => 'check-max-file-size', b => 'stdin';
 
-for ([1, 10001], [2, 20001], [4, 40001], [8, 90000]) {
-	assert_fails "check-max-file-size should catch wrong partsize",
-		qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --partsize $_->[0] --check-max-file-size $_->[1]!,
-		['dir'],
-		'partsize_vs_maxsize', 'maxsize' => 'check-max-file-size', 'partsize' => 'partsize', 'partsizevalue' => $_->[0], 'maxsizevalue' => $_->[1];
+##
+## test for check-max-file-size calculation
+##
+
+{
+	for my $partsize (1, 2, 4, 8, 1024, 2048, 4096) {
+		my $edge_size = $partsize * 10_000;
+		for my $filesize ($edge_size + 1, $edge_size + 2, $edge_size + 100) {
+			assert_fails "check-max-file-size should catch wrong partsize ($partsize, $filesize)",
+				qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --partsize $partsize --check-max-file-size $filesize!,
+				['dir'],
+				'partsize_vs_maxsize', 'maxsize' => 'check-max-file-size', 'partsize' => 'partsize', 'partsizevalue' => $partsize, 'maxsizevalue' => $filesize;
+		}
+		for my $filesize ($edge_size - 100, $edge_size - 2, $edge_size - 1, $edge_size) {
+			assert_passes "should work with filename and set-rel-filename",
+				qq!upload-file --config glacier.cfg --vault myvault --journal j --stdin --set-rel-filename x/y/z --partsize $partsize --check-max-file-size $filesize!,
+				'name-type' => 'rel-filename',
+				'data-type' => 'stdin',
+				stdin => 1,
+				'check-max-file-size' => $filesize,
+				partsize => $partsize,
+				relfilename => 'x/y/z',
+				'set-rel-filename' => 'x/y/z';
+		}
+	}
 }
+
 
 ## set-rel-filename
 
