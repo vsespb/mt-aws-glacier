@@ -29,76 +29,58 @@ use App::MtAws::LineProtocol;
 use Carp;
 use POSIX;
 use App::MtAws::Utils;
+use base q{App::MtAws::QueueEngine};
 
-sub new
+sub init
 {
-	my ($class, %args) = @_;
-	my $self = \%args;
-	$self->{children}||die;
-	$self->{disp_select}||die;
-	$self->{options}||die;
-	@{$self->{freeworkers}} = keys %{$self->{children}};
-	bless $self, $class;
-	return $self;
+	my ($self, %args) = @_;
+	$self->{$_} = $args{$_} || confess for (qw/children disp_select options/);
+	$self->add_worker($_) for (keys %{$self->{children}});
 }
 
-sub process_task
+sub queue
 {
-	my ($self, $ft, $journal) = @_;
-	my $task_list = {};
-	while () {
-		if ( @{$self->{freeworkers}} ) {
-			my ($result, $task) = $ft->get_task();
-			if ($result eq 'wait') {
-				if (scalar keys %{$self->{children}} == scalar @{$self->{freeworkers}}) {
-					die;
-				}
-				my ($r, $att) = $self->wait_worker($task_list, $ft, $journal);
-				return ($r, $att) if $r;
-			} elsif ($result eq 'ok') {
-				my $worker_pid = shift @{$self->{freeworkers}};
-				my $worker = $self->{children}->{$worker_pid};
-				$task_list->{$task->{id}} = $task;
-				send_data($worker->{tochild}, $task->{action}, $task->{id}, $task->{data}, $task->{attachment}) or
-					$self->comm_error;
-			} elsif ($result eq 'done') {
-				return (1, undef);
-			} else {
-				die;
-			}
-		} else {
-			my ($r, $att) = $self->wait_worker($task_list, $ft, $journal);
-			return ($r, $att) if $r;
-		}
-	}
+	my ($self, $worker_id, $task) = @_;
+	my $worker = $self->{children}{$worker_id};
+	send_data($worker->{tochild}, $task->{action}, $task->{_id}, $task->{args}, $task->{attachment}) or
+		$self->comm_error;
+
 }
 
 sub wait_worker
 {
-	my ($self, $task_list, $ft, $journal) = @_;
+	my ($self) = @_;
 	my @ready;
 	do { @ready = $self->{disp_select}->can_read(); } until @ready || $! != EINTR;
 	for my $fh (@ready) {
 		my ($pid, undef, $taskid, $data, $resultattachmentref) = get_data($fh);
 		$pid or $self->comm_error;
-		push @{$self->{freeworkers}}, $pid;
-		die unless my $task = $task_list->{$taskid};
+
+		my $task = $self->unqueue_task($pid);
+
+		confess unless $taskid == $task->{_id};
+
 		$task->{result} = $data;
 		$task->{attachmentref} = $resultattachmentref;
-		print "PID $pid $task->{result}->{console_out}\n";
-		if ($task->{result}->{journal_entry}) {
-			confess unless defined $journal;
-			$journal->add_entry($task->{result}->{journal_entry});
-		}
 
-		delete $task_list->{$taskid};
-		my ($result) = $ft->finish_task($task);
+		print "PID $pid $data->{console_out}\n";
 
-		if ($result eq 'done') {
-			return ($task->{result}, $task->{attachmentref});
+		$task->{cb_task_proxy}->($data, $resultattachmentref);
+
+		if ($data->{journal_entry}) {
+			confess unless defined $self->{journal};
+			$self->{journal}->add_entry($data->{journal_entry});
 		}
+		return;
 	}
 	return 0;
+}
+
+sub process_task
+{
+	my ($self, $lt, $j) = @_;
+	$self->{journal} = $j;
+	$self->process($lt);
 }
 
 sub comm_error

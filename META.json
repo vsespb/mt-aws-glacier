@@ -248,10 +248,6 @@
          "file" : "lib/App/MtAws/ParentWorker.pm",
          "version" : "1.059"
       },
-      "App::MtAws::ParentWorkerNew" : {
-         "file" : "lib/App/MtAws/ParentWorkerNew.pm",
-         "version" : "1.059"
-      },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
          "version" : "1.059"
