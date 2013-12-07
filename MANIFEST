@@ -134,7 +134,6 @@ t/unit/cmd_check_local_hash.t
 t/unit/cmd_download_inventory.t
 t/unit/cmd_retrieve.t
 t/unit/cmd_sync.t
-t/unit/cmd_sync_old.t
 t/unit/config_engine_new.t
 t/unit/config_engine_parse.t
 t/unit/exceptions.t
