@@ -199,7 +199,7 @@ sub check_https
 sub check_max_size
 {
 	if (present('check-max-file-size')) {
-		if (value('check-max-file-size')/value('partsize') > 10_000) {
+		if (value('check-max-file-size') > 10_000 * value('partsize')) {
 			seen('check-max-file-size'), error(message('partsize_vs_maxsize',
 				"With current partsize %d partsizevalue%MiB and maximum allowed file size %d maxsizevalue%MiB, upload might exceed 10 000 parts. ".
 				"Increase %option partsize% or decrease %option maxsize%"),
