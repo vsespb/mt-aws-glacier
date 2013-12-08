@@ -334,6 +334,7 @@ sub get_config
 		for (option('partsize', type => 'i', default => 16)) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
 			validation $_, message('Part size must be power of two'), sub { ($_ != 0) && (($_ & ($_ - 1)) == 0) };
+			validation $_, message('%option a% must be less or equal to 4096'), sub { $_ <= 4096 };
 		}
 		for (option('segment-size', type => 'i')) {
 			validation $_, $must_be_an_integer, stop => 1, sub { $_ =~ /^\d+$/ };
