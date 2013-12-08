@@ -29,7 +29,7 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 
-#warning_fatal(); # TODO: reenable when get rid of GetOpt warning
+warning_fatal();
 
 sub assert_segment_size($$@)
 {
