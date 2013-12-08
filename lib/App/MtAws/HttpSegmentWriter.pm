@@ -20,7 +20,7 @@
 
 package App::MtAws::HttpWriter;
 
-our $VERSION = '1.100';
+our $VERSION = '1.101';
 
 use strict;
 use warnings;
@@ -103,7 +103,7 @@ sub finish
 
 package App::MtAws::HttpSegmentWriter;
 
-our $VERSION = '1.100';
+our $VERSION = '1.101';
 
 use strict;
 use warnings;
@@ -175,7 +175,7 @@ sub finish
 
 package App::MtAws::HttpFileWriter;
 
-our $VERSION = '1.100';
+our $VERSION = '1.101';
 
 use strict;
 use warnings;
@@ -232,7 +232,7 @@ sub finish
 
 package App::MtAws::HttpMemoryWriter;
 
-our $VERSION = '1.100';
+our $VERSION = '1.101';
 
 use strict;
 use warnings;

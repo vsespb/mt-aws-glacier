@@ -1,7 +1,9 @@
+### 2013-12-08 v1.101
 
-  * Fixed: CPAN install was failing for non-English locales due to brittle test related to new FSM introduced in 1.100
+  * Fixed: CPAN install was failing for non-English locales due to brittle test related to new FSM (introduced in 1.100)
+  Also error message when reading from file failed in the middle of transfer was wrong for non-English locales.
 
-  * Added validation - max allowed by Amazon --partsize is 4096
+  * Added validation - max allowed by Amazon --partsize is 4096 Mb
 
   * Fixed: --check-max-file-size option validation upper limit was wrong. Was: 40 000 000 Mb; Fixed: 4 096 0000 Mb
 

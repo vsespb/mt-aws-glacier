@@ -127,6 +127,15 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
+	entry '1.101', 1, 'Sun, 8 Dec 2013 12:50:00 +0400', <<'END';
+  * Fixed: CPAN install was failing for non-English locales due to brittle test related to new FSM introduced in 1.100
+  Also error message when reading from file failed in the middle of transfer was wrong for non-English locales.
+
+  * Added validation - max allowed by Amazon --partsize is 4096 Mb
+
+  * Fixed: --check-max-file-size option validation upper limit was wrong. Was: 40 000 000 Mb; Fixed: 4 096 0000 Mb
+END
+
 	entry '1.100', 1, 'Sat, 7 Dec 2013 15:30:00 +0400', <<'END';
   * Nothing new for end users (I hope so ). Huge internal refactoring of FSM (task queue engine) + unit
   tests for all new FSM + integration testing for all mtglacier commands.

@@ -82,199 +82,199 @@
    "provides" : {
       "App::MtAws" : {
          "file" : "lib/App/MtAws.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::ChildWorker" : {
          "file" : "lib/App/MtAws/ChildWorker.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Command::CheckLocalHash" : {
          "file" : "lib/App/MtAws/Command/CheckLocalHash.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Command::DownloadInventory" : {
          "file" : "lib/App/MtAws/Command/DownloadInventory.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Command::Retrieve" : {
          "file" : "lib/App/MtAws/Command/Retrieve.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Command::Sync" : {
          "file" : "lib/App/MtAws/Command/Sync.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::ConfigDefinition" : {
          "file" : "lib/App/MtAws/ConfigDefinition.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::ConfigEngine" : {
          "file" : "lib/App/MtAws/ConfigEngine.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Exceptions" : {
          "file" : "lib/App/MtAws/Exceptions.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::FileVersions" : {
          "file" : "lib/App/MtAws/FileVersions.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Filter" : {
          "file" : "lib/App/MtAws/Filter.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::ForkEngine" : {
          "file" : "lib/App/MtAws/ForkEngine.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Glacier::ListJobs" : {
          "file" : "lib/App/MtAws/Glacier/ListJobs.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::GlacierRequest" : {
          "file" : "lib/App/MtAws/GlacierRequest.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::HttpFileWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::HttpMemoryWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::HttpSegmentWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::HttpWriter" : {
          "file" : "lib/App/MtAws/HttpSegmentWriter.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::IntermediateFile" : {
          "file" : "lib/App/MtAws/IntermediateFile.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Journal" : {
          "file" : "lib/App/MtAws/Journal.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::LineProtocol" : {
          "file" : "lib/App/MtAws/LineProtocol.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::MetaData" : {
          "file" : "lib/App/MtAws/MetaData.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::ParentWorker" : {
          "file" : "lib/App/MtAws/ParentWorker.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::ProxyTask" : {
          "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueEngine" : {
          "file" : "lib/App/MtAws/QueueEngine.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob" : {
          "file" : "lib/App/MtAws/QueueJob.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::CreateVault" : {
          "file" : "lib/App/MtAws/QueueJob/CreateVault.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::Delete" : {
          "file" : "lib/App/MtAws/QueueJob/Delete.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::DeleteVault" : {
          "file" : "lib/App/MtAws/QueueJob/DeleteVault.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::Download" : {
          "file" : "lib/App/MtAws/QueueJob/Download.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::DownloadInventory" : {
          "file" : "lib/App/MtAws/QueueJob/DownloadInventory.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::DownloadSegments" : {
          "file" : "lib/App/MtAws/QueueJob/DownloadSegments.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::DownloadSingle" : {
          "file" : "lib/App/MtAws/QueueJob/DownloadSingle.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::FetchAndDownload" : {
          "file" : "lib/App/MtAws/QueueJob/FetchAndDownload.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::FetchAndDownloadInventory" : {
          "file" : "lib/App/MtAws/QueueJob/FetchAndDownloadInventory.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::Iterator" : {
          "file" : "lib/App/MtAws/QueueJob/Iterator.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::MultipartCreate" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartCreate.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::MultipartFinish" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartFinish.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::MultipartPart" : {
          "file" : "lib/App/MtAws/QueueJob/MultipartPart.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::Retrieve" : {
          "file" : "lib/App/MtAws/QueueJob/Retrieve.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::RetrieveInventory" : {
          "file" : "lib/App/MtAws/QueueJob/RetrieveInventory.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::Upload" : {
          "file" : "lib/App/MtAws/QueueJob/Upload.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::UploadMultipart" : {
          "file" : "lib/App/MtAws/QueueJob/UploadMultipart.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::Verify" : {
          "file" : "lib/App/MtAws/QueueJob/Verify.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJob::VerifyAndUpload" : {
          "file" : "lib/App/MtAws/QueueJob/VerifyAndUpload.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::QueueJobResult" : {
          "file" : "lib/App/MtAws/QueueJobResult.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Task" : {
          "file" : "lib/App/MtAws/Task.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::TreeHash" : {
          "file" : "lib/App/MtAws/TreeHash.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       },
       "App::MtAws::Utils" : {
          "file" : "lib/App/MtAws/Utils.pm",
-         "version" : "1.100"
+         "version" : "1.101"
       }
    },
    "release_status" : "stable",
@@ -290,5 +290,5 @@
          "url" : "https://github.com/vsespb/mt-aws-glacier"
       }
    },
-   "version" : "1.100"
+   "version" : "1.101"
 }
