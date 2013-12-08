@@ -65,7 +65,7 @@ sub read_part
 
 		return (1, $start, $part_final_hash, $attachment);
 	} else {
-		confess "IO error $!" unless defined $r;
+		die exception 'cannot_read_from_file' => "Cannot read from file errno=%errno%", 'ERRNO'  unless defined $r;
 		return;
 	}
 

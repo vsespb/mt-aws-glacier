@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 2;
+use Test::More tests => 5;
 use Test::Deep;
 use FindBin;
 use POSIX;
@@ -59,8 +59,11 @@ my $j = bless { fh => $f, position => 0, partsize => 1, th => bless { mock => 'g
 my $expect_err = get_errno(POSIX::strerror(2));
 ok ! eval { $j->read_part(); 1; };
 my $err = $@;
-like $err, qr/^IO error \Q$expect_err/;
 
+is $err->{code}, 'cannot_read_from_file';
+is $err->{errno_code}, 2;
+is $err->{errno}, $expect_err;
+is exception_message($err), "Cannot read from file errno=".$expect_err;
 
 
 1;
