@@ -213,6 +213,7 @@ sub process_task
 sub comm_error
 {
 	# error message useless here
+	print STDERR "CHILD($$) COMM_ERROR $!\n";
 	exit(1);
 }
 

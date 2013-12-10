@@ -114,10 +114,10 @@ sub start_children
 		if ($ischild) {
 			# child code
 			my $first_time = 1;
-			my @signals = qw/INT TERM USR2 HUP/;
+			my @signals = qw/INT TERM USR2 HUP USR1 PIPE/;
 			for my $sig (@signals) {
 				$SIG{$sig} = sub {
-					print STDERR "CHILD($$) got SIG$sig\n" if $sig eq 'TERM';
+					print STDERR "CHILD($$) got SIG$sig ($first_time)\n";
 					if ($first_time) {
 						$first_time = 0;
 						exit(1); # we need exit, it will call all destructors which will destroy tempfiles
@@ -130,11 +130,13 @@ sub start_children
 	}
 
 	my $first_time = 1;
-	for my $sig (qw/INT TERM CHLD USR1 HUP/) {
+	for my $sig (qw/INT TERM CHLD USR1 HUP USR2 PIPE/) {
 		$SIG{$sig} = sub {
 			local ($!,$^E,$@);
+			print STDERR "PARENT($$) got SIG$sig ($first_time)\n";
 			if ($sig eq 'CHLD') {
 				my $pid = waitpid(-1, WNOHANG);
+				print STDERR "PARENT($$) ... from pid $pid\n";
 				# make sure we caugth signal from our children, not from external command executionin 3rd party module
 				# easy to test by adding `whoami` to parent after-fork-code
 				return unless $pid > 0 and defined delete $self->{children}{$pid}; # we also remove $pid
