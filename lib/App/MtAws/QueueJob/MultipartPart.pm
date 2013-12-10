@@ -66,6 +66,7 @@ sub read_part
 		return (1, $start, $part_final_hash, $attachment);
 	} else {
 		die exception 'cannot_read_from_file' => "Cannot read from file errno=%errno%", 'ERRNO'  unless defined $r;
+		close $self->{fh} or confess; # close file after EOF found
 		return;
 	}
 
@@ -109,6 +110,5 @@ sub on_other_parts
 	my @res = $self->get_part();
 	return @res ? @res : (keys %{$self->{uploadparts}} ? JOB_WAIT : state('done'));
 }
-
 
 1;
