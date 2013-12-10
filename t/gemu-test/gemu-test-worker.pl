@@ -12,7 +12,7 @@ use File::Path qw/mkpath rmtree/;
 use Getopt::Long;
 use App::MtAws::TreeHash;
 use List::MoreUtils qw(part);
-use Capture::Tiny qw/capture_merged/;
+use Capture::Tiny qw/capture_merged tee_merged/;
 use Fcntl qw/LOCK_SH LOCK_EX LOCK_NB LOCK_UN/;
 use File::Copy;
 use File::Compare;
@@ -256,7 +256,7 @@ sub cmd
 	my ($merged, $res, $exitcode);
 	{
 		local $SIG{__WARN__} = sub {};
-		($merged, $res, $exitcode) = capture_merged {
+		($merged, $res, $exitcode) = tee_merged {
 			(system(@args), $?);
 		};
 	}
@@ -295,12 +295,13 @@ sub run_with_pipe
 	my ($merged, $res, $exitcode);
 	{
 		local $SIG{__WARN__} = sub {};
-		($merged, $res, $exitcode) = capture_merged {
+		my $capture_what = sub {
 			open (my $f, "|-", @a);
 			$cb->($f);
 			close($f);
 			($?, $?)
 		};
+		($merged, $res, $exitcode) = $VERBOSE ? &tee_merged($capture_what) : &capture_merged($capture_what);
 	}
 	push_command(join(" ", @a), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
