@@ -88,6 +88,7 @@ t/integration/metadata.t
 t/integration/metadata_mt1.t
 t/integration/queue_engine.t
 t/integration/queue_job/multipart_create_files.t
+t/integration/queue_job/multipart_part_close.t
 t/integration/queue_job/multipart_part_files.t
 t/integration/queue_job/multipart_part_ioerr.t
 t/integration/source_checks.t

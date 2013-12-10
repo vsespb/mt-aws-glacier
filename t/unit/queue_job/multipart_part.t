@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 168;
+use Test::More tests => 174;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -46,6 +46,7 @@ use Data::Dumper;
 		mtime => 456,
 		upload_id => 'abc',
 		fh => { mock => 1},
+		stdin => 0,
 	);
 
 	ok eval { my $j = App::MtAws::QueueJob::MultipartPart->new(%opts); 1 };
@@ -66,6 +67,15 @@ use Data::Dumper;
 		local $opts{$zero_opt} = 0;
 		ok eval { App::MtAws::QueueJob::MultipartPart->new( %opts ); 1; }, "should work with $zero_opt=0";
 	}
+
+	ok eval { App::MtAws::QueueJob::MultipartPart->new( %opts, stdin => 0 ); 1; }, "should work with stdin 0";
+	ok eval { App::MtAws::QueueJob::MultipartPart->new( %opts, stdin => 1 ); 1; }, "should work with stdin 1";
+	ok eval { App::MtAws::QueueJob::MultipartPart->new( %opts, stdin => undef ); 1; }, "should work with stdin undef";
+	{
+		local $opts{stdin};
+		delete $opts{stdin};
+		ok !eval { App::MtAws::QueueJob::MultipartPart->new( %opts); 1; }, "should not work without stdin";
+	}
 }
 
 sub test_case
@@ -73,7 +83,7 @@ sub test_case
 	my ($n, $relfilename, $mtime, $test_cb) = @_;
 	my @orig_parts = map { [$_*10, "hash $_", \"file $_"] } (0..$n);
 	my @parts = @orig_parts;
-	my %args = (relfilename => $relfilename, partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => $mtime);
+	my %args = (relfilename => $relfilename, partsize => 2*1024*1024, upload_id => "someuploadid", fh => "somefh", mtime => $mtime, stdin => 1);
 
 	no warnings 'redefine';
 	local *App::MtAws::QueueJob::MultipartPart::read_part = sub {

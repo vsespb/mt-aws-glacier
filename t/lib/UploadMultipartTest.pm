@@ -47,6 +47,7 @@ sub expect_upload_multipart
 		$_[0]->{mtime} = $mtime;
 	};
 
+	local *App::MtAws::QueueJob::MultipartPart::close_file = sub {};
 
 	cmp_deeply my $create_resp = $j->next, App::MtAws::QueueJobResult->full_new(code => JOB_OK, task => {
 		args => { partsize => $partsize, mtime => $mtime, relfilename => $relfilename},

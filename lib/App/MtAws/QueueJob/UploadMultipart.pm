@@ -61,7 +61,7 @@ sub on_part
 	my ($self) = @_;
 	return
 		state("wait"),
-		job( App::MtAws::QueueJob::MultipartPart->new(map { $_ => $self->{$_} } qw/relfilename partsize mtime upload_id fh/), sub {
+		job( App::MtAws::QueueJob::MultipartPart->new(map { $_ => $self->{$_} } qw/relfilename stdin partsize mtime upload_id fh/), sub {
 			my $j = shift;
 			$self->{filesize} = $j->{position} || confess;
 			$self->{th} = $j->{th} || confess;
