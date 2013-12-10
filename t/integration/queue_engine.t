@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 54;
+use Test::More tests => 90;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -71,6 +71,8 @@ warning_fatal();
 		use App::MtAws::QueueJobResult;
 		use base q{App::MtAws::QueueJob};
 
+		our $_destroy_count = 0;
+
 		sub init
 		{
 			my ($self) = @_;
@@ -117,16 +119,25 @@ warning_fatal();
 					state("done")
 				});
 		}
+
+		sub DESTROY
+		{
+			$_destroy_count++;
+		}
 	};
 
 	{
 		package JobA;
+
 
 		use strict;
 		use warnings;
 		use App::MtAws::QueueJobResult;
 		use base q{App::MtAws::QueueJob};
 		use Carp;
+
+		our $_destroy_count = 0;
+
 		sub init{};
 		sub on_default
 		{
@@ -138,6 +149,11 @@ warning_fatal();
 				state("done")
 			}
 		}
+
+		sub DESTROY
+		{
+			$_destroy_count++;
+		}
 	};
 
 	{
@@ -148,6 +164,8 @@ warning_fatal();
 		use App::MtAws::QueueJobResult;
 		use base q{App::MtAws::QueueJob};
 		use Carp;
+
+		our $_destroy_count = 0;
 
 		sub init
 		{
@@ -179,6 +197,11 @@ warning_fatal();
 				}
 			}
 		}
+
+		sub DESTROY
+		{
+			$_destroy_count++;
+		}
 	};
 
 	{
@@ -189,6 +212,8 @@ warning_fatal();
 		use App::MtAws::QueueJobResult;
 		use base q{App::MtAws::QueueJob};
 		use Carp;
+
+		our $_destroy_count = 0;
 
 		sub init{};
 
@@ -202,28 +227,42 @@ warning_fatal();
 				state("done")
 			}
 		}
+
+		sub DESTROY
+		{
+			$_destroy_count++;
+		}
 	}
 
 	lcg_srand 4672 => sub {
 		for my $n (1, 10, 100) {
 			for my $workers (1, 2, 10) {
-				my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
-				my $q = QE->new(n => $workers);
-				$q->process($j);
+				my $destroy_count;
+				$MultiJob::_destroy_count = $JobA::_destroy_count = $JobB::_destroy_count = $JobC::_destroy_count = 0;
 
-				my $x1 = "a=101,b=102,c=103";
-				my $x2 = "thexx2";
-				my $y1 = "y1:".("z"x$n);
-				my $y2 = "y2:".("f"x$n);
-				my $z1 = "thezz1";
-				my $z2 = "Y1=($y1); Y2=($y2)";
+				{
+					my $j = MultiJob->new(cnt => $n, a => 101, b => 102, c => 103);
+					my $q = QE->new(n => $workers);
+					$q->process($j);
 
-				is $j->{x1}, $x1;
-				is $j->{x2}, $x2;
-				is $j->{y1}, $y1;
-				is $j->{y2}, $y2;
-				is $j->{z1}, $z1;
-				is $j->{z2}, $z2;
+					my $x1 = "a=101,b=102,c=103";
+					my $x2 = "thexx2";
+					my $y1 = "y1:".("z"x$n);
+					my $y2 = "y2:".("f"x$n);
+					my $z1 = "thezz1";
+					my $z2 = "Y1=($y1); Y2=($y2)";
+
+					is $j->{x1}, $x1;
+					is $j->{x2}, $x2;
+					is $j->{y1}, $y1;
+					is $j->{y2}, $y2;
+					is $j->{z1}, $z1;
+					is $j->{z2}, $z2;
+				}
+				is $MultiJob::_destroy_count, 1;
+				is $JobA::_destroy_count, 1;
+				is $JobB::_destroy_count, 1;
+				is $JobC::_destroy_count, 1;
 			}
 		}
 	}

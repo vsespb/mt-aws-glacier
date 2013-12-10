@@ -68,6 +68,7 @@ sub set_job_proxy_callback
 			confess if $result->{job};
 			confess if $result->{task};
 		}
+		undef $j;
 	}
 }
 
@@ -110,5 +111,12 @@ sub on_done { JOB_DONE }
 sub on_die { confess "on_die"; }
 sub on_default  { confess "Unimplemented"; }
 sub init { confess "Unimplemented"; }
+
+
+sub DESTROY
+{
+	warn "Possible memory leak:".ref(shift) if ${^GLOBAL_PHASE} eq 'DESTRUCT';
+}
+
 
 1;
