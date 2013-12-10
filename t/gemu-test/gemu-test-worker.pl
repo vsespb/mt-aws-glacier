@@ -263,7 +263,7 @@ sub cmd
 			($merged, $res, $exitcode) = capture_merged sub { (system(@args), $?) }
 		}
 	}
-	#print $merged;
+	confess if $merged =~ /WARNING/;
 	push_command(join(" ", @args), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
 	return ($res, $merged);
@@ -310,6 +310,7 @@ sub run_with_pipe
 			($merged, $res, $exitcode) = &capture_merged($capture_what);
 		}
 	}
+	confess if $merged =~ /WARNING/;
 	push_command(join(" ", @a), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
 	return ($res, $merged);
