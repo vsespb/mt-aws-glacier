@@ -136,7 +136,7 @@ sub start_children
 				my $pid = waitpid(-1, WNOHANG);
 				# make sure we caugth signal from our children, not from external command executionin 3rd party module
 				# easy to test by adding `whoami` to parent after-fork-code
-				return unless $pid > 0 and defined $self->{children}{$pid};
+				return unless $pid > 0 and defined delete $self->{children}{$pid}; # we also remove $pid
 			}
 			if ($first_time) {
 				$first_time = 0;
