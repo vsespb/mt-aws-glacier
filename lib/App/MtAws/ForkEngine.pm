@@ -117,6 +117,7 @@ sub start_children
 			my @signals = qw/INT TERM USR2 HUP/;
 			for my $sig (@signals) {
 				$SIG{$sig} = sub {
+					print STDERR "CHILD($$) got SIG$sig\n" if $sig eq 'TERM';
 					if ($first_time) {
 						$first_time = 0;
 						exit(1); # we need exit, it will call all destructors which will destroy tempfiles
