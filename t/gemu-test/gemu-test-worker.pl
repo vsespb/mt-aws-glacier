@@ -256,9 +256,11 @@ sub cmd
 	my ($merged, $res, $exitcode);
 	{
 		local $SIG{__WARN__} = sub {};
-		($merged, $res, $exitcode) = tee_merged {
-			(system(@args), $?);
-		};
+		if ($VERBOSE) {
+			($merged, $res, $exitcode) = tee_merged sub { (system(@args), $?) }
+		} else {
+			($merged, $res, $exitcode) = capture_merged sub { (system(@args), $?) }
+		}
 	}
 	#print $merged;
 	push_command(join(" ", @args), $merged);
@@ -301,7 +303,11 @@ sub run_with_pipe
 			close($f);
 			($?, $?)
 		};
-		($merged, $res, $exitcode) = $VERBOSE ? &tee_merged($capture_what) : &capture_merged($capture_what);
+		if ($VERBOSE) {
+			($merged, $res, $exitcode) = tee_merged sub { $capture_what }
+		} else {
+			($merged, $res, $exitcode) = capture_merged sub { $capture_what }
+		}
 	}
 	push_command(join(" ", @a), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
