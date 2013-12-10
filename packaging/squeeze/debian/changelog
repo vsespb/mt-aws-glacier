@@ -1,3 +1,12 @@
+libapp-mtaws-perl (1.102-0vdebian1~v6~mt1) squeeze; urgency=low
+
+  * Fixed: memory/reasource leak, introduced in v1.100. Usually resulting in crash after uploading ~ 1000 files ( too
+  many open files error)
+
+  * Minor improvements to process termination code
+
+ -- Victor Efimov <victor@vsespb.ru>  Tue, 10 Dec 2013 19:38:00 +0400
+
 libapp-mtaws-perl (1.101-0vdebian1~v6~mt1) squeeze; urgency=low
 
   * Fixed: CPAN install was failing for non-English locales due to brittle test related to new FSM introduced in 1.100

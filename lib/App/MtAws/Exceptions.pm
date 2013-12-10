@@ -20,7 +20,7 @@
 
 package App::MtAws::Exceptions;
 
-our $VERSION = '1.101';
+our $VERSION = '1.102';
 
 use strict;
 use warnings;

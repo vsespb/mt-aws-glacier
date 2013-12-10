@@ -127,6 +127,13 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
+	entry '1.102', 1, 'Tue, 10 Dec 2013 19:38:00 +0400', <<'END';
+  * Fixed: memory/reasource leak, introduced in v1.100. Usually resulting in crash after uploading ~ 1000 files ( too
+  many open files error)
+
+  * Minor improvements to process termination code
+END
+
 	entry '1.101', 1, 'Sun, 8 Dec 2013 12:50:00 +0400', <<'END';
   * Fixed: CPAN install was failing for non-English locales due to brittle test related to new FSM introduced in 1.100
   Also error message when reading from file failed in the middle of transfer was wrong for non-English locales.
