@@ -113,10 +113,5 @@ sub on_default  { confess "Unimplemented"; }
 sub init { confess "Unimplemented"; }
 
 
-sub DESTROY
-{
-	warn "Possible memory leak:".ref(shift) if ${^GLOBAL_PHASE} eq 'DESTRUCT';
-}
-
 
 1;
