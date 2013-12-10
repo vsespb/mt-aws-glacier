@@ -43,7 +43,8 @@ $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
 
 our $GLACIER;
 if ( !defined($GLACIER_BIN) ) {
-	confess "specify --glacierbin";
+#	confess "specify --glacierbin";
+	$GLACIER='../../mtglacier';
 } elsif ($GLACIER_BIN eq 'prod') {
 	$GLACIER='/opt/mt/mtglacier';
 } elsif ($GLACIER_BIN eq 'dev') {
@@ -304,9 +305,9 @@ sub run_with_pipe
 			($?, $?)
 		};
 		if ($VERBOSE) {
-			($merged, $res, $exitcode) = tee_merged sub { $capture_what }
+			($merged, $res, $exitcode) = &tee_merged($capture_what);
 		} else {
-			($merged, $res, $exitcode) = capture_merged sub { $capture_what }
+			($merged, $res, $exitcode) = &capture_merged($capture_what);
 		}
 	}
 	push_command(join(" ", @a), $merged);
@@ -1097,7 +1098,7 @@ sub process_upload_file
 				my ($f) = @_;
 				copy($real_filename, $f);
 			}, $terminal_encoding, $^X, $GLACIER, 'upload-file', \%opts);
-			confess if $code;
+			confess $code if $code;
 		} else {
 			confess;
 		}
