@@ -112,7 +112,9 @@ sub upload_part
 	my ($start, $end) = ($offset, $offset+length(${$self->{dataref}})-1 );
 	$self->add_header('Content-Range', "bytes ${start}-${end}/*");
 
-	my $resp = $self->perform_lwp();
+	#my $resp = $self->perform_lwp();
+	my $resp = 1;
+	$self->perform_curlbin();
 	return $resp ? 1 : undef;
 }
 
@@ -553,6 +555,58 @@ sub perform_lwp
 	die exception 'too_many_tries' => "Request was not successful after "._max_retries." retries";
 }
 
+
+our $seq=0;
+
+sub perform_curlbin
+{
+	my ($self) = @_;
+
+	for my $i (1.._max_retries) {
+		$seq++;
+		undef $self->{last_retry_reason};
+		$self->_sign();
+
+		my @curl_opts = ('-H', "Expect:", '-0', '-vv');
+		my $req = undef;
+		my $url = $self->{protocol} ."://$self->{host}$self->{url}";
+		$url = $self->{protocol} ."://$ENV{MTGLACIER_FAKE_HOST}$self->{url}" if $ENV{MTGLACIER_FAKE_HOST};
+		if ($self->{protocol} eq 'https') {
+			if ($ENV{MTGLACIER_FAKE_HOST}) {
+				push @curl_opts, '-k';
+			}
+		}
+		if ($self->{method} eq 'PUT') {
+			push @curl_opts, '-X', 'PUT';
+			my $tmpfile = "/tmp/mttmp_$$.tmp";
+			open my $f, ">", $tmpfile or confess;
+			binmode $f;
+			print $f ${$self->{dataref}};
+			close $f;
+			push @curl_opts, '--data-binary', "\@$tmpfile";
+		} else {
+			confess;
+		}
+
+		for ( @{$self->{headers}}, @{$self->{req_headers}} ) {
+			push @curl_opts, '-H', "$_->{name}: $_->{value}";
+		}
+		my $resp = undef;
+
+		my $t0 = time();
+
+		my $cmd = join(" ", "curl", map { "'".esc_chars($_)."'" } (@curl_opts, $url));
+		print STDERR "CMD: [$cmd]\n";
+
+
+		system("$cmd 2>&1 | tee trace_${$}_$seq.tmp");
+
+		print STDERR "CODE $?\n";
+		return 1 unless $?;
+
+	}
+	die exception 'too_many_tries' => "Request was not successful after "._max_retries." retries";
+}
 
 
 sub get_signature_key
