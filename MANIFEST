@@ -23,7 +23,6 @@ lib/App/MtAws/Journal.pm
 lib/App/MtAws/LineProtocol.pm
 lib/App/MtAws/MetaData.pm
 lib/App/MtAws/ParentWorker.pm
-lib/App/MtAws/ProxyTask.pm
 lib/App/MtAws/QueueEngine.pm
 lib/App/MtAws/QueueJob.pm
 lib/App/MtAws/QueueJob/CreateVault.pm
@@ -46,7 +45,6 @@ lib/App/MtAws/QueueJob/UploadMultipart.pm
 lib/App/MtAws/QueueJob/Verify.pm
 lib/App/MtAws/QueueJob/VerifyAndUpload.pm
 lib/App/MtAws/QueueJobResult.pm
-lib/App/MtAws/Task.pm
 lib/App/MtAws/TreeHash.pm
 lib/App/MtAws/Utils.pm
 LICENSE

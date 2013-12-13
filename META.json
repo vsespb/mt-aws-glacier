@@ -172,10 +172,6 @@
          "file" : "lib/App/MtAws/ParentWorker.pm",
          "version" : "1.102"
       },
-      "App::MtAws::ProxyTask" : {
-         "file" : "lib/App/MtAws/ProxyTask.pm",
-         "version" : "1.102"
-      },
       "App::MtAws::QueueEngine" : {
          "file" : "lib/App/MtAws/QueueEngine.pm",
          "version" : "1.102"
@@ -262,10 +258,6 @@
       },
       "App::MtAws::QueueJobResult" : {
          "file" : "lib/App/MtAws/QueueJobResult.pm",
-         "version" : "1.102"
-      },
-      "App::MtAws::Task" : {
-         "file" : "lib/App/MtAws/Task.pm",
          "version" : "1.102"
       },
       "App::MtAws::TreeHash" : {
