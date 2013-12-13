@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 89;
+use Test::More tests => 94;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -54,6 +54,20 @@ test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\01
 [
 	{ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'}
 ];
+
+test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\015\012a,b,c,d,e\015\012",
+[
+	{ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'}
+];
+
+test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\015\012a,b,c,d,e\012",
+[
+	{ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'}
+];
+
+test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\015\012",[];
+test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\012",[];
+test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash",[];
 
 test_full_file <<'END',
 ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash
