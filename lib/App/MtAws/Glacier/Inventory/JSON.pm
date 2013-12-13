@@ -29,9 +29,7 @@ use utf8;
 use Carp;
 use JSON::XS 1.00;
 
-require App::MtAws::Glacier::Inventory;
-use base qw/App::MtAws::Glacier::Inventory/;
-
+use base q{App::MtAws::Glacier::Inventory};
 
 sub new
 {
