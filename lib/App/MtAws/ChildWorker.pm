@@ -26,6 +26,7 @@ use App::MtAws::LineProtocol;
 use App::MtAws::GlacierRequest;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
+use Digest::SHA qw/sha256_hex/;
 use strict;
 use warnings;
 use utf8;
@@ -74,6 +75,7 @@ sub process_task
 		$result = { upload_id => $uploadid };
 		$console_out = "Created an upload_id $uploadid";
 	} elsif ($action eq "upload_part") {
+		print STDERR "SHA $$: childworker ".sha256_hex($$attachmentref)."(".length($$attachmentref).") (old: $data->{_sha})\n";
 		my $req = App::MtAws::GlacierRequest->new($self->{options});
 		my $r = $req->upload_part($data->{upload_id}, $attachmentref, $data->{start}, $data->{part_final_hash});
 		confess "upload_part failed" unless $r;
@@ -213,6 +215,7 @@ sub process_task
 sub comm_error
 {
 	# error message useless here
+	print STDERR "CHILD $$ COMM ERROR\n";
 	exit(1);
 }
 

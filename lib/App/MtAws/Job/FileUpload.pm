@@ -27,6 +27,7 @@ use warnings;
 use utf8;
 use base qw/App::MtAws::Job/;
 use App::MtAws::Job::FileFinish;
+use Digest::SHA qw/sha256_hex/;
 use Carp;
 
 
@@ -57,8 +58,11 @@ sub get_task
 		if (!defined($r)) {
 			die;
 		} elsif ($r > 0) {
+			my $initial_sha = sha256_hex($data);
+			print STDERR "SHA $$: initial ".$initial_sha."(".length($data).")\n";
 			my $part_th = App::MtAws::TreeHash->new(); #TODO: We calc sha twice for same data chunk here
 			$part_th->eat_data(\$data);
+			print STDERR "SHA $$: after_treehash1 ".sha256_hex($data)."(".length($data).") (old: $initial_sha)\n";
 			$part_th->calc_tree();
 
 			my $part_final_hash = $part_th->get_final_hash();
@@ -66,13 +70,15 @@ sub get_task
 				start => $self->{position},
 				upload_id => $self->{upload_id},
 				part_final_hash => $part_final_hash,
-				relfilename => $self->{relfilename}
+				relfilename => $self->{relfilename},
+				_sha => $initial_sha
 			}, attachment => \$data,
 			);
 			$self->{position} += $r;
 			$self->{uploadparts} ||= {};
 			$self->{uploadparts}->{$task->{id}} = 1;
 			$self->{th}->eat_data(\$data);
+			print STDERR "SHA $$: after_treehash2 ".sha256_hex($data)."(".length($data).") (old: $initial_sha)\n";
 			return ("ok", $task);
 		} else {
 			confess "Unexpected: zero-size archive" unless ($self->{position});

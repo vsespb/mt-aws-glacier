@@ -191,21 +191,29 @@ sub try_drop_utf8_flag
 	Encode::_utf8_off($_[0]) if utf8::is_utf8($_[0]) && (bytes::length($_[0]) == length($_[0]));
 }
 
+
 sub sysreadfull($$$)
 {
 	my ($file, $len) = ($_[0], $_[2]);
 	my $n = 0;
 	while ($len - $n) {
+		#print STDERR "IPC $$: sysread $len,$n ITERATION\n";
 		my $i = sysread($file, $_[1], $len - $n, $n);
 		if (defined($i)) {
 			if ($i == 0) {
+				print STDERR "IPC: sysread $len,$n EOF\n";
 				return $n;
 			} else {
 				$n += $i;
 			}
 		} elsif ($!{EINTR}) {
+			print STDERR "IPC $$: sysread $len,$n EINTR detected\n";
 			redo;
 		} else {
+			my $errno_i = $!+0;
+			my $errno_s = "$!";
+			local $!;
+			print STDERR "IPC $$: sysread $len, $n ERROR $errno_i [$errno_s] \n";
 			return $n ? $n : undef;
 		}
 	}
@@ -218,12 +226,18 @@ sub syswritefull($$)
 	confess if is_wide_string($_[1]);
 	my $n = 0;
 	while ($len - $n) {
+		#print STDERR "IPC $$: syswrite $len,$n ITERATION\n";
 		my $i = syswrite($file, $_[1], $len - $n, $n);
 		if (defined($i)) {
 			$n += $i;
 		} elsif ($!{EINTR}) {
+			print STDERR "IPC $$: syswrite $len,$n EINTR detected\n";
 			redo;
 		} else {
+			my $errno_i = $!+0;
+			my $errno_s = "$!";
+			local $!;
+			print STDERR "IPC $$: syswrite $len, $n ERROR $errno_i [$errno_s] \n";
 			return $n ? $n : undef;
 		}
 	}

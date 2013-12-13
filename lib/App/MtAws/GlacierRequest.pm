@@ -346,6 +346,7 @@ sub _calc_data_hash
 		$self->{data_sha256} = $self->{part_final_hash};
 	} else {
 		$self->{data_sha256} = sha256_hex(${$self->{dataref}});
+		print STDERR "SHA $$: calc_data_hash ".sha256_hex(${$self->{dataref}})."(".length(${$self->{dataref}}).")\n";
 	}
 }
 
