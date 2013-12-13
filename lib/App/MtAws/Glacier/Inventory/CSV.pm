@@ -67,10 +67,8 @@ sub _parse
 	my $re = undef;
 	my @fields;
 	my @records;
-	my @lines = split /\r?\n/, ${$self->{rawdata}};
-	my $line;
-
-	while (defined($line = shift @lines)) {
+	while (${$self->{rawdata}} =~ /^(.*?)\r?$/gsm) {
+		my $line = $1;
 		if(!defined $re) {
 			@fields = split /\s*,\s*/, $line;
 			_unescape($_) for (@fields);
