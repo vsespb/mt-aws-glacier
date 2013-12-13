@@ -42,6 +42,7 @@ sub on_download
 	return state "wait", task "inventory_download_job", { job_id => $self->{job_id} } => sub {
 		my ($args, $attachment) = @_;
 		$self->{inventory_raw_ref} = $attachment || confess "no attachment"; # we don't expect undef/FALSE here. only scalar ref
+		$self->{inventory_type} = $args->{inventory_type} || confess "no inventory type";
 		state("done")
 	}
 }

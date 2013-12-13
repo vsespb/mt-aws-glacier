@@ -240,13 +240,30 @@ sub child_worker
 				};
 			}
 
-			my $output = JSON::XS->new->allow_nonref->ascii->pretty->encode($data);
+			my $output = do {
+				if ($postdata->{Format} eq 'JSON') {
+					JSON::XS->new->allow_nonref->ascii->pretty->encode($data);
+				} elsif ($postdata->{Format} eq 'CSV')  {
+					join("\n",
+						"ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash",
+						map {
+							my $descr = $_->{ArchiveDescription};
+							$descr =~ s!\\!\\\\!g;
+							$descr =~ s!\"!\\\"!g;
+							qq{$_->{ArchiveId},"$descr",$_->{CreationDate},$_->{Size},$_->{SHA256TreeHash}}
+						} @$archive_list
+					);
+				} else {
+					confess "Unknown inventory format $postdata->{Format}";
+				}
+			};
 
 			my $job_id = gen_id();
 			store($account, $vault, 'jobs', $job_id,
 				job => {
 					id => $job_id,
 					type => 'inventory-retrieval',
+					format => $postdata->{Format},
 					completion_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 					creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 				},
@@ -369,6 +386,7 @@ sub child_worker
 			my $output = fetch_binary($account, $vault, 'jobs', $job_id, 'output');
 			$conn->send_basic_header(200);
 			print $conn header_line('Content-Length', length($$output));
+			print $conn header_line('Content-Type', $job->{format} eq 'JSON' ? 'application/json' : 'text/csv');
 			$conn->send_crlf;
 			print $conn $$output;
 			return;
@@ -617,22 +635,22 @@ sub seq_number
 	my $countfile = "$tmp_folder/seq.count";
 	open my $lock, ">", $lockfile or confess "$!";
 	flock $lock, LOCK_EX or confess "$!";
-	
+
 	open my $count_read, "<", $countfile or confess "$!";
 	my $cnt = <$count_read>;
 	confess unless $cnt;
 	chomp $cnt;
 	close $count_read or confess "$!";
-	
+
 	$cnt++;
-	
+
 	open my $count_write, ">", $countfile or confess "$!";
 	print ($count_write $cnt, "\n") or confess "$!";
 	close $count_write or confess "$!";
-	
-	
+
+
 	close $lock or confess "$!";
-	
+
 	$cnt;
 }
 

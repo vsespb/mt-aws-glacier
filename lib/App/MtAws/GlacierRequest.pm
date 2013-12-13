@@ -36,8 +36,6 @@ use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
 use Carp;
 
-
-
 sub new
 {
 	my ($class, $options) = @_;
@@ -307,7 +305,18 @@ sub retrieval_download_to_memory
 	my $resp = $self->perform_lwp();
 
 	$resp or confess;
-	return $resp->content;
+
+	my $itype = do {
+		my $ct = $resp->content_type;
+		if ($ct eq 'text/csv') {
+			INVENTORY_TYPE_CSV
+		} elsif ($ct eq 'application/json') {
+			INVENTORY_TYPE_JSON
+		} else {
+			confess "Unknown mime-type $ct";
+		}
+	};
+	return ($resp->content, $itype);
 }
 
 sub create_vault

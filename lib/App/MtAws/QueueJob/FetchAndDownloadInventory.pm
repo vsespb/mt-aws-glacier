@@ -55,9 +55,10 @@ sub on_list
 			return state 'list';
 		} else {
 			$self->{inventory_raw_ref} = undef;
+			$self->{inventory_type} = undef;
 			return state 'done';
 		}
-		
+
 	}
 }
 
@@ -68,6 +69,7 @@ sub on_download
 		job( App::MtAws::QueueJob::DownloadInventory->new(job_id => $self->{found_job}||confess), sub {
 			my ($j) = @_;
 			$self->{inventory_raw_ref} = $j->{inventory_raw_ref} || confess;
+			$self->{inventory_type} = $j->{inventory_type} || confess;
 			state("done")
 		});
 }

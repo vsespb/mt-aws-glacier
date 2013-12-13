@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 226;
+use Test::More tests => 250;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -42,14 +42,14 @@ sub expect_job_id
 {
 	my ($E, $expected_job_id) = @_;
 	my $j = App::MtAws::QueueJob::FetchAndDownloadInventory->new();
-	
+
 	my $is_ok = 0;
 	my $job_id = undef;
 	my $ourdata = \"ourdata";
 	my $i = 0;
 	while() {
 		confess if $i++ > 1000; # protection
-		
+
 		my $res = $j->next;
 		if ($res->{code} eq JOB_OK) {
 			if ($res->{task}{action} eq 'inventory_fetch_job') {
@@ -59,7 +59,7 @@ sub expect_job_id
 			} elsif ($res->{task}{action} eq 'inventory_download_job') {
 				$job_id = $res->{task}{args}{job_id};
 				expect_wait($j);
-				call_callback_with_attachment($res, {}, $ourdata);
+				call_callback_with_attachment($res, { inventory_type => "MyType" }, $ourdata);
 				expect_done($j);
 				$is_ok = 1;
 				last;
@@ -76,11 +76,14 @@ sub expect_job_id
 	is $job_id, $expected_job_id;
 	if (defined $expected_job_id) {
 		is $j->{inventory_raw_ref}, $ourdata;
+		is $j->{inventory_type}, "MyType";
 	} else {
 		ok exists $j->{inventory_raw_ref};
+		ok exists $j->{inventory_type};
 		ok !defined $j->{inventory_raw_ref};
+		ok !defined $j->{inventory_type};
 	}
-	
+
 }
 
 # that pretty complex test was invented when old FetchAndDownloadInventory implementation was alive

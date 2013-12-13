@@ -811,7 +811,10 @@ sub process_retrieve_inventory
 	}
 
 	empty_dir $root_dir;
-	run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	{
+		#local $opts{journal} = $new_journal if inventory_count();
+		run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/]);
+	}
 	run_ok($terminal_encoding, $^X, $GLACIER, 'delete-vault', \%opts, [qw/config/], [$opts{vault}]);
 }
 

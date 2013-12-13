@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 13;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -58,8 +58,9 @@ cmp_deeply my $res = $j->next,
 
 expect_wait($j);
 my $data = "123";
-call_callback_with_attachment($res, {}, \$data);
+call_callback_with_attachment($res, { inventory_type => "MyInventoryType" }, \$data);
 is $j->{inventory_raw_ref}, \$data;
+is $j->{inventory_type}, "MyInventoryType";
 expect_done($j);
 
 {
@@ -68,8 +69,7 @@ expect_done($j);
 	expect_wait($j);
 	ok ! eval { call_callback_with_attachment($res, {}); 1 }, "should confess without attachment";
 	ok $@ =~ /no attachment/;
-	
+
 }
 
 1;
-

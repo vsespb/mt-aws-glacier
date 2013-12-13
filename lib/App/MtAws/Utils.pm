@@ -35,10 +35,13 @@ use bytes ();
 require Exporter;
 use base qw/Exporter/;
 
+use constant INVENTORY_TYPE_CSV => 'CSV';
+use constant INVENTORY_TYPE_JSON => 'JSON';
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
-is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists/;
+is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists
+INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 # Does not work with directory names
 sub sanity_relative_filename

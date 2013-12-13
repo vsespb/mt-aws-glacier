@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 4;
+use Test::More tests => 8;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -34,6 +34,7 @@ use TestUtils;
 use POSIX;
 use Time::Local;
 use Carp;
+use App::MtAws::Utils;
 use App::MtAws::MetaData;
 use App::MtAws::Command::DownloadInventory;
 
@@ -102,15 +103,19 @@ my $now = time();
 
 sub assert_entry
 {
+	assert_entry_json(@_);
+	assert_entry_csv(@_);
+}
+
+sub assert_entry_json
+{
 	my ($inp, $out) = @_;
 	unlink $journal;
 	my $jdata = {
 		"VaultARN" => "arn:aws:glacier:us-east-1:123456:vaults/test",
 		"InventoryDate" => strftime("%Y%m%dT%H%M%SZ", gmtime(time)),
-		"ArchiveList" => [],
+		"ArchiveList" => [$inp],
 	};
-	my $archive_list = $jdata->{"ArchiveList"};
-	push @$archive_list, $inp;
 	my $json = JSON::XS->new->allow_nonref->ascii->pretty->encode($jdata);
 	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
 	no warnings 'redefine';
@@ -118,9 +123,30 @@ sub assert_entry
 		my (undef, $e) = @_;
 		ok cmp_deeply $e, $out;
 	};
-	App::MtAws::Command::DownloadInventory::parse_and_write_journal($J, \$json);
+	App::MtAws::Command::DownloadInventory::parse_and_write_journal($J, INVENTORY_TYPE_JSON, \$json);
+}
+
+sub assert_entry_csv
+{
+	my ($inp, $out) = @_;
+	unlink $journal;
+	my $jdata = {
+		"VaultARN" => "arn:aws:glacier:us-east-1:123456:vaults/test",
+		"InventoryDate" => strftime("%Y%m%dT%H%M%SZ", gmtime(time)),
+		"ArchiveList" => [$inp],
+	};
+	my $csv = <<"END";
+ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash
+$inp->{ArchiveId},"$inp->{ArchiveDescription}",$inp->{CreationDate},$inp->{Size},$inp->{SHA256TreeHash}
+END
+	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir);
+	no warnings 'redefine';
+	local *App::MtAws::Journal::add_entry = sub {
+		my (undef, $e) = @_;
+		ok cmp_deeply $e, $out;
+	};
+	App::MtAws::Command::DownloadInventory::parse_and_write_journal($J, INVENTORY_TYPE_CSV, \$csv);
 }
 
 unlink $journal;
 1;
-
