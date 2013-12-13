@@ -31,6 +31,7 @@ use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::Journal;
+use App::MtAws::Glacier::Inventory::JSON;
 
 use App::MtAws::QueueJob::FetchAndDownloadInventory;
 
@@ -59,8 +60,8 @@ sub run
 sub parse_and_write_journal
 {
 	my ($j, $attachmentref) = @_;
-	my $data = JSON::XS->new->allow_nonref->utf8->decode($$attachmentref);
-	for my $item (@{$data->{'ArchiveList'}}) {
+	my $data = App::MtAws::Glacier::Inventory::JSON->new($$attachmentref)->get_archives();
+	for my $item (@$data) {
 		my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
 		$relfilename = $item->{ArchiveId} unless defined $relfilename;
 

@@ -128,6 +128,14 @@
          "file" : "lib/App/MtAws/ForkEngine.pm",
          "version" : "1.102"
       },
+      "App::MtAws::Glacier::Inventory" : {
+         "file" : "lib/App/MtAws/Glacier/Inventory.pm",
+         "version" : "1.102"
+      },
+      "App::MtAws::Glacier::Inventory::JSON" : {
+         "file" : "lib/App/MtAws/Glacier/Inventory/JSON.pm",
+         "version" : "1.102"
+      },
       "App::MtAws::Glacier::ListJobs" : {
          "file" : "lib/App/MtAws/Glacier/ListJobs.pm",
          "version" : "1.102"
