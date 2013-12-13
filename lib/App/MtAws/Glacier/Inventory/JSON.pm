@@ -29,6 +29,7 @@ use utf8;
 use Carp;
 use JSON::XS 1.00;
 
+use App::MtAws::Glacier::Inventory ();
 use base q{App::MtAws::Glacier::Inventory};
 
 sub new
@@ -42,7 +43,6 @@ sub new
 sub _parse
 {
 	my ($self) = @_;
-	return if $self->{archives};
 	$self->{data} = JSON::XS->new->allow_nonref->utf8->decode(${ delete $self->{rawdata} || confess });
 }
 

@@ -36,7 +36,7 @@ sub new
 sub get_archives
 {
 	my ($self) = @_;
-	$self->_parse;
+	$self->_parse unless $self->{archives};
 	$self->{data}{ArchiveList};
 }
 1;
