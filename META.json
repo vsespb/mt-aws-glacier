@@ -132,6 +132,10 @@
          "file" : "lib/App/MtAws/Glacier/Inventory.pm",
          "version" : "1.102"
       },
+      "App::MtAws::Glacier::Inventory::CSV" : {
+         "file" : "lib/App/MtAws/Glacier/Inventory/CSV.pm",
+         "version" : "1.102"
+      },
       "App::MtAws::Glacier::Inventory::JSON" : {
          "file" : "lib/App/MtAws/Glacier/Inventory/JSON.pm",
          "version" : "1.102"

@@ -16,6 +16,7 @@ lib/App/MtAws/FileVersions.pm
 lib/App/MtAws/Filter.pm
 lib/App/MtAws/ForkEngine.pm
 lib/App/MtAws/Glacier/Inventory.pm
+lib/App/MtAws/Glacier/Inventory/CSV.pm
 lib/App/MtAws/Glacier/Inventory/JSON.pm
 lib/App/MtAws/Glacier/ListJobs.pm
 lib/App/MtAws/GlacierRequest.pm
@@ -123,6 +124,7 @@ t/unit/file_versions.t
 t/unit/file_versions_behaviour.t
 t/unit/filename_encodings.t
 t/unit/filter.t
+t/unit/glacier/inventory_csv.t
 t/unit/glacier/inventory_json.t
 t/unit/glacier/list_jobs.t
 t/unit/glacier_request.t
