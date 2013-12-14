@@ -67,7 +67,7 @@ ok eval { App::MtAws::check_module_versions(); 1 };
 }
 
 {
-	App::MtAws::load_all_dynamic_modules();
+	App::MtAws::check_all_dynamic_modules();
 	ok $INC{$_}, "module $_ is loaded as dynamic" for map { "App/MtAws/${_}.pm" } @dynamic_modules;
 }
 

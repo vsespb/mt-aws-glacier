@@ -94,11 +94,16 @@ sub print_system_modules_version
 
 sub load_all_dynamic_modules
 {
-	# we load here all dynamically loaded modules, to check that installation is correct.
 	require App::MtAws::Command::Sync;
 	require App::MtAws::Command::Retrieve;
 	require App::MtAws::Command::CheckLocalHash;
 	require App::MtAws::Command::DownloadInventory;
+}
+
+sub check_all_dynamic_modules
+{
+	# we load here all dynamically loaded modules, to check that installation is correct.
+	load_all_dynamic_modules();
 	check_module_versions;
 }
 
@@ -361,7 +366,7 @@ END
 ## use Test::Tabs
 
 	} elsif ($action eq 'version') {
-		load_all_dynamic_modules();
+		check_all_dynamic_modules();
 		print "mt-aws-glacier version: $VERSION $VERSION_MATURITY\n";
 		print "Perl Version: $]\n";
 		print_system_modules_version();
@@ -375,5 +380,7 @@ sub check_stdin_not_empty
 	die "Empty input from STDIN - cannot upload empty archive"
 		if eof(STDIN); # we block until first byte arrive, then we put it back in to buffer
 }
+
+BEGIN { load_all_dynamic_modules() if $^C };
 
 1;
