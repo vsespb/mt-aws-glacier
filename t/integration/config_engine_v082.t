@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 6;
+use Test::More tests => 22;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -56,7 +56,40 @@ for (
 			protocol => 'http',
 			vault=>'myvault',
 			config=>'glacier.cfg',
+			'request-inventory-format' => 'json',
 		}, "$_ result");
+	};
+}
+
+# retrieve-inventory
+
+for my $inventory_format (qw/json csv/) {
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(
+			split(' ', qq!retrieve-inventory --config=glacier.cfg --vault=myvault --request-inventory-format $inventory_format!)
+		);
+		ok( !$errors && !$warnings, "invenotry_format error/warnings");
+		ok ($command eq 'retrieve-inventory', "invenotry_format_ command");
+		is_deeply($result, {
+			%misc_opts,
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			vault=>'myvault',
+			config=>'glacier.cfg',
+			'request-inventory-format' => $inventory_format,
+		}, "invenotry_format result");
+	};
+}
+
+for my $inventory_format (qw/Json JSON Csv CVS XXX/) {
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(
+			split(' ', qq!retrieve-inventory --config=glacier.cfg --vault=myvault --request-inventory-format $inventory_format!)
+		);
+		ok( $errors );
+		cmp_deeply $errors, [q{request-inventory-format must be "json" or "csv"}];
 	};
 }
 

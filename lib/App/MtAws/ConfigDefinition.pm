@@ -341,6 +341,9 @@ sub get_config
 			validation $_, message('%option a% must be zero or power of two'), sub { (($_ & ($_ - 1)) == 0) }; # TODO: proper format
 		}
 
+		validation(option('request-inventory-format', default => 'json'),
+			message('request-inventory-format must be "json" or "csv"'), sub { /^(json|csv)$/ });
+
 		validation positional('vault-name'), message('Vault name should be 255 characters or less and consisting of a-z, A-Z, 0-9, ".", "-", and "_"'), sub {
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
@@ -394,7 +397,7 @@ sub get_config
 		};
 
 		command 'retrieve-inventory' => sub {
-			validate(mandatory(optional('config'), mandatory(@encodings), @config_opts, check_https, qw/vault/))
+			validate(mandatory(optional('config'), mandatory(@encodings), 'request-inventory-format', @config_opts, check_https, qw/vault/))
 		};
 
 		command 'download-inventory' => sub {
