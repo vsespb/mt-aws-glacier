@@ -16,6 +16,7 @@ use Capture::Tiny qw/capture_merged tee_merged/;
 use Fcntl qw/LOCK_SH LOCK_EX LOCK_NB LOCK_UN/;
 use File::Copy;
 use File::Compare;
+use Time::HiRes qw/gettimeofday tv_interval usleep/;
 
 our $BASE_DIR='/dev/shm/mtaws';
 our $DIR;
@@ -759,8 +760,12 @@ sub process_retrieve_inventory
 
 
 	with_newfsm {
-		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/config terminal-encoding vault filenames-encoding/]) if inventory_count() >= 1;
+		local $opts{'request-inventory-format'} = first_inventory_format();
+		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/request-inventory-format config terminal-encoding vault filenames-encoding/])
+			if inventory_count() >= 1;
 	};
+
+	my $t0 = [gettimeofday];
 
 	empty_dir $root_dir;
 
@@ -779,14 +784,28 @@ sub process_retrieve_inventory
 		confess unless $out =~ /Retrieved Archive/ || !after_files();
 	}
 
+	usleep(10000) while (tv_interval ( $t0, [gettimeofday]) < 1.1); # we need inventory time to differ 1 second
+
 	with_newfsm {
-		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/config terminal-encoding vault filenames-encoding/]) if inventory_count() >= 2;
+		local $opts{'request-inventory-format'} = second_inventory_format();
+		run_ok($terminal_encoding, $^X, $GLACIER, 'retrieve-inventory', \%opts, [qw/request-inventory-format config terminal-encoding vault filenames-encoding/])
+			if inventory_count() >= 2;
 	};
 
 	my $new_journal = "$journal_fullname.new";
 	with_newfsm {
 		local $opts{'new-journal'} = $new_journal;
-		run_ok($terminal_encoding, $^X, $GLACIER, 'download-inventory', \%opts, [qw/config new-journal terminal-encoding vault filenames-encoding/]);
+		my $out = run_ok($terminal_encoding, $^X, $GLACIER, 'download-inventory', \%opts, [qw/config new-journal terminal-encoding vault filenames-encoding/]);
+		my $expected_format;
+		if (inventory_count() == 2) {
+			$expected_format = second_inventory_format();
+		} elsif (inventory_count() == 1) {
+			$expected_format = first_inventory_format();
+		}
+		if (inventory_count()) {
+			$expected_format = uc $expected_format;
+			confess $expected_format unless $out =~ /Downloaded inventory in $expected_format format/;
+		}
 	};
 
 	my ($is_before, $is_after) = (0, 0);
@@ -804,8 +823,8 @@ sub process_retrieve_inventory
 
 	if (inventory_count() == 2) {
 		confess unless $is_before == before_files();
-		confess if $is_after;# TODO: THAt's a bug. line above is correct
-	} elsif (inventory_count() == 2) {
+		confess unless $is_after == after_files();
+	} elsif (inventory_count() == 1) {
 		confess unless $is_before == before_files();
 		confess if $is_after;
 	}

@@ -447,6 +447,9 @@ lfor command => qw/sync retrieve_inventory download retrieve upload_file purge_v
 	} elsif (command() eq "retrieve_inventory") {
 		my @filecounts = (0, 1, 2, 10, 60, 110);
 		lfor inventory_count => 0, 1, 2, sub {
+		lfor first_inventory_format => qw/json csv/, sub {
+		lfor second_inventory_format => qw/json csv/, sub {
+		if ( (inventory_count() >= 1 || first_inventory_format() eq 'json') && (inventory_count() >= 2 || second_inventory_format() eq 'json') ) {
 		lfor before_files => @filecounts, sub {
 			if (inventory_count()) {
 				lfor after_files => @filecounts, sub {
@@ -457,7 +460,7 @@ lfor command => qw/sync retrieve_inventory download retrieve upload_file purge_v
 					process();
 				}
 			}
-		};
+		}}}};
 		}
 	} elsif (command() eq "download") {
 		lfor dryrun => 0, sub {
