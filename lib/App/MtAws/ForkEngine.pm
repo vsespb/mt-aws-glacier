@@ -20,7 +20,7 @@
 
 package App::MtAws::ForkEngine;
 
-our $VERSION = '1.102';
+our $VERSION = '1.103';
 
 use strict;
 use warnings;
@@ -117,7 +117,6 @@ sub start_children
 			my @signals = qw/INT TERM USR2 HUP/;
 			for my $sig (@signals) {
 				$SIG{$sig} = sub {
-					print STDERR "CHILD($$) got SIG$sig\n" if $sig eq 'TERM';
 					if ($first_time) {
 						$first_time = 0;
 						exit(1); # we need exit, it will call all destructors which will destroy tempfiles
