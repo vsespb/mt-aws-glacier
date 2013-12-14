@@ -32,13 +32,15 @@ use base 'App::MtAws::QueueJob';
 sub init
 {
 	my ($self) = @_;
+	$self->{format} or confess;
+	$self->{format} =~ /^json|csv$/ or confess;
 	$self->enter('retrieve');
 }
 
 sub on_retrieve
 {
 	my ($self) = @_;
-	return state "wait", task "retrieve_inventory_job", { } => sub {
+	return state "wait", task "retrieve_inventory_job", { format => $self->{format} } => sub {
 		state("done")
 	}
 }

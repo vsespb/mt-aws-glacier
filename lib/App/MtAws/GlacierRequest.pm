@@ -175,7 +175,17 @@ END
 
 sub retrieve_inventory
 {
-	my ($self) = @_;
+	my ($self, $format) = @_;
+
+	$format or confess;
+
+	if ($format eq 'json') {
+		$format = 'JSON';
+	} elsif ($format eq 'csv') {
+		$format = 'CSV';
+	} else {
+		confess "unknown inventory format $format";
+	}
 
 	$self->add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8');
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
@@ -186,7 +196,7 @@ sub retrieve_inventory
 	my $body = <<"END";
 {
   "Type": "inventory-retrieval",
-  "Format": "JSON"
+  "Format": "$format"
 }
 END
 	# use Test::Tabs

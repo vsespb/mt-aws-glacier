@@ -165,7 +165,7 @@ sub process_task
 		$console_out = "Fetched job list for inventory retrieval";
 	} elsif ($action eq 'retrieve_inventory_job') {
 		my $req = App::MtAws::GlacierRequest->new($self->{options});
-		my $r = $req->retrieve_inventory();
+		my $r = $req->retrieve_inventory($data->{format});
 		confess unless $r;
 		$result = { job_id => $r };
 		$console_out = "Retrieved Inventory, job id $r";

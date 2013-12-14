@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 5;
+use Test::More tests => 19;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
@@ -36,23 +36,33 @@ warning_fatal();
 
 use Data::Dumper;
 
-my $j = App::MtAws::QueueJob::RetrieveInventory->new();
-cmp_deeply my $res = $j->next,
-	App::MtAws::QueueJobResult->full_new(
-		task => {
-			args => {
-			},
-			action => 'retrieve_inventory_job',
-			cb => test_coderef,
-			cb_task_proxy => test_coderef,
-		},
-		code => JOB_OK,
-	);
+ok eval { App::MtAws::QueueJob::RetrieveInventory->new(format => 'json'); 1; };
+ok eval { App::MtAws::QueueJob::RetrieveInventory->new(format => 'csv'); 1; };
+ok ! eval { App::MtAws::QueueJob::RetrieveInventory->new(); 1; };
 
-expect_wait($j);
-call_callback($res);
-expect_done($j);
+for my $format (undef, qw/Json JSON Csv CVS xyz/) {
+	ok ! eval { App::MtAws::QueueJob::RetrieveInventory->new(format => $format); 1; };
+}
+
+for my $format (qw/json csv/) {
+	my $j = App::MtAws::QueueJob::RetrieveInventory->new(format => $format);
+	cmp_deeply my $res = $j->next,
+		App::MtAws::QueueJobResult->full_new(
+			task => {
+				args => {
+					format => $format
+				},
+				action => 'retrieve_inventory_job',
+				cb => test_coderef,
+				cb_task_proxy => test_coderef,
+			},
+			code => JOB_OK,
+		);
+
+	expect_wait($j);
+	call_callback($res);
+	expect_done($j);
+}
 
 
 1;
-

@@ -285,7 +285,7 @@ END
 		$options->{concurrency} = 1; # TODO implement this in ConfigEngine
 
 		with_forks 1, $options, sub {
-			my $ft = App::MtAws::QueueJob::RetrieveInventory->new();
+			my $ft = App::MtAws::QueueJob::RetrieveInventory->new(format => $options->{'request-inventory-format'});
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 		}
 	} elsif ($action eq 'download-inventory') {
