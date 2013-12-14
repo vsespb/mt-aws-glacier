@@ -55,6 +55,10 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 	* [upload-file](#upload-file)
 
+	* [retrieve-inventory](#retrieve-inventory)
+
+	* [download-inventory](#download-inventory)
+
 	* [other commands](#other-commands)
 
 * [File selection options](#file-selection-options)
@@ -674,11 +678,26 @@ to a single Amazon Glacier vault and single Journal. Simple file versioning will
 
 2. You can use other optional options with this command (`concurrency`, `partsize`)
 
+### `retrieve-inventory`
+
+Issues inventory retrieval request for `--vault`.
+
+You can specify inventory format with `--request-inventory-format`. Allowed values are `json` and `csv`. Defaults to `json`.
+Although it's not recommended to use `csv` unless you have to. Amazon CSV format is not documented, has bugs and `mt-aws-glacier` CSV parsing
+implementation (i.e. `download-inventory` command) is ~ 10 times slower than JSON.
+
+See also [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands examples.
+
+### `download-inventory`
+
+Parses Amazon glacier job list (for `--vault`) taken from Amazon servers at runtime, finds latest (by initiation date) inventory retrieval request,
+downloads it, converts to journal file and saves to `--new-journal`. Both `CSV` and `JSON` jobs are supported.
+
+See also [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands examples.
+
 ### Other commands
 
 See [usage](#usage) for examples of use of the following commands: `purge-vault`, `check-local-hash`, `create-vault`, `delete-vault`.
-
-See [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands.
 
 ## File selection options
 

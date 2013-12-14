@@ -338,6 +338,7 @@ Commands:
 	  --segment-size - Size for multi-segment download, in megabytes
 	check-local-hash
 	retrieve-inventory
+	  --request-inventory-format - json or csv
 	download-inventory
 	  --new-journal - Write inventory as new journal
 	create-vault VAULT-NAME
