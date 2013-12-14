@@ -52,7 +52,7 @@ sub add_page
 		} elsif ($job->{Action} eq 'InventoryRetrieval') {
 			$self->_validate_fields($job, qw/Action Completed CompletionDate CreationDate StatusCode JobId/);
 		}
-		
+
 	}
 	push @{$self->{pages} }, [@_];
 }
@@ -60,7 +60,7 @@ sub add_page
 sub fetch_page
 {
 	my ($self, $marker) = @_;
-	
+
 	my $page_index = (defined $marker) ? ($self->{markers}{$marker} || confess "unknown marker $marker") : 0;
 	my $new_marker = do {
 		if ($page_index < $#{ $self->{pages} } ) {
@@ -112,6 +112,23 @@ sub add_inventory_fixture
 				Completed => JSON_XS_TRUE,
 				CompletionDate => 'somedate$_',
 				CreationDate => 'somedate$_',
+				StatusCode => 'Succeeded',
+				JobId => "j_${id}_$_"
+			},
+		} (1..10)
+	);
+}
+
+sub add_inventory_with_date
+{
+	my ($self, $id, $date) = @_;
+	$self->add_page(
+		map {
+			{
+				Action => 'InventoryRetrieval',
+				Completed => JSON_XS_TRUE,
+				CompletionDate => 'somedate$_',
+				CreationDate => $date,
 				StatusCode => 'Succeeded',
 				JobId => "j_${id}_$_"
 			},

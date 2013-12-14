@@ -35,6 +35,7 @@ sub init
 {
 	my ($self) = @_;
 	$self->{marker} = undef;
+	$self->{all_jobs} = [];
 	$self->enter("list");
 }
 
@@ -45,20 +46,31 @@ sub on_list
 		my ($args) = @_;
 
 		my ($marker, @jobs) = App::MtAws::Glacier::ListJobs->new( $args->{response} || confess )->get_inventory_entries();
-		if (@jobs) {
-			my $j = shift @jobs;
-			$self->{found_job} = $j->{JobId} || confess;
-			return state 'download';
-		}
+		push @{$self->{all_jobs}}, @jobs;
 		if ($marker) {
 			$self->{marker} = $marker;
 			return state 'list';
 		} else {
-			$self->{inventory_raw_ref} = undef;
-			$self->{inventory_type} = undef;
-			return state 'done';
+			return state 'sort';
 		}
+	}
+}
 
+sub on_sort
+{
+	my ($self) = @_;
+
+	if (@{ $self->{all_jobs} }) {
+		my $first = undef;
+		for (@{ $self->{all_jobs} }) {
+			$first = $_ if (!$first || $_->{CreationDate} gt $first->{CreationDate}); # "gt" - stable "sort" here, but why?
+		}
+		$self->{found_job} = $first->{JobId} || confess;
+		return state 'download';
+	} else {
+		$self->{inventory_raw_ref} = undef;
+		$self->{inventory_type} = undef;
+		return state 'done';
 	}
 }
 

@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 250;
+use Test::More tests => 376;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -104,6 +104,51 @@ for my $before_archives (0, 1, 2, 3) {
 	my $E = JobListEmulator->new();
 	$E->add_archive_fixture($_) for (1..$before_archives);
 	expect_job_id($E, undef);
+}
+
+{
+	my $E = JobListEmulator->new();
+	$E->add_inventory_with_date(1000, "2013-11-01T19:01:19.997Z");
+	$E->add_inventory_with_date(2000, "2013-11-02T19:01:19.997Z");
+	expect_job_id($E, "j_2000_1");
+}
+
+{
+	my $E = JobListEmulator->new();
+	$E->add_inventory_with_date(2000, "2013-11-01T19:01:19.997Z");
+	$E->add_inventory_with_date(1000, "2013-11-02T19:01:19.997Z");
+	expect_job_id($E, "j_1000_1");
+}
+
+{
+	my $E = JobListEmulator->new();
+	$E->add_inventory_with_date(1000, "2013-11-02T19:01:19.997Z");
+	$E->add_inventory_with_date(2000, "2013-11-01T19:01:19.997Z");
+	expect_job_id($E, "j_1000_1");
+}
+
+{
+	my $E = JobListEmulator->new();
+	$E->add_inventory_with_date(1000, "2013-11-02T19:01:19.997Z");
+	$E->add_inventory_with_date(2000, "2013-11-03T19:01:19.997Z");
+	$E->add_inventory_with_date(3000, "2013-11-01T19:01:19.997Z");
+	expect_job_id($E, "j_2000_1");
+}
+
+{
+	my $E = JobListEmulator->new();
+	$E->add_inventory_with_date(1000, "2013-11-04T19:01:19.997Z");
+	$E->add_inventory_with_date(2000, "2013-11-03T19:01:19.997Z");
+	$E->add_inventory_with_date(3000, "2013-11-01T19:01:19.997Z");
+	expect_job_id($E, "j_1000_1");
+}
+
+{
+	my $E = JobListEmulator->new();
+	$E->add_inventory_with_date(1000, "2013-11-04T19:01:19.997Z");
+	$E->add_inventory_with_date(2000, "2013-11-03T19:01:19.997Z");
+	$E->add_inventory_with_date(3000, "2013-11-05T19:01:19.997Z");
+	expect_job_id($E, "j_3000_1");
 }
 
 1;
