@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 94;
+use Test::More tests => 100;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -68,6 +68,16 @@ test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\01
 test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\015\012",[];
 test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\012",[];
 test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash",[];
+
+
+ok ! eval { test_full_file "ArchiveId,ArchiveDescription,AnotherField,CreationDate,Size,SHA256TreeHash",[]; 1 };
+like "$@", qr/Bad CSV header/i;
+ok ! eval { test_full_file "zzz",[]; 1 };
+like "$@", qr/Bad CSV header/i;
+
+ok ! eval { test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\na,b",[]; 1 };
+like "$@", qr/Bad CSV line/i;
+
 
 test_full_file <<'END',
 ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash

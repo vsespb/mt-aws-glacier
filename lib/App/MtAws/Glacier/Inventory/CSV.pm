@@ -71,12 +71,15 @@ sub _parse
 		my $line = $1;
 		if(!defined $re) {
 			@fields = split /\s*,\s*/, $line;
+			confess "Bad CSV header [$line]" unless
+				join(',', sort @fields) eq
+				join(',', sort qw/ArchiveId ArchiveDescription CreationDate Size SHA256TreeHash/);
 			_unescape($_) for (@fields);
 			my $re_str = join(',', map { "\\s*($_)\\s*" } map { $field_re{$_} or confess } @fields);
 			$re = qr/^$re_str$/;
 		} else {
 			my %data;
-			@data{@fields} = $line =~ $re or confess "bad CSV line [$line]";
+			@data{@fields} = $line =~ $re or confess "Bad CSV line [$line]";
 			_unescape($data{$_}) for (@fields);
 			push @records, \%data;
 		}
