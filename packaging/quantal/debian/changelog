@@ -1,3 +1,17 @@
+libapp-mtaws-perl (1.103-0ubuntu1~quantal1~ppa1) quantal; urgency=low
+
+  * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format
+  issued by 3rd party application. mt-aws-glacier was not supporting CSV and thus crashing.
+  It's hard to determine inventory format until you download it, so mt-aws-glacier now supports CSV parsing.
+
+  * Fixed: download-inventory command now fetches latest inventory, not oldest
+
+  * Added --request-inventory-format option for retrieve-inventory commands
+
+  * Documentation: updated docs for retrieve-inventory and retrieve-inventory and download-inventory commands
+
+ -- Victor Efimov <victor@vsespb.ru>  Sat, 14 Dec 2013 15:10:00 +0400
+
 libapp-mtaws-perl (1.102-0ubuntu1~quantal1~ppa1) quantal; urgency=low
 
   * Fixed: memory/reasource leak, introduced in v1.100. Usually resulting in crash after uploading ~ 1000 files ( too

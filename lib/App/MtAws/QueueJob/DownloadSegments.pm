@@ -20,7 +20,7 @@
 
 package App::MtAws::QueueJob::DownloadSegments;
 
-our $VERSION = '1.102';
+our $VERSION = '1.103';
 
 use strict;
 use warnings;

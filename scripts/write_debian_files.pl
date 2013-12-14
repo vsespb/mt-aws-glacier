@@ -127,6 +127,18 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
+	entry '1.103', 1, 'Sat, 14 Dec 2013 15:10:00 +0400', <<'END';
+  * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format
+  issued by 3rd party application. mt-aws-glacier was not supporting CSV and thus crashing.
+  It's hard to determine inventory format until you download it, so mt-aws-glacier now supports CSV parsing.
+
+  * Fixed: download-inventory command now fetches latest inventory, not oldest
+
+  * Added --request-inventory-format option for retrieve-inventory commands
+
+  * Documentation: updated docs for retrieve-inventory and retrieve-inventory and download-inventory commands
+END
+
 	entry '1.102', 1, 'Tue, 10 Dec 2013 19:38:00 +0400', <<'END';
   * Fixed: memory/reasource leak, introduced in v1.100. Usually resulting in crash after uploading ~ 1000 files ( too
   many open files error)
