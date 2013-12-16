@@ -23,12 +23,13 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 228;
+use Test::Simple tests => 1221;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Journal;
 use File::Path;
 use JournalTest;
+use Cwd;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 use TestUtils;
 
@@ -59,6 +60,17 @@ my $testfiles1 = [
 
 ];
 
+my $pwd  = Cwd::getcwd();
+
+for my $cd ("$tmproot/dataL1", "$tmproot/dataL1/dataL2", "$tmproot/dataL1/dataL2/ZZZ", "$tmproot/dataL1/dataL2/ZZZ/FF", $pwd) {
+	my $J = JournalTest->new(curdir => $cd, create_journal_version => 'B', mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
+	$J->test_all();
+}
+
+for my $cd ("$tmproot/dataL1", "$tmproot/dataL1/dataL2/ZZZ/FF", $pwd) {
+	my $J = JournalTest->new(follow => 1, curdir => $cd, create_journal_version => 'B', mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);
+	$J->test_all();
+}
 
 for my $jv (qw/0 A B C/) {
 	my $J = JournalTest->new(create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot, journal_file => $journal_file, testfiles => $testfiles1);

@@ -39,7 +39,7 @@ use TestUtils;
 warning_fatal();
 
 if(can_work_with_non_utf8_files) {
-	plan tests => 2700;
+	plan tests => 1908;
 } else {
 	plan skip_all => 'Test cannot be performed on character-oriented filesystem';
 }
@@ -86,8 +86,8 @@ my $testfiles1 = [
 
 ];
 
-for my $jv (qw/0 A B C/) {
-	for my $journal_encoding (qw/UTF-8 KOI8-R CP1251/) {#  # TODO: disable test on Unicode Filesystems (MacOSX)
+for my $jv (qw/0 B/) {
+	for my $journal_encoding (qw/UTF-8 CP1251/) {#  # TODO: disable test on Unicode Filesystems (MacOSX)
 		for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {#
 			my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 			my $dataroot_e = encode($filenames_encoding, $dataroot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);

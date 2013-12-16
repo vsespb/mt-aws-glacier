@@ -393,7 +393,11 @@ sub absfilename
 {
 	my ($self, $relfilename) = @_;
 	confess unless defined($self->{root_dir});
-	return File::Spec->rel2abs($relfilename, $self->{root_dir});
+
+	# Originally it was: File::Spec->rel2abs($relfilename, $self->{root_dir});
+
+	# TODO: maybe add File::Spec->canonpath() and fix absfilename_correct=./dirA/file3 ?
+	File::Spec->catfile($self->{root_dir}, $relfilename);
 }
 
 

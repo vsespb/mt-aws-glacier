@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 12;
+use Test::More tests => 30;
 use Test::Deep;
 use Carp;
 use Data::Dumper;
@@ -51,13 +51,6 @@ sub touch
 	close $f;
 }
 
-sub read_listing
-{
-	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir, follow => 1, leaf_optimization => $leaf_opt);
-	$J->read_journal(should_exist => 0);
-	$J->read_files({new=>1});
-	sort map { $_->{relfilename} } @{ $J->{listing}{new} };
-}
 
 sub test_case
 {
@@ -69,6 +62,22 @@ sub test_case
 	rmtree $mtroot;
 }
 
+sub compare_listing
+{
+	my ($expected, $msg) = @_;
+
+	my $J = App::MtAws::Journal->new(journal_file=> $journal, root_dir => $rootdir, follow => 1, leaf_optimization => $leaf_opt);
+	$J->read_journal(should_exist => 0);
+	$J->read_files({new=>1});
+	my $got = [ sort map { $_->{relfilename} } @{ $J->{listing}{new} } ];
+
+	cmp_deeply $got, $expected, $msg;
+
+	for (@$got) {
+		ok -f $J->absfilename($_);
+	}
+}
+
 for $leaf_opt (0, 1) {
 
 	test_case sub {
@@ -76,7 +85,7 @@ for $leaf_opt (0, 1) {
 		mkdir "$hiddendir/hdir";
 		touch "$hiddendir/hdir/hfile";
 		symlink "$hiddendir/hdir", "$rootdir/somedir2" or die;
-		cmp_deeply [read_listing], [ qw!somedir2/hfile! ], "should walk symlinked dirs";
+		compare_listing [ qw!somedir2/hfile! ], "should walk symlinked dirs";
 	};
 
 	test_case sub {
@@ -85,7 +94,7 @@ for $leaf_opt (0, 1) {
 		mkdir "$hiddendir/hdir/A";
 		touch "$hiddendir/hdir/A/hfile";
 		symlink "$hiddendir/hdir", "$rootdir/somedir2" or die;
-		cmp_deeply [read_listing], [ qw!somedir2/A/hfile! ], "should walk symlinked dirs deeper";
+		compare_listing [ qw!somedir2/A/hfile! ], "should walk symlinked dirs deeper";
 	};
 
 
@@ -93,7 +102,7 @@ for $leaf_opt (0, 1) {
 		mkdir "$rootdir/somedir";
 		touch "$rootdir/somedir/file1";
 		symlink "$rootdir/somedir/", "$rootdir/somedir/cycle1" or die;
-		cmp_deeply [read_listing], [ qw!somedir/file1! ], "should workaround cycle and report one file";
+		compare_listing [ qw!somedir/file1! ], "should workaround cycle and report one file";
 	};
 
 	test_case sub {
@@ -101,7 +110,7 @@ for $leaf_opt (0, 1) {
 		touch "$rootdir/somedir/file1";
 		touch "$rootdir/somedir/file2";
 		symlink "$rootdir/somedir/", "$rootdir/somedir/cycle1" or die;
-		cmp_deeply [read_listing], [ sort qw!somedir/file1 somedir/file2! ], "should workaround cycle and report two files";
+		compare_listing [ sort qw!somedir/file1 somedir/file2! ], "should workaround cycle and report two files";
 	};
 
 	test_case sub {
@@ -110,7 +119,7 @@ for $leaf_opt (0, 1) {
 		touch "$rootdir/somedir/file2";
 		symlink "$rootdir/somedir/file2", "$rootdir/somedir/file2a" or die;
 
-		cmp_deeply [read_listing], [ sort qw!somedir/file1 somedir/file2 somedir/file2a! ], "should report same file twice just like file-find without follow";
+		compare_listing [ sort qw!somedir/file1 somedir/file2 somedir/file2a! ], "should report same file twice just like file-find without follow";
 	};
 
 	test_case sub {
@@ -119,7 +128,7 @@ for $leaf_opt (0, 1) {
 		touch "$rootdir/somedir/file2";
 		symlink "$rootdir/somedir/file2", "$rootdir/somedir/file2a" or die;
 		unlink "$rootdir/somedir/file2";
-		cmp_deeply [read_listing], [ sort qw!somedir/file1! ], "should ignore dangling symlink";
+		compare_listing [ sort qw!somedir/file1! ], "should ignore dangling symlink";
 	};
 
 }

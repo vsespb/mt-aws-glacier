@@ -197,7 +197,7 @@ sub test_all_ok
 
 			ok ( ( $data->{_mtime_should_be_undef} && !defined($args->{mtime}) )
 				or ( !$data->{_mtime_should_be_undef} && $data->{mtime} == $args->{mtime} ));
-			ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
+			ok( $J->absfilename($args->{relfilename}) eq File::Spec->catfile($rootdir, $args->{relfilename}));
 			is_deeply($J->{used_versions}, {$ver=>1});
 		}
 
@@ -256,7 +256,7 @@ sub test_all_ok
 		ok is_iv_without_pv $args->{$_} for (qw/time size/);
 
 		ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
-		ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($data->{relfilename}, $rootdir));
+		ok( $J->absfilename($args->{relfilename}) eq File::Spec->catfile($rootdir, $args->{relfilename}));
 
 		is_deeply($J->{used_versions}, {'0'=>1});
 	}

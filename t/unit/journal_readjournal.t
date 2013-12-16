@@ -64,7 +64,7 @@ my $data = {
 	ok is_iv_without_pv $args->{$_} for (qw/time mtime size/);
 	ok($args);
 	ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time mtime treehash/;
-	ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($relfilename, $rootdir));
+	ok( $J->absfilename($args->{relfilename}) eq File::Spec->catfile($rootdir, $relfilename));
 	is_deeply($J->{used_versions}, {'A'=>1});
 }
 
@@ -122,7 +122,7 @@ my $data = {
 	ok is_iv_without_pv $args->{$_} for (qw/time size/);
 	ok($args);
 	ok( $args->{$_} eq $data->{$_}, $_) for qw/archive_id size time treehash/;
-	ok( $J->absfilename($args->{relfilename}) eq File::Spec->rel2abs($relfilename, $rootdir));
+	ok( $J->absfilename($args->{relfilename}) eq File::Spec->catfile($rootdir, $relfilename));
 
 	is_deeply($J->{used_versions}, {'0'=>1});
 }
