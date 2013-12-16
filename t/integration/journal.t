@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::Simple tests => 1221;
+use Test::Simple tests => 1375;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Journal;

@@ -39,7 +39,7 @@ use TestUtils;
 warning_fatal();
 
 if(can_work_with_non_utf8_files) {
-	plan tests => 1908;
+	plan tests => 2148;
 } else {
 	plan skip_all => 'Test cannot be performed on character-oriented filesystem';
 }

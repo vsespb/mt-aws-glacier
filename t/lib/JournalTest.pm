@@ -103,9 +103,11 @@ sub check_absfilename
 	}
 
 	#TODO: add File::Spec->canonpath() to _correct and fix absfilename_correct=./dirA/file3
-	ok $absfilename_correct =~ m{^\Q$self->{dataroot}/\E} unless $self->{dataroot} =~ m{^\.(/|$)};
 	ok $absfilename_old =~ m{^/};
 
+	ok $absfilename !~ m{//};
+
+	ok $absfilename =~ m{^\Q$self->{dataroot}/\E} unless $self->{dataroot} =~ m{^\.(/|$)};
 	is ($absfilename, $absfilename_correct, "absfilename match");
 }
 
