@@ -51,6 +51,12 @@ sub new
 
 	$self->{journal_encoding} ||= 'UTF-8';
 
+	if (defined $self->{root_dir}) {
+		# copied from File::Spec::catfile
+		$self->{canon_root_dir} = File::Spec->catdir($self->{root_dir});
+		$self->{canon_root_dir} .= "/" unless substr($self->{canon_root_dir},-1) eq "/";
+	}
+
 	defined($self->{journal_file}) || confess;
 	$self->{journal_h} = {};
 	$self->{archive_h} = {};
@@ -392,12 +398,12 @@ sub _is_file_exists
 sub absfilename
 {
 	my ($self, $relfilename) = @_;
-	confess unless defined($self->{root_dir});
+	confess unless defined($self->{canon_root_dir});
 
 	# Originally it was: File::Spec->rel2abs($relfilename, $self->{root_dir});
 
 	# TODO: maybe add File::Spec->canonpath() and fix absfilename_correct=./dirA/file3 ?
-	File::Spec->catfile($self->{root_dir}, $relfilename);
+	$self->{canon_root_dir}.$relfilename;
 }
 
 
