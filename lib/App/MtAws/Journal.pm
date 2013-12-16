@@ -27,8 +27,8 @@ use warnings;
 use utf8;
 
 
-use File::Find ;
-use File::Spec;
+use File::Find;
+use File::Spec 3.13;
 use Encode;
 use Carp;
 use IO::Handle;
