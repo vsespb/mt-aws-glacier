@@ -101,7 +101,7 @@ sub check_dir_or_relname
 				custom('relfilename', do {
 					validate 'dir', 'filename';
 					if (valid('dir') && valid('filename')) {
-						my $relfilename = File::Spec->abs2rel(value('filename'), value('dir'));
+						my $relfilename = abs2rel(value('filename'), value('dir'), allow_rel_base => 1);
 						if ($relfilename =~ m!^\.\./!) {
 							error(message('filename_inside_dir',
 								'File specified with "option a" should be inside directory specified in %option b%'),

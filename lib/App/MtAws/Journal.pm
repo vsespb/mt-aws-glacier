@@ -28,7 +28,7 @@ use utf8;
 
 
 use File::Find;
-use File::Spec 3.13;
+use File::Spec 3.12;
 use Encode;
 use Carp;
 use IO::Handle;
@@ -298,6 +298,7 @@ sub _write_line
 # Reading file listing
 #
 
+
 sub read_files
 {
 	my ($self, $mode, $max_number_of_files) = @_;
@@ -315,6 +316,7 @@ sub read_files
 	# TODO: find better workaround than "-s"
 	$File::Find::prune = 0;
 	$File::Find::dont_use_nlink = !$self->{leaf_optimization};
+
 	File::Find::find({ wanted => sub {
 		if ($self->_listing_exceeed_max_number_of_files($max_number_of_files)) {
 			$File::Find::prune = 1;
@@ -331,7 +333,8 @@ sub read_files
 
 		if (-d) {
 			my $dir = character_filename($_);
-			my $reldir = File::Spec->abs2rel($dir, $self->{root_dir});
+			$dir =~ s!/$!!; # make sure there is no trailing slash. just in case.
+			my $reldir = abs2rel($dir, $self->{root_dir}, allow_rel_base => 1);
 			if ($self->{filter} && $reldir ne '.') {
 				my ($match, $matchsubdirs) = $self->{filter}->check_dir($reldir."/");
 				if (!$match && $matchsubdirs) {
@@ -341,7 +344,7 @@ sub read_files
 		} else {
 			# file can be not existing here (i.e. dangling symlink)
 			my $filename = character_filename(my $binaryfilename = $_);
-			my $orig_relfilename = File::Spec->abs2rel($filename, $self->{root_dir});
+			my $orig_relfilename = abs2rel($filename, $self->{root_dir}, allow_rel_base => 1);
 			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
 					my $relfilename;

@@ -39,9 +39,10 @@ use constant INVENTORY_TYPE_CSV => 'CSV';
 use constant INVENTORY_TYPE_JSON => 'JSON';
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename open_file sysreadfull syswritefull hex_dump_string
+sanity_relative_filename is_relative_filename abs2rel open_file sysreadfull syswritefull hex_dump_string
 is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
+
 
 # Does not work with directory names
 sub sanity_relative_filename
@@ -68,6 +69,16 @@ sub is_relative_filename
 	}x;
 	1;
 }
+
+
+sub abs2rel
+{
+	my ($path, $base, %args) = @_;
+	confess "too few arguments" unless defined($path) && defined($base);
+	$args{allow_rel_base} or $base =~ m{^/} or confess "relative basedir not allowed";
+	File::Spec->abs2rel($path, $base);
+}
+
 
 
 our $_filename_encoding = 'UTF-8'; # global var
