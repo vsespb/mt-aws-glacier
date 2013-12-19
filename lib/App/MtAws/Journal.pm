@@ -334,7 +334,7 @@ sub read_files
 		if (-d) {
 			my $dir = character_filename($_);
 			$dir =~ s!/$!!; # make sure there is no trailing slash. just in case.
-			my $reldir = abs2rel($dir, $self->{root_dir}, allow_rel_base => 1);
+			my $reldir = character_abs2rel($dir, $self->{root_dir}, allow_rel_base => 1);
 			if ($self->{filter} && $reldir ne '.') {
 				my ($match, $matchsubdirs) = $self->{filter}->check_dir($reldir."/");
 				if (!$match && $matchsubdirs) {
@@ -344,7 +344,7 @@ sub read_files
 		} else {
 			# file can be not existing here (i.e. dangling symlink)
 			my $filename = character_filename(my $binaryfilename = $_);
-			my $orig_relfilename = abs2rel($filename, $self->{root_dir}, allow_rel_base => 1);
+			my $orig_relfilename = character_abs2rel($filename, $self->{root_dir}, allow_rel_base => 1);
 			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
 					my $relfilename;

@@ -39,7 +39,7 @@ use TestUtils;
 warning_fatal();
 
 if(can_work_with_non_utf8_files) {
-	plan tests => 2148;
+	plan tests => 5250;
 } else {
 	plan skip_all => 'Test cannot be performed on character-oriented filesystem';
 }
@@ -53,6 +53,7 @@ my $tmproot = "$mtroot/журнал-byteenc";
 my $dataroot = "$tmproot/dataL1/данныеL2";
 my $journal_file = "$tmproot/journal";
 
+my $pwd  = Cwd::getcwd();
 
 
 # -0.* -фexclude/a/ +*.gz -
@@ -114,5 +115,31 @@ for my $jv (qw/0 B/) {
 	}
 }
 
+for my $cd ("$tmproot/dataL1/данныеL2", "$tmproot/dataL1/", $pwd) {
+	for my $jv (qw/B/) {
+		for my $journal_encoding (qw/UTF-8 CP1251/) {#  # TODO: disable test on Unicode Filesystems (MacOSX)
+			for my $filenames_encoding (qw/UTF-8 KOI8-R CP1251/) {#
+				my $tmproot_e = encode($filenames_encoding, $tmproot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+				my $dataroot_e = encode($filenames_encoding, $dataroot, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
+
+				rmtree($tmproot_e) if ($tmproot_e) && (-d $tmproot_e);
+				mkpath($dataroot_e);
+
+				set_filename_encoding $filenames_encoding;
+
+				my $F = App::MtAws::Filter->new();
+				$F->parse_filters('-0.* -фexclude/a/ +');
+
+
+				my $J = JournalTest->new(curdir => $cd, journal_encoding => $journal_encoding, filenames_encoding => $filenames_encoding,
+					create_journal_version => $jv, mtroot => $mtroot, tmproot => $tmproot, dataroot => $dataroot,
+					journal_file => $journal_file, testfiles => $testfiles1, filter => $F);
+				$J->test_all();
+
+				rmtree($tmproot_e) if ($tmproot_e) && (-d $tmproot_e);
+			}
+		}
+	}
+}
 
 1;

@@ -65,6 +65,12 @@ sub binarypath
 	encode($self->{filenames_encoding}, $path, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
 }
 
+sub characterpath
+{
+	my ($self, $path) = @_;
+	decode($self->{filenames_encoding}, $path, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
+}
+
 sub test
 {
 	my ($self, $testname) = @_;
@@ -91,9 +97,9 @@ sub check_absfilename
 {
 	my ($self, $should_exist, $relfilename, $absfilename) = @_;
 
-	my $absfilename_old = File::Spec->rel2abs($relfilename, $self->{dataroot});
+	my $absfilename_old = $self->characterpath(File::Spec->rel2abs($self->binarypath($relfilename), $self->binarypath($self->{dataroot})));
 	my $absfilename_correct = File::Spec->catfile($self->{dataroot}, $relfilename);
-	my $absfilename_wrong = File::Spec->abs2rel(File::Spec->rel2abs($relfilename, $self->{dataroot}));
+	my $absfilename_wrong = $self->characterpath(File::Spec->abs2rel(File::Spec->rel2abs($self->binarypath($relfilename), $self->binarypath($self->{dataroot}))));
 
 	if ($should_exist) {
 		my $ino_old = stat($self->binarypath($absfilename_old))->ino;
