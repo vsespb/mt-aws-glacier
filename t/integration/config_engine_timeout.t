@@ -31,28 +31,32 @@ use TestUtils;
 
 warning_fatal();
 
+my $mtroot = get_temp_dir();
+open my $f, ">", "$mtroot/file"; print $f "1"; close $f;
+
 for (
 	[qw!create-vault --config glacier.cfg myvault!],
 	[qw!delete-vault --config glacier.cfg myvault!],
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!],
-	[qw!upload-file --config glacier.cfg --vault myvault --journal j --dir a --filename a/myfile!],
+	[qw!sync --config glacier.cfg --vault myvault --journal j!, '--dir', $mtroot],
+	[qw!upload-file --config glacier.cfg --vault myvault --journal j!, '--dir', $mtroot, '--filename', "$mtroot/file"],
 	[qw!purge-vault --config glacier.cfg --vault myvault --journal j!],
-	[qw!restore --config glacier.cfg --vault myvault --journal j --dir a --max-number-of-files 1!],
-	[qw!restore-completed --config glacier.cfg --vault myvault --journal j --dir a!],
+	[qw!restore --config glacier.cfg --vault myvault --journal j --max-number-of-files 1!, '--dir', $mtroot],
+	[qw!restore-completed --config glacier.cfg --vault myvault --journal j!, '--dir', $mtroot],
 	[qw!retrieve-inventory --config glacier.cfg --vault myvault!],
 	[qw!download-inventory --config glacier.cfg --vault myvault --new-journal j!],
 ) {
 	fake_config sub {
-		disable_validations qw/journal secret key filename dir/ => sub {
+		disable_validations qw/journal secret key/ => sub {
 			my $timeout = 60;
 			my $res = config_create_and_parse(@$_, qq!--timeout!, $timeout);
+			use Data::Dumper; print Dumper $res->{errors} if $res->{errors};
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{timeout}, $timeout, "timeout matches";
-			
+
 			$res = config_create_and_parse(@$_);
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{timeout}, 180, "timeout is optional but has default value 180";
-			
+
 			$timeout = ('x' x 3);
 			$res = config_create_and_parse(@$_, qq!--timeout!, $timeout);
 			cmp_deeply $res->{errors}, [{a => 'timeout', format => 'invalid_format', value => $timeout}], "should catch wrong timeout";
