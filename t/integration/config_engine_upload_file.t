@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 275;
+use Test::More tests => 226;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -35,9 +35,6 @@ use Data::Dumper;
 use TestUtils;
 
 warning_fatal();
-
-
-my $mtroot = get_temp_dir();
 
 
 # upload_file command parsing test
@@ -96,32 +93,6 @@ assert_passes "should work with filename and set-rel-filename",
 	'data-type' => 'filename',
 	'set-rel-filename' => 'x/y/z',
 	filename => '/tmp/dir/a/myfile';
-
-## dir
-
-
-sub test_file_and_dir
-{
-	my ($msg, $dir, $filename, $expected) = @_;
-	assert_passes $msg,
-		qq!upload-file --config glacier.cfg --vault myvault --journal j --filename $filename --dir $dir!,
-		'name-type' => 'dir',
-		'data-type' => 'filename',
-		relfilename => $expected,
-		dir => $dir,
-		filename => $filename;
-}
-
-
-
-test_file_and_dir "should work with filename and dir",
-	'/tmp/dir', '/tmp/dir/a/myfile', 'a/myfile';
-test_file_and_dir "should work with filename and dir when file right inside dir",
-	'/tmp/dir', '/tmp/dir/myfile', 'myfile';
-test_file_and_dir "should work with filename and dir when filename and dir are relative",
-	"tmp/dir", "tmp/dir/a/myfile", "a/myfile";
-test_file_and_dir "should work with filename and dir when file right inside dir when filename and dir are relative",
-	"tmp/dir", "tmp/dir/myfile", "myfile";
 
 
 ##
@@ -186,23 +157,6 @@ assert_fails "should check set-rel-filename to be relative filename for $_",
 	'require_relative_filename', a => 'set-rel-filename', value => $_;
 }
 
-## dir
-
-assert_fails "filename with fail without set-rel-filename or dir",
-	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir /tmp/notdir!,
-	['filename', 'dir'],
-	'filename_inside_dir', a => 'filename', b => 'dir';
-
-assert_fails "filename with fail without set-rel-filename or dir",
-	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir /tmp/dir/a/b!,
-	['filename', 'dir'],
-	'filename_inside_dir', a => 'filename', b => 'dir';
-
-assert_fails "filename with fail without set-rel-filename or dir",
-	qq!upload-file --config glacier.cfg --vault myvault --journal j --filename /tmp/dir/a/myfile --dir !.("x" x 2048),
-	['filename'],
-	'%option a% should be less than 512 characters', a => 'dir', value => ("x" x 2048); # TODO: test also for bad filename
-
 ##
 ## stdin
 ##
@@ -262,82 +216,6 @@ assert_fails "set-rel-filename and dir as mutual exclusize",
 	['dir'],
 	'mutual', a => 'set-rel-filename', b => 'dir';
 
-
-#
-# some integration testing
-#
-
-sub with_save_dir(&)
-{
-	my $curdir = Cwd::getcwd;
-	shift->();
-	chdir $curdir or confess;
-}
-
-sub with_my_dir($%)
-{
-	my ($d, $cb) = @_;
-	my $dir = "$mtroot/$d";
-	with_save_dir {
-		mkpath $dir;
-		chdir $dir or confess;
-		$cb->($dir);
-	}
-}
-
-{
-	with_my_dir "d1/d2", sub {
-		test_file_and_dir "should work with filename and dir when file right inside dir when filename and dir are relative",
-			"..", "myfile", "d2/myfile";
-		test_file_and_dir "should work with filename and dir when file right inside dir when filename and dir are relative",
-			"../..", "myfile", "d1/d2/myfile";
-	};
-}
-
-SKIP: {
-	skip "Cannot run under root", 19 if is_posix_root;
-
-	my $restricted_abs = "$mtroot/restricted";
-	my $normal_abs = "$restricted_abs/normal";
-	my $file_abs = "$normal_abs/file";
-
-
-	with_my_dir "restricted/normal", sub {
-		open my $f, ">", $file_abs; close $f;
-
-		mkpath "top";
-
-		my $file_rel = "file";
-		my $normal_rel = "../normal";
-
-		is stat($file_rel)->ino, stat($file_abs)->ino;
-		is stat($normal_rel)->ino, stat($normal_abs)->ino;
-
-		ok -f $file_rel;
-		ok -f $file_abs;
-		ok -d $normal_rel;
-		ok -d $normal_rel;
-
-		chmod 000, $restricted_abs;
-
-		ok  -f $file_rel;
-		ok !-f $file_abs;
-		ok !-d $normal_rel;
-		ok !-d $normal_rel;
-
-
-		test_file_and_dir "should work with filename and dir when file right inside dir when filename and dir are relative",
-			'.', $file_rel, "file";
-
-		test_file_and_dir "should work with filename and dir when file right inside dir when filename and dir are relative",
-			'top', "top/somefile", "somefile";
-
-		test_file_and_dir "should work with filename and dir when file right inside dir when filename and dir are relative",
-			'.', "top/somefile", "top/somefile";
-
-		chmod 700, $restricted_abs;
-	}
-}
 
 
 1;

@@ -73,6 +73,7 @@ t/integration/config_engine_sync_new.t
 t/integration/config_engine_timeout.t
 t/integration/config_engine_token.t
 t/integration/config_engine_upload_file.t
+t/integration/config_engine_upload_file_real.t
 t/integration/config_engine_v078.t
 t/integration/config_engine_v082.t
 t/integration/config_engine_v085.t
