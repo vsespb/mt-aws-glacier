@@ -49,7 +49,6 @@ for (
 		disable_validations qw/journal secret key/ => sub {
 			my $timeout = 60;
 			my $res = config_create_and_parse(@$_, qq!--timeout!, $timeout);
-			use Data::Dumper; print Dumper $res->{errors} if $res->{errors};
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{timeout}, $timeout, "timeout matches";
 

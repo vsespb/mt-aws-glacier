@@ -30,29 +30,31 @@ use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 
 warning_fatal();
+my $mtroot = get_temp_dir();
+open my $f, ">", "$mtroot/file"; print $f "1"; close $f;
 
 for (
 	[qw!create-vault --config glacier.cfg myvault!],
 	[qw!delete-vault --config glacier.cfg myvault!],
-	[qw!sync --config glacier.cfg --vault myvault --journal j --dir a!],
-	[qw!upload-file --config glacier.cfg --vault myvault --journal j --dir a --filename a/myfile!],
+	[qw!sync --config glacier.cfg --vault myvault --journal j!,'--dir', $mtroot],
+	[qw!upload-file --config glacier.cfg --vault myvault --journal j!, '--dir', $mtroot, '--filename', "$mtroot/file"],
 	[qw!purge-vault --config glacier.cfg --vault myvault --journal j!],
-	[qw!restore --config glacier.cfg --vault myvault --journal j --dir a --max-number-of-files 1!],
-	[qw!restore-completed --config glacier.cfg --vault myvault --journal j --dir a!],
+	[qw!restore --config glacier.cfg --vault myvault --journal j --max-number-of-files 1!, '--dir', $mtroot],
+	[qw!restore-completed --config glacier.cfg --vault myvault --journal j!, '--dir', $mtroot],
 	[qw!retrieve-inventory --config glacier.cfg --vault myvault!],
 	[qw!download-inventory --config glacier.cfg --vault myvault --new-journal j!],
 ) {
 	fake_config sub {
-		disable_validations qw/journal secret key filename dir/ => sub {
+		disable_validations qw/journal secret key/ => sub {
 			my $token = ('x' x 330);
 			my $res = config_create_and_parse(@$_, qq!--token!, $token);
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			is $res->{options}{token}, $token, "token matches";
-			
+
 			$res = config_create_and_parse(@$_);
 			ok !($res->{errors}||$res->{warnings}), "no errors";
 			ok !defined($res->{options}{token}), "token is optional";
-			
+
 			$token = ('x' x 10);
 			$res = config_create_and_parse(@$_, qq!--token!, $token);
 			cmp_deeply $res->{errors}, [{a => 'token', format => 'invalid_format', value => $token}], "should catch too small token";
