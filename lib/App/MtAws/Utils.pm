@@ -93,8 +93,7 @@ sub binary_abs_path
 
 	my ($orig_i, $orig_d) = (stat($path)->ino, stat($path)->dev);
 
-	my $abspath = Cwd::_perl_abs_path($path);
-	#my $abspath = Cwd::abs_path($path);
+	my $abspath = Cwd::abs_path($path);
 
 	return undef unless defined $abspath;
 	return undef if $abspath eq ''; # workaround RT#47755
