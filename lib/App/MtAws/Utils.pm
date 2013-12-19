@@ -26,6 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use File::Spec;
+use Cwd;
 use File::stat;
 use Carp;
 use Encode;
@@ -39,9 +40,22 @@ use constant INVENTORY_TYPE_CSV => 'CSV';
 use constant INVENTORY_TYPE_JSON => 'JSON';
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename abs2rel open_file sysreadfull syswritefull hex_dump_string
+sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull hex_dump_string
 is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
+
+
+BEGIN {
+	if ($File::Spec::VERSION < 3.13) {
+		our $__orig_abs_to_rel = File::Spec->can("abs2rel");
+		no warnings 'once';
+		*File::Spec::abs2rel = sub {
+			my $r = $__orig_abs_to_rel->(@_);
+			return '.' if $r eq '';
+			$r;
+		};
+	}
+}
 
 
 # Does not work with directory names
@@ -70,6 +84,23 @@ sub is_relative_filename
 	1;
 }
 
+
+sub binary_abs_path
+{
+	my ($path) = @_;
+	my ($orig_i, $orig_d) = (stat($path)->ino, stat($path)->dev);
+
+	my $abspath = Cwd::_perl_abs_path($path);
+	#my $abspath = Cwd::abs_path($path);
+
+	return undef unless defined $abspath;
+	return undef if $abspath eq ''; # workaround RT#47755
+
+	# workaround RT#47755 - in case perms problem it tries to return File::Spec->rel2abs
+	return undef unless -e $abspath && stat($abspath)->ino == $orig_i && stat($abspath)->dev == $orig_d;
+
+	return $abspath;
+}
 
 sub abs2rel
 {
