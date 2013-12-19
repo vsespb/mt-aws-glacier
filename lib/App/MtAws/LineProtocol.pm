@@ -58,17 +58,17 @@ sub get_data
 
 	my ($len, $line);
 
-	sysreadfull($fh, $len, 8) &&
-	sysreadfull($fh, $line, $len+0) or
+	sysreadfull_chk($fh, $len, 8) &&
+	sysreadfull_chk($fh, $line, $len+0) or
 	return;
 
 	chomp $line;
 	my ($pid, $action, $taskid, $datasize, $attachmentsize) = split /\t/, $line;
-	sysreadfull($fh, my $data_e, $datasize) or
+	sysreadfull_chk($fh, my $data_e, $datasize) or
 		return;
 	my $attachment = undef;
 	if ($attachmentsize) {
-		sysreadfull($fh, $attachment, $attachmentsize) or
+		sysreadfull_chk($fh, $attachment, $attachmentsize) or
 			return;
 	}
 	my $data = decode_data($data_e);
@@ -88,10 +88,10 @@ sub send_data
 	my $datasize = length($data_e);
 	my $line = "$$\t$action\t$taskid\t$datasize\t$attachmentsize\n"; # encode_data returns ASCII-7bit data, so ok here
 	confess if is_wide_string($line);
-	syswritefull($fh, sprintf("%08d", length($line))) &&
-	syswritefull($fh, $line) &&
-	syswritefull($fh, $data_e) &&
-		(!$attachmentsize || syswritefull($fh, $$attachmentref)) or
+	syswritefull_chk($fh, sprintf("%08d", length($line))) &&
+	syswritefull_chk($fh, $line) &&
+	syswritefull_chk($fh, $data_e) &&
+		(!$attachmentsize || syswritefull_chk($fh, $$attachmentref)) or
 		return;
 	return 1;
 }
