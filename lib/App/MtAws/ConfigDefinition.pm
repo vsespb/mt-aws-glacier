@@ -26,6 +26,7 @@ use strict;
 use warnings;
 use utf8;
 use File::Spec;
+use File::stat;
 use Encode;
 use Carp;
 use List::Util qw/first/;
@@ -115,7 +116,15 @@ sub check_dir_or_relname
 								a => 'filename'), undef;
 						} else {
 							my $relfilename = characterfilename abs2rel($b_file, $b_dir, allow_rel_base => 1);#TODO: no allow_rel_base
-							if ($relfilename =~ m!^\.\./!) {
+
+							my $dir = value('dir');
+							$dir =~ s!/$!!; # just in case
+
+							confess "something wrong with relative-absolute paths"
+								unless stat(binaryfilename value('filename'))->ino == stat(binaryfilename($dir."/".$relfilename))->ino;
+								#TODO: also check ->dev
+
+							if (!is_relative_filename($relfilename)) {
 								error(message('filename_inside_dir',
 									'File specified with "option a" should be inside directory specified in %option b%'),
 									a => 'filename', b => 'dir'),

@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 167;
+use Test::More tests => 179;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -187,10 +187,18 @@ for my $encoding (qw/UTF-8 CP1251 KOI8-R/) {
 }
 
 with_my_dir "d1/d2", "d1/d2/d3", sub {
+	my ($curdir) = @_;
+
 	touch "d3/myfile";
 
 	test_file_and_dir "dir/filename should work with ..",
 		"d3", "d3/myfile", "myfile";
+	test_file_and_dir "dir/filename should work with ..",
+		"d3/", "d3/myfile", "myfile";
+	test_file_and_dir "dir/filename should work with ..",
+		"$curdir/d3/", "d3/myfile", "myfile";
+
+
 	test_file_and_dir "dir/filename should work with ..",
 		".", "d3/myfile", "d3/myfile";
 	test_file_and_dir "dir/filename should work with ..",
@@ -219,6 +227,9 @@ with_my_dir "d1/d2", "d1/d2/d3", "d1/d2/d3/d4", sub {
 	test_file_and_dir "dir/filename should work with symlinks 1",
 		"d3", "d3/myfile", "myfile";
 
+	test_file_and_dir "dir/filename should work with symlinks 1",
+		"d3/", "d3/myfile", "myfile";
+
 	test_file_and_dir "dir/filename should work with symlinks 2",
 		"ds", "d3/myfile", "myfile";
 
@@ -241,6 +252,8 @@ with_my_dir "d1/d2", "d1/d2/d3", "d1/d2/d3/d4", sub {
 	test_file_and_dir "dir/filename should work with symlinks 8",
 		"ds", "ds/d4/myfile2", "d4/myfile2";
 
+	test_file_and_dir "dir/filename should work with symlinks 8",
+		"ds/", "ds/d4/myfile2", "d4/myfile2";
 };
 
 
