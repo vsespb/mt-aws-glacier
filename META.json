@@ -51,7 +51,7 @@
             "File::Basename" : "0",
             "File::Find" : "0",
             "File::Path" : "0",
-            "File::Spec" : "3.13",
+            "File::Spec" : "3.12",
             "File::Temp" : "0.16",
             "File::stat" : "0",
             "FindBin" : "0",

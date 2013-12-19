@@ -37,11 +37,9 @@ use TestUtils;
 
 use App::MtAws::Utils;
 
-#warning_fatal();
-
+warning_fatal();
 
 my $mtroot = get_temp_dir();
-
 
 # upload_file command parsing test
 
