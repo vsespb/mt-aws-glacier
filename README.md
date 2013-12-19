@@ -638,7 +638,11 @@ There are several possible combinations of options for `upload-file`:
 
 	(Let's assume current directory is `/home`. Then this will upload content of `/home/data/backup/dir1/myfile` to Amazon Glacier and use `dir1/myfile` as filename for Journal)
 
-	(NOTE: file `filename` should be inside directory `dir`)
+	NOTE: file `filename` should be inside directory `dir`
+
+	NOTE: both `filename` and `dir` resolved to full paths, before determining relative path from `dir` to `filename`. Thus yo'll get an error
+	if parent directories are unreadable. Also if you have `/dir/ds` symlink to `/dir/d3` directory, then `--dir=/dir` `--filename=/dir/ds/file` will result in relative
+	filename `d3/file` not `ds/file`
 
 2. **--filename** and  **--set-rel-filename**
 
