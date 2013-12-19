@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 27;
+use Test::More tests => 29;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -144,7 +144,7 @@ fork_engine_test 1,
 
 
 {
-	my @unhandled_signals = (POSIX::SIGPIPE);
+	my @unhandled_signals = (POSIX::SIGPIPE, POSIX::SIGUSR1);
 	my %child_signals;
 	for my $sig (@unhandled_signals) {
 		my $exited = 0;
