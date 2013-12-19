@@ -640,7 +640,7 @@ There are several possible combinations of options for `upload-file`:
 
 	NOTE: file `filename` should be inside directory `dir`
 
-	NOTE: both `filename` and `dir` resolved to full paths, before determining relative path from `dir` to `filename`. Thus yo'll get an error
+	NOTE: both `-filename` and `--dir` resolved to full paths, before determining relative path from `--dir` to `--filename`. Thus yo'll get an error
 	if parent directories are unreadable. Also if you have `/dir/ds` symlink to `/dir/d3` directory, then `--dir=/dir` `--filename=/dir/ds/file` will result in relative
 	filename `d3/file` not `ds/file`
 

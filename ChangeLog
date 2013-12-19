@@ -1,3 +1,19 @@
+
+  * Compatibility: upload-file with --filename option behaviour slightly changed:
+  both --filename and --dir now resolved to full paths, before determining relative path from --dir` to --filename`
+  So f you have `/dir/ds` symlink to `/dir/d3` directory, then `--dir=/dir` `--filename=/dir/ds/file` will result in
+  relative filename `d3/file` not `ds/file`. Previously you would get d3/file. Also now all parent directories has
+  to be readable.
+
+  * Documentation: documentation for upload-file updated.
+
+  * Fixed: upload-file with --filename and --dir were not working correctly for most of perl installations
+  if dir started with "..". This due to bug https://rt.perl.org/Public/Bug/Display.html?id=111510 in File::Spec module.
+  Currently upload-file behaviour changed (see above in ChangeLog) so  mtglacier not affected. In previous versions this
+  would result in wrong relative filenames in journal and Amazon glacier metadata
+  (precisely, those filenames are without path prefix, as if they would be in current directory, otherwise filename
+  part is correct).
+
 ### 2013-12-14 v1.103
 
   * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format
