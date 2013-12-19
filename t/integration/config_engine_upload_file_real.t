@@ -74,8 +74,8 @@ sub assert_passes_on_filesystem($$%)
 	my ($msg, $query, %result) = @_;
 	fake_config sub {
 		disable_validations qw/journal secret key/ => sub {
-			my $res = config_create_and_parse(split(' ', $query));
-			print Dumper $res->{errors} if $res->{errors};
+			my $res = config_create_and_parse(@$query);
+			print Dumper $res->{error_texts} if $res->{errors};
 			ok !($res->{errors}||$res->{warnings}), $msg;
 			is $res->{command}, 'upload-file', $msg;
 			is_deeply($res->{options}, {
@@ -91,7 +91,7 @@ sub assert_fails_on_filesystem($$%)
 	my ($msg, $query, $novalidations, $error, %opts) = @_;
 	fake_config sub {
 		disable_validations qw/journal key secret/, @$novalidations => sub {
-			my $res = config_create_and_parse(split(' ', $query));
+			my $res = config_create_and_parse(@$query);
 			print Dumper $res->{options} unless $res->{errors};
 			ok $res->{errors}, $msg;
 			ok !defined $res->{warnings}, $msg;
@@ -112,7 +112,7 @@ sub test_file_and_dir
 	local $App::MtAws::Utils::_filename_encoding = undef;
 
 	assert_passes_on_filesystem $msg,
-		qq!upload-file --config glacier.cfg --vault myvault --journal j --filename $filename_enc --dir $dir_enc --filenames-encoding=$encoding!,
+		[qw!upload-file --config glacier.cfg --vault myvault --journal j!, '--filename', $filename_enc, '--dir', $dir_enc,'--filenames-encoding', $encoding],
 		'name-type' => 'dir',
 		'data-type' => 'filename',
 		relfilename => $expected,
@@ -125,7 +125,7 @@ sub fails_file_and_dir
 {
 	my ($msg, $dir, $filename, $error, %opts) = @_;
 	assert_fails_on_filesystem $msg,
-		qq!upload-file --config glacier.cfg --vault myvault --journal j --filename $filename --dir $dir!,
+		[qw!upload-file --config glacier.cfg --vault myvault --journal j!, '--filename', $filename, '--dir', $dir],
 		[],
 		$error, %opts;
 }

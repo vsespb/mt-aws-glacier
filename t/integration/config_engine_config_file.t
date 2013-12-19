@@ -41,7 +41,7 @@ my $symlink = "$mtroot/config_engine_config_file_test.symlink";
 rmtree($file);
 
 
-my $line = "purge-vault --key=k --secret=s --region=myregion --config=$file --to-vault=myvault --journal x";
+my @line = (qw!purge-vault --key=k --secret=s --region=myregion -to-vault=myvault --journal x --config!, $file);
 SKIP: {
 	skip "Cannot run under root", 6 if is_posix_root;
 	rmtree($file);
@@ -50,7 +50,7 @@ SKIP: {
 	close F;
 	chmod 0000, $file;
 	disable_validations sub {
-		ok ! defined eval { config_create_and_parse(split(' ', $line)); 1; };
+		ok ! defined eval { config_create_and_parse(@line); 1; };
 		my $err = get_exception();
 		ok $err;
 		is $err->{code}, 'cannot_read_config';
@@ -64,7 +64,7 @@ SKIP: {
 	rmtree($file);
 	mkpath($file);
 	disable_validations sub {
-		ok ! defined eval { config_create_and_parse(split(' ', $line)); 1; };
+		ok ! defined eval { config_create_and_parse(@line); 1; };
 		my $err = get_exception();
 		ok $err;
 		is $err->{code}, 'config_file_is_not_a_file';
@@ -78,7 +78,7 @@ SKIP: {
 	open F, ">", $file;
 	close F;
 	disable_validations sub {
-		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $line));
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(@line);
 		ok( !$errors && $result, "should work with empty config file");
 	}
 }
@@ -90,7 +90,9 @@ SKIP: {
 	close F;
 	symlink $file, $symlink or die $!;
 	disable_validations sub {
-		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', "purge-vault --key=k --secret=s --region=myregion --config=$symlink --to-vault=myvault --journal x"));
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(
+			qw!purge-vault --key=k --secret=s --region=myregion --to-vault=myvault --journal x!, '--config', $symlink
+		);
 		ok( !$errors && $result, "should work with symlinked config file");
 	}
 }
