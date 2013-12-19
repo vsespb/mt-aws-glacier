@@ -84,6 +84,7 @@ my $build = Module::Build->new(
 		'File::Temp' => '0.16',
 
 		'File::Spec' => '3.12',
+		'Cwd' => 0,
 		'File::stat' => 0,
 		'Getopt::Long' => '2.24',
 
