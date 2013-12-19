@@ -26,7 +26,6 @@ use strict;
 use warnings;
 use utf8;
 use File::Spec;
-use File::stat;
 use Encode;
 use Carp;
 use List::Util qw/first/;
@@ -121,8 +120,7 @@ sub check_dir_or_relname
 							$dir =~ s!/$!!; # just in case
 
 							confess "something wrong with relative-absolute paths"
-								unless stat(binaryfilename value('filename'))->ino == stat(binaryfilename($dir."/".$relfilename))->ino;
-								#TODO: also check ->dev
+								unless file_inodev(value('filename')) eq file_inodev($dir."/".$relfilename);
 
 							if (!is_relative_filename($relfilename)) {
 								error(message('filename_inside_dir',
