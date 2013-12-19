@@ -88,6 +88,9 @@ sub is_relative_filename
 sub binary_abs_path
 {
 	my ($path) = @_;
+
+	local $SIG{__WARN__}=sub{};
+
 	my ($orig_i, $orig_d) = (stat($path)->ino, stat($path)->dev);
 
 	my $abspath = Cwd::_perl_abs_path($path);
