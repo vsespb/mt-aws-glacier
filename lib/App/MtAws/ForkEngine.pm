@@ -97,8 +97,21 @@ sub run_parent
 
 sub parent_exit_on_signal
 {
-	my ($self, $sig, $children) = @_;
-	print STDERR "\nEXIT on SIG$sig\n";
+	my ($self, $sig, $status) = @_;
+	my $status_str = do {
+		if (defined $status) {
+			my $exit_code = $status >> 8;
+			my $signal = $status & 127;
+			if ($signal) {
+				" (signal $signal, exit_code $exit_code)";
+			} else {
+				" (exit_code $exit_code)";
+			}
+		} else {
+			"";
+		}
+	};
+	print STDERR "\nEXIT on SIG$sig$status_str\n";
 	exit(1);
 }
 
@@ -132,8 +145,10 @@ sub start_children
 	for my $sig (qw/INT TERM CHLD USR1 HUP/) {
 		$SIG{$sig} = sub {
 			local ($!,$^E,$@);
+			my $status = undef;
 			if ($sig eq 'CHLD') {
 				my $pid = waitpid(-1, WNOHANG);
+				$status = $?;
 				# make sure we caugth signal from our children, not from external command executionin 3rd party module
 				# easy to test by adding `whoami` to parent after-fork-code
 				return unless $pid > 0 and defined delete $self->{children}{$pid}; # we also remove $pid
@@ -142,7 +157,7 @@ sub start_children
 				$first_time = 0;
 				kill (POSIX::SIGUSR2, keys %{$self->{children}});
 				while( wait() != -1 ){};
-				$self->parent_exit_on_signal($sig, $self->{children});
+				$self->parent_exit_on_signal($sig, $status);
 			}
 		};
 	}
