@@ -40,7 +40,7 @@ use constant INVENTORY_TYPE_CSV => 'CSV';
 use constant INVENTORY_TYPE_JSON => 'JSON';
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename binary_abs2rel character_abs2rel binary_abs_path open_file sysreadfull syswritefull hex_dump_string
+sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull hex_dump_string
 is_wide_string characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
@@ -119,19 +119,18 @@ sub characterfilename(;$)
 	decode(get_filename_encoding, @_ ? shift : $_, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 }
 
-sub binary_abs2rel
-{
-	my ($path, $base, %args) = @_;
-	confess "too few arguments" unless defined($path) && defined($base);
-	$args{allow_rel_base} or $base =~ m{^/} or confess "relative basedir not allowed";
-	File::Spec->abs2rel($path, $base);
-}
-
-sub character_abs2rel
+sub abs2rel
 {
 	my ($path, $base) = (shift, shift);
 	confess "too few arguments" unless defined($path) && defined($base);
-	characterfilename binary_abs2rel(binaryfilename($path), binaryfilename($base), @_)
+	my (%args) = (use_filename_encoding => 1, @_);
+	if ($args{use_filename_encoding}) {
+		$path = binaryfilename $path;
+		$base = binaryfilename $base;
+	}
+	$args{allow_rel_base} or $base =~ m{^/} or confess "relative basedir not allowed";
+	my $result = File::Spec->abs2rel($path, $base);
+	$args{use_filename_encoding} ? characterfilename($result) : $result;
 }
 
 
