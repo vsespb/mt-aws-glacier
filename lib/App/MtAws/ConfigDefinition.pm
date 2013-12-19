@@ -115,7 +115,7 @@ sub check_dir_or_relname
 								'File specified with "%option a%" cannot be resolved to full path'),
 								a => 'filename'), undef;
 						} else {
-							my $relfilename = characterfilename binary_abs2rel($b_file, $b_dir, allow_rel_base => 1);#TODO: no allow_rel_base
+							my $relfilename = characterfilename binary_abs2rel($b_file, $b_dir, allow_rel_base => 0);
 
 							my $dir = value('dir');
 							$dir =~ s!/$!!; # just in case
