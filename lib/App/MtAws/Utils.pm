@@ -99,7 +99,7 @@ sub binary_abs_path
 	return undef if $abspath eq ''; # workaround RT#47755
 
 	# workaround RT#47755 - in case perms problem it tries to return File::Spec->rel2abs
-	return undef unless file_inodev($abspath, use_filename_encoding => 0) eq $orig_id;
+	return undef unless -e $abspath && file_inodev($abspath, use_filename_encoding => 0) eq $orig_id;
 
 	return $abspath;
 }
