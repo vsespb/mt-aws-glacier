@@ -381,6 +381,4 @@ sub check_stdin_not_empty
 		if eof(STDIN); # we block until first byte arrive, then we put it back in to buffer
 }
 
-BEGIN { load_all_dynamic_modules() if $^C };
-
 1;
