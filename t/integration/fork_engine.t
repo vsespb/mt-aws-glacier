@@ -22,7 +22,8 @@
 
 use strict;
 use warnings;
-use Test::More tests => 24;
+use Test::More tests => 27;
+use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
@@ -76,8 +77,8 @@ sub fork_engine_test($%)
 		alarm 0;
 	};
 	local *App::MtAws::ForkEngine::parent_exit_on_signal = sub {
-		my ($self, $sig) = @_;
-		$cb{parent_exit_on_signal}->($sig, $self->{children});
+		my ($self, $sig, $status) = @_;
+		$cb{parent_exit_on_signal}->($sig, $status);
 	} if ($cb{parent_exit_on_signal});
 
 	my $FE = App::MtAws::ForkEngine->new(options => { concurrency => $cnt});
@@ -104,39 +105,73 @@ fork_engine_test 1,
 	};
 
 
-my @child_signals = (POSIX::SIGUSR2, POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM);
-my %child_signals = map { $_ => 1} @child_signals;
+{
+	my @child_signals = (POSIX::SIGUSR2, POSIX::SIGINT, POSIX::SIGHUP, POSIX::SIGTERM);
+	my %child_signals;
 
-for my $sig (@child_signals) {
-	my $exited = 0;
-	my $filename;
-	fork_engine_test 1,
-		parent_each => sub {
-			my ($fh, $children) = @_;
-			$filename = <$fh>;
-			chomp $filename;
-			ok -f $filename, "child should create temporary file";
-			is kill($sig, keys %$children), 1, "kill should work";
-			while (!$exited) {
-				usleep 30_000;
-			}
-		},
-		parent_exit_on_signal => sub {
-			$exited = 1;
-			delete $child_signals{$sig};
-		},
-		child => sub {
-			my ($in, $out) = @_;
-			my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/child_$$");
-			my $filename = $I->tempfilename;
-			print $out "$filename\n";
-			usleep 30_000 while (1);
-		};
-	ok $exited, "parent should exit if child receive signal $sig";
-	ok !-e $filename, "child should remove temporary files";
+	for my $sig (@child_signals) {
+		my $exited = 0;
+		my $filename;
+		fork_engine_test 1,
+			parent_each => sub {
+				my ($fh, $children) = @_;
+				$filename = <$fh>;
+				chomp $filename;
+				ok -f $filename, "child should create temporary file";
+				is kill($sig, keys %$children), 1, "kill should work";
+				while (!$exited) {
+					usleep 30_000;
+				}
+			},
+			parent_exit_on_signal => sub {
+				my (undef, $status) = @_;
+				$exited = 1;
+				$child_signals{$sig} = $status;
+			},
+			child => sub {
+				my ($in, $out) = @_;
+				my $I = App::MtAws::IntermediateFile->new(target_file => "$rootdir/child_$$");
+				my $filename = $I->tempfilename;
+				print $out "$filename\n";
+				usleep 30_000 while (1);
+			};
+		ok $exited, "parent should exit if child receive signal $sig";
+		ok !-e $filename, "child should remove temporary files";
+	}
+
+	cmp_deeply [values %child_signals], [map { 1 << 8} @child_signals], "all child signals tested";
 }
 
-ok scalar keys %child_signals == 0, "all child signals tested";
+
+{
+	my @unhandled_signals = (POSIX::SIGPIPE);
+	my %child_signals;
+	for my $sig (@unhandled_signals) {
+		my $exited = 0;
+		fork_engine_test 1,
+			parent_each => sub {
+				my ($fh, $children) = @_;
+				my $str = <$fh>;
+				is kill($sig, keys %$children), 1, "kill should work";
+				while (!$exited) {
+					usleep 30_000;
+				}
+			},
+			parent_exit_on_signal => sub {
+				my (undef, $status) = @_;
+				$exited = 1;
+				$child_signals{$sig} = $status;
+			},
+			child => sub {
+				my ($in, $out) = @_;
+				print $out "test\n";
+				usleep 30_000 while (1);
+			};
+		ok $exited, "parent should exit if child receive signal $sig";
+	}
+
+	cmp_deeply [@child_signals{@unhandled_signals}], [@unhandled_signals], "all child signals tested";
+}
 
 
 
@@ -160,7 +195,6 @@ for my $sig (@parent_signals) { # we dont test SIGCHLD here , this test does not
 			}
 		},
 		parent_exit_on_signal => sub { # parent signal handler
-			my (undef, $children) = @_;
 			$wait_test = 1 if wait() == -1;
 			delete $parent_signals{$sig};
 			$exit_flag = 1;
