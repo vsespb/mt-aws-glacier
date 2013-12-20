@@ -34,6 +34,8 @@
   this bug was not affecting any real use of mtglacier as mtglacier does not use backslashes in metadata and ignores
   foreign metadata.
 
+  * Cosmetic changes to process manager code
+
 ### 2013-12-14 v1.103
 
   * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format
