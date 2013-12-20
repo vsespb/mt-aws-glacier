@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 179;
+use Test::More tests => 194;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -153,9 +153,9 @@ sub with_my_dir($%)
 
 sub touch
 {
-	my ($filename) = @_;
+	my ($filename, $content) = (@_, "1");
 	open my $f, ">", binaryfilename $filename or confess;
-	print $f "1";
+	print $f $content;
 	close $f;
 }
 
@@ -352,7 +352,42 @@ SKIP: {
 
 		chmod 700, $restricted_abs;
 	}
-}
+};
 
+# TODO: also test with non-ascii filenames
+with_my_dir "d1", sub {
+	touch "myfile";
+	touch "unreadable";
+	touch "empty", "";
+
+	chmod 000, "unreadable";
+
+	assert_fails_on_filesystem "should check --filename for readability",
+		[qw!upload-file --config glacier.cfg --vault myvault --journal j --set-rel-filename somefile!, '--filename', "notafile"],
+		[],
+		'%option a% not a file', a => 'filename', value => 'notafile';
+
+	assert_fails_on_filesystem "should check --filename for readability",
+		[qw!upload-file --config glacier.cfg --vault myvault --journal j --set-rel-filename somefile!, '--filename', "empty"],
+		[],
+		'%option a% file size is zero', a => 'filename', value => 'empty';
+
+	SKIP: {
+		skip "Cannot run under root", 4 if is_posix_root;
+		assert_fails_on_filesystem "should check --filename for readability",
+			[qw!upload-file --config glacier.cfg --vault myvault --journal j --set-rel-filename somefile!, '--filename', "unreadable"],
+			[],
+			'%option a% file not readable', a => 'filename', value => 'unreadable';
+	}
+
+	assert_passes_on_filesystem "should check --filename for readability",
+		[qw!upload-file --config glacier.cfg --vault myvault --journal j --set-rel-filename somefile!, '--filename', "myfile"],
+		'name-type' => 'rel-filename',
+		'data-type' => 'filename',
+		'set-rel-filename' => 'somefile',
+		'relfilename' => 'somefile',
+		filename => 'myfile',
+		'filenames-encoding' => 'UTF-8';
+};
 
 1;
