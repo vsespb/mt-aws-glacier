@@ -76,8 +76,10 @@ sub test_is_digest_sha_broken_for_large_data
 is is_digest_sha_broken_for_large_data(), $Config{'longsize'} < 8 && $Digest::SHA::VERSION < 5.62-0.0000001;
 
 test_is_digest_sha_broken_for_large_data(4, '5.61', 1);
+
 test_is_digest_sha_broken_for_large_data(4, '5.62', 0);
 test_is_digest_sha_broken_for_large_data(4, '5.619999999999', 0);
+
 test_is_digest_sha_broken_for_large_data(4, '5.63', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.61', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.62', 0);

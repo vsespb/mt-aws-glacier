@@ -359,7 +359,7 @@ sub dump_request_response
 }
 
 
-sub get_config_var($)
+sub get_config_var($) # separate function so we can override it in tests
 {
 	$Config{shift()}
 }
