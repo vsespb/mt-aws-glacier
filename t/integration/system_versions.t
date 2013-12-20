@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 18;
+use Test::More tests => 16;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
@@ -75,25 +75,5 @@ ok eval { App::MtAws::check_module_versions(); 1 };
 	ok defined eval { App::MtAws::print_system_modules_version(); 1 };
 }
 
-
-##
-## not related to versions test.
-##
-
-{
-	my $i = 0;
-	while () {
-		last if ++$i == 3;
-	}
-	is $i, 3, "while() should produce infinite loop";
-}
-
-{
-	my $i = 0;
-	alarm 3;
-	++$i while ();
-	alarm 0;
-	is $i, 0, "while() without block should not produce infinite loop";
-}
 
 1;

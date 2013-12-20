@@ -88,6 +88,7 @@ t/integration/journal_zerofiles.t
 t/integration/lwp.t
 t/integration/metadata.t
 t/integration/metadata_mt1.t
+t/integration/misc.t
 t/integration/queue_engine.t
 t/integration/queue_job/multipart_create_files.t
 t/integration/queue_job/multipart_part_close.t
