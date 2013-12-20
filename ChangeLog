@@ -1,3 +1,7 @@
+### 2013-12-20 v1.111
+
+  * Brittle test fixed (i386, old Digest::SHA)
+
 ### 2013-12-20 v1.110
 
   * Compatibility: upload-file with --filename option behaviour slightly changed:

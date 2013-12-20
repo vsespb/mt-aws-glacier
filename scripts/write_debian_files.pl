@@ -127,6 +127,10 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
+	entry '1.111', 1, 'Fri, 20 Dec 2013 22:35:00 +0400', <<'END';
+  * Brittle test fixed (i386, old Digest::SHA)
+END
+
 	entry '1.110', 1, 'Fri, 20 Dec 2013 22:10:00 +0400', <<'END';
   * Compatibility: upload-file with --filename option behaviour slightly changed:
   both --filename and --dir now resolved to full paths, before determining relative path from --dir` to --filename`

@@ -1,3 +1,9 @@
+libapp-mtaws-perl (1.111-0vdebian1~v7~mt1) wheezy; urgency=low
+
+  * Brittle test fixed (i386, old Digest::SHA)
+
+ -- Victor Efimov <victor@vsespb.ru>  Fri, 20 Dec 2013 22:35:00 +0400
+
 libapp-mtaws-perl (1.110-0vdebian1~v7~mt1) wheezy; urgency=low
 
   * Compatibility: upload-file with --filename option behaviour slightly changed:
