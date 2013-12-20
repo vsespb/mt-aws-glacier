@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 100;
+use Test::More tests => 155;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -139,6 +139,8 @@ sub test_description
 	test_full_file($file, [{ArchiveId => 'a', ArchiveDescription=>$expected, CreationDate=>'b', Size => 'c', SHA256TreeHash => 'd'}]);
 }
 
+# first chunk of real data from Amazon
+
 test_description
 	q!"{\"Path\":\"glacier-ui.exe\",\"UTCDateModified\":\"20130313T040002Z\"}"!,
 	q!{"Path":"glacier-ui.exe","UTCDateModified":"20130313T040002Z"}!;
@@ -183,3 +185,41 @@ test_description
 test_description
 	q!"\\\\""!,
 	q!\\"!;
+
+# second chunk of real data from Amazon
+
+test_description
+	q!"mt2 eyJmaWxlbmFtZSI6ImZpbGUudHh0IiwibXRpbWUiOiIyMDEzMTIxOVQwODMzMDFaIn0"!,
+	q!mt2 eyJmaWxlbmFtZSI6ImZpbGUudHh0IiwibXRpbWUiOiIyMDEzMTIxOVQwODMzMDFaIn0!;
+test_description
+	q!"\\"!,
+	q!\\!;
+test_description
+	q!"\\\\""!,
+	q!\\"!;
+test_description
+	q!"\\""!,
+	q!"!;
+test_description
+	q!"a\\b"!,
+	q!a\\b!;
+test_description
+	q!"\\\\"\\"!,
+	q!\\"\\!;
+test_description
+	q!"\\\\"!,
+	q!\\\\!;
+test_description
+	q!","!,
+	q!,!;
+test_description
+	q!"\\\\"\\\\"\\\\\\"\\"!,
+	q!\\"\\"\\\\"\\!;
+test_description
+	q!"\\x"!,
+	q!\\x!;
+test_description
+	q!"x\\"!,
+	q!x\\!;
+
+__END__

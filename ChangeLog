@@ -18,6 +18,12 @@
   size is more than 2^29 bytes. Now mtglacier throws an error if --partsize > 256Mb and machine 32bit and version is
   below 5.62. Commands which don't use --partsize are unaffected.
 
+  * Fixed: Amazon CSV format parsing: Amazon escapes doublequote with backslash but.. does not escape backslash itself.
+  https://forums.aws.amazon.com/thread.jspa?threadID=141807
+  This format is undocumented and broken by design. Fixing parser now to parse this.
+  this bug was not affecting any real use of mtglacier as mtglacier does not use backslashes in metadata and ignores
+  foreign metadata.
+
 ### 2013-12-14 v1.103
 
   * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format
