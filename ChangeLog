@@ -14,6 +14,10 @@
   (precisely, those filenames are without path prefix, as if they would be in current directory, otherwise filename
   part is correct).
 
+  * Workaround: Digest::SHA perl module prior to version 5.62 calculates SHA256 wrong on 32bit machines, when data
+  size is more than 2^29 bytes. Now mtglacier throws an error if --partsize > 256Mb and machine 32bit and version is
+  below 5.62. Commands which don't use --partsize are unaffected.
+
 ### 2013-12-14 v1.103
 
   * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format

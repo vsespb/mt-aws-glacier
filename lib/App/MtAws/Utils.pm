@@ -359,9 +359,14 @@ sub dump_request_response
 }
 
 
+sub get_config_var($)
+{
+	$Config{shift()}
+}
+
 sub is_digest_sha_broken_for_large_data
 {
-	$Config{'longsize'} < 8 && $Digest::SHA::VERSION < 5.62-0.0000001;
+	get_config_var('longsize') < 8 && $Digest::SHA::VERSION < 5.62 - 1E-06;
 }
 
 1;
