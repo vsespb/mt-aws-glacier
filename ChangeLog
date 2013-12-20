@@ -1,3 +1,4 @@
+### 2013-12-20 v1.110
 
   * Compatibility: upload-file with --filename option behaviour slightly changed:
   both --filename and --dir now resolved to full paths, before determining relative path from --dir` to --filename`

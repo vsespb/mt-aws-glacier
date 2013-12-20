@@ -20,7 +20,7 @@
 
 package App::MtAws::QueueJob::Iterator;
 
-our $VERSION = '1.103';
+our $VERSION = '1.110';
 
 use strict;
 use warnings;

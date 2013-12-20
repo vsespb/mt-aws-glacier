@@ -1,3 +1,44 @@
+libapp-mtaws-perl (1.110-0vdebian1~v6~mt1) squeeze; urgency=low
+
+  * Compatibility: upload-file with --filename option behaviour slightly changed:
+  both --filename and --dir now resolved to full paths, before determining relative path from --dir` to --filename`
+  So f you have `/dir/ds` symlink to `/dir/d3` directory, then `--dir=/dir` `--filename=/dir/ds/file` will result in
+  relative filename `d3/file` not `ds/file`. Previously you would get d3/file. Also now all parent directories has
+  to be readable.
+
+  * Documentation: documentation for upload-file updated.
+
+  * Fixed: #63 internaly mtglacier was using absolute filenames when reading/writing file in filesystem, even if user
+  specified relative. Seems that was wrong. Undex Unix file can be readable by relative name but unaccessible by real,
+  absolute name if path components of this name are unreadable. Fixed now - always use relative filenames in all commands
+  except upload-file command (where it's documented that absolute names are used).
+  This change does not affect relative filenames stroed in journal or amazon glacier metadata in any way.
+  This change might affect filenames format that you see in mtglacier output.
+
+  * Fixed: some bugs related to directory traversal under old-old perl installations (RHEL 5.x, when no new
+  CPAN modules installed) worked around.
+
+  * Fixed: upload-file with --filename and --dir were not working correctly for most of perl installations
+  if dir started with "..". This due to bug https://rt.perl.org/Public/Bug/Display.html?id=111510 in File::Spec module.
+  Currently upload-file behaviour changed (see above in ChangeLog) so  mtglacier not affected. In previous versions this
+  would result in wrong relative filenames in journal and Amazon glacier metadata
+  (precisely, those filenames are without path prefix, as if they would be in current directory, otherwise filename
+  part is correct).
+
+  * Workaround: Digest::SHA perl module prior to version 5.62 calculates SHA256 wrong on 32bit machines, when data
+  size is more than 2^29 bytes. Now mtglacier throws an error if --partsize >= 512Mb and machine is 32bit and digest-sha
+  version is below 5.62. Commands which don't use --partsize are unaffected.
+
+  * Fixed: Amazon CSV format parsing: Amazon escapes doublequote with backslash but.. does not escape backslash itself.
+  https://forums.aws.amazon.com/thread.jspa?threadID=141807
+  This format is undocumented and broken by design. Fixing parser now to parse this.
+  this bug was not affecting any real use of mtglacier as mtglacier does not use backslashes in metadata and ignores
+  foreign metadata.
+
+  * Cosmetic changes to process manager code
+
+ -- Victor Efimov <victor@vsespb.ru>  Fri, 20 Dec 2013 22:10:00 +0400
+
 libapp-mtaws-perl (1.103-0vdebian1~v6~mt1) squeeze; urgency=low
 
   * Fixed: issue #48 download-inventory was crashing if there was a request for inventory retrieval in CSV format
