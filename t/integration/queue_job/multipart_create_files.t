@@ -76,7 +76,7 @@ unlink $filename;
 }
 
 SKIP: {
-	skip "Test cannot be performed on character-oriented filesyste", 3 unless can_work_with_non_utf8_files;
+	skip "Test cannot be performed on character-oriented filesystem", 3 unless can_work_with_non_utf8_files;
 
 	my $filename = "тест42";
 	my $fullfilename = "$mtroot/$filename";

@@ -170,20 +170,22 @@ with_my_dir "d1/d2", sub {
 };
 
 
-
-for my $encoding (qw/UTF-8 CP1251 KOI8-R/) {
-	local $App::MtAws::Utils::_filename_encoding = $encoding;
-	with_my_dir "д1/д2", sub {
-		touch "мойфайл";
-		test_file_and_dir "dir/filename should work with ..",
-			".", "мойфайл", "мойфайл", $encoding;
-		test_file_and_dir "dir/filename should work with ..",
-			"../д2", "мойфайл", "мойфайл", $encoding;
-		test_file_and_dir "dir/filename should work with ..",
-			"..", "мойфайл", "д2/мойфайл", $encoding;
-		test_file_and_dir "dir/filename should work with ../..",
-			"../..", "мойфайл", "д1/д2/мойфайл", $encoding;
-	};
+SKIP: {
+	skip "Test cannot be performed on character-oriented filesystem", 36 unless can_work_with_non_utf8_files;
+	for my $encoding (qw/UTF-8 CP1251 KOI8-R/) {
+		local $App::MtAws::Utils::_filename_encoding = $encoding;
+		with_my_dir "д1/д2", sub {
+			touch "мойфайл";
+			test_file_and_dir "dir/filename should work with ..",
+				".", "мойфайл", "мойфайл", $encoding;
+			test_file_and_dir "dir/filename should work with ..",
+				"../д2", "мойфайл", "мойфайл", $encoding;
+			test_file_and_dir "dir/filename should work with ..",
+				"..", "мойфайл", "д2/мойфайл", $encoding;
+			test_file_and_dir "dir/filename should work with ../..",
+				"../..", "мойфайл", "д1/д2/мойфайл", $encoding;
+		};
+	}
 }
 
 with_my_dir "d1/d2", "d1/d2/d3", sub {

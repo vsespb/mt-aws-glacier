@@ -284,7 +284,7 @@ SKIP: {
 
 SKIP: {
 	for (5) {
-		skip "Test cannot be performed on character-oriented filesyste", $_ unless can_work_with_non_utf8_files;
+		skip "Test cannot be performed on character-oriented filesystem", $_ unless can_work_with_non_utf8_files;
 		skip "Cannot run under root", $_ if is_posix_root;
 	}
 	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
@@ -303,7 +303,7 @@ SKIP: {
 
 SKIP: {
 	for (6) {
-		skip "Test cannot be performed on character-oriented filesyste", $_ unless can_work_with_non_utf8_files;
+		skip "Test cannot be performed on character-oriented filesystem", $_ unless can_work_with_non_utf8_files;
 		skip "Cannot run under root", $_ if is_posix_root;
 	}
 	local $App::MtAws::Utils::_filename_encoding = 'KOI8-R';
@@ -321,4 +321,3 @@ SKIP: {
 
 
 1;
-
