@@ -45,6 +45,7 @@
          },
          "requires" : {
             "Carp" : "0",
+            "Config" : "0",
             "Cwd" : "0",
             "Digest::SHA" : "0",
             "Encode" : "0",

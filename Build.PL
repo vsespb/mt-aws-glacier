@@ -57,6 +57,7 @@ my $build = Module::Build->new(
 	},
 	requires => {
 		'perl' => 5.008008, # 5.8.8
+		'Config' => 0,
 
 		'LWP' => '5.803', # ancient CentOS 5.x version
 		'HTTP::Request' => 0, # either shipped with LWP, or prereq by LWP, does not contain correct version, sometimes
