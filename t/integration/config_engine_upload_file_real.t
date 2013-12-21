@@ -307,7 +307,7 @@ with_my_dir "d1/d2", "d1/d2/d3", sub {
 };
 
 SKIP: {
-	skip "Cannot run under root", 24 if is_posix_root;
+	skip "Cannot run under root", 24 if $^O eq 'cygwin' || is_posix_root; # too britle even under cygwin non-root
 
 	my $restricted_abs = "$mtroot/restricted";
 	my $normal_abs = "$restricted_abs/normal";
