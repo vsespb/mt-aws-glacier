@@ -75,6 +75,8 @@ sub test
 {
 	my ($self, $testname) = @_;
 
+	my $pwd  = Cwd::getcwd();
+
 	mkpath($self->binarypath($self->{absdataroot}));;
 	die unless -d $self->binarypath($self->{absdataroot});
 
@@ -89,7 +91,7 @@ sub test
 	$self->$testname();
 
 
-	chdir $self->binarypath($self->{mtroot}) or die;
+	chdir $self->binarypath($pwd) or die;
 	-d && rmtree($_) for ($self->binarypath($self->{tmproot}));
 }
 
