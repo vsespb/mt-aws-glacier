@@ -19,7 +19,11 @@ use File::Compare;
 use Time::HiRes qw/gettimeofday tv_interval usleep/;
 
 our $BASE_DIR='/dev/shm/mtaws';
+
 our $DIR;
+our $ROOT;
+our $ROOT_ENC;
+
 our $GLACIER_BIN;
 our $N;
 our $VERBOSE = 0;
@@ -58,6 +62,28 @@ if ( !defined($GLACIER_BIN) ) {
 
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDIN, ":encoding(UTF-8)";
+
+sub with_encfs
+{
+	my ($cb, $password, $plain, $enc) = @_;
+	if (defined $enc) {
+		my $pid = open(my $C, "|-");
+		unless ($pid){
+			exec qw/encfs -f --standard --stdinpass --reverse/,  $plain, $enc;
+			exit 1;
+		}
+		$C->autoflush();
+		print $C "$password\n";
+		sleep 4;
+#print STDERR "PE $plain $enc\n";
+#sleep 1000;
+		$cb->($enc);
+		kill 'TERM', $pid;
+	} else {
+		$cb->($plain);
+	}
+}
+
 
 sub getlock
 {
@@ -659,10 +685,11 @@ sub process_retrieve
 sub process_sync_new
 {
 	empty_dir $DIR;
-
+	empty_dir $ROOT;
 	my %opts;
 	set_vault \%opts;
-	$opts{dir} = my $root_dir = "$DIR/root";
+	my $root_dir = $ROOT;
+	$opts{dir} = $ROOT_ENC;
 
 
 	my $content = get_file_body(filebody(), filesize());
@@ -1283,9 +1310,16 @@ for my $task (@parts) {
 		$pids{$pid}=1;
 	} elsif (defined $pid) {
 		$DIR = "$BASE_DIR/$$";
-		for (@$task) {
-			process_task($_);
-		}
+		$ROOT = "$BASE_DIR/${$}_root";
+		mkpath $ROOT;
+		my $enc_root = "$BASE_DIR/${$}_root_enc";
+		mkpath $enc_root;
+		with_encfs sub {
+			$ROOT_ENC = shift;
+			for (@$task) {
+				process_task($_);
+			}
+		}, "MyPassword", $ROOT, $enc_root;
 		exit(0);
 	} else {
 		confess $pid;
