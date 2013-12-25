@@ -22,3 +22,4 @@ run-*.sh
 t/gemu-test/gemu-test-tasks.txt
 *.komodoproject
 .komodotools/
+.project

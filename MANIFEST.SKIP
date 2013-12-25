@@ -82,3 +82,4 @@ run\-.*\.sh
 ^*\.komodoproject
 ^\.komodotools/
 ^\.travis.yml
+\.project
