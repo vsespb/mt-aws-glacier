@@ -248,6 +248,7 @@ sub check_file
 	my $binaryfilename = encode($filenames_encoding, $fullname, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 
 	my $srcfilename = get_sample_fullname($content);
+	print STDERR "COMPARING $srcfilename, $binaryfilename\n";
 	return compare($srcfilename, $binaryfilename) == 0;
 }
 
@@ -291,6 +292,7 @@ sub cmd
 		}
 	}
 	confess if $merged =~ /WARNING/;
+	print STDERR join(" ", @args), "\n";
 	push_command(join(" ", @args), $merged);
 	die "mtlacier exited after SIGINT" if $exitcode==2;
 	return ($res, $merged);
@@ -496,7 +498,10 @@ sub check_otherfiles
 {
 	my ($filenames_encoding, $root_dir, @otherfiles) = @_;
 	for (@otherfiles) {
-		confess "$_->{dest_filename} $_->{file_id}" unless check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess);
+		unless (check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess)) {
+			print STDERR "ERROR IN FILES $_->{dest_filename} $_->{file_id}\n" ;
+			sleep 1000;
+		}
 	}
 }
 
@@ -725,6 +730,7 @@ sub process_sync_new
 	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
 	empty_dir $root_dir;
+	sleep 4;
 	unless (dryrun()) {
 		$opts{'max-number-of-files'} = 100_000;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);

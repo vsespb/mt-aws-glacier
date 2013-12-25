@@ -524,7 +524,7 @@ sub perform_lwp
 		} elsif (defined($resp->header('X-Died')) && (get_exception($resp->header('X-Died')))) {
 			die $resp->header('X-Died'); # propogate our own exceptions
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
-			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)\n";
+			print "PID $$ HTTP connection problem. Will retry ($dt seconds spent for request)".$resp->header('X-Died')."\n";
 			$self->{last_retry_reason} = 'X-Died';
 			throttle($i);
 		} elsif ($resp->code =~ /^2\d\d$/) {

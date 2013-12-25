@@ -56,18 +56,10 @@ sub _init
 		'Cannot create directory %string dir%, errors: %error%',
 		dir => $dir, error => hex_dump_string($@);
 	};
-	$self->{tmp} = eval {
-		# PID is needed cause child processes re-use random number generators, improves performance only, no risk of race cond.
-		File::Temp->new(TEMPLATE => "__mtglacier_temp${$}_XXXXXX", UNLINK => 1, SUFFIX => '.tmp', DIR => $binary_dirname)
-	} or do {
-		die exception 'cannot_create_tempfile' =>
-		'Cannot create temporary file in directory %string dir%, errors: %error%',
-		dir => $dir, error => hex_dump_string($@);
-	};
-	my $binary_tempfile = $self->{tmp}->filename;
-	$self->{tempfile} = characterfilename($binary_tempfile);
+	$self->{tempfile} = $self->{target_file};
+	open my $f, ">", binaryfilename($self->{tempfile}) or confess;
+	close $f;
 	 # it's important to close file, it's filename can be passed to different process, and it can be locked
-	close $self->{tmp} or confess;
 }
 
 sub tempfilename
@@ -79,18 +71,10 @@ sub make_permanent
 {
 	my $self = shift;
 	confess "unknown arguments" if @_;
-	my $binary_target_filename = binaryfilename($self->{target_file});
+	my $binary_tempfile = binaryfilename($self->{tempfile});
 
-	my $character_tempfile = delete $self->{tempfile} or confess "file already permanent or not initialized";
-	$self->{tmp}->unlink_on_destroy(0);
-	undef $self->{tmp};
-	my $binary_tempfile = binaryfilename($character_tempfile);
-
-	chmod((0666 & ~umask), $binary_tempfile) or confess "cannot chmod file $character_tempfile";
-	utime $self->{mtime}, $self->{mtime}, $binary_tempfile or confess "cannot change mtime for $character_tempfile" if defined $self->{mtime};
-	rename $binary_tempfile, $binary_target_filename or
-		die exception "cannot_rename_file" => "Cannot rename file %string from% to %string to%",
-		from => $character_tempfile, to => $self->{target_file};
+	chmod((0666 & ~umask), $binary_tempfile) or confess "cannot chmod file ";
+	utime $self->{mtime}, $self->{mtime}, $binary_tempfile or confess "cannot change mtime for" if defined $self->{mtime};
 }
 
 # File::Temp < 0.19 does not have protection from calling destructor in fork'ed child
@@ -99,12 +83,5 @@ sub make_permanent
 
 # we can try use File::Temp::tempfile() but it destroys temp files only on program exit
 # (can workaround with DESTROY) + when handle is closed! (thats bad)
-sub DESTROY
-{
-	my ($self) = @_;
-	local ($!, $@, $?);
-	eval { $self->{tmp}->unlink_on_destroy(0) }
-		if ($self->{_init_pid} && $self->{_init_pid} != $$ && $self->{tmp});
-}
 
 1;
