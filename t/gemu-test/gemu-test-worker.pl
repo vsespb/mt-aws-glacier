@@ -8,7 +8,7 @@ use Data::Dumper;
 use Carp;
 use File::Basename;
 use Encode;
-use File::Path qw/mkpath rmtree/;
+use File::Path qw/mkpath rmtree remove_tree/;
 use Getopt::Long;
 use App::MtAws::TreeHash;
 use List::MoreUtils qw(part);
@@ -363,8 +363,7 @@ sub run_fail
 sub empty_dir
 {
 	my $dir = shift;
-	rmtree $dir if -d $dir;
-	mkpath $dir;
+	remove_tree($dir, { keep_root => 1}) if -d $dir;
 
 }
 
@@ -500,7 +499,7 @@ sub check_otherfiles
 	for (@otherfiles) {
 		unless (check_file($filenames_encoding, $root_dir, $_->{dest_filename}||confess, $_->{file_id}||confess)) {
 			print STDERR "ERROR IN FILES $_->{dest_filename} $_->{file_id}\n" ;
-			sleep 1000;
+			confess;
 		}
 	}
 }
@@ -689,6 +688,7 @@ sub process_retrieve
 
 sub process_sync_new
 {
+	mkpath $DIR;
 	empty_dir $DIR;
 	empty_dir $ROOT;
 	my %opts;
@@ -730,14 +730,14 @@ sub process_sync_new
 	#run_ok($terminal_encoding, $^X, $GLACIER, 'check-local-hash', \%opts, [qw/config dir journal terminal-encoding/]);
 
 	empty_dir $root_dir;
-	sleep 4;
+	#sleep 1;
 	unless (dryrun()) {
 		$opts{'max-number-of-files'} = 100_000;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore', \%opts, [qw/config dir journal terminal-encoding vault max-number-of-files filenames-encoding/]);
 		run_ok($terminal_encoding, $^X, $GLACIER, 'restore-completed', \%opts, [qw/config dir journal terminal-encoding vault filenames-encoding/]);
 
 		check_otherfiles(filenames_encoding(), $root_dir, @otherfiles) if @otherfiles && $FASTMODE < 3;
-		confess unless check_file(filenames_encoding(), $root_dir, filename(), $content);
+		confess "T" unless check_file(filenames_encoding(), $root_dir, filename(), $content);
 
 		empty_dir $root_dir;
 		run_ok($terminal_encoding, $^X, $GLACIER, 'purge-vault', \%opts, [qw/config journal terminal-encoding vault filenames-encoding/])
