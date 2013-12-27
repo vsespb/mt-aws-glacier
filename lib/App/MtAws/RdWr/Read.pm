@@ -60,6 +60,7 @@ sub _sysread
 sub sysreadfull
 {
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
+	confess unless $len;
 	$offset ||= 0;
 	my $n = 0;
 	while ($len - $n) {

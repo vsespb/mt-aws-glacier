@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 196;
+use Test::More tests => 231;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -216,13 +216,16 @@ warning_fatal();
 					push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
 					$rd->readahead(1);
 				}
-				push @queue, (gen_string($n-$pre_readaheads, $pre_readaheads) => $n-$pre_readaheads, EOF => $k-$n);
+				push @queue,
+					(gen_string($n-$pre_readaheads, $pre_readaheads) =>
+					 $n-$pre_readaheads, EOF => $k-$n ? $k-$n : 1); # 1 is for eof tes
 				$rd->readahead($n-$pre_readaheads);
 
 				my $res = $rd->read(my $x, $k);
 				if ($k >= $n) {
 					is $x, $str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
 					is $res, $n;
+					ok !$rd->read($x, 1);
 				} else {
 					is $x, $str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
 					is $res, $k;
@@ -235,19 +238,3 @@ warning_fatal();
 
 1;
 __END__
-	{
-		my $n_readahead = 3; # > length(ab)
-		my $n_fullread = 5;
-		my $ab = 'ab';
-		my $c = 'c';
-		my $d = 'd';
-		for my $ab (qw/a ab abc abcd abcde/) {
-			for my $n_readahead (length($ab)+ 1) {
-				local @queue = ($ab => $n_readahead, $c => $n_readahead - length($ab), $d => $n_fullread - $n_readahead, EOF => $n_fullread - $n_readahead - 1);
-				my $rd = readahead;
-				$rd->readahead($n_readahead);
-				is $rd->read(my $x, $n_fullread), length($ab.$c.$d);
-				is $x, $ab.$c.$d, "T1";
-			}
-		}
-	}

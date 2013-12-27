@@ -51,14 +51,14 @@ sub read
 	if (@{$self->{queue}} && (my $first = $self->{queue}[0])->{type} == RDWR_DATA) {
 		if ($len == $first->{len}) {
 			shift @{$self->{queue}};
-			substr($_[1], $offset, $len) = ${$first->{dataref}};
+			substr($_[1], $offset) = ${$first->{dataref}};
 			return $len;
 		} elsif ($len < $first->{len}) {
-			substr($_[1], $offset, $len) = substr(${$first->{dataref}}, 0, $len);
+			substr($_[1], $offset) = substr(${$first->{dataref}}, 0, $len);
 			substr(${$first->{dataref}}, 0, $len)='';
 			return $len;
 		} elsif ($len > $first->{len}) {
-			substr($_[1], $offset, $first->{len}) = ${$first->{dataref}};
+			substr($_[1], $offset) = ${$first->{dataref}};
 			shift @{$self->{queue}};
 			return $first->{len} + $self->read($_[1], $len - $first->{len}, $offset + $first->{len});
 		} else {
