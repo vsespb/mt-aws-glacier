@@ -45,7 +45,7 @@ open(my $tmp, ">", "$mtroot/infile") or confess;
 close $tmp;
 open(my $in, "<", "$mtroot/infile") or confess;
 
-#warning_fatal();
+warning_fatal();
 
 {
 	no warnings 'redefine';
