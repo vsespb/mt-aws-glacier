@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1198;
+use Test::More tests => 47;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -208,6 +208,7 @@ warning_fatal();
 
 	# I already dont understand how this test works.
 	# it's integration test. if it broke - take a debugger, investigate and fix.
+	test_fast_ok 1152, "integration test for readahead" => sub {
 	for my $init_offset (0, 1) {
 		for my $pre_readaheads (0..4) {
 			for my $n (max($pre_readaheads, 1)..5) {
@@ -226,9 +227,9 @@ warning_fatal();
 						push @queue,
 							($n_but_pre_readaheads ? (gen_string($n_but_pre_readaheads, $pre_readaheads) => $n_but_pre_readaheads) : ()),
 							(EOF => $k-$n > 0 ? $k-$n : 1);
-						is $rd->readahead($n_but_pre_readaheads), $n_but_pre_readaheads;
+						fast_ok $rd->readahead($n_but_pre_readaheads) == $n_but_pre_readaheads;
 
-						is $rd->readahead($k-$n), 0 if $read_ahead_meets_eof;
+						fast_ok $rd->readahead($k-$n) == 0 if $read_ahead_meets_eof;
 
 						my ($x, $pre);
 						if ($init_offset) {
@@ -239,22 +240,23 @@ warning_fatal();
 						}
 						my $res = $rd->read($x, $k, $init_offset);
 						if ($k >= $n) {
-							is $x, $pre.$str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
-							is $res, $n;
-							ok !$rd->read($x, 1);
+							fast_ok $x eq $pre.$str_n, sub { "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n" };
+							fast_ok $res == $n;
+							fast_ok !$rd->read($x, 1);
 						} else {
-							is $x, $pre.$str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
-							is $res, $k;
+							fast_ok $x eq $pre.$str_k, sub { "$pre_readaheads prereadaheads. read for smaller data size $k < $n" };
+							fast_ok $res == $k;
 							my $z;
 							$rd->read($z, $n-$k);
-							is $x.$z, $pre.$str_n;
+							fast_ok $x.$z eq $pre.$str_n;
 							my $w;
-							ok !$rd->read($w, 1);
+							fast_ok !$rd->read($w, 1);
 						}
 					}
 				}
 			}
 		}
+	}
 	}
 }
 
