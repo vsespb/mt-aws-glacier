@@ -56,6 +56,7 @@ sub read
 		} elsif ($len < $first->{len}) {
 			substr($_[1], $offset) = substr(${$first->{dataref}}, 0, $len);
 			substr(${$first->{dataref}}, 0, $len)='';
+			$first->{len} = length(${$first->{dataref}});
 			return $len;
 		} elsif ($len > $first->{len}) {
 			substr($_[1], $offset) = ${$first->{dataref}};

@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 796;
+use Test::More tests => 888;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -206,6 +206,8 @@ warning_fatal();
 		join('', map { chr(ord('a')+$_+$pre_readaheads-1) } 1..$n)
 	}
 
+	# I already dont understand how this test works.
+	# it's integration test. if it broke - take a debugger, investigate and fix.
 	for my $init_offset (0, 1) {
 		for my $pre_readaheads (0..4) {
 			for my $n (max($pre_readaheads, 1)..5) {
@@ -245,6 +247,8 @@ warning_fatal();
 							my $z;
 							$rd->read($z, $n-$k);
 							is $x.$z, $pre.$str_n;
+							my $w;
+							ok !$rd->read($w, 1);
 						}
 					}
 				}
