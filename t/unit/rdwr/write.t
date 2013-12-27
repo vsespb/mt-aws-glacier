@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 64;
+use Test::More tests => 18;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -33,12 +33,8 @@ use POSIX;
 use lib map { "$FindBin::RealBin/$_" } qw{../../lib ../../../lib};
 use Data::Dumper;
 
-# before 'use xxx Utils'
-
-use App::MtAws::RdWr::Read;
 use App::MtAws::RdWr::Write;
 use TestUtils;
-
 
 my $mtroot = get_temp_dir();
 open(my $tmp, ">", "$mtroot/infile") or confess;
@@ -52,146 +48,6 @@ warning_fatal();
 
 	our @queue;
 	local $!;
-	local *App::MtAws::RdWr::Read::_sysread = sub {
-		confess unless @queue;
-		my $pos = $_[3]||0;
-		$_[1] = '' unless defined $_[1];
-		my $q = shift @queue;
-		my $expected_size = shift @queue;
-		confess unless $expected_size;
-		confess "$expected_size == $_[2]" unless $expected_size == $_[2];
-		$! = 0;
-		return 0 if $q eq 'EOF';
-		return undef if $q eq 'ERR';
-		if ($q eq 'EINTR') {
-			$! = EINTR;
-			return undef;
-		}
-		my $len = length( $_[1] );
-		$_[1] .= "0" x ( $pos - $len ) if $len < $pos; # original sysread uses 0x00
-
-		substr($_[1], $pos) = $q;
-		length $q;
-	};
-
-	# test the test - how our test code _sysread works
-	{
-		local @queue;
-		ok ! defined eval { App::MtAws::RdWr::Read::_sysread($in, my $x, 1); 1 };
-	}
-	{
-		local @queue = (EOF => 1);
-		is App::MtAws::RdWr::Read::_sysread($in, my $x, 1), 0;
-		is $x, '';
-		ok !$!;
-	}
-	{
-		local @queue = (ERR => 2);
-		is App::MtAws::RdWr::Read::_sysread($in, my $x, 2), undef;
-		is $x, '';
-		ok !$!;
-	}
-	{
-		local @queue = (EINTR => 3);
-		is App::MtAws::RdWr::Read::_sysread($in, my $x, 3), undef;
-		is $x, '';
-		ok $!{EINTR};
-	}
-	{
-		local @queue = (a => 1);
-		is App::MtAws::RdWr::Read::_sysread($in, my $x, 1), 1;
-		is $x, 'a';
-		ok !$!;
-	}
-	{
-		local @queue = (a => 1);
-		is App::MtAws::RdWr::Read::_sysread($in, my $x, 1, 1), 1;
-		is $x, '0a';
-		ok !$!;
-	}
-	{
-		local @queue = (d => 1);
-		my $x = 'abc';
-		is App::MtAws::RdWr::Read::_sysread($in, $x, 1, 3), 1;
-		is $x, 'abcd';
-		ok !$!;
-	}
-
-	sub rd
-	{
-		App::MtAws::RdWr::Read->new($in);
-	}
-
-
-	# actual test
-	{
-		local @queue = (ab => 2);
-		is rd->sysreadfull(my $x, 2), 2;
-		is $x, 'ab', "should work in simple case";
-	}
-
-	{
-		local @queue = (a => 3, bc => 2);
-		is rd->sysreadfull(my $x, 3), 3;
-		is $x, 'abc', "should work with two reads";
-	}
-	{
-		local @queue = (ab => 5, c => 3, de => 2);
-		is rd->sysreadfull(my $x, 5), 5;
-		is $x, 'abcde', "should work with three reads";
-	}
-	{
-		local @queue = (ab => 5, c => 3, de => 2);
-		is rd->sysreadfull(my $x, 5), 5;
-		is $x, 'abcde', "should work with three reads";
-	}
-	{
-		local @queue = (ab => 5, c => 3, EOF => 2);
-		is rd->sysreadfull(my $x, 5), 3;
-		is $x, 'abc', "should work when eof not reached";
-	}
-	{
-		local @queue = (EOF => 5);
-		is rd->sysreadfull(my $x, 5), 0;
-		is $x, '', "should work with eof in the beginning";
-	}
-	{
-		local @queue = (ERR => 5);
-		is rd->sysreadfull(my $x, 5), undef;
-		is $x, '', "should work with ERROR in the beginning";
-	}
-	{
-		local @queue = (ab => 5, c => 3, ERR => 2, ERR => 7);
-		my $rd = rd;
-		is $rd->sysreadfull(my $x, 5), 3;
-		is $x, 'abc', "should work with ERROR in the middle";
-		is $rd->sysreadfull(my $y, 7), undef;
-	}
-	{
-		local @queue = (ab => 5, c => 3, EINTR => 2, de => 2);
-		is rd->sysreadfull(my $x, 5), 5;
-		is $x, 'abcde', "should work with EINTR in the middle";
-	}
-	{
-		local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, EOF => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with EINTR in the middle, when there will be eof";
-	}
-	{
-		local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, ERR => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with EINTR in the middle, when there will be ERROR";
-	}
-	{
-		local @queue = (EINTR => 5, ab => 5, c => 3, EINTR => 2, EINTR => 2, d => 2, EINTR => 1, ERR => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with several EINTR";
-	}
-	{
-		local @queue = (ab => 5, EINTR => 3, EINTR => 3, c => 3, d => 2, EINTR => 1, EOF => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with several EINTR";
-	}
 
 	local *App::MtAws::RdWr::Write::_syswrite = sub {
 		confess unless @queue;
