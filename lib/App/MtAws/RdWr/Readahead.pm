@@ -52,11 +52,7 @@ sub read
 	if (@{$self->{queue}} && ( my $chunk = $self->{queue}[0] )->{type} == RDWR_DATA) {
 		my $chunk_ref = $chunk->{dataref};
 		my $chunk_len = length $$chunk_ref;
-		if ($len == $chunk_len) {
-			shift @{$self->{queue}};
-			substr($_[1], $offset) = $$chunk_ref;
-			return $len;
-		} elsif ($len < $chunk_len) {
+		if ($len < $chunk_len) {
 			substr($_[1], $offset) = substr($$chunk_ref, 0, $len);
 			substr($$chunk_ref, 0, $len)='';
 			return $len;
@@ -64,8 +60,10 @@ sub read
 			substr($_[1], $offset) = $$chunk_ref;
 			shift @{$self->{queue}};
 			return $chunk_len + $self->read($_[1], $len - $chunk_len, $offset + $chunk_len); # works fine for chunk_len==0
-		} else {
-			confess "never happens";
+		} else { # $len == $chunk_len
+			shift @{$self->{queue}};
+			substr($_[1], $offset) = $$chunk_ref;
+			return $len;
 		}
 	} else {
 		return $self->SUPER::read($_[1], $len, $offset);
