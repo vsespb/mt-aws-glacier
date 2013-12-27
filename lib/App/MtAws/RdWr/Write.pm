@@ -55,7 +55,7 @@ sub syswritefull
 		} elsif ($!{EINTR}) {
 			redo;
 		} else {
-			$self->_adderror($!+0) if $self;
+			$self->_adderror($!+0);
 			return $n ? $n : undef;
 		}
 	}
