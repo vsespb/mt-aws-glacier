@@ -60,7 +60,7 @@ sub read
 		} elsif ($len > $first->{len}) {
 			substr($_[1], $offset) = ${$first->{dataref}};
 			shift @{$self->{queue}};
-			return $first->{len} + $self->read($_[1], $len - $first->{len}, $offset + $first->{len});
+			return $first->{len} + $self->read($_[1], $len - $first->{len}, $offset + $first->{len}); # works fine for first->len==0
 		} else {
 			confess "never happens";
 		}

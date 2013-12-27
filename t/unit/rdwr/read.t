@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 524;
+use Test::More tests => 704;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -59,7 +59,7 @@ warning_fatal();
 		my $expected_size = shift @queue;
 		confess if $expected_size < 0;
 		confess "[$q] $expected_size" unless $expected_size;
-		confess "$expected_size == $_[2]" unless $expected_size == $_[2];
+		confess "[$q] $expected_size == $_[2]" unless $expected_size == $_[2];
 		$! = 0;
 		return 0 if $q eq 'EOF';
 		return undef if $q eq 'ERR';
@@ -210,35 +210,39 @@ warning_fatal();
 		for my $pre_readaheads (0..4) {
 			for my $n (max($pre_readaheads, 1)..5) {
 				for my $k (1..5) {
-					my $str_n = gen_string($n);
-					my $str_k = gen_string($k);
-					local @queue;
+					for my $read_ahead_meets_eof ($k > $n ? (0, 1) : 0) {
+						my $str_n = gen_string($n);
+						my $str_k = gen_string($k);
+						local @queue;
 
-					my $rd = readahead;
-					for my $i (1..$pre_readaheads) {
-						push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
-						$rd->readahead(1);
-					}
-					push @queue,
-						($n-$pre_readaheads ? (gen_string($n-$pre_readaheads, $pre_readaheads) => $n-$pre_readaheads) : ()),
-						(EOF => $k-$n > 0 ? $k-$n : 1);
-					$rd->readahead($n-$pre_readaheads);
+						my $rd = readahead;
+						for my $i (1..$pre_readaheads) {
+							push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
+							$rd->readahead(1);
+						}
+						push @queue,
+							($n-$pre_readaheads ? (gen_string($n-$pre_readaheads, $pre_readaheads) => $n-$pre_readaheads) : ()),
+							(EOF => $k-$n > 0 ? $k-$n : 1);
+						$rd->readahead($n-$pre_readaheads);
 
-					my ($x, $pre);
-					if ($init_offset) {
-						$pre = '1';
-						$x = $pre;
-					} else {
-						$pre = '';
-					}
-					my $res = $rd->read($x, $k, $init_offset);
-					if ($k >= $n) {
-						is $x, $pre.$str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
-						is $res, $n;
-						ok !$rd->read($x, 1);
-					} else {
-						is $x, $pre.$str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
-						is $res, $k;
+						$rd->readahead($k-$n) if $read_ahead_meets_eof;
+
+						my ($x, $pre);
+						if ($init_offset) {
+							$pre = '1';
+							$x = $pre;
+						} else {
+							$pre = '';
+						}
+						my $res = $rd->read($x, $k, $init_offset);
+						if ($k >= $n) {
+							is $x, $pre.$str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
+							is $res, $n;
+							ok !$rd->read($x, 1);
+						} else {
+							is $x, $pre.$str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
+							is $res, $k;
+						}
 					}
 				}
 			}
