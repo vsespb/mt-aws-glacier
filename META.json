@@ -274,6 +274,22 @@
          "file" : "lib/App/MtAws/QueueJobResult.pm",
          "version" : "1.111"
       },
+      "App::MtAws::RdWr" : {
+         "file" : "lib/App/MtAws/RdWr.pm",
+         "version" : "1.111"
+      },
+      "App::MtAws::RdWr::Read" : {
+         "file" : "lib/App/MtAws/RdWr/Read.pm",
+         "version" : "1.111"
+      },
+      "App::MtAws::RdWr::Readahead" : {
+         "file" : "lib/App/MtAws/RdWr/Readahead.pm",
+         "version" : "1.111"
+      },
+      "App::MtAws::RdWr::Write" : {
+         "file" : "lib/App/MtAws/RdWr/Write.pm",
+         "version" : "1.111"
+      },
       "App::MtAws::TreeHash" : {
          "file" : "lib/App/MtAws/TreeHash.pm",
          "version" : "1.111"

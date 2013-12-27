@@ -48,6 +48,10 @@ lib/App/MtAws/QueueJob/UploadMultipart.pm
 lib/App/MtAws/QueueJob/Verify.pm
 lib/App/MtAws/QueueJob/VerifyAndUpload.pm
 lib/App/MtAws/QueueJobResult.pm
+lib/App/MtAws/RdWr.pm
+lib/App/MtAws/RdWr/Read.pm
+lib/App/MtAws/RdWr/Readahead.pm
+lib/App/MtAws/RdWr/Write.pm
 lib/App/MtAws/TreeHash.pm
 lib/App/MtAws/Utils.pm
 LICENSE
@@ -161,8 +165,9 @@ t/unit/queue_job/upload_multipart.t
 t/unit/queue_job/verify.t
 t/unit/queue_job/verify_and_upload.t
 t/unit/queue_job_result.t
+t/unit/rdwr/read.t
+t/unit/rdwr/write.t
 t/unit/string_escape.t
-t/unit/sysread_syswrite_unit.t
 t/unit/test_test.t
 t/unit/u_treehash.t
 test.t
