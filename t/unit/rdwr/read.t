@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 888;
+use Test::More tests => 1198;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -222,12 +222,13 @@ warning_fatal();
 							push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
 							$rd->readahead(1);
 						}
+						my $n_but_pre_readaheads = $n-$pre_readaheads;
 						push @queue,
-							($n-$pre_readaheads ? (gen_string($n-$pre_readaheads, $pre_readaheads) => $n-$pre_readaheads) : ()),
+							($n_but_pre_readaheads ? (gen_string($n_but_pre_readaheads, $pre_readaheads) => $n_but_pre_readaheads) : ()),
 							(EOF => $k-$n > 0 ? $k-$n : 1);
-						$rd->readahead($n-$pre_readaheads);
+						is $rd->readahead($n_but_pre_readaheads), $n_but_pre_readaheads;
 
-						$rd->readahead($k-$n) if $read_ahead_meets_eof;
+						is $rd->readahead($k-$n), 0 if $read_ahead_meets_eof;
 
 						my ($x, $pre);
 						if ($init_offset) {
