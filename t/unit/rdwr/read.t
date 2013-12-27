@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 46;
+use Test::More tests => 196;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -34,6 +34,7 @@ use lib map { "$FindBin::RealBin/$_" } qw{../../lib ../../../lib};
 use Data::Dumper;
 
 use App::MtAws::RdWr::Read;
+use App::MtAws::RdWr::Readahead;
 use TestUtils;
 
 
@@ -55,7 +56,7 @@ warning_fatal();
 		$_[1] = '' unless defined $_[1];
 		my $q = shift @queue;
 		my $expected_size = shift @queue;
-		confess unless $expected_size;
+		confess $expected_size unless $expected_size;
 		confess "$expected_size == $_[2]" unless $expected_size == $_[2];
 		$! = 0;
 		return 0 if $q eq 'EOF';
@@ -64,6 +65,7 @@ warning_fatal();
 			$! = EINTR;
 			return undef;
 		}
+		confess "q [$q] greated than expected_size $expected_size" if length($q) > $expected_size;
 		my $len = length( $_[1] );
 		$_[1] .= "0" x ( $pos - $len ) if $len < $pos; # original sysread uses 0x00
 
@@ -117,6 +119,11 @@ warning_fatal();
 	sub rd
 	{
 		App::MtAws::RdWr::Read->new($in);
+	}
+
+	sub readahead
+	{
+		App::MtAws::RdWr::Readahead->new($in);
 	}
 
 
@@ -189,7 +196,58 @@ warning_fatal();
 		is rd->sysreadfull(my $x, 5), 4;
 		is $x, 'abcd', "should work with several EINTR";
 	}
+
+
+	sub gen_string
+	{
+		my ($n, $pre_readaheads) = (@_, 0);
+		join('', map { chr(ord('a')+$_+$pre_readaheads-1) } 1..$n)
+	}
+
+	for my $pre_readaheads (0..4) {#3
+		for my $n ($pre_readaheads+1..5) {
+			for my $k (1..5) {
+				my $str_n = gen_string($n);
+				my $str_k = gen_string($k);
+				local @queue;
+
+				my $rd = readahead;
+				for my $i (1..$pre_readaheads) {
+					push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
+					$rd->readahead(1);
+				}
+				push @queue, (gen_string($n-$pre_readaheads, $pre_readaheads) => $n-$pre_readaheads, EOF => $k-$n);
+				$rd->readahead($n-$pre_readaheads);
+
+				my $res = $rd->read(my $x, $k);
+				if ($k >= $n) {
+					is $x, $str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
+					is $res, $n;
+				} else {
+					is $x, $str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
+					is $res, $k;
+				}
+			}
+		}
+	}
 }
 
 
 1;
+__END__
+	{
+		my $n_readahead = 3; # > length(ab)
+		my $n_fullread = 5;
+		my $ab = 'ab';
+		my $c = 'c';
+		my $d = 'd';
+		for my $ab (qw/a ab abc abcd abcde/) {
+			for my $n_readahead (length($ab)+ 1) {
+				local @queue = ($ab => $n_readahead, $c => $n_readahead - length($ab), $d => $n_fullread - $n_readahead, EOF => $n_fullread - $n_readahead - 1);
+				my $rd = readahead;
+				$rd->readahead($n_readahead);
+				is $rd->read(my $x, $n_fullread), length($ab.$c.$d);
+				is $x, $ab.$c.$d, "T1";
+			}
+		}
+	}

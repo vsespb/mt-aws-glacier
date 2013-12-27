@@ -63,6 +63,7 @@ sub sysreadfull
 	$offset ||= 0;
 	my $n = 0;
 	while ($len - $n) {
+		confess if $len - $n < 0;
 		my $i = _sysread($self->{fh}, $_[1], $len - $n, $offset + $n);
 		if (defined($i)) {
 			if ($i == 0) {
@@ -81,7 +82,7 @@ sub sysreadfull
 	return $n;
 }
 
-sub eof
+sub was_eof
 {
 	my $self = shift;
 	!! ( @{$self->{queue}} && $self->{queue}[0]{type} == RDWR_EOF );
