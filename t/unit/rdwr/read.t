@@ -33,10 +33,7 @@ use POSIX;
 use lib map { "$FindBin::RealBin/$_" } qw{../../lib ../../../lib};
 use Data::Dumper;
 
-# before 'use xxx Utils'
-
 use App::MtAws::RdWr::Read;
-use App::MtAws::RdWr::Write;
 use TestUtils;
 
 
