@@ -218,7 +218,7 @@ warning_fatal();
 				}
 				push @queue,
 					(gen_string($n-$pre_readaheads, $pre_readaheads) =>
-					 $n-$pre_readaheads, EOF => $k-$n ? $k-$n : 1); # 1 is for eof tes
+					$n-$pre_readaheads, EOF => $k-$n ? $k-$n : 1); # 1 is for eof tes
 				$rd->readahead($n-$pre_readaheads);
 
 				my $res = $rd->read(my $x, $k);
