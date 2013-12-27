@@ -38,9 +38,10 @@ sub readahead
 	return unless $len;
 	my $q = {};
 	push @{ $self->{queue} }, $q; # buf can be empty here
-	$q->{len} = $self->sysreadfull(my $buf, $len);
+	my $read_len = $self->sysreadfull(my $buf, $len);
 	$q->{type} = RDWR_DATA;
 	$q->{dataref} = \$buf;
+	$read_len;
 }
 
 sub read
@@ -48,20 +49,21 @@ sub read
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
 	$offset ||= 0;
 	$_[1] = '' unless defined $_[1];
-	if (@{$self->{queue}} && (my $first = $self->{queue}[0])->{type} == RDWR_DATA) {
-		if ($len == $first->{len}) {
+	if (@{$self->{queue}} && ( my $chunk = $self->{queue}[0] )->{type} == RDWR_DATA) {
+		my $chunk_ref = $chunk->{dataref};
+		my $chunk_len = length $$chunk_ref;
+		if ($len == $chunk_len) {
 			shift @{$self->{queue}};
-			substr($_[1], $offset) = ${$first->{dataref}};
+			substr($_[1], $offset) = $$chunk_ref;
 			return $len;
-		} elsif ($len < $first->{len}) {
-			substr($_[1], $offset) = substr(${$first->{dataref}}, 0, $len);
-			substr(${$first->{dataref}}, 0, $len)='';
-			$first->{len} = length(${$first->{dataref}});
+		} elsif ($len < $chunk_len) {
+			substr($_[1], $offset) = substr($$chunk_ref, 0, $len);
+			substr($$chunk_ref, 0, $len)='';
 			return $len;
-		} elsif ($len > $first->{len}) {
-			substr($_[1], $offset) = ${$first->{dataref}};
+		} elsif ($len > $chunk_len) {
+			substr($_[1], $offset) = $$chunk_ref;
 			shift @{$self->{queue}};
-			return $first->{len} + $self->read($_[1], $len - $first->{len}, $offset + $first->{len}); # works fine for first->len==0
+			return $chunk_len + $self->read($_[1], $len - $chunk_len, $offset + $chunk_len); # works fine for chunk_len==0
 		} else {
 			confess "never happens";
 		}
