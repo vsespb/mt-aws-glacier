@@ -29,7 +29,8 @@ use Test::More tests => 60;
 use Encode;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use App::MtAws::Utils;
+use App::MtAws::RdWr::Read;
+use App::MtAws::RdWr::Write;
 use Encode;
 use POSIX;
 use TestUtils;
@@ -43,10 +44,13 @@ use Time::HiRes qw/usleep/;
 	open(my $tmp, ">", "$mtroot/infile") or confess;
 	close $tmp;
 	open(my $in, "<", "$mtroot/infile") or confess;
+
+	my $in_rd = App::MtAws::RdWr::Read->new($in);
+
 	is sysread($in, my $buf, 1), 0;
 	is $buf, '', "sysread initialize buffer to empty string";
 
-	is sysreadfull($in, my $buf2, 1), 0;
+	is $in_rd->sysreadfull(my $buf2, 1), 0;
 	is $buf2, '', "sysreadfull initialize buffer to empty string";
 
 	is read($in, my $buf3, 1), 0;
@@ -58,12 +62,12 @@ my $is_ualarm = Time::HiRes::d_ualarm();
 
 for my $redef (0, 1) {
 	no warnings 'redefine';
-	local *sysreadfull = sub {
-		read($_[0], $_[1], $_[2]);
+	local *App::MtAws::RdWr::Read::sysreadfull = sub {
+		read($_[0]->{fh}, $_[1], $_[2]);
 	} if $redef;
 
-	local *syswritefull = sub {
-		my $f = $_[0];
+	local *App::MtAws::RdWr::Write::syswritefull = sub {
+		my $f = $_[0]->{fh};
 		print ($f $_[1]) or confess "Error $! in print";
 		length $_[1];
 	} if $redef;
@@ -73,16 +77,18 @@ for my $redef (0, 1) {
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				my $n = sysreadfull($in, my $x, 2);
+				my $in_rd = App::MtAws::RdWr::Read->new($in);
+				my $n = $in_rd->sysreadfull(my $x, 2);
 				is $n, 2, "should merge two reads";
 				is $x, 'zx', "should merge two reads";
 				kill(POSIX::SIGUSR2, $childpid);
 			},
 			sub {
 				my ($in, $out) = @_;
-				syswritefull($out, 'z') == 1 or die "$$ bad syswrite";
+				my $out_wr = App::MtAws::RdWr::Write->new($out);
+				$out_wr->syswritefull('z') == 1 or die "$$ bad syswrite";
 				usleep 5_000;
-				syswritefull($out, 'x') == 1  or die "$$ bad syswrite";
+				$out_wr->syswritefull('x') == 1  or die "$$ bad syswrite";
 				usleep 10_000 while(1);
 			};
 	}
@@ -92,15 +98,17 @@ for my $redef (0, 1) {
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				my $n = sysreadfull($in, my $x, 2);
+				my $in_rd = App::MtAws::RdWr::Read->new($in);
+				my $n = $in_rd->sysreadfull(my $x, 2);
 				is $n, 1, "should return first data chunk";
 				is $x, 'z', "should return first data chunk correct";
-				$n = sysreadfull($in, $x, 1);
+				$n = $in_rd->sysreadfull($x, 1);
 				is $n, 0, "should return EOF";
 			},
 			sub {
 				my ($in, $out, $ppid) = @_;
-				syswritefull($out, 'z') == 1 or die "$$ bad syswrite";
+				my $out_wr = App::MtAws::RdWr::Write->new($out);
+				$out_wr->syswritefull('z') == 1 or die "$$ bad syswrite";
 			};
 	}
 
@@ -109,16 +117,18 @@ for my $redef (0, 1) {
 		with_fork
 			sub {
 				my ($in, $out, $childpid) = @_;
-				my $n = sysreadfull($in, my $x, 2);
+				my $in_rd = App::MtAws::RdWr::Read->new($in);
+				my $n = $in_rd->sysreadfull(my $x, 2);
 				is $n, 2, "should handle EINTR in sysread";
 				is $x, 'zx', "should handle EINTR in sysread";
 				kill(POSIX::SIGUSR2, $childpid);
 			},
 			sub {
 				my ($in, $out, $ppid) = @_;
+				my $out_wr = App::MtAws::RdWr::Write->new($out);
 				usleep 30_000;
 				kill(POSIX::SIGUSR1, $ppid);
-				syswritefull($out, 'zx') == 2 or die "$$ bad syswrite";
+				$out_wr->syswritefull('zx') == 2 or die "$$ bad syswrite";
 				usleep 10_000 while(1);
 			};
 	}
@@ -143,8 +153,9 @@ for my $redef (0, 1) {
 			sub {
 				my ($in, $out, $childpid) = @_;
 				$is_ualarm ? usleep($small_delay*2*$uratio) : sleep($small_delay*2);
+				my $in_rd = App::MtAws::RdWr::Read->new($in);
 				for (1..$n) {
-					my $n = sysreadfull($in, my $x, $sample_l);
+					my $n = $in_rd->sysreadfull(my $x, $sample_l);
 					is $n, $sample_l, "should handle EINTR in syswrite";
 					ok $x eq $full_sample
 				}
@@ -152,8 +163,9 @@ for my $redef (0, 1) {
 			sub {
 				my ($in, $out, $ppid) = @_;
 				for (1..$n) {
+					my $out_wr = App::MtAws::RdWr::Write->new($out);
 					$is_ualarm ? Time::HiRes::ualarm($small_delay*$uratio) : alarm($small_delay);
-					syswritefull($out, $full_sample) == $sample_l or die "$$ bad syswrite";
+					$out_wr->syswritefull($full_sample) == $sample_l or die "$$ bad syswrite";
 					$is_ualarm ? Time::HiRes::ualarm(0) : alarm(0);
 				}
 

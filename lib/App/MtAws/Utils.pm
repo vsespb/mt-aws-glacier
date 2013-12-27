@@ -42,7 +42,7 @@ use constant INVENTORY_TYPE_CSV => 'CSV';
 use constant INVENTORY_TYPE_JSON => 'JSON';
 
 our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
-sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull sysreadfull_chk syswritefull_chk
+sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file
 hex_dump_string is_wide_string
 characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists file_inodev
 is_digest_sha_broken_for_large_data
@@ -259,57 +259,6 @@ sub is_wide_string
 sub try_drop_utf8_flag
 {
 	Encode::_utf8_off($_[0]) if utf8::is_utf8($_[0]) && (bytes::length($_[0]) == length($_[0]));
-}
-
-sub sysreadfull_chk($$$)
-{
-	my $len = $_[2];
-	sysreadfull(@_) == $len;
-}
-
-sub sysreadfull($$$)
-{
-	my ($file, $len) = ($_[0], $_[2]);
-	my $n = 0;
-	while ($len - $n) {
-		my $i = sysread($file, $_[1], $len - $n, $n);
-		if (defined($i)) {
-			if ($i == 0) {
-				return $n;
-			} else {
-				$n += $i;
-			}
-		} elsif ($!{EINTR}) {
-			redo;
-		} else {
-			return $n ? $n : undef;
-		}
-	}
-	return $n;
-}
-
-sub syswritefull_chk($$)
-{
-	my $length = length $_[1];
-	syswritefull(@_) == $length
-}
-
-sub syswritefull($$)
-{
-	my ($file, $len) = ($_[0], length($_[1]));
-	confess if is_wide_string($_[1]);
-	my $n = 0;
-	while ($len - $n) {
-		my $i = syswrite($file, $_[1], $len - $n, $n);
-		if (defined($i)) {
-			$n += $i;
-		} elsif ($!{EINTR}) {
-			redo;
-		} else {
-			return $n ? $n : undef;
-		}
-	}
-	return $n;
 }
 
 sub hex_dump_string
