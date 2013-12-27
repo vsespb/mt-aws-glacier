@@ -24,13 +24,14 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 231;
+use Test::More tests => 524;
 use Test::Deep;
 use Carp;
 use Encode;
 use FindBin;
 use POSIX;
 use lib map { "$FindBin::RealBin/$_" } qw{../../lib ../../../lib};
+use List::Util qw/max/;
 use Data::Dumper;
 
 use App::MtAws::RdWr::Read;
@@ -56,7 +57,8 @@ warning_fatal();
 		$_[1] = '' unless defined $_[1];
 		my $q = shift @queue;
 		my $expected_size = shift @queue;
-		confess $expected_size unless $expected_size;
+		confess if $expected_size < 0;
+		confess "[$q] $expected_size" unless $expected_size;
 		confess "$expected_size == $_[2]" unless $expected_size == $_[2];
 		$! = 0;
 		return 0 if $q eq 'EOF';
@@ -204,31 +206,40 @@ warning_fatal();
 		join('', map { chr(ord('a')+$_+$pre_readaheads-1) } 1..$n)
 	}
 
-	for my $pre_readaheads (0..4) {#3
-		for my $n ($pre_readaheads+1..5) {
-			for my $k (1..5) {
-				my $str_n = gen_string($n);
-				my $str_k = gen_string($k);
-				local @queue;
+	for my $init_offset (0, 1) {
+		for my $pre_readaheads (0..4) {
+			for my $n (max($pre_readaheads, 1)..5) {
+				for my $k (1..5) {
+					my $str_n = gen_string($n);
+					my $str_k = gen_string($k);
+					local @queue;
 
-				my $rd = readahead;
-				for my $i (1..$pre_readaheads) {
-					push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
-					$rd->readahead(1);
-				}
-				push @queue,
-					(gen_string($n-$pre_readaheads, $pre_readaheads) =>
-					$n-$pre_readaheads, EOF => $k-$n ? $k-$n : 1); # 1 is for eof tes
-				$rd->readahead($n-$pre_readaheads);
+					my $rd = readahead;
+					for my $i (1..$pre_readaheads) {
+						push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
+						$rd->readahead(1);
+					}
+					push @queue,
+						($n-$pre_readaheads ? (gen_string($n-$pre_readaheads, $pre_readaheads) => $n-$pre_readaheads) : ()),
+						(EOF => $k-$n > 0 ? $k-$n : 1);
+					$rd->readahead($n-$pre_readaheads);
 
-				my $res = $rd->read(my $x, $k);
-				if ($k >= $n) {
-					is $x, $str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
-					is $res, $n;
-					ok !$rd->read($x, 1);
-				} else {
-					is $x, $str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
-					is $res, $k;
+					my ($x, $pre);
+					if ($init_offset) {
+						$pre = '1';
+						$x = $pre;
+					} else {
+						$pre = '';
+					}
+					my $res = $rd->read($x, $k, $init_offset);
+					if ($k >= $n) {
+						is $x, $pre.$str_n, "$pre_readaheads prereadaheads. read for higher or same data size $k >= $n";
+						is $res, $n;
+						ok !$rd->read($x, 1);
+					} else {
+						is $x, $pre.$str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
+						is $res, $k;
+					}
 				}
 			}
 		}
