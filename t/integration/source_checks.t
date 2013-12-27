@@ -30,7 +30,7 @@ use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
 
 my $basedir = "$FindBin::RealBin/../..";
-my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/integration/queue_job t/unit/queue_job t/unit/glacier t/lib t/libtest!;
+my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/integration/queue_job t/unit/queue_job t/unit/glacier t/lib t/libtest t/unit/rdwr!;
 
 for my $dir (@dirs) {
 	for my $filename (<$dir/*>) {
