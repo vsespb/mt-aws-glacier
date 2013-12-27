@@ -46,7 +46,7 @@ my $test_size = 3_000_000 - 1;
 
 
 my $throttling_exception = '{"message":"The security token included in the request is invalid.","code":"ThrottlingException","type":"Client"}';
-my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $proto, timeout => 20);
+my %common_options = (region => 'r', key => 'k', secret => 's', protocol => $proto, timeout => 40);
 my ($base) = initialize_processes();
 	plan tests => 42;
 
@@ -310,29 +310,32 @@ sub initialize_processes
 {
 	if (@ARGV && $ARGV[0] eq 'daemon') {
 		my $d = $proto eq 'http' ?
-			HTTP::Daemon->new(Timeout => 10, LocalAddr => '127.0.0.1') :
-			HTTP::Daemon::SSL->new(Timeout => 10, LocalAddr => '127.0.0.1'); # need certs/ dir
+			HTTP::Daemon->new(Timeout => 20, LocalAddr => '127.0.0.1') :
+			HTTP::Daemon::SSL->new(Timeout => 20, LocalAddr => '127.0.0.1'); # need certs/ dir
 		$SIG{PIPE}='IGNORE';
 		$| = 1;
 		print "Please to meet you at: <URL:", $d->url, ">\n";
 
+		$!=0;
 		while (my $c = $d->accept) {
-		my $r = $c->get_request;
-		if ($r) {
-			my @p = $r->uri->path_segments;
-			shift @p;
-			my $p = shift @p;
-			my $func = lc("httpd_$p");
-			if (defined &$func) {
-				no strict 'refs';
-				&$func($c, $r, @p);
-			} else {
-				$c->send_error(404);
+			my $r = $c->get_request;
+			if ($r) {
+				my @p = $r->uri->path_segments;
+				shift @p;
+				my $p = shift @p;
+				my $func = lc("httpd_$p");
+				if (defined &$func) {
+					no strict 'refs';
+					&$func($c, $r, @p);
+				} else {
+					$c->send_error(404);
+				}
 			}
+			$c = undef;  # close connection
 		}
-		$c = undef;  # close connection
-		}
-		print STDERR "HTTP Server terminated\n";
+		my $errno_i = $!+0;
+		my $errno_s = "$!";
+		print STDERR "HTTP Server terminated (errno=$errno_i [$errno_s])\n";
 		exit;
 	} else {
 		use Config;
