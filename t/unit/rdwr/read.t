@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 704;
+use Test::More tests => 796;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -242,6 +242,9 @@ warning_fatal();
 						} else {
 							is $x, $pre.$str_k, "$pre_readaheads prereadaheads. read for smaller data size $k < $n";
 							is $res, $k;
+							my $z;
+							$rd->read($z, $n-$k);
+							is $x.$z, $pre.$str_n;
 						}
 					}
 				}
