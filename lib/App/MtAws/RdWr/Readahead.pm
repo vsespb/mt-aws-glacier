@@ -35,7 +35,7 @@ use base qw/App::MtAws::RdWr::Read/;
 sub readahead
 {
 	my ($self, $len) = @_;
-	return unless $len;
+	return 0 unless $len;
 	my $q = {};
 	push @{ $self->{queue} }, $q; # buf can be empty here
 	my $read_len = $self->sysreadfull(my $buf, $len);
