@@ -47,7 +47,7 @@ my $rootdir = get_temp_dir();
 my @TRUE_CMD = ($Config{'perlpath'}, '-e', '0');
 
 print "# STARTED $$ ".time()."\n";
-$SIG{ALRM} = sub { print "# ALARM $$ ".time()."\n"; exit(1) };
+$SIG{ALRM} = sub { print STDERR "ALARM $$ ".time()."\n"; exit(1) };
 
 sub fork_engine_test($%)
 {
@@ -56,14 +56,14 @@ sub fork_engine_test($%)
 	no warnings 'redefine';
 	local ($SIG{INT}, $SIG{USR1}, $SIG{USR2}, $SIG{TERM}, $SIG{HUP}, $SIG{CHLD});
 	local *App::MtAws::ForkEngine::run_children = sub {
-		alarm 20;
+		alarm 40;
 		my ($self, $out, $in) = @_;
 		confess unless $self->{parent_pid};
 		$cb{child}->($in, $out, $self->{parent_pid}) if $cb{child};
 		alarm 0;
 	};
 	local *App::MtAws::ForkEngine::run_parent = sub {
-		alarm 20;
+		alarm 40;
 		my ($self, $disp_select) = @_;
 		$cb{parent_init}->($self->{children}) if $cb{parent_init};
 		my @ready;
