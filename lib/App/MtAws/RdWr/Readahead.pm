@@ -60,6 +60,7 @@ sub read
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
 	$offset = $self->_initialize_buffer($_[1], $offset);
 	my $add_length = 0;
+	# TODO: while loop works only if we assume that there is only RDWR_DATA, RDWR_EOF/ERR and later can be in the end only.
 	while (@{$self->{queue}} && ( my $chunk = $self->{queue}[0] )->{type} == RDWR_DATA) {
 		my $chunk_ref = $chunk->{dataref};
 		my $chunk_len = length $$chunk_ref;
