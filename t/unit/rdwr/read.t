@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 118;
+use Test::More tests => 119;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -251,6 +251,17 @@ warning_fatal();
 			is $rd->read(my $x, 5, 2), 0;
 			is $x, "\x00\x00";
 		}
+	}
+
+	# unit tests for readahead
+
+	{
+		local @queue = (ab => 5, EOF => 3);
+		my $rd = get_readahead;
+		is $rd->readahead(5), 2;
+		is $rd->read(my $x, 5, 2), 2;
+		exit;
+
 	}
 
 	sub gen_string

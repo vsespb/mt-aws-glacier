@@ -96,12 +96,13 @@ sub _initialize_buffer
 	$_[1] = '' unless defined $_[1];
 	my $delta = $offset - length $_[1];
 	$_[1] .= "\x00" x $delta if $delta > 0;
+	$offset
 }
 
 sub read
 {
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
-	$self->_initialize_buffer($_[1], $offset);
+	$offset = $self->_initialize_buffer($_[1], $offset);
 	if (@{$self->{queue}}) {
 		my $first = $self->{queue}[0];
 		if ($first->{type} == App::MtAws::RdWr::RDWR_ERROR) {
