@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 120;
+use Test::More tests => 124;
 use Test::Deep;
 use Carp;
 use Encode;
