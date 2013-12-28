@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 136;
+use Test::More tests => 142;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -255,6 +255,20 @@ warning_fatal();
 
 	# unit tests for readahead
 
+	{
+		local @queue = (EOF => 5);
+		my $rd = get_readahead;
+		is $rd->readahead(5), 0;
+		is $rd->read(my $x, 5), 0;
+		is $x, "", "readahead should work if EOF is first in stream";
+	}
+	{
+		local @queue = (ERR => 5);
+		my $rd = get_readahead;
+		is $rd->readahead(5), 0;
+		ok ! defined $rd->read(my $x, 5);
+		is $x, "", "readahead should work if ERR is first in stream";
+	}
 	{
 		local @queue = (EOF => 5);
 		my $rd = get_readahead;
