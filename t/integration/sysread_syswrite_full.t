@@ -25,11 +25,12 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 60;
+use Test::More tests => 90;
 use Encode;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::RdWr::Read;
+use App::MtAws::RdWr::Readahead;
 use App::MtAws::RdWr::Write;
 use Encode;
 use POSIX;
@@ -37,24 +38,65 @@ use TestUtils;
 use Carp;
 use Time::HiRes qw/usleep/;
 
-#warning_fatal();
+warning_fatal();
 
 {
 	my $mtroot = get_temp_dir();
-	open(my $tmp, ">", "$mtroot/infile") or confess;
-	close $tmp;
-	open(my $in, "<", "$mtroot/infile") or confess;
 
-	my $in_rd = App::MtAws::RdWr::Read->new($in);
+	for my $class (qw/App::MtAws::RdWr::Read App::MtAws::RdWr::Readahead/) {
+		{
+			open(my $tmp, ">", "$mtroot/infile") or confess;
+			close $tmp;
+			open(my $in, "<", "$mtroot/infile") or confess;
 
-	is sysread($in, my $buf, 1), 0;
-	is $buf, '', "sysread initialize buffer to empty string";
+			my $in_rd = $class->new($in);
 
-	is $in_rd->sysreadfull(my $buf2, 1), 0;
-	is $buf2, '', "sysreadfull initialize buffer to empty string";
+			is sysread($in, my $buf, 1), 0;
+			is $buf, '', "sysread initialize buffer to empty string";
 
-	is read($in, my $buf3, 1), 0;
-	is $buf3, '', "read initialize buffer to empty string";
+			is $in_rd->sysreadfull(my $buf2, 1), 0;
+			is $buf2, '', "sysreadfull initialize buffer to empty string";
+
+			is read($in, my $buf3, 1), 0;
+			is $buf3, '', "read initialize buffer to empty string";
+
+		}
+		{
+			open(my $tmp, ">", "$mtroot/infile") or confess;
+			close $tmp;
+			open(my $in, "<", "$mtroot/infile") or confess;
+
+			my $in_rd = $class->new($in);
+
+			is sysread($in, my $buf, 1, 2), 0;
+			is $buf, "\x00\x00", "sysread zero-pads buffer";
+
+			is $in_rd->sysreadfull(my $buf2, 1, 2), 0;
+			is $buf2, "\x00\x00", "sysreadfull zero-pads buffer";
+
+			is read($in, my $buf3, 1, 2), 0;
+			is $buf3, "\x00\x00", "read zero-pads buffer";
+		}
+		{
+			open(my $tmp, ">", "$mtroot/infile") or confess;
+			close $tmp;
+			open(my $in, "<", "$mtroot/infile") or confess;
+
+			my $in_rd = $class->new($in);
+
+			my $buf = "X";
+			is sysread($in, $buf, 1, 2), 0;
+			is $buf, "X\x00", "sysread zero-pads buffer";
+
+			my $buf2 = "X";
+			is $in_rd->sysreadfull($buf2, 1, 2), 0;
+			is $buf2, "X\x00", "sysreadfull zero-pads buffer";
+
+			my $buf3 = "X";
+			is read($in, $buf3, 1, 2), 0;
+			is $buf3, "X\x00", "read zero-pads buffer";
+		}
+	}
 }
 
 my $redef = 1;
