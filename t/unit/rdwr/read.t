@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 63;
+use Test::More tests => 106;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -118,122 +118,120 @@ warning_fatal();
 		ok !$!;
 	}
 
-	sub rd
-	{
-		App::MtAws::RdWr::Read->new($in);
-	}
+	sub rd { die "Unimplemented" }
+	sub get_rd { App::MtAws::RdWr::Read->new($in) }
+	sub get_readahead { App::MtAws::RdWr::Readahead->new($in) }
 
-	sub readahead
-	{
-		App::MtAws::RdWr::Readahead->new($in);
-	}
+	for my $factory(\&get_rd, \&get_readahead) {
 
+		local *rd = $factory;
 
-	# actual test sysreadfull
-	{
-		local @queue = (ab => 2);
-		is rd->sysreadfull(my $x, 2), 2;
-		is $x, 'ab', "should work in simple case";
-	}
+		# actual test sysreadfull
+		{
+			local @queue = (ab => 2);
+			is rd->sysreadfull(my $x, 2), 2;
+			is $x, 'ab', "should work in simple case";
+		}
 
-	{
-		local @queue = (a => 3, bc => 2);
-		is rd->sysreadfull(my $x, 3), 3;
-		is $x, 'abc', "should work with two reads";
-	}
-	{
-		local @queue = (ab => 5, c => 3, de => 2);
-		is rd->sysreadfull(my $x, 5), 5;
-		is $x, 'abcde', "should work with three reads";
-	}
-	{
-		local @queue = (ab => 5, c => 3, de => 2);
-		is rd->sysreadfull(my $x, 5), 5;
-		is $x, 'abcde', "should work with three reads";
-	}
-	{
-		local @queue = (ab => 5, c => 3, EOF => 2);
-		is rd->sysreadfull(my $x, 5), 3;
-		is $x, 'abc', "should work when eof not reached";
-	}
-	{
-		local @queue = (EOF => 5);
-		is rd->sysreadfull(my $x, 5), 0;
-		is $x, '', "should work with eof in the beginning";
-	}
-	{
-		local @queue = (ERR => 5);
-		is rd->sysreadfull(my $x, 5), undef;
-		is $x, '', "should work with ERROR in the beginning";
-	}
-	{
-		local @queue = (ab => 5, c => 3, ERR => 2, ERR => 7);
-		my $rd = rd;
-		is $rd->sysreadfull(my $x, 5), 3;
-		is $x, 'abc', "should work with ERROR in the middle";
-		is $rd->sysreadfull(my $y, 7), undef;
-	}
-	{
-		local @queue = (ab => 5, c => 3, EINTR => 2, de => 2);
-		is rd->sysreadfull(my $x, 5), 5;
-		is $x, 'abcde', "should work with EINTR in the middle";
-	}
-	{
-		local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, EOF => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with EINTR in the middle, when there will be eof";
-	}
-	{
-		local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, ERR => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with EINTR in the middle, when there will be ERROR";
-	}
-	{
-		local @queue = (EINTR => 5, ab => 5, c => 3, EINTR => 2, EINTR => 2, d => 2, EINTR => 1, ERR => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with several EINTR";
-	}
-	{
-		local @queue = (ab => 5, EINTR => 3, EINTR => 3, c => 3, d => 2, EINTR => 1, EOF => 1);
-		is rd->sysreadfull(my $x, 5), 4;
-		is $x, 'abcd', "should work with several EINTR";
-	}
+		{
+			local @queue = (a => 3, bc => 2);
+			is rd->sysreadfull(my $x, 3), 3;
+			is $x, 'abc', "should work with two reads";
+		}
+		{
+			local @queue = (ab => 5, c => 3, de => 2);
+			is rd->sysreadfull(my $x, 5), 5;
+			is $x, 'abcde', "should work with three reads";
+		}
+		{
+			local @queue = (ab => 5, c => 3, de => 2);
+			is rd->sysreadfull(my $x, 5), 5;
+			is $x, 'abcde', "should work with three reads";
+		}
+		{
+			local @queue = (ab => 5, c => 3, EOF => 2);
+			is rd->sysreadfull(my $x, 5), 3;
+			is $x, 'abc', "should work when eof not reached";
+		}
+		{
+			local @queue = (EOF => 5);
+			is rd->sysreadfull(my $x, 5), 0;
+			is $x, '', "should work with eof in the beginning";
+		}
+		{
+			local @queue = (ERR => 5);
+			is rd->sysreadfull(my $x, 5), undef;
+			is $x, '', "should work with ERROR in the beginning";
+		}
+		{
+			local @queue = (ab => 5, c => 3, ERR => 2, ERR => 7);
+			my $rd = rd;
+			is $rd->sysreadfull(my $x, 5), 3;
+			is $x, 'abc', "should work with ERROR in the middle";
+			is $rd->sysreadfull(my $y, 7), undef;
+		}
+		{
+			local @queue = (ab => 5, c => 3, EINTR => 2, de => 2);
+			is rd->sysreadfull(my $x, 5), 5;
+			is $x, 'abcde', "should work with EINTR in the middle";
+		}
+		{
+			local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, EOF => 1);
+			is rd->sysreadfull(my $x, 5), 4;
+			is $x, 'abcd', "should work with EINTR in the middle, when there will be eof";
+		}
+		{
+			local @queue = (ab => 5, c => 3, EINTR => 2, d => 2, ERR => 1);
+			is rd->sysreadfull(my $x, 5), 4;
+			is $x, 'abcd', "should work with EINTR in the middle, when there will be ERROR";
+		}
+		{
+			local @queue = (EINTR => 5, ab => 5, c => 3, EINTR => 2, EINTR => 2, d => 2, EINTR => 1, ERR => 1);
+			is rd->sysreadfull(my $x, 5), 4;
+			is $x, 'abcd', "should work with several EINTR";
+		}
+		{
+			local @queue = (ab => 5, EINTR => 3, EINTR => 3, c => 3, d => 2, EINTR => 1, EOF => 1);
+			is rd->sysreadfull(my $x, 5), 4;
+			is $x, 'abcd', "should work with several EINTR";
+		}
 
-	# actual test read()
-	{
-		local @queue = (ab => 5, EOF => 3);
-		my $rd = rd;
-		is $rd->read(my $x, 5), 2;
-		is $x, "ab";
-		is $rd->read(my $y, 5), 0;
-		is $y, '', "read() should not try read after eof again. should initialize value to empty string";
-	}
+		# actual test read()
+		{
+			local @queue = (ab => 5, EOF => 3);
+			my $rd = rd;
+			is $rd->read(my $x, 5), 2;
+			is $x, "ab";
+			is $rd->read(my $y, 5), 0;
+			is $y, '', "read() should not try read after eof again. should initialize value to empty string";
+		}
 
-	{
-		local @queue = (EOF => 5);
-		my $rd = rd;
-		is $rd->read(my $x, 5), 0;
-		is $x, '', 'read() should initialize value to empty string if eof found';
-		is $rd->read(my $y, 5), 0;
-		is $y, '', "read() should not try read after eof again. even if eof is the first thing found in steam";
-	}
+		{
+			local @queue = (EOF => 5);
+			my $rd = rd;
+			is $rd->read(my $x, 5), 0;
+			is $x, '', 'read() should initialize value to empty string if eof found';
+			is $rd->read(my $y, 5), 0;
+			is $y, '', "read() should not try read after eof again. even if eof is the first thing found in steam";
+		}
 
-	{
-		local @queue = (ab => 5, ERR => 3);
-		my $rd = rd;
-		is $rd->read(my $x, 5), 2;
-		is $x, "ab";
-		ok ! defined $rd->read(my $y, 5);
-		is $y, '', "read() should not try read after error again. should initialize value to empty string";
-	}
+		{
+			local @queue = (ab => 5, ERR => 3);
+			my $rd = rd;
+			is $rd->read(my $x, 5), 2;
+			is $x, "ab";
+			ok ! defined $rd->read(my $y, 5);
+			is $y, '', "read() should not try read after error again. should initialize value to empty string";
+		}
 
-	{
-		local @queue = (ERR => 5);
-		my $rd = rd;
-		ok ! defined $rd->read(my $x, 5);
-		is $x, '', 'read() should initialize value to empty string if error found';
-		ok ! defined $rd->read(my $y, 5);
-		is $y, '', "read() should not try read after error again. even if error is the first thing found in steam";
+		{
+			local @queue = (ERR => 5);
+			my $rd = rd;
+			ok ! defined $rd->read(my $x, 5);
+			is $x, '', 'read() should initialize value to empty string if error found';
+			ok ! defined $rd->read(my $y, 5);
+			is $y, '', "read() should not try read after error again. even if error is the first thing found in steam";
+		}
 	}
 
 	sub gen_string
@@ -254,7 +252,7 @@ warning_fatal();
 						my $str_k = gen_string($k);
 						local @queue;
 
-						my $rd = readahead;
+						my $rd = get_readahead;
 						for my $i (1..$pre_readaheads) {
 							push @queue, (chr(ord('a')+$i-1) => 1);#, EOF => $k-$n
 							$rd->readahead(1);
