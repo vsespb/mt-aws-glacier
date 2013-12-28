@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 51;
+use Test::More tests => 55;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -207,6 +207,15 @@ warning_fatal();
 		is $x, "ab";
 		is $rd->read(my $y, 5), 0;
 		is $y, '', "read() should not try read after eof again. should initialize value to empty string";
+	}
+
+	{
+		local @queue = (EOF => 5);
+		my $rd = rd;
+		is $rd->read(my $x, 5), 0;
+		is $x, '', 'read() should initialize value to empty string if eof found';
+		is $rd->read(my $y, 5), 0;
+		is $y, '', "read() should not try read after eof again. even if eof is the first thing found in steam";
 	}
 
 	sub gen_string
