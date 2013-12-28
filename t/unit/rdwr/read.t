@@ -260,14 +260,14 @@ warning_fatal();
 		my $rd = get_readahead;
 		is $rd->readahead(5), 2;
 		is $rd->read(my $x, 5, 2), 2;
-		is $x, "\x00\x00ab";
+		is $x, "\x00\x00ab", "should zero-pad data, with readahead";
 	}
 	{
 		local @queue = (EOF => 5);
 		my $rd = get_readahead;
 		is $rd->readahead(5), 0;
 		is $rd->read(my $x, 5, 2), 0;
-		is $x, "\x00\x00";
+		is $x, "\x00\x00", "should zero-pad data, with readahead, if EOF is first in stream";
 	}
 
 	sub gen_string
