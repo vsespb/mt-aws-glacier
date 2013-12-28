@@ -58,7 +58,9 @@ sub read
 		} elsif ($len > $chunk_len) {
 			substr($_[1], $offset) = $$chunk_ref;
 			shift @{$self->{queue}};
-			return $chunk_len + $self->read($_[1], $len - $chunk_len, $offset + $chunk_len); # works fine for chunk_len==0
+			# works fine for chunk_len==0
+			my $next_read = $self->read($_[1], $len - $chunk_len, $offset + $chunk_len);
+			return $chunk_len ? $chunk_len + ($next_read||0) : $next_read;
 		} else { # $len == $chunk_len
 			shift @{$self->{queue}};
 			substr($_[1], $offset) = $$chunk_ref;
