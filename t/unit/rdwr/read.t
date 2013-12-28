@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 110;
+use Test::More tests => 118;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -236,8 +236,20 @@ warning_fatal();
 		{
 			local @queue = (ab => 5, EOF => 3);
 			my $rd = rd;
+			is $rd->read(my $x, 5, 1), 2;
+			is $x, "\x00ab";
+		}
+		{
+			local @queue = (ab => 5, EOF => 3);
+			my $rd = rd;
 			is $rd->read(my $x, 5, 2), 2;
 			is $x, "\x00\x00ab";
+		}
+		{
+			local @queue = (EOF => 5);
+			my $rd = rd;
+			is $rd->read(my $x, 5, 2), 0;
+			is $x, "\x00\x00";
 		}
 	}
 

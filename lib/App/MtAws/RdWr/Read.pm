@@ -89,10 +89,19 @@ sub was_eof
 	!! ( @{$self->{queue}} && $self->{queue}[0]{type} == RDWR_EOF );
 }
 
+sub _initialize_buffer
+{
+	my ($self, $offset) = ($_[0], $_[2]);
+	$offset ||= 0;
+	$_[1] = '' unless defined $_[1];
+	my $delta = $offset - length $_[1];
+	$_[1] .= "\x00" x $delta if $delta > 0;
+}
+
 sub read
 {
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
-	$_[1] = '' unless defined $_[1];
+	$self->_initialize_buffer($_[1], $offset);
 	if (@{$self->{queue}}) {
 		my $first = $self->{queue}[0];
 		if ($first->{type} == App::MtAws::RdWr::RDWR_ERROR) {
