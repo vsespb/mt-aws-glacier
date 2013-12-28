@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 106;
+use Test::More tests => 110;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -69,7 +69,7 @@ warning_fatal();
 		}
 		confess "q [$q] greated than expected_size $expected_size" if length($q) > $expected_size;
 		my $len = length( $_[1] );
-		$_[1] .= "0" x ( $pos - $len ) if $len < $pos; # original sysread uses 0x00
+		$_[1] .= "\x00" x ( $pos - $len ) if $len < $pos; # original sysread uses 0x00
 
 		substr($_[1], $pos) = $q;
 		length $q;
@@ -107,7 +107,7 @@ warning_fatal();
 	{
 		local @queue = (a => 1);
 		is App::MtAws::RdWr::Read::_sysread($in, my $x, 1, 1), 1;
-		is $x, '0a';
+		is $x, "\x00a";
 		ok !$!;
 	}
 	{
@@ -231,6 +231,13 @@ warning_fatal();
 			is $x, '', 'read() should initialize value to empty string if error found';
 			ok ! defined $rd->read(my $y, 5);
 			is $y, '', "read() should not try read after error again. even if error is the first thing found in steam";
+		}
+
+		{
+			local @queue = (ab => 5, EOF => 3);
+			my $rd = rd;
+			is $rd->read(my $x, 5, 2), 2;
+			is $x, "\x00\x00ab";
 		}
 	}
 
