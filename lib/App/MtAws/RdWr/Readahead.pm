@@ -48,27 +48,29 @@ sub read
 {
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
 	$offset = $self->_initialize_buffer($_[1], $offset);
-	if (@{$self->{queue}} && ( my $chunk = $self->{queue}[0] )->{type} == RDWR_DATA) {
+	my $add_length = 0;
+	while (@{$self->{queue}} && ( my $chunk = $self->{queue}[0] )->{type} == RDWR_DATA) {
 		my $chunk_ref = $chunk->{dataref};
 		my $chunk_len = length $$chunk_ref;
 		if ($len < $chunk_len) {
 			substr($_[1], $offset) = substr($$chunk_ref, 0, $len);
 			substr($$chunk_ref, 0, $len)='';
-			return $len;
+			return $add_length + $len;
 		} elsif ($len > $chunk_len) {
 			substr($_[1], $offset) = $$chunk_ref;
 			shift @{$self->{queue}};
 			# works fine for chunk_len==0
-			my $next_read = $self->read($_[1], $len - $chunk_len, $offset + $chunk_len);
-			return $chunk_len ? $chunk_len + ($next_read||0) : $next_read;
+			$add_length += $chunk_len;
+			$offset += $chunk_len;
+			$len -= $chunk_len;
 		} else { # $len == $chunk_len
 			shift @{$self->{queue}};
 			substr($_[1], $offset) = $$chunk_ref;
-			return $len;
+			return $add_length + $len;
 		}
-	} else {
-		return $self->SUPER::read($_[1], $len, $offset);
 	}
+	my $real_read = $self->SUPER::read($_[1], $len, $offset);
+	return $add_length ? $add_length + ($real_read||0) : $real_read; # real_read can be undef
 }
 
 
