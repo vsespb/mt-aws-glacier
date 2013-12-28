@@ -92,6 +92,7 @@ sub was_eof
 sub read
 {
 	my ($self, $len, $offset) = ($_[0], $_[2], $_[3]);
+	$_[1] = '' unless defined $_[1];
 	if (@{$self->{queue}}) {
 		my $first = $self->{queue}[0];
 		if ($first->{type} == App::MtAws::RdWr::RDWR_ERROR) {

@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 47;
+use Test::More tests => 51;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -129,7 +129,7 @@ warning_fatal();
 	}
 
 
-	# actual test
+	# actual test sysreadfull
 	{
 		local @queue = (ab => 2);
 		is rd->sysreadfull(my $x, 2), 2;
@@ -199,6 +199,15 @@ warning_fatal();
 		is $x, 'abcd', "should work with several EINTR";
 	}
 
+	# actual test read()
+	{
+		local @queue = (ab => 5, EOF => 3);
+		my $rd = rd;
+		is $rd->read(my $x, 5), 2;
+		is $x, "ab";
+		is $rd->read(my $y, 5), 0;
+		is $y, '', "read() should not try read after eof again. should initialize value to empty string";
+	}
 
 	sub gen_string
 	{
