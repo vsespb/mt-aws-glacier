@@ -24,7 +24,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 130;
+use Test::More tests => 136;
 use Test::Deep;
 use Carp;
 use Encode;
@@ -256,25 +256,34 @@ warning_fatal();
 	# unit tests for readahead
 
 	{
-		local @queue = (ab => 5, EOF => 3);
-		my $rd = get_readahead;
-		is $rd->readahead(5), 2;
-		is $rd->read(my $x, 5, 2), 2;
-		is $x, "\x00\x00ab", "should zero-pad data, with readahead";
-	}
-	{
 		local @queue = (EOF => 5);
 		my $rd = get_readahead;
 		is $rd->readahead(5), 0;
 		is $rd->read(my $x, 5, 2), 0;
 		is $x, "\x00\x00", "should zero-pad data, with readahead, if EOF is first in stream";
 	}
-	for (qw/EOF ERR/){
-		local @queue = (ab => 2, $_ => 1);
+	{
+		local @queue = (ERR => 5);
 		my $rd = get_readahead;
-		is $rd->readahead(2), 2;
-		is $rd->read(my $x, 3), 2;
-		is $x, "ab", "should handle $_ right after readahead";
+		is $rd->readahead(5), 0;
+		ok ! defined $rd->read(my $x, 5, 2);
+		is $x, "\x00\x00", "should zero-pad data, with readahead, if ERR is first in stream";
+	}
+	for (qw/EOF ERR/){
+		{
+			local @queue = (ab => 5, $_ => 3);
+			my $rd = get_readahead;
+			is $rd->readahead(5), 2;
+			is $rd->read(my $x, 5, 2), 2;
+			is $x, "\x00\x00ab", "should zero-pad data, with readahead";
+		}
+		{
+			local @queue = (ab => 2, $_ => 1);
+			my $rd = get_readahead;
+			is $rd->readahead(2), 2;
+			is $rd->read(my $x, 3), 2;
+			is $x, "ab", "should handle $_ right after readahead";
+		}
 	}
 
 	sub gen_string

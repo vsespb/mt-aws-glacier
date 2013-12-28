@@ -32,16 +32,27 @@ use constant RDWR_DATA => 3;
 use base qw/App::MtAws::RdWr::Read/;
 
 
+=pod
+
+$rd->readahead($len)
+
+Reads up to $len bytes from real stream to readahead buffers. Return number of bytes read. (unlike perl sysread,
+0 in case of both eof and errors).
+
+If there was already data in readahead buffer, it does not change behaviour of readahead()
+
+=cut
+
 sub readahead
 {
 	my ($self, $len) = @_;
 	return 0 unless $len;
 	my $q = {};
 	push @{ $self->{queue} }, $q; # buf can be empty here
-	my $read_len = $self->sysreadfull(my $buf, $len);
+	my $read_len = $self->sysreadfull(my $buf, $len); # can be undef
 	$q->{type} = RDWR_DATA;
 	$q->{dataref} = \$buf;
-	$read_len;
+	$read_len||0;
 }
 
 sub read
