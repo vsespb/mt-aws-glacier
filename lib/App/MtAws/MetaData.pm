@@ -100,7 +100,7 @@ understant how to decode it back.
 
 =cut
 
-my $meta_coder = ($JSON::XS::VERSION >= 1.4) ?
+my $meta_coder = ($JSON::XS::VERSION ge '1.4') ?
 	JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) : # some additional abuse-protection
 	JSON::XS->new->utf8; # it's still protected by length checking below
 
@@ -108,7 +108,7 @@ sub meta_decode
 {
 	my ($str) = @_;
 	return (undef, undef) unless defined $str; # protect from undef $str
-	
+
 	my ($marker, $b64) = split(' ', $str); # split will return empty list if string is empty or contains spaces only
 	if (defined($marker) && $marker eq 'mt1') {
 		return (undef, undef) if !defined $b64 || length($b64) > MAX_SIZE;
