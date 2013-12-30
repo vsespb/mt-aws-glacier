@@ -50,7 +50,7 @@ INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 
 BEGIN {
-	if ($File::Spec::VERSION < 3.13) {
+	if ($File::Spec::VERSION lt '3.13') {
 		our $__orig_abs_to_rel = File::Spec->can("abs2rel");
 		no warnings 'once';
 		*File::Spec::abs2rel = sub {
