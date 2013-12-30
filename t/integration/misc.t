@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 11;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
@@ -73,16 +73,17 @@ sub test_is_digest_sha_broken_for_large_data
 	}
 }
 
-is is_digest_sha_broken_for_large_data(), $Config{'longsize'} < 8 && $Digest::SHA::VERSION < 5.62-0.0000001;
+is is_digest_sha_broken_for_large_data(), $Config{'longsize'} < 8 && $Digest::SHA::VERSION lt '5.62';
 
 test_is_digest_sha_broken_for_large_data(4, '5.61', 1);
 
 test_is_digest_sha_broken_for_large_data(4, '5.62', 0);
-test_is_digest_sha_broken_for_large_data(4, '5.619999999999', 0);
+test_is_digest_sha_broken_for_large_data(4, '5.619999999999', 1);
 
 test_is_digest_sha_broken_for_large_data(4, '5.63', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.61', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.62', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.63', 0);
+test_is_digest_sha_broken_for_large_data(4, '5.84_01', 0);
 
 1;

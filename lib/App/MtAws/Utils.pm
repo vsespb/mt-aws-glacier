@@ -366,7 +366,7 @@ sub get_config_var($) # separate function so we can override it in tests
 
 sub is_digest_sha_broken_for_large_data
 {
-	get_config_var('longsize') < 8 && $Digest::SHA::VERSION < 5.62 - 1E-06;
+	get_config_var('longsize') < 8 && $Digest::SHA::VERSION lt '5.62';
 }
 
 1;
