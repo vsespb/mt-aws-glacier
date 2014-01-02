@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 3;
+use Test::More tests => 9;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
