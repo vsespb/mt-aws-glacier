@@ -27,6 +27,7 @@ use warnings;
 use Carp;
 
 use App::MtAws::QueueJobResult;
+use App::MtAws::RoundRobinHash;
 use base 'App::MtAws::QueueJob';
 
 sub init
@@ -36,6 +37,7 @@ sub init
 	$self->{iterator}||confess "iterator required";
 	$self->{maxcnt} ||= 30;
 	$self->{jobs} = {};
+	$self->{jobs_rr} = App::MtAws::RoundRobinHash->new();
 	$self->{job_autoincrement} = 0;
 	$self->enter('itt_only');
 }
@@ -48,6 +50,7 @@ sub get_next_itt
 	if ($next_job) {
 		my $i = ++$self->{job_autoincrement};
 		$self->{jobs}{$i} = $next_job;
+		$self->{jobs_rr}->add_to_head($i);#TODO: what if several jobs added here
 	}
 	$next_job;
 }
@@ -56,18 +59,22 @@ sub find_next_job
 {
 	my ($self) = @_;
 	my $maxcnt = $self->{maxcnt};
-	for my $job_id (keys %{$self->{jobs}}) { # Random order of jobs
+	my $i = 0;
+	my $job_id;
+	while ($job_id = $self->{jobs_rr}->current($i)) {
 		my $job = $self->{jobs}{$job_id};
 		my $res = $job->next();
-		
+
 		# uncoverable branch false count:3
 		if ($res->{code} eq JOB_WAIT) {
 			return JOB_WAIT unless --$maxcnt;
+			++$i;
 		} elsif ($res->{code} eq JOB_DONE) {
+			$self->{jobs_rr}->remove($job_id);
 			delete $self->{jobs}{$job_id};
 			return JOB_RETRY;
-
 		} elsif ($res->{code} eq JOB_OK) {
+			$self->{jobs_rr}->move_to_tail($i);
 			return task($res->{task}, sub {
 				$res->{task}{cb_task_proxy}->(@_);
 				return;
