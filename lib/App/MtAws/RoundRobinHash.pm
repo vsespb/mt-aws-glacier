@@ -29,24 +29,38 @@ use Carp;
 
 sub new
 {
-	my ($class, $hashref) = @_;
-	my $self = bless { source => $hashref, mirror => {}, indices => [], current => undef }, $class;
+	my ($class) = @_;
+	my $self = bless { hash => {}, indices => [], current => undef }, $class;
 	$self;
 }
 
-sub _addkey
+sub add
 {
 	my ($self, $key) = @_;
 	if (defined $self->{current}) {
-		splice @{ $self->{indices} }, $self->{current}++, 0, $key;
+		splice @{ $self->{indices} }, $self->{current}, 0, $key;
+		$self->next_key(1);
 	} else {
 		$self->{current} = 0;
 		push @{ $self->{indices} }, $key;
 	}
-	$self->{mirror}{$key} = 1;
+	$self->{hash}{$key} = 1;
 }
 
-sub _removekey
+sub add_to_head
+{
+	my ($self, $key) = @_;
+	if (defined $self->{current}) {
+		splice @{ $self->{indices} }, $self->{current}, 0, $key;
+		#$self->next_key(1);
+	} else {
+		$self->{current} = 0;
+		push @{ $self->{indices} }, $key;
+	}
+	$self->{hash}{$key} = 1;
+}
+
+sub remove
 {
 	my ($self, $key) = @_;
 	if (defined $self->{current}) {
@@ -62,34 +76,60 @@ sub _removekey
 		} elsif ($self->{current} > $#{$self->{indices}}) {
 			$self->{current} = 0
 		}
-		delete $self->{mirror}{$key};
+		delete $self->{hash}{$key};
 	} else {
 		confess;
 	}
 }
 
+sub _new_current
+{
+	my ($self, $offset) = @_;
+	return if $offset > @{$self->{indices}} - 1;
+	my $new_current = $self->{current}+$offset;
+	$new_current -= @{$self->{indices}} if $new_current > $#{$self->{indices}};
+	$new_current;
+}
+
 sub next_key
 {
-	my ($self) = @_;
-	for (keys %{$self->{source}}) {
-		$self->_addkey($_) unless exists $self->{mirror}{$_};
-	}
-	for (keys %{$self->{mirror}}) {
-		$self->_removekey($_) unless exists $self->{source}{$_};
-	}
+	my ($self, $offset) = @_;
 	if (defined $self->{current}) {
-		$self->{current} = 0 if ++$self->{current} > $#{$self->{indices}};
+		defined($self->{current} = $self->_new_current($offset)) or confess;
 		$self->{indices}[$self->{current}];
 	} else {
 		return;
 	}
 }
 
-sub next_value
+sub move_to_tail
 {
-	my ($self) = @_;
-	my $key = $self->next_key;
-	return defined($key) ? $self->{source}{$key} : ();
+	my ($self, $offset) = @_;
+	if ($offset) {
+		my $new_offset = $self->_new_current($offset);
+		my $el = splice @{ $self->{indices} }, $new_offset, 1;
+		$self->{current}-- if $new_offset < $self->{current};
+		splice @{ $self->{indices} }, $self->{current}, 0, $el;
+		$self->next_key(1) if @{$self->{indices}} > 1;
+	} else {
+		$self->next_key(1) if @{$self->{indices}} > 1;
+	}
 }
+
+sub current
+{
+	#use Data::Dumper; print Dumper \@_;
+	my ($self, $offset) = @_;
+	return unless defined $self->{current};
+	if ($offset) {
+		my $new_current = $self->_new_current($offset);
+		return unless defined $new_current;
+		$self->{indices}[$new_current];
+	} else {
+		$self->{indices}[$self->{current}];
+	}
+
+}
+
 
 1;

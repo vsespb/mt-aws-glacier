@@ -41,94 +41,84 @@ sub rr
 }
 
 {
-	my %h = ();
-	my $rr = rr(\%h);
-	ok ! defined $rr->next_key;
-	my @a = $rr->next_key;
-	ok !@a;
-	ok ! defined $rr->next_value;
-	my @b = $rr->next_value;
-	ok !@b;
+	my $rr = rr;
+	ok ! defined $rr->current();
+	ok ! defined $rr->current(0);
+	ok ! defined $rr->current(1);
 }
 
 {
-	my %h = ('a' => 42);
-	my $rr = rr(\%h);
-	is $rr->next_key, 'a';
-	is $rr->next_key, 'a';
+	my $rr = rr;
+	$rr->add('a');
+	is $rr->current, 'a';
+	is $rr->current, 'a';
+	is $rr->current(0), 'a';
+	ok ! defined $rr->current(1);
 }
 
 
 {
-	my %h = ();
-	my $rr = rr(\%h);
-	$h{a}=1;
-	is $rr->next_key, 'a';
-	$h{b}=1;
-	is $rr->next_key, 'b';
-	is $rr->next_key, 'a';
-	is $rr->next_key, 'b';
+	my $rr = rr;
+	$rr->add('a');
+	$rr->add('b');
+	is $rr->current, 'a';
+	is $rr->current, 'a';
+	is $rr->current(0), 'a';
+	is $rr->current(1), 'b';
+	ok ! defined $rr->current(2);
 }
 
 {
-	my %h = ();
-	my $rr = rr(\%h);
-	$h{a}=1;
-	is $rr->next_key, 'a';
-	delete $h{a};
-	ok ! defined $rr->next_key;
+	my $rr = rr;
+	$rr->add('a');
+	$rr->add('b');
+	is $rr->current, 'a';
+	is $rr->current, 'a';
+	$rr->remove('a');
+	is $rr->current, 'b';
+	is $rr->current(0), 'b';
+	ok ! defined $rr->current(1);
 }
 
 {
-	my %h = ();
-	my $rr = rr(\%h);
-	$h{a}=1;
-	is $rr->next_key, 'a';
-	$h{b}=1;
-	is $rr->next_key, 'b';
-	delete $h{a};
-	is $rr->next_key, 'b', "should work if current key removed";
-	is $rr->next_key, 'b';
+	my $rr = rr;
+	$rr->add('a');
+	$rr->add('b');
+	is $rr->current, 'a';
+	is $rr->current, 'a';
+	is $rr->current(0), 'a';
+#	exit;
+#	print Dumper $rr;
+	is $rr->current(1), 'b';
+#	print Dumper $rr;
+	$rr->next_key(1);
+#	print Dumper $rr;
+	is $rr->current, 'b';
+	is $rr->current(0), 'b';
+#	print Dumper $rr;
+	is $rr->current(1), 'a';
+#	print Dumper $rr;
+	ok ! defined $rr->current(2);
 }
 
 {
-	my %h = ();
-	my $rr = rr(\%h);
-	$h{a}=1;
-	is $rr->next_key, 'a';
-	$h{b}=1;
-	is $rr->next_key, 'b';
-	cmp_deeply $rr->{indices}, [qw/b a/];
-	delete $h{b};
-	is $rr->next_key, 'a', "should work if previous key removed";
-	is $rr->next_key, 'a';
+	my $rr = rr;
+	$rr->add('a');
+	$rr->add('b');
+	is $rr->current(0), 'a';
+	is $rr->current(1), 'b';
+	$rr->move_to_tail(0);
+	is $rr->current(0), 'b';
 }
 
 {
-	my %h = ();
-	my $rr = rr(\%h);
-	$h{a}=1;
-	is $rr->next_key, 'a';
-	$h{b}=1;
-	is $rr->next_key, 'b';
-	cmp_deeply $rr->{indices}, [qw/b a/];
-	is $rr->next_key, 'a';
-	delete $h{a};
-	is $rr->next_key, 'b', "should work if previous key removed, and previous key is above current";
-	is $rr->next_key, 'b';
+	my $rr = rr;
+	$rr->add('a');
+	$rr->add('b');
+	is $rr->current(0), 'a';
+	is $rr->current(1), 'b';
+	$rr->move_to_tail(1);
+	is $rr->current(0), 'a';
+	is $rr->current(1), 'b';
 }
-
-{
-	my %h = ();
-	my $rr = rr(\%h);
-	$h{a}=1;
-	is $rr->next_key, 'a';
-	$h{b}=1;
-	is $rr->next_key, 'b';
-	cmp_deeply $rr->{indices}, [qw/b a/];
-	is $rr->next_key, 'a';
-	delete $h{b};
-	is $rr->next_key, 'a';
-}
-
 1;
