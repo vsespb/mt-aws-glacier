@@ -45,7 +45,7 @@ sub _parse
 	my ($self) = @_;
 	return if $self->{data};
 	$self->{data} = JSON::XS->new->allow_nonref->decode(${ delete $self->{rawdata} || confess });
-	
+
 	# get rid of JSON::XS boolean object, just in case.
 	# also JSON::XS between versions 1.0 and 2.1 (inclusive) do not allow to modify this field
 	# (modification of read only error thrown)
@@ -58,6 +58,17 @@ sub _completed
 	$_->{Completed} && $_->{StatusCode} eq 'Succeeded'
 }
 
+sub _full_inventory
+{
+	!$_->{InventoryRetrievalParameters} ||
+	(
+		(! defined $_->{InventoryRetrievalParameters}{StartDate}) && # TODO: test that autovivification is not happening
+		(! defined $_->{InventoryRetrievalParameters}{EndDate}) &&
+		(! defined $_->{InventoryRetrievalParameters}{Limit}) &&
+		(! defined $_->{InventoryRetrievalParameters}{Marker})
+	)
+}
+
 sub _filter_and_return_entries
 {
 	my ($self, $filter_cb) = @_;
@@ -68,13 +79,12 @@ sub _filter_and_return_entries
 
 sub get_inventory_entries
 {
-	shift->_filter_and_return_entries(sub { _completed() && $_->{Action} eq 'InventoryRetrieval' });
+	shift->_filter_and_return_entries(sub { $_->{Action} eq 'InventoryRetrieval' && _completed() && _full_inventory() });
 }
 
 sub get_archive_entries
 {
-	shift->_filter_and_return_entries(sub { _completed() && $_->{Action} eq 'ArchiveRetrieval' });
+	shift->_filter_and_return_entries(sub { $_->{Action} eq 'ArchiveRetrieval' && _completed() });
 }
 
 1;
-
