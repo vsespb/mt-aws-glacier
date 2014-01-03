@@ -62,7 +62,7 @@ sub _full_inventory
 {
 	!$_->{InventoryRetrievalParameters} ||
 	(
-		(! defined $_->{InventoryRetrievalParameters}{StartDate}) && # TODO: test that autovivification is not happening
+		(! defined $_->{InventoryRetrievalParameters}{StartDate}) &&
 		(! defined $_->{InventoryRetrievalParameters}{EndDate}) &&
 		(! defined $_->{InventoryRetrievalParameters}{Limit}) &&
 		(! defined $_->{InventoryRetrievalParameters}{Marker})
