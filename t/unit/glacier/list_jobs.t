@@ -254,8 +254,8 @@ END
 "SHA256TreeHash":null,"SNSTopic":null,"StatusCode":"Succeeded","StatusMessage":"Succeeded",
 "VaultARN":"arn:aws:glacier:us-east-1:111111111111:vaults/test1"}],"Marker":null}
 END
-
-		my ($marker, $first, @others) = App::MtAws::Glacier::ListJobs->new($sample1)->get_inventory_entries();
+	# next line aligned to satisfy Test::Tabs
+	my ($marker, $first, @others) = App::MtAws::Glacier::ListJobs->new($sample1)->get_inventory_entries();
 		if ($key eq "NONE") {
 			is $first->{JobId}, 'Y88K008l_-X-o7bHFU6U8aKusnfPiqAUuUGu9Yl25J9ugwA86Du5BOf0Ce61GTGrcE6zcr5pIougjPomV-d2HeRmixKx';
 		} else {
