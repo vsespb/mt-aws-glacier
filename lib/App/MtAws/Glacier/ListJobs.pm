@@ -60,12 +60,14 @@ sub _completed
 
 sub _full_inventory
 {
-	!$_->{InventoryRetrievalParameters} ||
-	(
-		(! defined $_->{InventoryRetrievalParameters}{StartDate}) &&
-		(! defined $_->{InventoryRetrievalParameters}{EndDate}) &&
-		(! defined $_->{InventoryRetrievalParameters}{Limit}) &&
-		(! defined $_->{InventoryRetrievalParameters}{Marker})
+	!(
+		$_->{InventoryRetrievalParameters} &&
+		(
+			defined $_->{InventoryRetrievalParameters}{StartDate} ||
+			defined $_->{InventoryRetrievalParameters}{EndDate} ||
+			defined $_->{InventoryRetrievalParameters}{Limit} ||
+			defined $_->{InventoryRetrievalParameters}{Marker}
+		)
 	)
 }
 
