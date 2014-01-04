@@ -1,3 +1,7 @@
+  * Documentation: Fixed - installation instructions for Debian via custom repository improved - lsb_release command
+  was not a part of minimal debian installs. So some users experienced problems installing mtglacier first time. I
+  suspect also users who use FISH shell were affected.
+
 ### 2013-12-20 v1.111
 
   * Brittle test fixed (i386, old Digest::SHA)

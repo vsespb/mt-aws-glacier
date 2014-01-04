@@ -130,27 +130,6 @@ Can be installed/updated via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/
 2.	`sudo apt-get update`
 3.	`sudo apt-get install libapp-mtaws-perl`
 
-That's it.
-
-##### Debian 7 (Wheezy), Debian 8 (Jessie)
-
-Can be installed/updated via custom repository
-
-1.	`wget -O - https://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
-
-	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
-
-2. Add repository
-
-
-		echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
-
-
-3.	`sudo apt-get update`
-4.	`sudo apt-get install libapp-mtaws-perl`
-
-That's it.
-
 ##### Debian 6 (Squeeze)
 
 Can be installed/updated via custom repository
@@ -162,7 +141,7 @@ Can be installed/updated via custom repository
 2. Add repository
 
 
-		echo "deb http://dl.mt-aws.com/debian/current $(lsb_release -sc) main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+		echo "deb http://dl.mt-aws.com/debian/current squeeze main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
 
 
 3.	`sudo apt-get update`
@@ -175,6 +154,39 @@ Can be installed/updated via custom repository
 
 6. install/update `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
 
+##### Debian 7 (Wheezy)
+
+Can be installed/updated via custom repository
+
+1.	`wget -O - https://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
+
+	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
+
+2. Add repository
+
+
+		echo "deb http://dl.mt-aws.com/debian/current wheezy main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+
+
+3.	`sudo apt-get update`
+4.	`sudo apt-get install libapp-mtaws-perl`
+
+##### Debian 8 (Jessie)
+
+Can be installed/updated via custom repository
+
+1.	`wget -O - https://mt-aws.com/vsespb.gpg.key | sudo apt-key add -`
+
+	(this will add GPG key 2C00 B003 A56C 5F2A 75C4 4BF8 2A6E 0307 **D0FF 5699**)
+
+2. Add repository
+
+
+		echo "deb http://dl.mt-aws.com/debian/current jessie main"|sudo tee /etc/apt/sources.list.d/mt-aws.list
+
+
+3.	`sudo apt-get update`
+4.	`sudo apt-get install libapp-mtaws-perl`
 
 ### Manual installation
 
