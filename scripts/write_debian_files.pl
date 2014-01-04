@@ -104,6 +104,10 @@ Package: $PACKAGE
 Architecture: all
 Depends: \${misc:Depends}, \${perl:Depends}, perl, $deps
 ${recommends_line}Description: mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier
+ Amazon Glacier is an archive/backup service with very low storage price.
+ However with some caveats in usage and archive retrieval prices.
+ mt-aws-glacier is a client application for Amazon Glacier, written
+ in Perl programming language, for *nix systems.
 END
 
 	close $f or confess
