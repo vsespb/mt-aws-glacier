@@ -33,7 +33,7 @@ die "OS unsupported\n" if ($^O eq 'MSWin32');
 our $MB_VERSION = '0.36';
 
 #https://github.com/Perl-Toolchain-Gang/Module-Build/issues/40
-our $MB_BROKEN_RECOMMENDS = ($Module::Build::VERSION >= 0.42) && ($Module::Build::VERSION < 0.4203);
+our $MB_BROKEN_RECOMMENDS = ($Module::Build::VERSION ge '0.42') && ($Module::Build::VERSION lt '0.4203');
 
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
