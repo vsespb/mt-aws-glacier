@@ -1,6 +1,11 @@
-  * Documentation: Fixed - installation instructions for Debian via custom repository improved - lsb_release command
-  was not a part of minimal debian installs. So some users experienced problems installing mtglacier first time. I
-  suspect also users who use FISH shell were affected.
+  * Fixed several brittle tests introduced in v1.110, preventing mtglacier from install via CPAN on some systems:
+  - systems with perl 5.18.1, 5.18.2 and stock version of Digest::SHA
+  - old systems (i suspect RHEL5 without any CPAN modules installed) with old version of File::Temp
+  - Cygwin
+
+  * Documentation: Fixed - installation instructions for Debian via custom repository improved - lsb_release command,
+  used in install instruction, was not a part of (some?) minimal Debian installs. So some users experienced problems
+  installing mtglacier first time. I suspect users who use FISH shell were affected too.
 
 ### 2013-12-20 v1.111
 
