@@ -51,7 +51,7 @@ latin1_to_utf8() - input - byte sequence, output - byte sequence
 	Treats input data as Latin1 (ISO 8859-1) encoded sequence and converts it to UTF-8 sequence
 
 isoO8601() - input - time, output - character string
-	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC filezone. No leap seconds supported.
+	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC timezone. No leap seconds supported.
 	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
 
 {'filename': FILENAME, 'mtime': iso8601(MTIME)}
