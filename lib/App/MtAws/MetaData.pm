@@ -104,6 +104,7 @@ my $meta_coder = ($JSON::XS::VERSION ge '1.4') ?
 	JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) : # some additional abuse-protection
 	JSON::XS->new->utf8; # it's still protected by length checking below
 
+# TODO: replace "return (undef, undef)" with "return"
 sub meta_decode
 {
 	my ($str) = @_;
@@ -203,8 +204,7 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 	return unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
 	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
 	$sec = 59 if $sec == 60; # TODO: dirty workaround to avoid dealing with leap seconds
-	my $res = eval { timegm($sec,$min,$hour,$day,$month - 1,$year) };
-	return ($@ ne ' ') ? $res : undef;
+	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) };
 }
 
 1;

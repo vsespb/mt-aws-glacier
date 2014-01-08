@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 963;
+use Test::More tests => 967;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -227,6 +227,7 @@ no warnings 'redefine';
 }
 
 # test error catch while decoding
+#TODO: test what it returns in list context..
 {
 	ok !defined App::MtAws::MetaData::meta_decode('zzz'), 'should return undef if no marker present';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 zzz'), 'should return undef if utf is broken';
@@ -234,6 +235,7 @@ no warnings 'redefine';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 z+z'), 'should return undef if base64 is broken';
 	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
 	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
+	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20081515T222324Z"}')), 'should return undef if mtime is broken';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('ff')), 'should return undef if json is broken';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
 	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
@@ -247,7 +249,7 @@ no warnings 'redefine';
 	ok !defined App::MtAws::MetaData::meta_decode('  '), 'should return undef, without warning, if input is multiple spaces';
 	ok !defined App::MtAws::MetaData::meta_decode(undef), 'should return undef, without warning, if input is undef';
 	ok !defined App::MtAws::MetaData::meta_decode(), 'should return undef, without warning, if input is empty list';
-	
+
 	for (qw/mt1 mt2/) {
 		ok !defined App::MtAws::MetaData::meta_decode("$_"), 'should return undef, without warning, if input is marker plus empty string';
 		ok !defined App::MtAws::MetaData::meta_decode("$_ "), 'should return undef, without warning, if input is marker plus space';
@@ -263,9 +265,9 @@ no warnings 'redefine';
 
 	eval { App::MtAws::MetaData::meta_decode('mt2 zzz') };
 	ok $@ eq '', 'should not override eval code'; # it looks now that those tests are broken
-	
-	
-	
+
+
+
 
 }
 
@@ -324,6 +326,22 @@ no warnings 'redefine';
 	) {
 		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
 		ok($result == $_->[1], 'should parse iso8601');
+	}
+}
+
+# list vs scalar context
+
+{
+		my $date = '20121225T100000Z';
+		my $result = App::MtAws::MetaData::_parse_iso8601($date);
+		my @a = App::MtAws::MetaData::_parse_iso8601($date);
+		is $a[0], $result, "should work same way in list context";
+}
+
+# test error handling _parse_iso8601
+{
+	for (qw/20121515T100000Z 1234/) {
+		ok ! defined App::MtAws::MetaData::_parse_iso8601($_);
 	}
 }
 
