@@ -34,7 +34,7 @@ sub write_changelog($&)
 	open my $f, ">", $CHANGELOG or confess;
 	for (@{$_changelog}) {
 		next if $_->{re} && $distro !~ $_->{re};
-		next if $distro eq 'trusty' && $_->{upstream_version} le '1.110';
+		next if $distro eq 'trusty' && $_->{upstream_version} le '1.111';
 		my $version;
 		if ($DISTRO_TYPE eq 'ubuntu') {
 		    $version = "$_->{upstream_version}-0ubuntu$_->{package_version}~${distro}1~ppa1";
