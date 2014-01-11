@@ -82,7 +82,7 @@ sub write_control
 
 	my $is_lucid = $distro =~ /(lucid|squeeze)/i;
 
-	push @build_deps, 'libtest-spec-perl ', 'libhttp-daemon-perl' unless $is_lucid;
+	push @build_deps, 'libtest-spec-perl', 'libhttp-daemon-perl' unless $is_lucid;
 
 	my @deps = qw/libwww-perl libjson-xs-perl/;
 	my @recommends = $is_lucid ?  () : qw/liblwp-protocol-https-perl/;
