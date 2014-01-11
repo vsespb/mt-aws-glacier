@@ -1,0 +1,6 @@
+libapp-mtaws-perl (1.111-0ubuntu1~trusty1~ppa1) trusty; urgency=low
+
+  * Brittle test fixed (i386, old Digest::SHA)
+
+ -- Victor Efimov <victor@vsespb.ru>  Fri, 20 Dec 2013 22:35:00 +0400
+
