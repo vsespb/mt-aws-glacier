@@ -332,10 +332,10 @@ no warnings 'redefine';
 # list vs scalar context
 
 {
-		my $date = '20121225T100000Z';
-		my $result = App::MtAws::MetaData::_parse_iso8601($date);
-		my @a = App::MtAws::MetaData::_parse_iso8601($date);
-		is $a[0], $result, "should work same way in list context";
+	my $date = '20121225T100000Z';
+	my $result = App::MtAws::MetaData::_parse_iso8601($date);
+	my @a = App::MtAws::MetaData::_parse_iso8601($date);
+	is $a[0], $result, "should work same way in list context";
 }
 
 # test error handling _parse_iso8601
