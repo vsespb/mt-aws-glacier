@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 967;
+use Test::More tests => 983;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -226,28 +226,35 @@ no warnings 'redefine';
 	}
 }
 
-# test error catch while decoding
-#TODO: test what it returns in list context..
+sub test_undefined
 {
-	ok !defined App::MtAws::MetaData::meta_decode('zzz'), 'should return undef if no marker present';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 zzz'), 'should return undef if utf is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 !!!!'), 'should return undef if base64 is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 z+z'), 'should return undef if base64 is broken';
+	my ($str, $msg) = @_;
+	ok !defined App::MtAws::MetaData::meta_decode($str), "$msg (scalar)";
+	my @a = App::MtAws::MetaData::meta_decode($str);
+	cmp_deeply \@a, [undef, undef], "$msg (array)";
+}
+
+# test error catch while decoding
+{
+	test_undefined 'zzz', 'should return undef if no marker present';
+	test_undefined 'mt2 zzz', 'should return undef if utf is broken';
+	test_undefined 'mt2 !!!!', 'should return undef if base64 is broken';
+	test_undefined 'mt2 z+z', 'should return undef if base64 is broken';
 	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
 	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20081515T222324Z"}')), 'should return undef if mtime is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('ff')), 'should return undef if json is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "a", "mtime": "20081515T222324Z"}'), 'should return undef if mtime is broken';
+	test_undefined 'mt2 '._encode_base64url('ff'), 'should return undef if json is broken';
+	test_undefined 'mt2 '._encode_base64url('{ "a": 1, "x": 2}'), 'should return undef if filename and mtime missed';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "f", "x": 2}'), 'should return undef if mtime missed';
+	test_undefined 'mt2 '._encode_base64url('{ "x": 1, "mtime": 2}'), 'should return undef if filename missed';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "a", "mtime": "zzz"}'), 'should return undef if time is broken';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}'), 'should return undef if b64 too big';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}'), 'should return undef if b64 too big';
 
-	ok !defined App::MtAws::MetaData::meta_decode(''), 'should return undef, without warning, if input is empty string';
-	ok !defined App::MtAws::MetaData::meta_decode(' '), 'should return undef, without warning, if input is space';
-	ok !defined App::MtAws::MetaData::meta_decode('  '), 'should return undef, without warning, if input is multiple spaces';
-	ok !defined App::MtAws::MetaData::meta_decode(undef), 'should return undef, without warning, if input is undef';
+	test_undefined '', 'should return undef, without warning, if input is empty string';
+	test_undefined ' ', 'should return undef, without warning, if input is space';
+	test_undefined '  ', 'should return undef, without warning, if input is multiple spaces';
+	test_undefined undef, 'should return undef, without warning, if input is undef';
 	ok !defined App::MtAws::MetaData::meta_decode(), 'should return undef, without warning, if input is empty list';
 
 	for (qw/mt1 mt2/) {
