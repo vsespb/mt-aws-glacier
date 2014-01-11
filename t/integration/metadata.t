@@ -169,7 +169,7 @@ no warnings 'redefine';
 		my $result_decoded =decode("UTF-8", $result, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 		ok ($result_decoded =~ /\Q$_->[0]\E/m, "json string should contain UTF without escapes");
 
-		my ($filename, $mtime) = App::MtAws::MetaData::_decode_json($result);
+		my ($filename, $mtime) = App::MtAws::MetaData::_decode_filename_and_mtime(App::MtAws::MetaData::_decode_json($result));
 		ok ($filename eq $_->[0], 'filename match');
 		ok ($mtime == $_->[1], 'mtime match');
 	}

@@ -112,10 +112,10 @@ sub meta_decode
 	my ($marker, $b64) = split(' ', $str); # split will return empty list if string is empty or contains spaces only
 	if (defined($marker) && $marker eq 'mt1') {
 		return if !defined $b64 || length($b64) > MAX_SIZE;
-		return _decode_json(_decode_utf8(_decode_b64($b64)));
+		return _decode_filename_and_mtime(_decode_json(_decode_utf8(_decode_b64($b64))));
 	} elsif (defined($marker) && $marker eq 'mt2') {
 		return if !defined $b64 || length($b64) > MAX_SIZE;
-		return _decode_json(_decode_b64($b64));
+		return _decode_filename_and_mtime(_decode_json(_decode_b64($b64)));
 	} else {
 		return;
 	}
@@ -145,12 +145,17 @@ sub _decode_json
 {
 	my ($str) = @_;
 	return unless defined $str;
-	my $h = eval { $meta_coder->decode($str) } or return;
+	eval { $meta_coder->decode($str) }
+}
+
+sub _decode_filename_and_mtime
+{
+	my ($h) = @_;
+	return unless defined $h;
 	return unless defined($h->{filename}) && defined($h->{mtime});
 	defined(my $mtime = _parse_iso8601($h->{mtime})) or return;
 	return ($h->{filename}, $mtime);
 }
-
 
 
 sub meta_encode
