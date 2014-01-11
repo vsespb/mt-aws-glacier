@@ -231,7 +231,7 @@ sub test_undefined
 	my ($str, $msg) = @_;
 	ok !defined App::MtAws::MetaData::meta_decode($str), "$msg (scalar)";
 	my @a = App::MtAws::MetaData::meta_decode($str);
-	cmp_deeply \@a, [undef, undef], "$msg (array)";
+	is scalar @a, 0, "$msg (array)";
 }
 
 # test error catch while decoding

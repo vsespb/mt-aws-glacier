@@ -104,21 +104,20 @@ my $meta_coder = ($JSON::XS::VERSION ge '1.4') ?
 	JSON::XS->new->utf8->max_depth(1)->max_size(MAX_SIZE) : # some additional abuse-protection
 	JSON::XS->new->utf8; # it's still protected by length checking below
 
-# TODO: replace "return (undef, undef)" with "return"
 sub meta_decode
 {
 	my ($str) = @_;
-	return (undef, undef) unless defined $str; # protect from undef $str
+	return unless defined $str; # protect from undef $str
 
 	my ($marker, $b64) = split(' ', $str); # split will return empty list if string is empty or contains spaces only
 	if (defined($marker) && $marker eq 'mt1') {
-		return (undef, undef) if !defined $b64 || length($b64) > MAX_SIZE;
+		return if !defined $b64 || length($b64) > MAX_SIZE;
 		return _decode_json(_decode_utf8(_decode_b64($b64)));
 	} elsif (defined($marker) && $marker eq 'mt2') {
-		return (undef, undef) if !defined $b64 || length($b64) > MAX_SIZE;
+		return if !defined $b64 || length($b64) > MAX_SIZE;
 		return _decode_json(_decode_b64($b64));
 	} else {
-		return (undef, undef);
+		return;
 	}
 }
 
@@ -152,11 +151,10 @@ sub _decode_json
 		$meta_coder->decode($str)
 	};
 	if ($@ ne '') {
-		return (undef, undef);
+		return;
 	} else {
-		return (undef, undef) unless defined($h->{filename}) && defined($h->{mtime});
-		my $mtime = _parse_iso8601($h->{mtime});
-		return (undef, undef) unless defined $mtime;
+		return unless defined($h->{filename}) && defined($h->{mtime});
+		defined(my $mtime = _parse_iso8601($h->{mtime})) or return;
 		return ($h->{filename}, $mtime);
 	}
 }
