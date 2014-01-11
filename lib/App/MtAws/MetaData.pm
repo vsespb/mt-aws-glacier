@@ -124,39 +124,31 @@ sub meta_decode
 sub _decode_b64
 {
 	my ($str) = @_;
-	my $res = eval {
+	return eval {
 		$str =~ tr{-_}{+/};
 		my $padding_n = length($str) % 4;
 		$str .= ('=' x (4 - $padding_n) ) if $padding_n;
 		MIME::Base64::decode_base64($str);
-	};
-	return $@ eq '' ? $res : undef;
+	}; # undef if eval failed
 }
 
 sub _decode_utf8
 {
 	my ($str) = @_;
 	return unless defined $str;
-	my $res = eval {
+	return eval {
 		decode("UTF-8", $str, Encode::DIE_ON_ERR|Encode::LEAVE_SRC)
-	};
-	return $@ eq '' ? $res : undef;
+	};  # undef if eval failed
 }
 
 sub _decode_json
 {
 	my ($str) = @_;
 	return unless defined $str;
-	my $h = eval {
-		$meta_coder->decode($str)
-	};
-	if ($@ ne '') {
-		return;
-	} else {
-		return unless defined($h->{filename}) && defined($h->{mtime});
-		defined(my $mtime = _parse_iso8601($h->{mtime})) or return;
-		return ($h->{filename}, $mtime);
-	}
+	my $h = eval { $meta_coder->decode($str) } or return;
+	return unless defined($h->{filename}) && defined($h->{mtime});
+	defined(my $mtime = _parse_iso8601($h->{mtime})) or return;
+	return ($h->{filename}, $mtime);
 }
 
 
