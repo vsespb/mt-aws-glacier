@@ -128,7 +128,7 @@ sub meta_job_decode
 	my ($marker, $b64) = _split_meta($str);
 	return unless defined $marker;
 	if ($marker eq 'mtjob1') {
-		return _decode_json(_decode_b64($b64));
+		_decode_jobs(_decode_json(_decode_b64($b64)));
 	} else {
 		return;
 	}
@@ -178,6 +178,13 @@ sub _decode_filename_and_mtime
 	return ($h->{filename}, $mtime);
 }
 
+sub _decode_jobs
+{
+	my ($h) = @_;
+	return unless defined $h;
+	return unless defined($h->{type});
+	return ($h->{type});
+}
 
 sub meta_encode
 {

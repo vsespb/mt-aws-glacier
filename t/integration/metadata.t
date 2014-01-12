@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1001;
+use Test::More tests => 1003;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -372,10 +372,16 @@ ok App::MtAws::MetaData::meta_job_encode("x");
 ok ! defined App::MtAws::MetaData::meta_job_encode("x" x 1024);
 
 for (qw/full 0 x тест µ/, '') {
-	cmp_deeply App::MtAws::MetaData::meta_job_decode(App::MtAws::MetaData::meta_job_encode($_)), { type => $_}, "should decode jobs metadata";
+	cmp_deeply [App::MtAws::MetaData::meta_job_decode(App::MtAws::MetaData::meta_job_encode($_))], [$_], "should decode jobs metadata";
 }
-cmp_deeply App::MtAws::MetaData::meta_job_decode('mtjob1 eyJ0eXBlIjoiZnVsbCJ9'), { type => 'full'}, "should decode jobs metadata";
+cmp_deeply [App::MtAws::MetaData::meta_job_decode('mtjob1 eyJ0eXBlIjoiZnVsbCJ9')], ['full'], "should decode jobs metadata";
 
+{
+	my $without_type = "mtjob1 ".App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_json({ x => 'y' }));
+	ok ! defined App::MtAws::MetaData::meta_job_decode($without_type), "should return undef in case there is no type";
+	my @r = App::MtAws::MetaData::meta_job_decode($without_type);
+	is scalar @r, 0, "should return empty list in case there is no type";
+}
 
 ok ! defined App::MtAws::MetaData::meta_job_decode(undef), 'should return undef if input undef';
 ok ! defined App::MtAws::MetaData::meta_job_decode(), 'should return undef if input empty';
