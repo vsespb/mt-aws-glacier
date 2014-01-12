@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 983;
+use Test::More tests => 1001;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -363,6 +363,29 @@ sub test_undefined
 	ok !defined App::MtAws::MetaData::_decode_utf8 undef;
 	ok !$called, "_decode_utf8 retruns undef even without calling Encode::decode";
 }
+
+#
+# testing jobs metadata
+#
+
+ok App::MtAws::MetaData::meta_job_encode("x");
+ok ! defined App::MtAws::MetaData::meta_job_encode("x" x 1024);
+
+for (qw/full 0 x тест µ/, '') {
+	cmp_deeply App::MtAws::MetaData::meta_job_decode(App::MtAws::MetaData::meta_job_encode($_)), { type => $_}, "should decode jobs metadata";
+}
+cmp_deeply App::MtAws::MetaData::meta_job_decode('mtjob1 eyJ0eXBlIjoiZnVsbCJ9'), { type => 'full'}, "should decode jobs metadata";
+
+
+ok ! defined App::MtAws::MetaData::meta_job_decode(undef), 'should return undef if input undef';
+ok ! defined App::MtAws::MetaData::meta_job_decode(), 'should return undef if input empty';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob11 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mt1 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
+ok ! defined App::MtAws::MetaData::meta_job_decode('zzz'), 'should return undef if no marker present';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 zzz'), 'should return undef if utf is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 !!!!'), 'should return undef if base64 is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 z+z'), 'should return undef if base64 is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 '._encode_base64url('ff')), 'should return undef if json is broken';
 
 sub to_iso8601
 {
