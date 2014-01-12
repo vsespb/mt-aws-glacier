@@ -109,16 +109,23 @@ sub meta_decode
 	my ($str) = @_;
 	return unless defined $str; # protect from undef $str
 
-	my ($marker, $b64) = split(' ', $str); # split will return empty list if string is empty or contains spaces only
-	if (defined($marker) && $marker eq 'mt1') {
-		return if !defined $b64 || length($b64) > MAX_SIZE;
+	my ($marker, $b64) = _split_meta($str);
+	return unless defined $marker;
+	if ($marker eq 'mt1') {
 		return _decode_filename_and_mtime(_decode_json(_decode_utf8(_decode_b64($b64))));
-	} elsif (defined($marker) && $marker eq 'mt2') {
-		return if !defined $b64 || length($b64) > MAX_SIZE;
+	} elsif ($marker eq 'mt2') {
 		return _decode_filename_and_mtime(_decode_json(_decode_b64($b64)));
 	} else {
 		return;
 	}
+}
+
+sub _split_meta
+{
+	my ($str) = @_;
+	my ($marker, $b64) = split(' ', $str); # split will return empty list if string is empty or contains spaces only
+	return if !defined $b64 || length($b64) > MAX_SIZE;
+	return ($marker, $b64);
 }
 
 sub _decode_b64
