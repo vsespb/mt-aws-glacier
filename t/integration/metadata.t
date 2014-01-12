@@ -161,7 +161,7 @@ no warnings 'redefine';
 		['директория/файл',0],
 		['директория/файл','0'],
 	) {
-		my $result = App::MtAws::MetaData::_encode_json($_->[0], $_->[1]);
+		my $result = App::MtAws::MetaData::_encode_json(App::MtAws::MetaData::_encode_filename_and_mtime($_->[0], $_->[1]));
 		my $recoded = JSON::XS->new->utf8->allow_nonref->decode($result);
 		ok ($result !~ /[\r\n]/m, 'no linefeed');
 ##		ok( $result =~ /\:\s*$_->[1]/, "result should contain mtime as numeric");

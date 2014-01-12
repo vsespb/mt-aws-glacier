@@ -120,6 +120,20 @@ sub meta_decode
 	}
 }
 
+sub meta_job_decode
+{
+	my ($str) = @_;
+	return unless defined $str; # protect from undef $str
+
+	my ($marker, $b64) = _split_meta($str);
+	return unless defined $marker;
+	if ($marker eq 'mtjob1') {
+		return _decode_json(_decode_b64($b64));
+	} else {
+		return;
+	}
+}
+
 sub _split_meta
 {
 	my ($str) = @_;
@@ -169,7 +183,15 @@ sub meta_encode
 {
 	my ($relfilename, $mtime) = @_;
 	return unless defined($mtime) && defined($relfilename);
-	my $res = "mt2 "._encode_b64(_encode_json($relfilename, $mtime));
+	my $res = "mt2 "._encode_b64(_encode_json(_encode_filename_and_mtime($relfilename, $mtime)));
+	return if length($res) > MAX_SIZE;
+	return $res;
+}
+
+sub meta_job_encode
+{
+	my ($type) = @_;
+	my $res = "mtjob1 "._encode_b64(_encode_json({ type => $type }));
 	return if length($res) > MAX_SIZE;
 	return $res;
 }
@@ -189,15 +211,19 @@ sub _encode_utf8
 	return encode("UTF-8",$str,Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 }
 
+sub _encode_filename_and_mtime
+{
+	my ($relfilename, $mtime) = @_;
+	return {
+		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
+		filename => $relfilename
+	};
+}
 
 sub _encode_json
 {
-	my ($relfilename, $mtime) = @_;
-
-	return $meta_coder->encode({
-		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
-		filename => $relfilename
-	}),
+	my ($h) = @_;
+	return $meta_coder->encode($h);
 }
 
 sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
