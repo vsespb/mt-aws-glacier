@@ -1,3 +1,15 @@
+  * Workaround: 31 December 2013 Amazon introduced extension to inventory retrieval API: now one can request for just
+  a part of inventory. This, however, can break mt-aws-glacier behaviour in rare circumstances i.e. when you use 3rd
+  party app to request a part of inventory and then run mt-aws-glacier to get full inventory, mt-aws-glacier can
+  download partial inventory instead of full. (details here https://forums.aws.amazon.com/thread.jspa?threadID=143107).
+
+  Releasing workaround now - mt-aws-glacier now tried to check if this is a full inventory (it's still possible for the
+  bug to appear very-very rare circumstances i.e. if 3rd party app will request for part inventory with limit set and
+  then request for continuation without any limits).
+
+  Also, now all inventory jobs raised by mt-aws-glacier have special marker. In the future versions bug will be fully
+  fixed as all non-mtglacier jobs will be disabled.
+
   * Fixed several brittle tests introduced in v1.110, preventing mtglacier from install via CPAN on some systems:
   - systems with perl 5.18.1, 5.18.2 and stock version of Digest::SHA
   - old systems (i suspect RHEL5 without any CPAN modules installed) with old version of File::Temp
