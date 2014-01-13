@@ -276,5 +276,5 @@ END
 __END__
 
 example of real data with right job description
-"InventorySizeInBytes":null,"JobDescription":"mtjob1 eyJ0eXBlIjoiZnVsbCJ9","JobId":"IV7wu2Oc
+"InventorySizeInBytes":null,"JobDescription":"mtijob1 eyJ0eXBlIjoiZnVsbCJ9","JobId":"IV7wu2Oc
 

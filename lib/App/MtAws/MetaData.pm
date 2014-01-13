@@ -132,7 +132,7 @@ sub meta_job_decode
 
 	my ($marker, $b64) = _split_meta($str);
 	return unless defined $marker;
-	if ($marker eq 'mtjob1') {
+	if ($marker eq 'mtijob1') {
 		_decode_jobs(_decode_json(_decode_b64($b64)));
 	} else {
 		return;
@@ -203,7 +203,7 @@ sub meta_encode
 sub meta_job_encode
 {
 	my ($type) = @_;
-	my $res = "mtjob1 "._encode_b64(_encode_json({ type => $type }));
+	my $res = "mtijob1 "._encode_b64(_encode_json({ type => $type }));
 	return if length($res) > MAX_SIZE;
 	return $res;
 }

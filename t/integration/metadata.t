@@ -374,10 +374,10 @@ ok ! defined App::MtAws::MetaData::meta_job_encode("x" x 1024);
 for (qw/full 0 x тест µ/, '') {
 	cmp_deeply [App::MtAws::MetaData::meta_job_decode(App::MtAws::MetaData::meta_job_encode($_))], [$_], "should decode jobs metadata";
 }
-cmp_deeply [App::MtAws::MetaData::meta_job_decode('mtjob1 eyJ0eXBlIjoiZnVsbCJ9')], ['full'], "should decode jobs metadata";
+cmp_deeply [App::MtAws::MetaData::meta_job_decode('mtijob1 eyJ0eXBlIjoiZnVsbCJ9')], ['full'], "should decode jobs metadata";
 
 {
-	my $without_type = "mtjob1 ".App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_json({ x => 'y' }));
+	my $without_type = "mtijob1 ".App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_json({ x => 'y' }));
 	ok ! defined App::MtAws::MetaData::meta_job_decode($without_type), "should return undef in case there is no type";
 	my @r = App::MtAws::MetaData::meta_job_decode($without_type);
 	is scalar @r, 0, "should return empty list in case there is no type";
@@ -385,13 +385,13 @@ cmp_deeply [App::MtAws::MetaData::meta_job_decode('mtjob1 eyJ0eXBlIjoiZnVsbCJ9')
 
 ok ! defined App::MtAws::MetaData::meta_job_decode(undef), 'should return undef if input undef';
 ok ! defined App::MtAws::MetaData::meta_job_decode(), 'should return undef if input empty';
-ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob11 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob11 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
 ok ! defined App::MtAws::MetaData::meta_job_decode('mt1 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
 ok ! defined App::MtAws::MetaData::meta_job_decode('zzz'), 'should return undef if no marker present';
-ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 zzz'), 'should return undef if utf is broken';
-ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 !!!!'), 'should return undef if base64 is broken';
-ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 z+z'), 'should return undef if base64 is broken';
-ok ! defined App::MtAws::MetaData::meta_job_decode('mtjob1 '._encode_base64url('ff')), 'should return undef if json is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 zzz'), 'should return undef if utf is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 !!!!'), 'should return undef if base64 is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 z+z'), 'should return undef if base64 is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 '._encode_base64url('ff')), 'should return undef if json is broken';
 
 sub to_iso8601
 {
