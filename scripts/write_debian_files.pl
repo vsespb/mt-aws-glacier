@@ -132,6 +132,33 @@ sub copy_files_to_debian
 
 write_changelog $distro, sub {
 
+	entry '1.112', 1, 'Tue, 14 Jan 2014 01:34:00 +0400', <<'END';
+  * PPA package for Ubuntu 14.04 added to Ubuntu PPA (+ fixes in metadata of Debian/Ubuntu packages)
+
+  * Workaround: 31 December 2013 Amazon introduced extension to inventory retrieval API: now one can request for just
+  a part of inventory. This, however, can break mt-aws-glacier behaviour in rare circumstances i.e. when you use 3rd
+  party app to request a part of inventory and then run mt-aws-glacier to get full inventory, mt-aws-glacier can
+  download partial inventory instead of full. (details here https://forums.aws.amazon.com/thread.jspa?threadID=143107).
+
+  Releasing workaround now - mt-aws-glacier now tried to check if this is a full inventory (it's still possible for the
+  bug to appear very-very rare circumstances i.e. if 3rd party app will request for part inventory with limit set and
+  then request for continuation without any limits).
+
+  Also, now all inventory jobs raised by mt-aws-glacier have special marker. In the future versions bug will be fully
+  fixed as all non-mtglacier jobs will be disabled.
+
+  * Fixed several brittle tests introduced in v1.110, preventing mtglacier from install via CPAN on some systems:
+  - systems with perl 5.18.1, 5.18.2 and stock version of Digest::SHA
+  - old systems (i suspect RHEL5 without any CPAN modules installed) with old version of File::Temp
+  - Cygwin
+
+  * Documentation: Warning about incompatibility of metadata added to Must Read section
+
+  * Documentation: Fixed - installation instructions for Debian via custom repository improved - lsb_release command,
+  used in install instruction, was not a part of (some?) minimal Debian installs. So some users experienced problems
+  installing mtglacier first time. I suspect users who use FISH shell were affected too.
+END
+
 	entry '1.111', 1, 'Fri, 20 Dec 2013 22:35:00 +0400', <<'END';
   * Brittle test fixed (i386, old Digest::SHA)
 END

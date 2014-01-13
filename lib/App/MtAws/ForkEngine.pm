@@ -20,7 +20,7 @@
 
 package App::MtAws::ForkEngine;
 
-our $VERSION = '1.111';
+our $VERSION = '1.112';
 
 use strict;
 use warnings;

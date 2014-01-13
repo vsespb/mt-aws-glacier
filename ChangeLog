@@ -1,3 +1,7 @@
+### 2014-01-14 v1.112
+
+  * PPA package for Ubuntu 14.04 added to Ubuntu PPA (+ fixes in metadata of Debian/Ubuntu packages)
+
   * Workaround: 31 December 2013 Amazon introduced extension to inventory retrieval API: now one can request for just
   a part of inventory. This, however, can break mt-aws-glacier behaviour in rare circumstances i.e. when you use 3rd
   party app to request a part of inventory and then run mt-aws-glacier to get full inventory, mt-aws-glacier can
