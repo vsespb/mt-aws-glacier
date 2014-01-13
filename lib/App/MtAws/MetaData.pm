@@ -33,7 +33,12 @@ use POSIX;
 use Time::Local;
 
 use constant MAX_SIZE => 1024;
+use constant META_JOB_TYPE_FULL => 'full';
 
+require Exporter;
+use base qw/Exporter/;
+
+our @EXPORT = qw/meta_decode meta_job_decode meta_encode meta_job_encode META_JOB_TYPE_FULL/;
 =pod
 
 MT-AWS-GLACIER metadata format ('x-amz-archive-description' field).

@@ -30,6 +30,7 @@ use Carp;
 use JSON::XS 1.00;
 
 use App::MtAws::Utils;
+use App::MtAws::MetaData;
 
 
 sub new
@@ -71,6 +72,13 @@ sub _full_inventory
 	)
 }
 
+# TODO: yet unused. release after some time
+sub _meta_full_inventory
+{
+	my ($type) = meta_job_decode($_->{JobDescription});
+	$type && $type eq META_JOB_TYPE_FULL;
+}
+
 sub _filter_and_return_entries
 {
 	my ($self, $filter_cb) = @_;
@@ -81,7 +89,7 @@ sub _filter_and_return_entries
 
 sub get_inventory_entries
 {
-	shift->_filter_and_return_entries(sub { $_->{Action} eq 'InventoryRetrieval' && _completed() && _full_inventory() });
+	shift->_filter_and_return_entries(sub { $_->{Action} eq 'InventoryRetrieval' && _completed() && _full_inventory() }); #  && _meta_full_inventory()
 }
 
 sub get_archive_entries

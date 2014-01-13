@@ -191,11 +191,14 @@ sub retrieve_inventory
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
 	$self->{method} = 'POST';
 
+	my $job_meta = App::MtAws::MetaData::meta_job_encode(META_JOB_TYPE_FULL);
+
 	#  add "SNSTopic": "sometopic"
 	# no Test::Tabs
 	my $body = <<"END";
 {
   "Type": "inventory-retrieval",
+  "Description": "$job_meta",
   "Format": "$format"
 }
 END
