@@ -321,6 +321,9 @@ or non-empty vault in amazon console now. Also make sure you have read _all_ Ama
 * Before using this program, you should read Amazon Glacier documentation and understand, in general, Amazon Glacier workflows and entities. This documentation
 does not define any new layer of abstraction over Amazon Glacier entities.
 
+* In general, all Amazon Glacier clients store metadata (filenames, file metadata) in own formats, incompatible with each other. To restore backup made with `mt-aws-glacier` you'll
+need `mt-aws-glacier`, other software most likely will restore your data but loose filenames.
+
 * With low "partsize" option you pay a bit more (Amazon charges for each upload request)
 
 * For backup created with older versions (0.7x) of mt-aws-glacier, Journal file **required to restore backup**.

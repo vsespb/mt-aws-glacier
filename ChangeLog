@@ -15,6 +15,8 @@
   - old systems (i suspect RHEL5 without any CPAN modules installed) with old version of File::Temp
   - Cygwin
 
+  * Documentation: Warning about incompatibility of metadata added to Must Read section
+
   * Documentation: Fixed - installation instructions for Debian via custom repository improved - lsb_release command,
   used in install instruction, was not a part of (some?) minimal Debian installs. So some users experienced problems
   installing mtglacier first time. I suspect users who use FISH shell were affected too.
