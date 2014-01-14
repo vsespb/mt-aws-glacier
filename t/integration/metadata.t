@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1003;
+use Test::More tests => 1011;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -330,11 +330,21 @@ sub test_undefined
 		['2009 01-01T 00:00 00 z', 1230768000], # after leap second
 		['2009 01-01T 00:00 00.123 z', 1230768000],
 		['2009 01-01T 00:00 00,1234 z', 1230768000],
+		# more examples with leap second
+		['1998-12-31T23:59:60Z', 915148800],
+		['1999-01-01T00:00:00Z', 915148800],
+		['1998-12-31T23:59:59Z', 915148799],
+		['1998-12-31T23:59:60Z', 915148800],
 	) {
 		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
-		ok($result == $_->[1], 'should parse iso8601');
+		ok($result == $_->[1], "should parse iso8601 $result == $_->[1]");
 	}
 }
+
+
+# check time converts both ways
+
+is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_ for (-9151488000, -10, 9151488000, 1389659709);
 
 # list vs scalar context
 

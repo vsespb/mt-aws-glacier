@@ -243,8 +243,9 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 	my ($str) = @_;
 	return unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
 	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
-	$sec = 59 if $sec == 60; # TODO: dirty workaround to avoid dealing with leap seconds
-	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) };
+	my $leap = 0;
+	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
+	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
 }
 
 1;
