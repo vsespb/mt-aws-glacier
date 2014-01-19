@@ -43,7 +43,7 @@ sub _parse
 {
 	my ($self) = @_;
 
-	# Text::CSV with belo options does not seem to work for our case
+	# Text::CSV with below options does not seem to work for our case
 	# ( { binary => 1 , allow_whitespace => 1, quote_char => '"', allow_loose_quotes => 1, escape_char => "\\", auto_diag=>1} )
 	# because Amazon CSV is buggy https://forums.aws.amazon.com/thread.jspa?threadID=141807&tstart=0
 
@@ -73,18 +73,18 @@ sub _parse
 
 		} else {
 			my @x = $line =~ /$re/xm or confess "Bad CSV line [$line]";;
-			my @a;
-			for (0..$#fields) {
+			my %data;
+			@data{@fields} = map {
 				if (defined $x[$_*3+2]) {
 					my $s = $x[$_*3+2];
 					$s =~ s/\\"/"/g;
-					push @a, $s;
+					$s;
 				} elsif (defined $x[$_*3+1]) {
-					push @a, $x[$_*3+1];
+					$x[$_*3+1];
+				} else {
+					confess;
 				}
-			}
-			my %data;
-			@data{@fields} = @a;
+			} (0..$#fields);
 			push @records, \%data;
 
 		}
