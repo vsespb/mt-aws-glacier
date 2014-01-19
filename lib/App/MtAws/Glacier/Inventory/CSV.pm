@@ -31,14 +31,6 @@ use Carp;
 use App::MtAws::Glacier::Inventory ();
 use base q{App::MtAws::Glacier::Inventory};
 
-our %field_re = (
-	ArchiveId => '[A-Za-z0-9_-]+',
-	ArchiveDescription => '.*?',
-	CreationDate => '[^,]+?',
-	Size => '[^,]+?',
-	SHA256TreeHash => '[^,]+?',
-);
-
 sub new
 {
 	my $class = shift;
@@ -46,15 +38,6 @@ sub new
 	bless $self, $class;
 	$self;
 }
-
-sub _unescape
-{
-	return unless $_[0] =~ /^\"/;
-	$_[0] =~ s/^\"//;
-	$_[0] =~ s/\"$//;
-	$_[0] =~ s/\\"/"/g;
-}
-
 
 sub _parse
 {
@@ -71,17 +54,39 @@ sub _parse
 		my $line = $1;
 		if(!defined $re) {
 			@fields = split /\s*,\s*/, $line;
-			confess "Bad CSV header [$line]" unless
-				join(',', sort @fields) eq
-				join(',', sort qw/ArchiveId ArchiveDescription CreationDate Size SHA256TreeHash/);
-			_unescape($_) for (@fields);
-			my $re_str = join(',', map { "\\s*($_)\\s*" } map { $field_re{$_} or confess } @fields);
-			$re = qr/^$re_str$/;
+			for (@fields) {
+				s/^\"//;
+				s/\"$//;
+			}
+			my $re_s .= join(',', map {
+				qr{
+					\s*(
+						([^\\\"\,]*?)|
+						(?:\"(
+							(?:\\\"|\\|.)*)
+						\")
+					)\s*
+				}x;
+
+			} 1..@fields);
+			$re = qr/^$re_s$/;
+
 		} else {
+			my @x = $line =~ /$re/xm or confess "Bad CSV line [$line]";;
+			my @a;
+			for (0..$#fields) {
+				if (defined $x[$_*3+2]) {
+					my $s = $x[$_*3+2];
+					$s =~ s/\\"/"/g;
+					push @a, $s;
+				} elsif (defined $x[$_*3+1]) {
+					push @a, $x[$_*3+1];
+				}
+			}
 			my %data;
-			@data{@fields} = $line =~ $re or confess "Bad CSV line [$line]";
-			_unescape($data{$_}) for (@fields);
+			@data{@fields} = @a;
 			push @records, \%data;
+
 		}
 	}
 	$self->{data} = { ArchiveList => \@records };
