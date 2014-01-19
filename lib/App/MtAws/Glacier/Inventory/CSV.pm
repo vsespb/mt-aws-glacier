@@ -53,19 +53,19 @@ sub _parse
 	while (${$self->{rawdata}} =~ /^(.*?)\r?$/gsm) {
 		my $line = $1;
 		if(!defined $re) {
-			@fields = split /\s*,\s*/, $line;
+			@fields = split /,/, $line;
 			for (@fields) {
 				s/^\"//;
 				s/\"$//;
 			}
 			my $re_s .= join(',', map {
 				qr{
-					\s*(
+					(
 						([^\\\"\,]*?)|
 						(?:\"(
 							(?:\\\"|\\|.)*)
 						\")
-					)\s*
+					)
 				}x;
 
 			} 1..@fields);

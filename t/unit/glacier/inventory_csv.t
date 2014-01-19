@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 783;
+use Test::More tests => 805;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -41,9 +41,16 @@ sub test_full_file
 	my $a = shift;
 	my $b = shift;
 	my $data = App::MtAws::Glacier::Inventory::CSV->new($a)->get_archives();
-	#print Dumper $data, $a, $b unless is_deeply $data, $b;
 	cmp_deeply $data, $b;
 }
+
+test_full_file <<'END',
+ArchiveId ,ArchiveDescription , CreationDate,Size,SHA256TreeHash
+a,b,c,d,e
+END
+[
+	{'ArchiveId ' => 'a', 'ArchiveDescription ' =>'b', ' CreationDate'=>'c', Size => 'd', SHA256TreeHash => 'e'}
+];
 
 test_full_file <<'END',
 ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash
@@ -111,21 +118,6 @@ sub test_line
 	test_full_file($file, [$expected, $expected]);
 }
 
-
-{
-	my @a = qw/a b c d e/;
-	for my $f (0..4) {
-		my $af = $a[$f];
-		local $a[$f] = " $af";
-		test_line join(',', @a), {ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'};
-
-		local $a[$f] = "$af ";
-		test_line join(',', @a), {ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'};
-
-		local $a[$f] = " $af ";
-		test_line join(',', @a), {ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'};
-	}
-}
 
 sub test_description
 {
@@ -245,6 +237,9 @@ sub reverse_test
 }
 
 reverse_test('a', 'b');
+reverse_test('a ', ' b');
+reverse_test(' a', 'b ');
+reverse_test(' a ', ' b ');
 reverse_test('a,', 'b');
 reverse_test('\\"', '",');
 reverse_test('",', '\\"');
@@ -255,6 +250,7 @@ reverse_test('",', '\\"');
 	for my $a (@weird, '') {
 		for my $b (@weird, '') {
 			for my $c (@weird) {
+				reverse_test("$a$b$c");
 				reverse_test("$a$b$c", "$a$b$c");
 				for my $d (@weird) {
 					reverse_test("$a$b$c", "$d");
