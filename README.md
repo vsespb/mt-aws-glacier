@@ -363,37 +363,37 @@ need `mt-aws-glacier`, other software most likely will restore your data but loo
 	(you can skip any config option and specify it directly in command line)
 3. Create a vault in specified region, using Amazon Console (`myvault`) or using mtglacier
 
-		./mtglacier create-vault myvault --config=glacier.cfg
+		./mtglacier create-vault myvault --config glacier.cfg
 
 	(note that Amazon Glacier does not return error if vault already exists etc)
 
 4. Choose a filename for the Journal, for example, `journal.log`
 5. Sync your files
 
-		./mtglacier sync --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log --concurrency=3
+		./mtglacier sync --config glacier.cfg --dir /data/backup --vault myvault --journal journal.log --concurrency 3
 
 6. Add more files and sync again
 7. Check that your local files not modified since last sync
 
-		./mtglacier check-local-hash --config=glacier.cfg --dir /data/backup --journal=journal.log
+		./mtglacier check-local-hash --config glacier.cfg --dir /data/backup --journal journal.log
 
 8. Delete some files from your backup location
 9. Initiate archive restore job on Amazon side
 
-		./mtglacier restore --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log --max-number-of-files=10
+		./mtglacier restore --config glacier.cfg --dir /data/backup --vault myvault --journal journal.log --max-number-of-files 10
 
 10. Wait 4+ hours for Amazon Glacier to complete archive retrieval
 11. Download restored files back to backup location
 
-		./mtglacier restore-completed --config=glacier.cfg --dir /data/backup --vault=myvault --journal=journal.log
+		./mtglacier restore-completed --config glacier.cfg --dir /data/backup --vault myvault --journal journal.log
 
 12. Delete all your files from vault
 
-		./mtglacier purge-vault --config=glacier.cfg --vault=myvault --journal=journal.log
+		./mtglacier purge-vault --config glacier.cfg --vault myvault --journal journal.log
 
 13. Wait ~ 24-48 hours and you can try deleting your vault
 
-		./mtglacier delete-vault myvault --config=glacier.cfg
+		./mtglacier delete-vault myvault --config glacier.cfg
 
 	(note: currently Amazon Glacier does not return error if vault is not exists)
 
@@ -403,13 +403,13 @@ In case you lost your journal file, you can restore it from Amazon Glacier metad
 
 1. Run retrieve-inventory command. This will request Amazon Glacier to prepare vault inventory.
 
-		./mtglacier retrieve-inventory --config=glacier.cfg --vault=myvault
+		./mtglacier retrieve-inventory --config glacier.cfg --vault myvault
 
 2. Wait 4+ hours for Amazon Glacier to complete inventory retrieval (also note that you will get only ~24h old inventory..)
 
 3. Download inventory and export it to new journal (this sometimes can be pretty slow even if inventory is small, wait a few minutes):
 
-		./mtglacier download-inventory --config=glacier.cfg --vault=myvault --new-journal=new-journal.log
+		./mtglacier download-inventory --config glacier.cfg --vault myvault --new-journal new-journal.log
 
 
 For files created by mt-aws-glacier version 0.8x and higher original filenames will be restored. For other files archive_id will be used as filename. See Amazon Glacier metadata format for mt-aws-glacier here: [Amazon Glacier metadata format used by mt-aws glacier][Amazon Glacier metadata format used by mt-aws glacier]
@@ -645,18 +645,18 @@ There are several possible combinations of options for `upload-file`:
 
 	_Filename in Journal and Amazon Glacier metadata_: A relative path from `dir` to `filename`
 
-		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --dir /data/backup --filename=/data/backup/dir1/myfile
+		./mtglacier upload-file --config glacier.cfg --vault myvault --journal journal.log --dir /data/backup --filename /data/backup/dir1/myfile
 
 	(this will upload content of `/data/backup/dir1/myfile` to Amazon Glacier and use `dir1/myfile` as filename for Journal )
 
-		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --dir data/backup --filename=data/backup/dir1/myfile
+		./mtglacier upload-file --config glacier.cfg --vault myvault --journal journal.log --dir data/backup --filename data/backup/dir1/myfile
 
 	(Let's assume current directory is `/home`. Then this will upload content of `/home/data/backup/dir1/myfile` to Amazon Glacier and use `dir1/myfile` as filename for Journal)
 
 	NOTE: file `filename` should be inside directory `dir`
 
 	NOTE: both `-filename` and `--dir` resolved to full paths, before determining relative path from `--dir` to `--filename`. Thus yo'll get an error
-	if parent directories are unreadable. Also if you have `/dir/ds` symlink to `/dir/d3` directory, then `--dir=/dir` `--filename=/dir/ds/file` will result in relative
+	if parent directories are unreadable. Also if you have `/dir/ds` symlink to `/dir/d3` directory, then `--dir /dir` `--filename /dir/ds/file` will result in relative
 	filename `d3/file` not `ds/file`
 
 2. **--filename** and  **--set-rel-filename**
@@ -665,7 +665,7 @@ There are several possible combinations of options for `upload-file`:
 
 	_Filename in Journal and Amazon Glacier metadata_: As specified in `set-rel-filename`
 
-		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --filename=/tmp/myfile --set-rel-filename a/b/c
+		./mtglacier upload-file --config glacier.cfg --vault myvault --journal journal.log --filename /tmp/myfile --set-rel-filename a/b/c
 
 	(this will upload content of `/tmp/myfile` to Amazon Glacier and use `a/b/c` as filename for Journal )
 
@@ -683,7 +683,7 @@ There are several possible combinations of options for `upload-file`:
 	any other option to config file)
 
 
-		./mtglacier upload-file --config=glacier.cfg --vault=myvault --journal=journal.log --stdin --set-rel-filename path/to/file --check-max-file-size=131
+		./mtglacier upload-file --config glacier.cfg --vault myvault --journal journal.log --stdin --set-rel-filename path/to/file --check-max-file-size 131
 
 	(this will upload content of file read from STDIN to Amazon Glacier and use `path/to/file` as filename for Journal. )
 
@@ -728,7 +728,7 @@ Can be used with commands: `sync`, `purge-vault`, `restore`, `restore-completed 
 	Adds one or several RULES to the list of rules. One filter value can contain multiple rules, it has same effect as multiple filter values with one
 	RULE each.
 
-		--filter='RULE1 RULE2' --filter 'RULE3'
+		--filter 'RULE1 RULE2' --filter 'RULE3'
 
 	is same as
 
@@ -852,11 +852,11 @@ NOTE: Any command line option can be used in config file as well.
 
 1. `concurrency` (with `sync`, `upload-file`, `restore`, `restore-completed` commands) - number of parallel upload streams to run. (default 4)
 
-		--concurrency=4
+		--concurrency 4
 
 2. `partsize` (with `sync`, `upload-file` command) - size of file chunk to upload at once, in Megabytes. (default 16)
 
-		--partsize=16
+		--partsize 16
 
 3. `segment-size` (with `restore-completed` command) - size of download segment, in MiB  (default: none)
 
@@ -869,7 +869,7 @@ NOTE: Any command line option can be used in config file as well.
 
 4. `max-number-of-files` (with `sync` or `restore` commands) - limit number of files to sync/restore. Program will finish when reach this limit.
 
-		--max-number-of-files=100
+		--max-number-of-files 100
 
 5. `key/secret/region/vault/protocol` - you can override any option from config
 
