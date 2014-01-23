@@ -1,3 +1,14 @@
+  * Fixed: perl module Time::Local prior version 1.19 was not working correctly with dates less than 1902 or greater
+  than 2038.
+  Only RHEL/CentOS 5 (perl 5.8.8) users affected (who did not upgrade this module). This issue could result in file
+  loose it's original filename and modif. time if Journal restored from Amazon Glacier inventory. Only if file modif.
+  date's year is less than ~1902 or greater than ~ 2038.
+
+  * Compatability: RHEL/CentOS 5 users might need to upgrade Time::Local via CPAN to version 1.19+. mt-aws-glacier will
+  refuse to work with older versions.
+
+  * Cosmetic changes to docs
+
 ### 2014-01-14 v1.112
 
   * PPA package for Ubuntu 14.04 added to Ubuntu PPA (+ fixes in metadata of Debian/Ubuntu packages)

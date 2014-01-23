@@ -30,7 +30,7 @@ use Encode;
 use MIME::Base64;
 use JSON::XS;
 use POSIX;
-use Time::Local;
+use Time::Local 1.19;
 
 use constant MAX_SIZE => 1024;
 use constant META_JOB_TYPE_FULL => 'full';
@@ -179,6 +179,8 @@ sub _decode_filename_and_mtime
 	my ($h) = @_;
 	return unless defined $h;
 	return unless defined($h->{filename}) && defined($h->{mtime});
+	 # TODO: is that good to return undef everytime something missing? Maybe return error in case signature etc
+	 # correct but time is broken - it's more robust.
 	defined(my $mtime = _parse_iso8601($h->{mtime})) or return;
 	return ($h->{filename}, $mtime);
 }
