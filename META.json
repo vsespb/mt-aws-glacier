@@ -68,7 +68,7 @@
             "List::Util" : "1.11",
             "POSIX" : "0",
             "PerlIO::encoding" : "0",
-            "Time::Local" : "1.19",
+            "Time::Local" : "0",
             "Time::localtime" : "0",
             "bytes" : "0",
             "constant" : "0",

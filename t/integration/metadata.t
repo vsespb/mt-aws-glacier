@@ -23,11 +23,12 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1011;
+use Test::More tests => 1012;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::MetaData;
+use App::MtAws::Utils;
 
 use Test::MockModule;
 use MIME::Base64 qw/encode_base64/;
@@ -344,7 +345,13 @@ sub test_undefined
 
 # check time converts both ways
 
-is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_ for (-9151488000, -10, 9151488000, 1389659709);
+SKIP: {
+	skip "Y2038 not supported", 3 unless is_y2038_supported;
+	is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_
+		for (-9151488000, 9151488000, 64063267200);
+}
+is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_
+	for (-10, 1389659709);
 
 # list vs scalar context
 

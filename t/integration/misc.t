@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 11;
+use Test::More tests => 16;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
@@ -85,5 +85,41 @@ test_is_digest_sha_broken_for_large_data(8, '5.61', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.62', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.63', 0);
 test_is_digest_sha_broken_for_large_data(4, '5.84_01', 0);
+
+SKIP: {
+	skip "This installation possibly does not support Y2038", 3
+		unless
+		(
+			($^V ge v5.12.0) ||
+			(
+				(App::MtAws::Utils::get_config_var('longsize') >= 8) &&
+				($^V eq v5.8.9 or $^V ge v5.10.1)
+			)
+		);
+	ok is_y2038_supported, "make sure is_y2038_supported at least sometimes returns true";
+	# the fact it can return false as well, tested in different test. yo'll see.
+
+	{
+		my $count = 0;
+		no warnings 'redefine';
+		local *App::MtAws::Utils::timegm = sub { ++$count; die "MOCK DIE"; };
+		local $App::MtAws::Utils::_is_y2038_supported = undef;
+		is_y2038_supported();
+		my $err = $@;
+		like $err, qr/MOCK DIE/;
+		is_y2038_supported();
+		is $count, 1, "should be cached even if eval failed";
+	}
+
+}
+
+is_y2038_supported(); # should not issue warning;
+
+{
+	local $App::MtAws::Utils::_is_y2038_supported = 42;
+	is is_y2038_supported, 42, "make sure is_y2038_supported is cached";
+	is is_y2038_supported, 42, "make sure is_y2038_supported is cached. again.";
+}
+
 
 1;

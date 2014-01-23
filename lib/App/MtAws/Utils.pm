@@ -32,6 +32,7 @@ use Carp;
 use Encode;
 use LWP::UserAgent;
 use Digest::SHA;
+use Time::Local;
 use Config;
 use bytes ();
 
@@ -45,7 +46,7 @@ our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull sysreadfull_chk syswritefull_chk
 hex_dump_string is_wide_string
 characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists file_inodev
-is_digest_sha_broken_for_large_data
+is_digest_sha_broken_for_large_data is_y2038_supported
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 
@@ -367,6 +368,19 @@ sub get_config_var($) # separate function so we can override it in tests
 sub is_digest_sha_broken_for_large_data
 {
 	get_config_var('longsize') < 8 && $Digest::SHA::VERSION lt '5.62';
+}
+
+our $_is_y2038_supported = undef;
+sub is_y2038_supported
+{
+	return $_is_y2038_supported if defined $_is_y2038_supported;
+	local $SIG{__WARN__} = sub {};
+	$_is_y2038_supported = eval {
+		(timegm(0, 0, 0, 01, 01, 2038) == 2148595200) &&
+		(timegm(0, 0, 0, 01, 01, 4000) == 64063267200) &&
+		(join(",",gmtime(64063267200)) eq "0,0,0,1,1,2100,2,31,0") &&
+		(join(",",gmtime(2148595200)) eq "0,0,0,1,1,138,1,31,0")
+	} || 0;
 }
 
 1;

@@ -30,7 +30,7 @@ use Encode;
 use MIME::Base64;
 use JSON::XS;
 use POSIX;
-use Time::Local 1.19;
+use Time::Local;
 
 use constant MAX_SIZE => 1024;
 use constant META_JOB_TYPE_FULL => 'full';
