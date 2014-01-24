@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 155;
+use Test::More tests => 805;
 use Test::Deep;
 use Carp;
 use FindBin;
@@ -38,9 +38,19 @@ use Data::Dumper;
 
 sub test_full_file
 {
-	my $data = App::MtAws::Glacier::Inventory::CSV->new(shift)->get_archives();
-	cmp_deeply $data, shift;
+	my $a = shift;
+	my $b = shift;
+	my $data = App::MtAws::Glacier::Inventory::CSV->new($a)->get_archives();
+	cmp_deeply $data, $b;
 }
+
+test_full_file <<'END',
+ArchiveId ,ArchiveDescription , CreationDate,Size,SHA256TreeHash
+a,b,c,d,e
+END
+[
+	{'ArchiveId ' => 'a', 'ArchiveDescription ' =>'b', ' CreationDate'=>'c', Size => 'd', SHA256TreeHash => 'e'}
+];
 
 test_full_file <<'END',
 ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash
@@ -70,10 +80,10 @@ test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\01
 test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash",[];
 
 
-ok ! eval { test_full_file "ArchiveId,ArchiveDescription,AnotherField,CreationDate,Size,SHA256TreeHash",[]; 1 };
-like "$@", qr/Bad CSV header/i;
-ok ! eval { test_full_file "zzz",[]; 1 };
-like "$@", qr/Bad CSV header/i;
+ok eval { test_full_file "ArchiveId,ArchiveDescription,AnotherField,CreationDate,Size,SHA256TreeHash",[]; 1 },
+	"should allow new fields";
+ok eval { test_full_file "zzz",[]; 1 },
+	"should allow different fields";
 
 ok ! eval { test_full_file "ArchiveId,ArchiveDescription,CreationDate,Size,SHA256TreeHash\na,b",[]; 1 };
 like "$@", qr/Bad CSV line/i;
@@ -108,21 +118,6 @@ sub test_line
 	test_full_file($file, [$expected, $expected]);
 }
 
-
-{
-	my @a = qw/a b c d e/;
-	for my $f (0..4) {
-		my $af = $a[$f];
-		local $a[$f] = " $af";
-		test_line join(',', @a), {ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'};
-
-		local $a[$f] = "$af ";
-		test_line join(',', @a), {ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'};
-
-		local $a[$f] = " $af ";
-		test_line join(',', @a), {ArchiveId => 'a', ArchiveDescription=>'b', CreationDate=>'c', Size => 'd', SHA256TreeHash => 'e'};
-	}
-}
 
 sub test_description
 {
@@ -221,5 +216,51 @@ test_description
 test_description
 	q!"x\\"!,
 	q!x\\!;
+
+sub reverse_test
+{
+	my (@orig) = @_;
+	my @a = @orig;
+	for (@a) {
+		s/\"/\\"/g;
+		$_ = "\"$_\"" if /[",\\]/;
+	}
+	my %expected;
+	my @header;
+	my $header = join(",", map {
+		my $field = "f$_";
+		$expected{$field} = $orig[$_];
+		$field;
+	} (0..$#a));
+	my $data = join(",", @a);
+	test_full_file "$header\n$data\n", [\%expected];
+}
+
+reverse_test('a', 'b');
+reverse_test('a ', ' b');
+reverse_test(' a', 'b ');
+reverse_test(' a ', ' b ');
+reverse_test('a,', 'b');
+reverse_test('\\"', '",');
+reverse_test('",', '\\"');
+
+{
+	my @weird = (',', '"', '\\');
+
+	for my $a (@weird, '') {
+		for my $b (@weird, '') {
+			for my $c (@weird) {
+				reverse_test("$a$b$c");
+				reverse_test("$a$b$c", "$a$b$c");
+				for my $d (@weird) {
+					reverse_test("$a$b$c", "$d");
+					reverse_test("$a$b$c", "$d$a$b$c");
+					reverse_test("$a$b$c$d", "$a$b$c");
+					reverse_test("$d", "$a$b$c");
+				}
+			}
+		}
+	}
+}
 
 __END__

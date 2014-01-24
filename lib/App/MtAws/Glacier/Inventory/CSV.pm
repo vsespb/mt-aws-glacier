@@ -31,14 +31,6 @@ use Carp;
 use App::MtAws::Glacier::Inventory ();
 use base q{App::MtAws::Glacier::Inventory};
 
-our %field_re = (
-	ArchiveId => '[A-Za-z0-9_-]+',
-	ArchiveDescription => '.*?',
-	CreationDate => '[^,]+?',
-	Size => '[^,]+?',
-	SHA256TreeHash => '[^,]+?',
-);
-
 sub new
 {
 	my $class = shift;
@@ -47,20 +39,11 @@ sub new
 	$self;
 }
 
-sub _unescape
-{
-	return unless $_[0] =~ /^\"/;
-	$_[0] =~ s/^\"//;
-	$_[0] =~ s/\"$//;
-	$_[0] =~ s/\\"/"/g;
-}
-
-
 sub _parse
 {
 	my ($self) = @_;
 
-	# Text::CSV with belo options does not seem to work for our case
+	# Text::CSV with below options does not seem to work for our case
 	# ( { binary => 1 , allow_whitespace => 1, quote_char => '"', allow_loose_quotes => 1, escape_char => "\\", auto_diag=>1} )
 	# because Amazon CSV is buggy https://forums.aws.amazon.com/thread.jspa?threadID=141807&tstart=0
 
@@ -70,18 +53,40 @@ sub _parse
 	while (${$self->{rawdata}} =~ /^(.*?)\r?$/gsm) {
 		my $line = $1;
 		if(!defined $re) {
-			@fields = split /\s*,\s*/, $line;
-			confess "Bad CSV header [$line]" unless
-				join(',', sort @fields) eq
-				join(',', sort qw/ArchiveId ArchiveDescription CreationDate Size SHA256TreeHash/);
-			_unescape($_) for (@fields);
-			my $re_str = join(',', map { "\\s*($_)\\s*" } map { $field_re{$_} or confess } @fields);
-			$re = qr/^$re_str$/;
+			@fields = split /,/, $line;
+			for (@fields) {
+				s/^\"//;
+				s/\"$//;
+			}
+			my $re_s .= join(',', map {
+				qr{
+					(
+						([^\\\"\,]*?)|
+						(?:\"(
+							(?:\\\"|\\|.)*)
+						\")
+					)
+				}x;
+
+			} 1..@fields);
+			$re = qr/^$re_s$/;
+
 		} else {
+			my @x = $line =~ /$re/xm or confess "Bad CSV line [$line]";;
 			my %data;
-			@data{@fields} = $line =~ $re or confess "Bad CSV line [$line]";
-			_unescape($data{$_}) for (@fields);
+			@data{@fields} = map {
+				if (defined $x[$_*3+2]) {
+					my $s = $x[$_*3+2];
+					$s =~ s/\\"/"/g;
+					$s;
+				} elsif (defined $x[$_*3+1]) {
+					$x[$_*3+1];
+				} else {
+					confess;
+				}
+			} (0..$#fields);
 			push @records, \%data;
+
 		}
 	}
 	$self->{data} = { ArchiveList => \@records };
