@@ -345,8 +345,11 @@ sub test_undefined
 
 # check time converts both ways
 
-is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_
-	for (-9151488000, 9151488000, 64063267200, -10, 1389659709);
+is App::MtAws::MetaData::_parse_iso8601("16800101T000000Z"), -9151488000;
+is App::MtAws::MetaData::_parse_iso8601("22600101T000000Z"), 9151488000;
+is App::MtAws::MetaData::_parse_iso8601("40000201T000000Z"), 64063267200;
+is App::MtAws::MetaData::_parse_iso8601("19691231T235950Z"), -10;
+is App::MtAws::MetaData::_parse_iso8601("20140114T003509Z"), 1389659709;
 
 is App::MtAws::MetaData::_parse_iso8601("20371231T235959Z"), 2145916799;
 is App::MtAws::MetaData::_parse_iso8601("20380101T000000Z"), 2145916800;
