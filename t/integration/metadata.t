@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1012;
+use Test::More tests => 1049;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -345,13 +345,25 @@ sub test_undefined
 
 # check time converts both ways
 
-SKIP: {
-	skip "Y2038 not supported", 3 unless is_y2038_supported;
-	is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_
-		for (-9151488000, 9151488000, 64063267200);
-}
 is App::MtAws::MetaData::_parse_iso8601(strftime("%Y%m%dT%H%M%SZ", gmtime($_))), $_
-	for (-10, 1389659709);
+	for (-9151488000, 9151488000, 64063267200, -10, 1389659709);
+
+is App::MtAws::MetaData::_parse_iso8601("20371231T235959Z"), 2145916799;
+is App::MtAws::MetaData::_parse_iso8601("20380101T000000Z"), 2145916800;
+is App::MtAws::MetaData::_parse_iso8601("19011231T235959Z"), -2145916801;
+is App::MtAws::MetaData::_parse_iso8601("19020101T000000Z"), -2145916800;
+
+ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("2014%02d01T000000Z", $_)) for (1..12);
+ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("201401%02dT000000Z", $_)) for (1,2,30,31);
+ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("20140101T%02d0000Z", $_)) for (0,1,22,23);
+ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("20140101T00%02d00Z", $_)) for (0,1,58,59);
+ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("20140101T0000%02dZ", $_)) for (0,1,58,59);
+
+ok !defined App::MtAws::MetaData::_parse_iso8601("20141301T000000Z");
+ok !defined App::MtAws::MetaData::_parse_iso8601("20140132T000000Z");
+ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T240000Z");
+ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T006000Z");
+ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
 
 # list vs scalar context
 

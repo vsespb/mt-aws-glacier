@@ -97,7 +97,6 @@ SKIP: {
 			)
 		);
 	ok is_y2038_supported, "make sure is_y2038_supported at least sometimes returns true";
-	# the fact it can return false as well, tested in different test. yo'll see.
 
 	{
 		my $count = 0;

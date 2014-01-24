@@ -31,6 +31,7 @@ use MIME::Base64;
 use JSON::XS;
 use POSIX;
 use Time::Local;
+use App::MtAws::Utils;
 
 use constant MAX_SIZE => 1024;
 use constant META_JOB_TYPE_FULL => 'full';
@@ -247,7 +248,18 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
 	my $leap = 0;
 	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
-	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
+	if (is_y2038_supported || (($year > 1901) && ($year < 2038)) ) {
+		eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
+	} else { # some Y2038 bugs in timegm, workaround it
+		return unless
+			($month >= 1 && $month <= 12) &&
+			($day >= 1 && $day <= 31) &&
+			($hour >= 0 && $hour <= 23) &&
+			($min >= 0 && $min <= 59) &&
+			($sec >= 0 && $sec <= 59); # rought validation
+		eval { Time::Local::timegm_nocheck($sec,$min,$hour,$day,$month - 1,$year) + $leap };
+	}
+
 }
 
 1;
