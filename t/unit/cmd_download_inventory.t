@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 12;
+use Test::More tests => 6;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -100,24 +100,27 @@ my $now = time();
 	}
 	);
 	# check that we support datetime past Y2038
-	assert_entry(
-	{
-		ArchiveId => $data->{archive_id},
-		ArchiveDescription => App::MtAws::MetaData::meta_encode($data->{relfilename}, 64063267200), # Year 4000!
-		CreationDate => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
-		Size => $data->{size},
-		SHA256TreeHash => $data->{treehash},
-	},
-	{
-		time => $now,
-		type => 'CREATED',
-		treehash => $data->{treehash},
-		mtime => 64063267200,
-		archive_id => $data->{archive_id},
-		relfilename => $data->{relfilename},
-		size => $data->{size},
+	SKIP: {
+		skip "not supported under 32bit os", 2 unless !is_64bit_os;
+		assert_entry(
+		{
+			ArchiveId => $data->{archive_id},
+			ArchiveDescription => App::MtAws::MetaData::meta_encode($data->{relfilename}, 64063267200), # Year 4000!
+			CreationDate => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+			Size => $data->{size},
+			SHA256TreeHash => $data->{treehash},
+		},
+		{
+			time => $now,
+			type => 'CREATED',
+			treehash => $data->{treehash},
+			mtime => 64063267200,
+			archive_id => $data->{archive_id},
+			relfilename => $data->{relfilename},
+			size => $data->{size},
+		}
+		);
 	}
-	);
 }
 
 sub assert_entry
@@ -140,7 +143,7 @@ sub assert_entry_json
 	no warnings 'redefine';
 	local *App::MtAws::Journal::add_entry = sub {
 		my (undef, $e) = @_;
-		ok cmp_deeply $e, $out;
+		cmp_deeply $e, $out;
 	};
 	App::MtAws::Command::DownloadInventory::parse_and_write_journal($J, INVENTORY_TYPE_JSON, \$json);
 }
@@ -162,7 +165,7 @@ END
 	no warnings 'redefine';
 	local *App::MtAws::Journal::add_entry = sub {
 		my (undef, $e) = @_;
-		ok cmp_deeply $e, $out;
+		cmp_deeply $e, $out;
 	};
 	App::MtAws::Command::DownloadInventory::parse_and_write_journal($J, INVENTORY_TYPE_CSV, \$csv);
 }
