@@ -20,6 +20,9 @@
 
   * Documentation: Also, note about Y2038 added to "Limitationss" section.
 
+  * CSV inventory parsing - making it 30% slower, but more consistent with what Amazon documented about its format
+  https://forums.aws.amazon.com/thread.jspa?threadID=141807&tstart=0
+
   * Cosmetic changes to docs
 
 ### 2014-01-14 v1.112
