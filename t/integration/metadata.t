@@ -371,6 +371,7 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
 
 ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should disallow years before 1000";
 
+# test correctness and consistency of _parse_iso8601 and _to_iso8601
 {
 	my @a;
 	for my $year (1000..1100, 1800..1850, 1890..1910, 1970..2040, 2090..2106,

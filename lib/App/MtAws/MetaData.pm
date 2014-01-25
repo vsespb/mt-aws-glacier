@@ -58,7 +58,8 @@ latin1_to_utf8() - input - byte sequence, output - byte sequence
 
 isoO8601() - input - time, output - character string
 	ISOO8601 time in the following format YYYYMMDDTHHMMSSZ. Only UTC timezone. No leap seconds supported.
-	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds are not supported (yet).
+	Supported year range is from 1000 to 9999
+	When encoding isoO8601() mt-aws-glacier will not store leap seconds. When decoding from isoO8601 leap seconds will be dropped.
 
 {'filename': FILENAME, 'mtime': iso8601(MTIME)}
 	Hash with two keys: 'filename' and 'mtime'. Corresponds to JSON 'Object'.
@@ -71,8 +72,8 @@ FILENAME (character string)
 	with known encoding.
 MTIME (time)
 	is file last modification time with 1 second resolution. Can be below Y1970.
-	Internal representation is epoch time, so it can be any valid epoch time (including negative values and zero). On some system it's
-	32bit signed, on others 64bit signed, for some filesystems it's 34 bit signed etc.
+	Internal representation is epoch time, so it can be any valid epoch time (including negative values and zero).Supported
+	range - from year 1000 to 9999 (inclusive)
 
 Version 'mt2'
 =====================
