@@ -253,7 +253,7 @@ sub is_leap
 	($_[0] % 400 ==0) || ( ($_[0] % 100 != 0) && ($_[0] % 4 == 0) )
 }
 
-our %_leap_cache = {};
+our %_leap_cache;
 sub number_of_leap_years
 {
 	my ($y1, $y2, $m) = @_;
