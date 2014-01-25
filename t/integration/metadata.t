@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1051;
+use Test::More tests => 1054;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -284,6 +284,7 @@ sub test_undefined
 # test error cacth while encoding
 {
 	ok defined App::MtAws::MetaData::meta_encode('filename', -1), 'should not catch negative mtime';
+	ok !defined App::MtAws::MetaData::meta_encode('filename', -30639629694), 'should disallow time before Y1000';
 	ok !defined App::MtAws::MetaData::meta_encode('filename'), 'should catche missed mtime';
 	ok !defined App::MtAws::MetaData::meta_encode(undef, 4), 'should catche missed filename';
 	ok defined App::MtAws::MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
@@ -370,6 +371,8 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T006000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
 
 ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should disallow years before 1000";
+ok defined App::MtAws::MetaData::_to_iso8601(253402300799);
+ok !defined App::MtAws::MetaData::_to_iso8601(253402300799+1), "should disallow years after 9999";
 
 # test correctness and consistency of _parse_iso8601 and _to_iso8601
 {
@@ -387,6 +390,7 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should di
 					my $str = sprintf("%04d%02d%02dT%sZ", $year, $month, $day, $time);
 					my $r = App::MtAws::MetaData::_parse_iso8601($str);
 					my $str_a = App::MtAws::MetaData::_to_iso8601($r); # reverse
+					die "$str, $r" unless defined $str_a;
 					die "$str_a $str" unless $str_a eq $str;
 					die $r unless $r =~ /^\-?\d+$/; # numbers only, no floating point
 					push @a, $r;

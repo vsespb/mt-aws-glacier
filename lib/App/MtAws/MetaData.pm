@@ -199,7 +199,8 @@ sub meta_encode
 {
 	my ($relfilename, $mtime) = @_;
 	return unless defined($mtime) && defined($relfilename);
-	my $res = "mt2 "._encode_b64(_encode_json(_encode_filename_and_mtime($relfilename, $mtime)));
+	defined(my $res = _encode_b64(_encode_json(_encode_filename_and_mtime($relfilename, $mtime)))) or return;
+	$res = "mt2 ".$res;
 	return if length($res) > MAX_SIZE;
 	return $res;
 }
@@ -215,6 +216,7 @@ sub meta_job_encode
 sub _encode_b64
 {
 	my ($str) = @_;
+	return unless defined $str;
 	my $res = MIME::Base64::encode_base64($str,'');
 	$res =~ s/=+\z//;
 	$res =~ tr{+/}{-_};
@@ -230,8 +232,9 @@ sub _encode_utf8
 sub _encode_filename_and_mtime
 {
 	my ($relfilename, $mtime) = @_;
+	defined(my $iso = _to_iso8601($mtime)) or return;
 	return {
-		mtime => _to_iso8601($mtime),
+		mtime => $iso,
 		filename => $relfilename
 	};
 }
@@ -239,6 +242,7 @@ sub _encode_filename_and_mtime
 sub _encode_json
 {
 	my ($h) = @_;
+	return unless defined $h;
 	return $meta_coder->encode($h);
 }
 
@@ -271,7 +275,9 @@ sub number_of_leap_years
 
 sub _to_iso8601
 {
-	strftime("%Y%m%dT%H%M%SZ", gmtime(shift()));
+	my ($time) = @_;
+	return if $time < -30610224000 || $time > 253402300799;
+	strftime("%Y%m%dT%H%M%SZ", gmtime($time));
 }
 
 sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
