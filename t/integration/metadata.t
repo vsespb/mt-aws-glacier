@@ -32,6 +32,7 @@ use App::MtAws::Utils;
 
 use Test::MockModule;
 use MIME::Base64 qw/encode_base64/;
+use Digest::SHA qw/sha256_hex/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
@@ -369,18 +370,22 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T006000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
 
 {
-	use Digest::SHA qw/sha256_hex/;
 	my @a;
-	for my $year (0..9999) {
-		for my $month (1..12) {
-			for my $day (0..28, ($month == 2 && $year % 4 == 0 && (($year - ($year % 100)) % 400) == 0) ? (29) : () ) {
+	for my $year (0..10,90..110,180..210, 350..360, 900..1100, 1800..1850, 1890..1910, 1970..2040, 2090..2106,
+			(map { $_* 100-2, $_* 100-1, $_* 100, $_*100+1, $_*100+2 } 25..99), 9901..9999)
+	{
+		for my $month (1,2,3,12) {
+			for my $day (1..2, 28, ($month == 2 && ( ($year % 100 == 0) ? ($year % 400 == 0) : ($year % 4 == 0)  ) ) ? (29) : () ) {
 				for my $time ("000000", "235959") {
-					push @a, App::MtAws::MetaData::_parse_iso8601(sprintf("%04d%02d%02dT%s", $year, $month, $day, $time))
+					my $str = sprintf("%04d%02d%02dT%sZ", $year, $month, $day, $time);
+					my $r = App::MtAws::MetaData::_parse_iso8601($str);
+					die $r unless $r =~ /^\-?\d+$/; # numbers only, no floating point
+					push @a, $r;
 				}
 			}
 		}
 	}
-	is sha256_hex(join(",", @a)), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+	is sha256_hex(join(",", @a)), '3676ede53ea3b3c08d6766966f6e4877ef3a954dfc1ea42dd7925141b0370111';
 }
 
 # list vs scalar context

@@ -241,6 +241,33 @@ sub _encode_json
 	return $meta_coder->encode($h);
 }
 
+
+# iso8601 time parsing
+
+use constant SEC_PER_DAY => 86400;
+use constant YEARS_PER_CENTURY => 100;
+use constant DAYS_PER_YEAR => 365;
+
+sub is_leap
+{
+	($_[0] % 400 ==0) || ( ($_[0] % 100 != 0) && ($_[0] % 4 == 0) )
+}
+
+our %_leap_cache = {};
+sub number_of_leap_years
+{
+	my ($y1, $y2, $m) = @_;
+	$_leap_cache{$y1,$y2,$m} ||= do {
+		my $cnt = 0;
+		for ($y1+1..$y2-1) {
+			$cnt++ if is_leap($_);
+		}
+		$cnt++ if ($m < 3 ) && is_leap($y1);
+		$cnt++ if ($m >= 3) && is_leap($y2);
+		$cnt;
+	}
+}
+
 sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
 {
 	my ($str) = @_;
@@ -249,16 +276,17 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 	my $leap = 0;
 	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
 
-	if (!is_y2038_supported && (($year <= 1901) || ($year >= 2038)) ) { # some Y2038 bugs in timegm, workaround it
+	# some Y2038 bugs in timegm, workaround it. we need consistency across platforms and perl versions when parsing vault metadata
+	if ($year < 1000 || ( !is_y2038_supported && (($year <= 1901) || ($year >= 2038)) )) {
 		while ($year <= 1901) {
-			$year += 100;
-			$leap -= 86400 if (($year - ($year % 100)) % 400) == 0;
-			$leap -= 3155760000-86400;
+			$leap -= number_of_leap_years($year, $year + YEARS_PER_CENTURY, $month)*SEC_PER_DAY;
+			$year += YEARS_PER_CENTURY;
+			$leap -= YEARS_PER_CENTURY*SEC_PER_DAY*DAYS_PER_YEAR;
 		}
 		while ($year >= 2038) {
-			$leap += 86400 if (($year - ($year % 100)) % 400) == 0;
-			$year -= 100;
-			$leap += 3155760000-86400;
+			$leap += number_of_leap_years($year - YEARS_PER_CENTURY, $year, $month)*SEC_PER_DAY;
+			$year -= YEARS_PER_CENTURY;
+			$leap += YEARS_PER_CENTURY*SEC_PER_DAY*DAYS_PER_YEAR;
 		}
 	}
 	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
