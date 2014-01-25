@@ -1,12 +1,24 @@
-  * Fixed: perl module Time::Local prior version 1.19 was not working correctly with dates less than 1902 or greater
-  than 2038.
-  Only RHEL/CentOS 5 (perl 5.8.8) users affected (who did not upgrade this module). This issue could result in file
-  loose it's original filename and modif. time if Journal restored from Amazon Glacier inventory. Only if file modif.
-  date's year is less than ~1902 or greater than ~ 2038.
-  Reported RHEL bug https://bugzilla.redhat.com/show_bug.cgi?id=1057047
+  * Fixed: Y2038 problem with file modification time in metadata (i.e. journal and Amazon Glacier servers).
+  Some OSes and filesystems don't support years after 2038 (i.e. Linux 32bit)
+  Some perl versions don't support handling dates after 2038 (i.e. 32bit perl before 5.12 and
+  64bit perl 5.8.8 (RHEL5), 5.10.0 (some SUSE))
 
-  * Compatability: RHEL/CentOS 5 users might need to upgrade Time::Local via CPAN to version 1.19+ if non-CPAN
-  installation of mt-aws-glacier is used. mt-aws-glacier will refuse to work with older versions.
+  There is not much sense in having files with file modification after Y2038 or before Y1902, however such file can
+  appear in filesystems due to bugs in other software etc.
+
+  Fixing now inconsistency in behaviour with such metadata between different OS/perl versions.
+
+  After this fix file modification time will be restored correctly from Amazon servers to journal (via download-inventory)
+  on all platforms, for all years in range 1000-9999.
+
+  However if your OS/filesystem does not work with such dates, anything except correct date in journal file
+  is not guaranteed.
+
+  Before this fix, such dates could result in lost of filenames and modification time in journal (filename replaced
+  with random token) when restoring inventory (you are affected if you uploaded file on 64bit system with date
+  after Y2038, but then restored on 32bit system).
+
+  * Documentation: Also, note about Y2038 added to "Limitationss" section.
 
   * Cosmetic changes to docs
 

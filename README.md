@@ -953,7 +953,14 @@ which are made of random bytes/garbage is not supported. usually it's not a prob
 
 * Length of relative filenames. Currently limit is about 700 ASCII characters or 350 2-byte UTF-8 character (.. or 230 3-byte characters).
 
+* File modification time should be in range from year 1000 to year 9999.
+
 (NOTE: if above requirements are not met, error will be thrown)
+
+* If you uploaded files with file modifications dates past Y2038 on system which supports it, and then restored on system
+which does not (like Linux 32bit), resulting file timestamp (of course) wrong and also
+unpredictible (undefined behaviour). The only thing is guaranteed that if you restore journal from Amazon servers on affected (i.e. 32bit)
+machine - journal will contain correct timestamp (same as on 64bit).
 
 * Memory usage (for 'sync') formula is ~ min(NUMBER_OF_FILES_TO_SYNC, max-number-of-files) + partsize*concurrency
 
