@@ -230,7 +230,7 @@ sub _encode_filename_and_mtime
 {
 	my ($relfilename, $mtime) = @_;
 	return {
-		mtime => strftime("%Y%m%dT%H%M%SZ", gmtime($mtime)),
+		mtime => _to_iso8601($mtime),
 		filename => $relfilename
 	};
 }
@@ -268,16 +268,22 @@ sub number_of_leap_years
 	}
 }
 
+sub _to_iso8601
+{
+	strftime("%Y%m%dT%H%M%SZ", gmtime(shift()));
+}
+
 sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
 {
 	my ($str) = @_;
 	return unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
 	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
+	return if $year < 1000;
 	my $leap = 0;
 	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
 
 	# some Y2038 bugs in timegm, workaround it. we need consistency across platforms and perl versions when parsing vault metadata
-	if ($year < 1000 || ( !is_y2038_supported && (($year <= 1901) || ($year >= 2038)) )) {
+	if (!is_y2038_supported && (($year <= 1901) || ($year >= 2038)) ) {
 		while ($year <= 1901) {
 			$leap -= number_of_leap_years($year, $year + YEARS_PER_CENTURY, $month)*SEC_PER_DAY;
 			$year += YEARS_PER_CENTURY;
