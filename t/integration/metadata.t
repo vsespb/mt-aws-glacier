@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1050;
+use Test::More tests => 1051;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -369,9 +369,11 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T240000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T006000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
 
+ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should disallow years before 1000";
+
 {
 	my @a;
-	for my $year (0..10,90..110,180..210, 350..360, 900..1100, 1800..1850, 1890..1910, 1970..2040, 2090..2106,
+	for my $year (1000..1100, 1800..1850, 1890..1910, 1970..2040, 2090..2106,
 		(map { $_* 100-2, $_* 100-1, $_* 100, $_*100+1, $_*100+2 } 25..99), 9901..9999)
 	{
 		for my $month (1,2,3,12) {
@@ -379,13 +381,15 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
 				for my $time ("000000", "235959") {
 					my $str = sprintf("%04d%02d%02dT%sZ", $year, $month, $day, $time);
 					my $r = App::MtAws::MetaData::_parse_iso8601($str);
+					my $str_a = App::MtAws::MetaData::_to_iso8601($r); # reverse
+					die "$str_a $str" unless $str_a eq $str;
 					die $r unless $r =~ /^\-?\d+$/; # numbers only, no floating point
 					push @a, $r;
 				}
 			}
 		}
 	}
-	is sha256_hex(join(",", @a)), '3676ede53ea3b3c08d6766966f6e4877ef3a954dfc1ea42dd7925141b0370111';
+	is sha256_hex(join(",", @a)), 'c9abe2c98f980b0749c66b7d7da4278a375428a0d500d4cd26d48dda0c559fd0';
 }
 
 # list vs scalar context
