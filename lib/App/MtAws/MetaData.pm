@@ -251,6 +251,17 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 	if (is_y2038_supported || (($year > 1901) && ($year < 2038)) ) {
 		eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
 	} else { # some Y2038 bugs in timegm, workaround it
+		while ($year <= 1901) {
+			$year += 100;
+			$leap -= 86400 if (($year - ($year % 100)) % 400) == 0;
+			$leap -= 3155760000-86400;
+		}
+		while ($year >= 2038) {
+			$leap += 86400 if (($year - ($year % 100)) % 400) == 0;
+			$year -= 100;
+			$leap += 3155760000-86400;
+		}
+		return eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };#3155760000-86400
 		return unless
 			($month >= 1 && $month <= 12) &&
 			($day >= 1 && $day <= 31) &&

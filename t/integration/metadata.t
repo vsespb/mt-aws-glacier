@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1049;
+use Test::More tests => 1050;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -367,6 +367,21 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("20140132T000000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T240000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T006000Z");
 ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
+
+{
+	use Digest::SHA qw/sha256_hex/;
+	my @a;
+	for my $year (0..9999) {
+		for my $month (1..12) {
+			for my $day (0..28, ($month == 2 && $year % 4 == 0 && (($year - ($year % 100)) % 400) == 0) ? (29) : () ) {
+				for my $time ("000000", "235959") {
+					push @a, App::MtAws::MetaData::_parse_iso8601(sprintf("%04d%02d%02dT%s", $year, $month, $day, $time))
+				}
+			}
+		}
+	}
+	is sha256_hex(join(",", @a)), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+}
 
 # list vs scalar context
 
