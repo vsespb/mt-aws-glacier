@@ -249,9 +249,7 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 	my $leap = 0;
 	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
 
-	if (is_y2038_supported || (($year > 1901) && ($year < 2038)) ) {
-		eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
-	} else { # some Y2038 bugs in timegm, workaround it
+	if (!is_y2038_supported && (($year <= 1901) || ($year >= 2038)) ) { # some Y2038 bugs in timegm, workaround it
 		while ($year <= 1901) {
 			$year += 100;
 			$leap -= 86400 if (($year - ($year % 100)) % 400) == 0;
@@ -262,9 +260,8 @@ sub _parse_iso8601 # Implementing this as I don't want to have non-core dependen
 			$year -= 100;
 			$leap += 3155760000-86400;
 		}
-		eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
 	}
-
+	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
 }
 
 1;
