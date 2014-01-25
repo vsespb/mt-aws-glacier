@@ -29,7 +29,6 @@ use Encode;
 
 use MIME::Base64;
 use JSON::XS;
-use POSIX;
 use Time::Local;
 use App::MtAws::Utils;
 
@@ -277,7 +276,9 @@ sub _to_iso8601
 {
 	my ($time) = @_;
 	return if $time < -30610224000 || $time > 253402300799;
-	strftime("%Y%m%dT%H%M%SZ", gmtime($time));
+	my ($sec,$min,$hour,$mday,$mon,$year) = gmtime($time);
+	 # strftime works bad on 32bit with Y2038 dates
+	sprintf("%04d%02d%02dT%02d%02d%02dZ", 1900+$year, $mon+1, $mday, $hour, $min, $sec);
 }
 
 sub _parse_iso8601 # Implementing this as I don't want to have non-core dependencies
