@@ -81,9 +81,10 @@ sub create_multipart_upload
 	# currently meat_encode only returns undef if filename is too big
 	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime)) or
 		die exception 'file_name_too_big' =>
-		"Relative filename %string filename% is too big to store in Amazon Glacier metadata. ".
-		"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.",
-		filename => $relfilename;
+		"Either relative filename %string filename% is too big to store in Amazon Glacier metadata. ".
+		"(Limit is about 700 ASCII characters or 350 2-byte UTF-8 characters) or file modification time %string mtime% out of range".
+		"(Only years from 1000 to 9999 are supported)",
+		filename => $relfilename, mtime => $mtime; # TODO: more clear error
 	$self->add_header('x-amz-archive-description', $self->{description});
 
 	my $resp = $self->perform_lwp();

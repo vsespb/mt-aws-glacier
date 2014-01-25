@@ -106,12 +106,15 @@ describe "create_multipart_upload" => sub {
 	it "should throw exception if filename too long" => sub {
 		my $g = App::MtAws::GlacierRequest->new({%common_options});
 		my $filename = 'x' x 2000;
-		ok ! defined eval { $g->create_multipart_upload(2, $filename, time()); 1 };
+		my $t = time();
+		ok ! defined eval { $g->create_multipart_upload(2, $filename, $t); 1 };
 		ok is_exception('file_name_too_big');
 		is get_exception->{filename}, $filename;
 		is exception_message(get_exception),
-			"Relative filename \"$filename\" is too big to store in Amazon Glacier metadata. ".
-			"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.";
+			"Either relative filename \"$filename\" is too big to store in Amazon Glacier metadata. ".
+			"(Limit is about 700 ASCII characters or 350 2-byte UTF-8 characters)".
+			" or file modification time \"$t\" out of range".
+			"(Only years from 1000 to 9999 are supported)";
 	};
 };
 
