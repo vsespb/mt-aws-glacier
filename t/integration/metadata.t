@@ -23,12 +23,13 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1054;
+use Test::More tests => 1057;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
+use Carp;
 
 use Test::MockModule;
 use MIME::Base64 qw/encode_base64/;
@@ -401,6 +402,28 @@ ok !defined App::MtAws::MetaData::_to_iso8601(253402300799+1), "should disallow 
 		}
 	}
 	is sha256_hex(join(",", @a)), '49c852f65d2d9ceeccdc02f64214f1a2d249d00337bf669288c34a603ff7acbf', "hardcoded checksum";
+}
+
+# test if filesystem/OS supports particular time range, _to_iso8601 supports it too.
+{
+	my $mtroot = get_temp_dir();
+	my $filename = "$mtroot/f1";
+	open my $f, ">", $filename or confess;
+	close $f or confess;
+	for (
+		["16800101T000000Z", -9151488000],
+		["22600101T000000Z", 9151488000],
+		["40000201T000000Z", 64063267200],
+	) {
+		my ($strtime, $numtime) = ($_->[0], $_->[1]);
+		eval { utime time(), $numtime, $filename; };
+		my $got = eval { file_mtime($filename); };
+		SKIP: {
+			skip "unable to set file mtime=$numtime", 1 unless $got == $numtime;
+			is App::MtAws::MetaData::_to_iso8601($got), $strtime;
+		}
+	}
+	unlink $filename;
 }
 
 # list vs scalar context
