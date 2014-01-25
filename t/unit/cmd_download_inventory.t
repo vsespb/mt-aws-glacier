@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 8;
+use Test::More tests => 12;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -94,6 +94,25 @@ my $now = time();
 		type => 'CREATED',
 		treehash => $data->{treehash},
 		mtime => $now - 111,
+		archive_id => $data->{archive_id},
+		relfilename => $data->{relfilename},
+		size => $data->{size},
+	}
+	);
+	# check that we support datetime past Y2038
+	assert_entry(
+	{
+		ArchiveId => $data->{archive_id},
+		ArchiveDescription => App::MtAws::MetaData::meta_encode($data->{relfilename}, 64063267200), # Year 4000!
+		CreationDate => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
+		Size => $data->{size},
+		SHA256TreeHash => $data->{treehash},
+	},
+	{
+		time => $now,
+		type => 'CREATED',
+		treehash => $data->{treehash},
+		mtime => 64063267200,
 		archive_id => $data->{archive_id},
 		relfilename => $data->{relfilename},
 		size => $data->{size},
