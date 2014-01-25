@@ -377,7 +377,11 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should di
 		(map { $_* 100-2, $_* 100-1, $_* 100, $_*100+1, $_*100+2 } 25..99), 9901..9999)
 	{
 		for my $month (1,2,3,12) {
-			for my $day (1..2, 28, ($month == 2 && ( ($year % 100 == 0) ? ($year % 400 == 0) : ($year % 4 == 0)  ) ) ? (29) : () ) {
+			for my $day (
+				1..2, 28,
+				($month == 2 && ( ($year % 100 == 0) ? ($year % 400 == 0) : ($year % 4 == 0)  ) ) ? (29) : (),
+				($month == 12 || $month == 1) ? (30, 31) : ()
+			) {
 				for my $time ("000000", "235959") {
 					my $str = sprintf("%04d%02d%02dT%sZ", $year, $month, $day, $time);
 					my $r = App::MtAws::MetaData::_parse_iso8601($str);
@@ -389,7 +393,7 @@ ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should di
 			}
 		}
 	}
-	is sha256_hex(join(",", @a)), 'c9abe2c98f980b0749c66b7d7da4278a375428a0d500d4cd26d48dda0c559fd0';
+	is sha256_hex(join(",", @a)), '49c852f65d2d9ceeccdc02f64214f1a2d249d00337bf669288c34a603ff7acbf', "hardcoded checksum";
 }
 
 # list vs scalar context
