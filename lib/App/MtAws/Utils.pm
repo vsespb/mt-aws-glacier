@@ -372,7 +372,8 @@ sub is_64bit_os
 
 sub is_64bit_time
 {
-	is_64bit_os && ($^O ne 'openbsd')
+	is_64bit_os && ($^O =~ /^(freebsd|gnukfreebsd|netbsd|midnightbsd|linux|darwin|solaris)$/) # no OpenBSD for sure
+	# not sure about cygwin, solaris
 }
 
 
