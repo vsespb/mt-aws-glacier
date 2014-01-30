@@ -71,29 +71,33 @@ sub epoch_to_iso8601
 	strftime("%Y%m%dT%H%M%SZ", gmtime($time));
 }
 
+our %_year_month_shift;
+
 sub iso8601_to_epoch
 {
 	my ($str) = @_;
 	return unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
 	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
 	return if $year < 1000;
-	my $leap = 0;
+	my ($leap, $delta) = (0, 0);
 	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
 
 	# some Y2038 bugs in timegm, workaround it. we need consistency across platforms and perl versions when parsing vault metadata
 	if (!is_y2038_supported && (($year <= 1901) || ($year >= 2038)) ) {
-		while ($year <= 1901) {
-			$leap -= number_of_leap_years($year, $year + YEARS_PER_CENTURY, $month)*SEC_PER_DAY;
-			$year += YEARS_PER_CENTURY;
-			$leap -= YEARS_PER_CENTURY*SEC_PER_DAY*DAYS_PER_YEAR;
-		}
-		while ($year >= 2038) {
-			$leap += number_of_leap_years($year - YEARS_PER_CENTURY, $year, $month)*SEC_PER_DAY;
-			$year -= YEARS_PER_CENTURY;
-			$leap += YEARS_PER_CENTURY*SEC_PER_DAY*DAYS_PER_YEAR;
-		}
+		($year, $delta) = @{ $_year_month_shift{$year,$month} ||= [ do {
+			my ($d, $y) = (0, $year);
+			while ($y <= 1901) {
+				$d -= number_of_leap_years($y, $y + YEARS_PER_CENTURY, $month)*SEC_PER_DAY + YEARS_PER_CENTURY*SEC_PER_DAY*DAYS_PER_YEAR;
+				$y += YEARS_PER_CENTURY;
+			}
+			while ($y >= 2038) {
+				$d += number_of_leap_years($y - YEARS_PER_CENTURY, $y, $month)*SEC_PER_DAY + YEARS_PER_CENTURY*SEC_PER_DAY*DAYS_PER_YEAR;
+				$y -= YEARS_PER_CENTURY;
+			}
+			($y, $d);
+		} ] };
 	}
-	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap };
+	eval { timegm($sec,$min,$hour,$day,$month - 1,$year) + $leap + $delta };
 }
 
 1;
