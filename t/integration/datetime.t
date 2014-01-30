@@ -122,7 +122,7 @@ ok !defined iso8601_to_epoch("09990101T000000Z"), "should disallow years before 
 ok defined epoch_to_iso8601(253402300799);
 ok !defined epoch_to_iso8601(253402300799+1), "should disallow years after 9999";
 
-# test correctness and consistency of iso8601_to_epoch and _to_iso8601
+# test correctness and consistency of iso8601_to_epoch and epoch_to_iso8601
 {
 	my @a;
 	for my $year (1000..1100, 1800..1850, 1890..1910, 1970..2040, 2090..2106,
@@ -151,7 +151,7 @@ ok !defined epoch_to_iso8601(253402300799+1), "should disallow years after 9999"
 	is sha256_hex(join(",", @a)), '49c852f65d2d9ceeccdc02f64214f1a2d249d00337bf669288c34a603ff7acbf', "hardcoded checksum";
 }
 
-# test if filesystem/OS supports particular time range, _to_iso8601 supports it too.
+# test if filesystem/OS supports particular time range, epoch_to_iso8601 supports it too.
 {
 	my $mtroot = get_temp_dir();
 	my $filename = "$mtroot/f1";

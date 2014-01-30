@@ -76,8 +76,10 @@ our %_year_month_shift;
 sub iso8601_to_epoch
 {
 	my ($str) = @_;
-	return unless $str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i; # _some_ iso8601 support for now
-	my ($year, $month, $day, $hour, $min, $sec) = ($1,$2,$3,$4,$5,$6);
+	 # only _some_ iso8601 format support for now
+	my ($year, $month, $day, $hour, $min, $sec) =
+		$str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i or
+		return;
 	return if $year < 1000;
 	my ($leap, $delta) = (0, 0);
 	$leap = $sec - 59, $sec = 59 if ($sec == 60 || $sec == 61);
