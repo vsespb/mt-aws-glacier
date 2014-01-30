@@ -23,6 +23,7 @@
 use 5.008008; # minumum perl version is 5.8.8, ancient cpan clients will ignore 'requires/perl' below
 use strict;
 use warnings;
+use Config;
 use Module::Build;
 
 use lib qw(lib);
@@ -163,7 +164,7 @@ my $build = Module::Build->new(
 	$ENV{MT_NO_HARNESS} ?
 		() :
 		(use_tap_harness    => 1, tap_harness_args   => {
-			jobs => ($^O =~ /(openbsd|arm)/i ? 2 : 8) # openBSD has low default ulimits. ARM systems have small memory
+			jobs => ( ($^O eq 'openbsd' || $Config{archname} =~ /arm/i) ? 2 : 8) # openBSD has low default ulimits. ARM systems have small memory
 		}),
 );
 
