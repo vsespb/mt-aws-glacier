@@ -53,7 +53,7 @@ our %_leap_cache;
 sub number_of_leap_years
 {
 	my ($y1, $y2, $m) = @_;
-	$_leap_cache{$y1,$y2,$m} ||= do {
+	$_leap_cache{$y1,$y2, ($m < 3 ? '0' : '1') } ||= do {
 		my $cnt = 0;
 		for ($y1+1..$y2-1) {
 			$cnt++ if is_leap($_);
