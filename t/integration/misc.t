@@ -92,7 +92,7 @@ SKIP: {
 		(
 			($^V ge v5.12.0) ||
 			(
-				(App::MtAws::Utils::get_config_var('longsize') >= 8) &&
+				is_64bit_time &&
 				($^V eq v5.8.9 or $^V ge v5.10.1)
 			)
 		);

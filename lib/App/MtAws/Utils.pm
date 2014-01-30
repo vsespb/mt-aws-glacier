@@ -46,7 +46,7 @@ our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull sysreadfull_chk syswritefull_chk
 hex_dump_string is_wide_string
 characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists file_inodev
-is_64bit_os is_digest_sha_broken_for_large_data is_y2038_supported
+is_64bit_os is_64bit_time is_digest_sha_broken_for_large_data is_y2038_supported
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 
@@ -369,6 +369,12 @@ sub is_64bit_os
 {
 	get_config_var('longsize') >= 8
 }
+
+sub is_64bit_time
+{
+	is_64bit_os && ($^O ne 'openbsd')
+}
+
 
 sub is_digest_sha_broken_for_large_data
 {

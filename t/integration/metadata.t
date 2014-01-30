@@ -390,7 +390,7 @@ ok !defined App::MtAws::MetaData::_to_iso8601(253402300799+1), "should disallow 
 				for my $time ("000000", "235959") {
 					my $str = sprintf("%04d%02d%02dT%sZ", $year, $month, $day, $time);
 					my $r = App::MtAws::MetaData::_parse_iso8601($str);
-					if (is_64bit_os) {
+					if (is_64bit_time) {
 						my $str_a = App::MtAws::MetaData::_to_iso8601($r); # reverse
 						die "$str, $r" unless defined $str_a;
 						die "$str_a $str" unless $str_a eq $str;

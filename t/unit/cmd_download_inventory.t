@@ -101,7 +101,7 @@ my $now = time();
 	);
 	# check that we support datetime past Y2038
 	SKIP: {
-		skip "not supported under 32bit os", 2 unless is_64bit_os;
+		skip "not supported under 32bit os", 2 unless is_64bit_time;
 		assert_entry(
 		{
 			ArchiveId => $data->{archive_id},
