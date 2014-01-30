@@ -22,12 +22,13 @@
 
 use strict;
 use warnings;
-use Test::More tests => 16;
+use Test::More tests => 17;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 use App::MtAws;
 use App::MtAws::Utils;
+use Config;
 
 use Digest::SHA;
 use Config;
@@ -85,6 +86,11 @@ test_is_digest_sha_broken_for_large_data(8, '5.61', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.62', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.63', 0);
 test_is_digest_sha_broken_for_large_data(4, '5.84_01', 0);
+
+SKIP: {
+	skip "cant test this", 1 unless $^O eq 'linux' && $Config{'longsize'} >= 8;
+	ok is_64bit_time, "at least sometimes is_64bit_time returns true";
+}
 
 SKIP: {
 	skip "This installation possibly does not support Y2038", 3

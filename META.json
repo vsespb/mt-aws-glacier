@@ -114,6 +114,10 @@
          "file" : "lib/App/MtAws/ConfigEngine.pm",
          "version" : "1.112"
       },
+      "App::MtAws::DateTime" : {
+         "file" : "lib/App/MtAws/DateTime.pm",
+         "version" : "1.112"
+      },
       "App::MtAws::Exceptions" : {
          "file" : "lib/App/MtAws/Exceptions.pm",
          "version" : "1.112"

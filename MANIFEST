@@ -11,6 +11,7 @@ lib/App/MtAws/Command/Retrieve.pm
 lib/App/MtAws/Command/Sync.pm
 lib/App/MtAws/ConfigDefinition.pm
 lib/App/MtAws/ConfigEngine.pm
+lib/App/MtAws/DateTime.pm
 lib/App/MtAws/Exceptions.pm
 lib/App/MtAws/FileVersions.pm
 lib/App/MtAws/Filter.pm
@@ -78,6 +79,7 @@ t/integration/config_engine_v078.t
 t/integration/config_engine_v082.t
 t/integration/config_engine_v085.t
 t/integration/config_read_config.t
+t/integration/datetime.t
 t/integration/fork_engine.t
 t/integration/intermediate_file_ipc.t
 t/integration/journal.t

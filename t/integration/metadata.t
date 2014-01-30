@@ -23,23 +23,19 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1057;
+use Test::More tests => 966;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::MetaData;
-use App::MtAws::Utils;
 use Carp;
 
-use Test::MockModule;
 use MIME::Base64 qw/encode_base64/;
 use Digest::SHA qw/sha256_hex/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
 use POSIX;
-use DateTime; #TODO: rewrite using core Time::Piece https://github.com/azumakuniyuki/perl-benchmark-collection/blob/master/module/datetime-vs-time-piece.pl
-use Test::Spec;
 use TestUtils;
 
 warning_fatal();
@@ -292,154 +288,6 @@ sub test_undefined
 	ok !defined App::MtAws::MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
 	ok defined App::MtAws::MetaData::meta_encode('я' x 350, 0), 'should allow 350 UTF 2 bytes characters';
 	ok defined App::MtAws::MetaData::meta_encode('z' x 700, 0), 'should allow 700 ASCII characters';
-}
-
-# test _parse_iso8601
-{
-	for (
-		['20121225T100000Z', 1356429600],
-		['20130101T000000Z', 1356998400],
-		['20120229T000000Z', 1330473600],
-		['20130228T000000Z', 1362009600],
-		['20130228T235959Z', 1362095999],
-		['20120630T235959Z', 1341100799], # leap second
-		['20120701T000000Z', 1341100800], # after leap second
-		['20081231T235959Z', 1230767999], # before leap second
-#		['20081231T235960Z', 1230768000], # leap second is broken
-		['20090101T000000Z', 1230768000], # after leap second
-		['19070809T082454Z', -1969112106], # negative value
-		['19070809T084134Z', -1969111106], # negative value
-		['19700101T000000Z', 0],
-	) {
-		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
-		ok($result == $_->[1], 'should parse iso8601');
-
-		my $dt = DateTime->from_epoch( epoch => $_->[1] );
-		my $dt_8601 = sprintf("%04d%02d%02dT%02d%02d%02dZ", $dt->year, $dt->month, $dt->day, $dt->hour, $dt->min, $dt->sec);
-		ok( $_->[0] eq $dt_8601, "iso8601 $dt_8601 should be correct string");
-	}
-}
-
-# test different formats _parse_iso8601
-{
-	for (
-		['20121225T100000Z', 1356429600],
-		['20130101t000000Z', 1356998400],
-		['20120229 T 000000Z', 1330473600],
-		['2013-02-28T00:00:00Z', 1362009600],
-		['20130228 t 235959z', 1362095999],
-		['20120630T23:59:59  Z', 1341100799], # leap second
-		['  20120701 T 000000 Z', 1341100800], # after leap second
-		['2008 12 31 T 23 59 59Z', 1230767999], # before leap second
-		['2009 01-01T 00:00 00 z', 1230768000], # after leap second
-		['2009 01-01T 00:00 00.123 z', 1230768000],
-		['2009 01-01T 00:00 00,1234 z', 1230768000],
-		# more examples with leap second
-		['1998-12-31T23:59:60Z', 915148800],
-		['1999-01-01T00:00:00Z', 915148800],
-		['1998-12-31T23:59:59Z', 915148799],
-		['1998-12-31T23:59:60Z', 915148800],
-	) {
-		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
-		ok($result == $_->[1], "should parse iso8601 $result == $_->[1]");
-	}
-}
-
-
-# check time converts both ways
-
-is App::MtAws::MetaData::_parse_iso8601("16800101T000000Z"), -9151488000;
-is App::MtAws::MetaData::_parse_iso8601("22600101T000000Z"), 9151488000;
-is App::MtAws::MetaData::_parse_iso8601("40000201T000000Z"), 64063267200;
-is App::MtAws::MetaData::_parse_iso8601("19691231T235950Z"), -10;
-is App::MtAws::MetaData::_parse_iso8601("20140114T003509Z"), 1389659709;
-
-is App::MtAws::MetaData::_parse_iso8601("20371231T235959Z"), 2145916799;
-is App::MtAws::MetaData::_parse_iso8601("20380101T000000Z"), 2145916800;
-is App::MtAws::MetaData::_parse_iso8601("19011231T235959Z"), -2145916801;
-is App::MtAws::MetaData::_parse_iso8601("19020101T000000Z"), -2145916800;
-
-ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("2014%02d01T000000Z", $_)) for (1..12);
-ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("201401%02dT000000Z", $_)) for (1,2,30,31);
-ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("20140101T%02d0000Z", $_)) for (0,1,22,23);
-ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("20140101T00%02d00Z", $_)) for (0,1,58,59);
-ok defined App::MtAws::MetaData::_parse_iso8601(sprintf("20140101T0000%02dZ", $_)) for (0,1,58,59);
-
-ok !defined App::MtAws::MetaData::_parse_iso8601("20141301T000000Z");
-ok !defined App::MtAws::MetaData::_parse_iso8601("20140132T000000Z");
-ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T240000Z");
-ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T006000Z");
-ok !defined App::MtAws::MetaData::_parse_iso8601("20140101T000063Z");
-
-ok !defined App::MtAws::MetaData::_parse_iso8601("09990101T000000Z"), "should disallow years before 1000";
-ok defined App::MtAws::MetaData::_to_iso8601(253402300799);
-ok !defined App::MtAws::MetaData::_to_iso8601(253402300799+1), "should disallow years after 9999";
-
-# test correctness and consistency of _parse_iso8601 and _to_iso8601
-{
-	my @a;
-	for my $year (1000..1100, 1800..1850, 1890..1910, 1970..2040, 2090..2106,
-		(map { $_* 100-2, $_* 100-1, $_* 100, $_*100+1, $_*100+2 } 25..99), 9901..9999)
-	{
-		for my $month (1,2,3,12) {
-			for my $day (
-				1..2, 28,
-				($month == 2 && ( ($year % 100 == 0) ? ($year % 400 == 0) : ($year % 4 == 0)  ) ) ? (29) : (),
-				($month == 12 || $month == 1) ? (30, 31) : ()
-			) {
-				for my $time ("000000", "235959") {
-					my $str = sprintf("%04d%02d%02dT%sZ", $year, $month, $day, $time);
-					my $r = App::MtAws::MetaData::_parse_iso8601($str);
-					if (is_64bit_time) {
-						my $str_a = App::MtAws::MetaData::_to_iso8601($r); # reverse
-						die "$str, $r" unless defined $str_a;
-						die "$str_a $str" unless $str_a eq $str;
-					}
-					die $r unless $r =~ /^\-?\d+$/; # numbers only, no floating point
-					push @a, $r;
-				}
-			}
-		}
-	}
-	is sha256_hex(join(",", @a)), '49c852f65d2d9ceeccdc02f64214f1a2d249d00337bf669288c34a603ff7acbf', "hardcoded checksum";
-}
-
-# test if filesystem/OS supports particular time range, _to_iso8601 supports it too.
-{
-	my $mtroot = get_temp_dir();
-	my $filename = "$mtroot/f1";
-	open my $f, ">", $filename or confess;
-	close $f or confess;
-	for (
-		["16800101T000000Z", -9151488000],
-		["22600101T000000Z", 9151488000],
-		["40000201T000000Z", 64063267200],
-	) {
-		my ($strtime, $numtime) = ($_->[0], $_->[1]);
-		eval { utime time(), $numtime, $filename; };
-		my $got = eval { file_mtime($filename); };
-		SKIP: {
-			skip "unable to set file mtime=$numtime", 1 unless $got == $numtime;
-			is App::MtAws::MetaData::_to_iso8601($got), $strtime;
-		}
-	}
-	unlink $filename;
-}
-
-# list vs scalar context
-
-{
-	my $date = '20121225T100000Z';
-	my $result = App::MtAws::MetaData::_parse_iso8601($date);
-	my @a = App::MtAws::MetaData::_parse_iso8601($date);
-	is $a[0], $result, "should work same way in list context";
-}
-
-# test error handling _parse_iso8601
-{
-	for (qw/20121515T100000Z 1234/) {
-		ok ! defined App::MtAws::MetaData::_parse_iso8601($_);
-	}
 }
 
 

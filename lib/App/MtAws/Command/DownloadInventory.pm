@@ -31,6 +31,8 @@ use App::MtAws::ForkEngine  qw/with_forks fork_engine/;
 use App::MtAws::TreeHash;
 use App::MtAws::Exceptions;
 use App::MtAws::Journal;
+use App::MtAws::MetaData;
+use App::MtAws::DateTime;
 use App::MtAws::Glacier::Inventory::JSON;
 use App::MtAws::Glacier::Inventory::CSV;
 
@@ -76,7 +78,7 @@ sub parse_and_write_journal
 		my ($relfilename, $mtime) = App::MtAws::MetaData::meta_decode($item->{ArchiveDescription});
 		$relfilename = $item->{ArchiveId} unless defined $relfilename;
 
-		my $creation_time = App::MtAws::MetaData::_parse_iso8601($item->{CreationDate}); # TODO: move code out
+		my $creation_time = iso8601_to_epoch($item->{CreationDate}); # TODO: move code out
 		#time archive_id size mtime treehash relfilename
 		$j->add_entry({
 			type => 'CREATED',
