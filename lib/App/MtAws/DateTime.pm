@@ -64,6 +64,9 @@ sub number_of_leap_years
 	}
 }
 
+# allowed range Y1000 - Y9999
+# should work with Y2038 dates if underlying OS supports 64bit time (otherwise we don't need such conversion in
+# mt-aws-glacier)
 sub epoch_to_iso8601
 {
 	my ($time) = @_;
@@ -73,6 +76,8 @@ sub epoch_to_iso8601
 
 our %_year_month_shift;
 
+# allowed range Y1000 - Y9999
+# should work with Y2038 dates always
 sub iso8601_to_epoch
 {
 	my ($str) = @_;
