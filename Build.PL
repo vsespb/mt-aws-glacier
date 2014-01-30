@@ -163,7 +163,7 @@ my $build = Module::Build->new(
 	$ENV{MT_NO_HARNESS} ?
 		() :
 		(use_tap_harness    => 1, tap_harness_args   => {
-			jobs => ($^O eq 'openbsd' ? 2 : 8) # openBSD has low default ulimits
+			jobs => ($^O =~ /(openbsd|arm)/i ? 2 : 8) # openBSD has low default ulimits. ARM systems have small memory
 		}),
 );
 
