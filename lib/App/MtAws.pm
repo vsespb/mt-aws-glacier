@@ -109,7 +109,7 @@ sub main
 {
 	$|=1;
 	STDERR->autoflush(1);
-	print "MT-AWS-Glacier, Copyright 2012-2013 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
+	print "MT-AWS-Glacier, Copyright 2012-2014 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
 
 	warn "**NOT RECOMMENDED FOR PRODUCTION USE UNDER CYGWIN**\n\n" if ($^O eq 'cygwin');
 	die "**DEVELOPMENT VERSION, NOT FOR PRODUCTION USE. EXITING**\n\n" if ($VERSION =~ /_/);
