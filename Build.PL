@@ -36,6 +36,17 @@ our $MB_VERSION = '0.36';
 #https://github.com/Perl-Toolchain-Gang/Module-Build/issues/40
 our $MB_BROKEN_RECOMMENDS = ($Module::Build::VERSION ge '0.42') && ($Module::Build::VERSION lt '0.4203');
 
+
+sub test_jobs
+{
+	return 2 if $^O eq 'openbsd';  # openBSD has low default ulimits.
+	return 2 if $Config{archname} =~ /arm/i; # ARM systems have small memory
+	return 2 if $Config{osvers} =~ /qnap/i; # NAS. small memory amount
+	return 4 if $Config{longsize} < 8; # 32bit system. not too much memory
+	return 8; # default 8;
+}
+
+
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
 	author => 'Victor Efimov <vs@vs-dev.com>',
@@ -163,9 +174,7 @@ my $build = Module::Build->new(
 	),
 	$ENV{MT_NO_HARNESS} ?
 		() :
-		(use_tap_harness    => 1, tap_harness_args   => {
-			jobs => ( ($^O eq 'openbsd' || $Config{archname} =~ /arm/i) ? 2 : 8) # openBSD has low default ulimits. ARM systems have small memory
-		}),
+		(use_tap_harness    => 1, tap_harness_args   => { jobs => test_jobs() }),
 );
 
 $build->create_build_script();
