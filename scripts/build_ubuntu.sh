@@ -2,7 +2,7 @@
 cd .. && grep -s -q APP-MTAWS-ROOT-DIR Build.PL || exit 1 # protect from wrong dir
 [ `which perl` = "/usr/bin/perl" ] || exit 1
 perl Build.PL && ./Build build
-DISTROS="precise quantal raring saucy trusty"
+DISTROS="precise quantal saucy trusty"
 for DISTRO in $DISTROS
 do
 rm -rf debian
