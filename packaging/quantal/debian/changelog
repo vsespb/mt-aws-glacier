@@ -1,3 +1,43 @@
+libapp-mtaws-perl (1.113-0ubuntu2~quantal1~ppa1) quantal; urgency=low
+
+  * Rebuild for Ubuntu - remove some extra files from tarrball.
+
+ -- Victor Efimov <victor@vsespb.ru>  Sat, 1 Feb 2014 18:10:00 +0400
+
+libapp-mtaws-perl (1.113-0ubuntu1~quantal1~ppa1) quantal; urgency=low
+
+  * Fixed: Y2038 problem with file modification time in metadata (i.e. journal and Amazon Glacier servers).
+  Some OSes and filesystems don't support years after 2038 (i.e. Linux 32bit)
+  Some perl versions don't support handling dates after 2038 (i.e. 32bit perl before 5.12 and
+  64bit perl 5.8.8 (RHEL5), 5.10.0 (some SUSE))
+
+  There is not much sense in having files with file modification after Y2038 or before Y1902, however such file can
+  appear in filesystems due to bugs in other software etc.
+
+  Fixing now inconsistency in behaviour with such metadata between different OS/perl versions.
+
+  After this fix file modification time will be restored correctly from Amazon servers to journal (via download-inventory)
+  on all platforms, for all years in range 1000-9999.
+
+  However if your OS/filesystem does not work with such dates, anything except correct date in journal file
+  is not guaranteed.
+
+  Before this fix, such dates could result in lost of filenames and modification time in journal (filename replaced
+  with random token) when restoring inventory (you are affected if you uploaded file on 64bit system with date
+  after Y2038, but then restored on 32bit system).
+
+  * Documentation: Also, note about Y2038 added to "Limitationss" section.
+
+  * CSV inventory parsing - making it 30% slower, but more consistent with what Amazon documented about its format
+  https://forums.aws.amazon.com/thread.jspa?threadID=141807&tstart=0
+
+  * Cosmetic changes to docs
+
+  * CPAN install - on some systems like ARM, some NAS, 32bit OSes decrease number of concurrent tests during install.
+  Might help preventing out-of-memory problems (but makes test slower).
+
+ -- Victor Efimov <victor@vsespb.ru>  Sat, 1 Feb 2014 17:50:00 +0400
+
 libapp-mtaws-perl (1.112-0ubuntu1~quantal1~ppa1) quantal; urgency=low
 
   * PPA package for Ubuntu 14.04 added to Ubuntu PPA (+ fixes in metadata of Debian/Ubuntu packages)

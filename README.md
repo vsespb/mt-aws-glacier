@@ -13,7 +13,7 @@ Amazon Glacier is an archive/backup service with very low storage price. However
 
 ## Version
 
-* Version 1.112 (See [ChangeLog][mt-aws glacier changelog] or follow [@mtglacier](https://twitter.com/mtglacier) for updates)  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
+* Version 1.113 (See [ChangeLog][mt-aws glacier changelog] or follow [@mtglacier](https://twitter.com/mtglacier) for updates)  [![Build Status](https://travis-ci.org/vsespb/mt-aws-glacier.png?branch=master)](https://travis-ci.org/vsespb/mt-aws-glacier)
 
 [mt-aws glacier changelog]:https://github.com/vsespb/mt-aws-glacier/blob/master/ChangeLog
 
