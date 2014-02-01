@@ -1,5 +1,5 @@
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -20,7 +20,7 @@
 
 package App::MtAws::GlacierRequest;
 
-our $VERSION = '1.111';
+our $VERSION = '1.113';
 
 use strict;
 use warnings;
@@ -81,9 +81,10 @@ sub create_multipart_upload
 	# currently meat_encode only returns undef if filename is too big
 	defined($self->{description} = App::MtAws::MetaData::meta_encode($relfilename, $mtime)) or
 		die exception 'file_name_too_big' =>
-		"Relative filename %string filename% is too big to store in Amazon Glacier metadata. ".
-		"Limit is about 700 ASCII characters or 350 2-byte UTF-8 character.",
-		filename => $relfilename;
+		"Either relative filename %string filename% is too big to store in Amazon Glacier metadata. ".
+		"(Limit is about 700 ASCII characters or 350 2-byte UTF-8 characters) or file modification time %string mtime% out of range".
+		"(Only years from 1000 to 9999 are supported)",
+		filename => $relfilename, mtime => $mtime; # TODO: more clear error
 	$self->add_header('x-amz-archive-description', $self->{description});
 
 	my $resp = $self->perform_lwp();
@@ -191,11 +192,14 @@ sub retrieve_inventory
 	$self->{url} = "/$self->{account_id}/vaults/$self->{vault}/jobs";
 	$self->{method} = 'POST';
 
+	my $job_meta = App::MtAws::MetaData::meta_job_encode(META_JOB_TYPE_FULL);
+
 	#  add "SNSTopic": "sometopic"
 	# no Test::Tabs
 	my $body = <<"END";
 {
   "Type": "inventory-retrieval",
+  "Description": "$job_meta",
   "Format": "$format"
 }
 END

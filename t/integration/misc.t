@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -22,12 +22,13 @@
 
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 17;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils;
 use App::MtAws;
 use App::MtAws::Utils;
+use Config;
 
 use Digest::SHA;
 use Config;
@@ -73,16 +74,57 @@ sub test_is_digest_sha_broken_for_large_data
 	}
 }
 
-is is_digest_sha_broken_for_large_data(), $Config{'longsize'} < 8 && $Digest::SHA::VERSION < 5.62-0.0000001;
+is is_digest_sha_broken_for_large_data(), $Config{'longsize'} < 8 && $Digest::SHA::VERSION lt '5.62';
 
 test_is_digest_sha_broken_for_large_data(4, '5.61', 1);
 
 test_is_digest_sha_broken_for_large_data(4, '5.62', 0);
-test_is_digest_sha_broken_for_large_data(4, '5.619999999999', 0);
+test_is_digest_sha_broken_for_large_data(4, '5.619999999999', 1);
 
 test_is_digest_sha_broken_for_large_data(4, '5.63', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.61', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.62', 0);
 test_is_digest_sha_broken_for_large_data(8, '5.63', 0);
+test_is_digest_sha_broken_for_large_data(4, '5.84_01', 0);
+
+SKIP: {
+	skip "cant test this", 1 unless $^O eq 'linux' && $Config{'longsize'} >= 8;
+	ok is_64bit_time, "at least sometimes is_64bit_time returns true";
+}
+
+SKIP: {
+	skip "This installation possibly does not support Y2038", 3
+		unless
+		(
+			($^V ge v5.12.0) ||
+			(
+				is_64bit_time &&
+				($^V eq v5.8.9 or $^V ge v5.10.1)
+			)
+		);
+	ok is_y2038_supported, "make sure is_y2038_supported at least sometimes returns true";
+
+	{
+		my $count = 0;
+		no warnings 'redefine';
+		local *App::MtAws::Utils::timegm = sub { ++$count; die "MOCK DIE"; };
+		local $App::MtAws::Utils::_is_y2038_supported = undef;
+		is_y2038_supported();
+		my $err = $@;
+		like $err, qr/MOCK DIE/;
+		is_y2038_supported();
+		is $count, 1, "should be cached even if eval failed";
+	}
+
+}
+
+is_y2038_supported(); # should not issue warning;
+
+{
+	local $App::MtAws::Utils::_is_y2038_supported = 42;
+	is is_y2038_supported, 42, "make sure is_y2038_supported is cached";
+	is is_y2038_supported, 42, "make sure is_y2038_supported is cached. again.";
+}
+
 
 1;

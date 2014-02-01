@@ -1,5 +1,5 @@
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -23,6 +23,7 @@
 use 5.008008; # minumum perl version is 5.8.8, ancient cpan clients will ignore 'requires/perl' below
 use strict;
 use warnings;
+use Config;
 use Module::Build;
 
 use lib qw(lib);
@@ -33,7 +34,18 @@ die "OS unsupported\n" if ($^O eq 'MSWin32');
 our $MB_VERSION = '0.36';
 
 #https://github.com/Perl-Toolchain-Gang/Module-Build/issues/40
-our $MB_BROKEN_RECOMMENDS = ($Module::Build::VERSION >= 0.42) && ($Module::Build::VERSION < 0.4203);
+our $MB_BROKEN_RECOMMENDS = ($Module::Build::VERSION ge '0.42') && ($Module::Build::VERSION lt '0.4203');
+
+
+sub test_jobs
+{
+	return 2 if $^O eq 'openbsd';  # openBSD has low default ulimits.
+	return 2 if $Config{archname} =~ /arm/i; # ARM systems have small memory
+	return 2 if $Config{osvers} =~ /qnap/i; # NAS. small memory amount
+	return 4 if $Config{longsize} < 8; # 32bit system. not too much memory
+	return 8; # default 8;
+}
+
 
 my $build = Module::Build->new(
 	module_name => 'App::MtAws',
@@ -162,9 +174,7 @@ my $build = Module::Build->new(
 	),
 	$ENV{MT_NO_HARNESS} ?
 		() :
-		(use_tap_harness    => 1, tap_harness_args   => {
-			jobs => ($^O eq 'openbsd' ? 2 : 8) # openBSD has low default ulimits
-		}),
+		(use_tap_harness    => 1, tap_harness_args   => { jobs => test_jobs() }),
 );
 
 $build->create_build_script();

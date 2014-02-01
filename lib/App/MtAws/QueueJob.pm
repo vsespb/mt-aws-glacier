@@ -1,5 +1,5 @@
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -20,7 +20,7 @@
 
 package App::MtAws::QueueJob;
 
-our $VERSION = '1.111';
+our $VERSION = '1.113';
 
 use strict;
 use warnings;
@@ -34,7 +34,7 @@ sub new
 	my $self = \%args;
 	bless $self, $class;
 	$self->{_state} = 'default';
-	$self->{_jobs} = [];
+	$self->{_jobs} = []; # Jobs is array, but, as you can see below only one element can be stored in it at time.
 	$self->init();
 	return $self;
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -37,10 +37,11 @@ warning_fatal();
 describe "MetaData" => sub {
 	it "should catch undef in _decode_json" => sub {
 		JSON::XS->expects("decode");
-		App::MtAws::MetaData::_decode_json App::MtAws::MetaData::_encode_json('тест', 1);
+		App::MtAws::MetaData::_decode_json
+			App::MtAws::MetaData::_encode_json(App::MtAws::MetaData::_encode_filename_and_mtime('тест', 1));
 		JSON::XS->expects("decode")->never();
 		ok !defined App::MtAws::MetaData::_decode_json undef;
-		
+
 	};
 	it "should not call encode" => sub {
 		App::MtAws::MetaData->expects("_encode_utf8")->never();

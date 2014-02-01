@@ -221,6 +221,7 @@ sub child_worker
 		} elsif ($postdata->{Type} eq 'inventory-retrieval') {
 			my $now = time();
 
+			confess "unimplemented" if exists $postdata->{InventoryRetrievalParameters};
 
 			my $bpath = basepath($account, $vault, 'archive');
 			my $data = {
@@ -264,6 +265,7 @@ sub child_worker
 					id => $job_id,
 					type => 'inventory-retrieval',
 					format => $postdata->{Format},
+					description => $postdata->{Description},
 					completion_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 					creation_date => strftime("%Y%m%dT%H%M%SZ", gmtime($now)),
 				},
@@ -314,6 +316,8 @@ sub child_worker
 						CompletionDate => $j->{completion_date}||confess("4 completion date"),
 						CreationDate => $j->{creation_date}||confess("5 creation date"),
 						StatusCode => "Succeeded",
+						JobDescription => $j->{description},
+						InventoryRetrievalParameters => { StartDate => undef, EndDate => undef, Limit => undef, Marker => undef},
 						JobId => $j->{id}||confess("6 job id"),
 					} ;
 				} else {

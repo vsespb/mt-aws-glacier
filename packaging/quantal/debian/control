@@ -2,7 +2,7 @@ Source: libapp-mtaws-perl
 Section: perl
 Priority: optional
 Maintainer: Victor Efimov <victor@vsespb.ru>
-Build-Depends: debhelper (>= 8), perl, libwww-perl, libjson-xs-perl, libtest-deep-perl, libtest-mockmodule-perl, libdatetime-perl, libmodule-build-perl, libtest-spec-perl , libhttp-daemon-perl
+Build-Depends: debhelper (>= 8), perl, libwww-perl, libjson-xs-perl, libtest-deep-perl, libtest-mockmodule-perl, libdatetime-perl, libmodule-build-perl, libtest-spec-perl, libhttp-daemon-perl
 Standards-Version: 3.9.2
 Homepage: http://search.cpan.org/dist/App-MtAws/
 
@@ -11,3 +11,7 @@ Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, perl, libwww-perl, libjson-xs-perl
 Recommends: liblwp-protocol-https-perl
 Description: mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier
+ Amazon Glacier is an archive/backup service with very low storage price.
+ However with some caveats in usage and archive retrieval prices.
+ mt-aws-glacier is a client application for Amazon Glacier, written
+ in Perl programming language, for *nix systems.

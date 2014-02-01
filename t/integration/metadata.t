@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -23,20 +23,19 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 963;
+use Test::More tests => 966;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::MetaData;
+use Carp;
 
-use Test::MockModule;
 use MIME::Base64 qw/encode_base64/;
+use Digest::SHA qw/sha256_hex/;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
 use POSIX;
-use DateTime; #TODO: rewrite using core Time::Piece https://github.com/azumakuniyuki/perl-benchmark-collection/blob/master/module/datetime-vs-time-piece.pl
-use Test::Spec;
 use TestUtils;
 
 warning_fatal();
@@ -161,7 +160,7 @@ no warnings 'redefine';
 		['директория/файл',0],
 		['директория/файл','0'],
 	) {
-		my $result = App::MtAws::MetaData::_encode_json($_->[0], $_->[1]);
+		my $result = App::MtAws::MetaData::_encode_json(App::MtAws::MetaData::_encode_filename_and_mtime($_->[0], $_->[1]));
 		my $recoded = JSON::XS->new->utf8->allow_nonref->decode($result);
 		ok ($result !~ /[\r\n]/m, 'no linefeed');
 ##		ok( $result =~ /\:\s*$_->[1]/, "result should contain mtime as numeric");
@@ -169,7 +168,7 @@ no warnings 'redefine';
 		my $result_decoded =decode("UTF-8", $result, Encode::DIE_ON_ERR|Encode::LEAVE_SRC);
 		ok ($result_decoded =~ /\Q$_->[0]\E/m, "json string should contain UTF without escapes");
 
-		my ($filename, $mtime) = App::MtAws::MetaData::_decode_json($result);
+		my ($filename, $mtime) = App::MtAws::MetaData::_decode_filename_and_mtime(App::MtAws::MetaData::_decode_json($result));
 		ok ($filename eq $_->[0], 'filename match');
 		ok ($mtime == $_->[1], 'mtime match');
 	}
@@ -226,28 +225,37 @@ no warnings 'redefine';
 	}
 }
 
+sub test_undefined
+{
+	my ($str, $msg) = @_;
+	ok !defined App::MtAws::MetaData::meta_decode($str), "$msg (scalar)";
+	my @a = App::MtAws::MetaData::meta_decode($str);
+	is scalar @a, 0, "$msg (array)";
+}
+
 # test error catch while decoding
 {
-	ok !defined App::MtAws::MetaData::meta_decode('zzz'), 'should return undef if no marker present';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 zzz'), 'should return undef if utf is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 !!!!'), 'should return undef if base64 is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 z+z'), 'should return undef if base64 is broken';
+	test_undefined 'zzz', 'should return undef if no marker present';
+	test_undefined 'mt2 zzz', 'should return undef if utf is broken';
+	test_undefined 'mt2 !!!!', 'should return undef if base64 is broken';
+	test_undefined 'mt2 z+z', 'should return undef if base64 is broken';
 	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'=='), 'should allow base64 padding';
 	ok defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "20080102T222324Z"}').'='), 'should allow base64 padding';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('ff')), 'should return undef if json is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "a": 1, "x": 2}')), 'should return undef if filename and mtime missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "x": 2}')), 'should return undef if mtime missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "x": 1, "mtime": 2}')), 'should return undef if filename missed';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "a", "mtime": "zzz"}')), 'should return undef if time is broken';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}')), 'should return undef if b64 too big';
-	ok !defined App::MtAws::MetaData::meta_decode('mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}')), 'should return undef if b64 too big';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "a", "mtime": "20081515T222324Z"}'), 'should return undef if mtime is broken';
+	test_undefined 'mt2 '._encode_base64url('ff'), 'should return undef if json is broken';
+	test_undefined 'mt2 '._encode_base64url('{ "a": 1, "x": 2}'), 'should return undef if filename and mtime missed';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "f", "x": 2}'), 'should return undef if mtime missed';
+	test_undefined 'mt2 '._encode_base64url('{ "x": 1, "mtime": 2}'), 'should return undef if filename missed';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "a", "mtime": "zzz"}'), 'should return undef if time is broken';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "'.('x' x 1024).'", "mtime": 1}'), 'should return undef if b64 too big';
+	test_undefined 'mt2 '._encode_base64url('{ "filename": "f", "mtime": "20081302T222324Z"}'), 'should return undef if b64 too big';
 
-	ok !defined App::MtAws::MetaData::meta_decode(''), 'should return undef, without warning, if input is empty string';
-	ok !defined App::MtAws::MetaData::meta_decode(' '), 'should return undef, without warning, if input is space';
-	ok !defined App::MtAws::MetaData::meta_decode('  '), 'should return undef, without warning, if input is multiple spaces';
-	ok !defined App::MtAws::MetaData::meta_decode(undef), 'should return undef, without warning, if input is undef';
+	test_undefined '', 'should return undef, without warning, if input is empty string';
+	test_undefined ' ', 'should return undef, without warning, if input is space';
+	test_undefined '  ', 'should return undef, without warning, if input is multiple spaces';
+	test_undefined undef, 'should return undef, without warning, if input is undef';
 	ok !defined App::MtAws::MetaData::meta_decode(), 'should return undef, without warning, if input is empty list';
-	
+
 	for (qw/mt1 mt2/) {
 		ok !defined App::MtAws::MetaData::meta_decode("$_"), 'should return undef, without warning, if input is marker plus empty string';
 		ok !defined App::MtAws::MetaData::meta_decode("$_ "), 'should return undef, without warning, if input is marker plus space';
@@ -263,9 +271,9 @@ no warnings 'redefine';
 
 	eval { App::MtAws::MetaData::meta_decode('mt2 zzz') };
 	ok $@ eq '', 'should not override eval code'; # it looks now that those tests are broken
-	
-	
-	
+
+
+
 
 }
 
@@ -273,58 +281,13 @@ no warnings 'redefine';
 # test error cacth while encoding
 {
 	ok defined App::MtAws::MetaData::meta_encode('filename', -1), 'should not catch negative mtime';
+	ok !defined App::MtAws::MetaData::meta_encode('filename', -30639629694), 'should disallow time before Y1000';
 	ok !defined App::MtAws::MetaData::meta_encode('filename'), 'should catche missed mtime';
 	ok !defined App::MtAws::MetaData::meta_encode(undef, 4), 'should catche missed filename';
 	ok defined App::MtAws::MetaData::meta_encode('filename', 0), 'should allow 0 mtime';
 	ok !defined App::MtAws::MetaData::meta_encode('f' x 1024, 0), 'should catch too big string';
 	ok defined App::MtAws::MetaData::meta_encode('я' x 350, 0), 'should allow 350 UTF 2 bytes characters';
 	ok defined App::MtAws::MetaData::meta_encode('z' x 700, 0), 'should allow 700 ASCII characters';
-}
-
-# test _parse_iso8601
-{
-	for (
-		['20121225T100000Z', 1356429600],
-		['20130101T000000Z', 1356998400],
-		['20120229T000000Z', 1330473600],
-		['20130228T000000Z', 1362009600],
-		['20130228T235959Z', 1362095999],
-		['20120630T235959Z', 1341100799], # leap second
-		['20120701T000000Z', 1341100800], # after leap second
-		['20081231T235959Z', 1230767999], # before leap second
-#		['20081231T235960Z', 1230768000], # leap second is broken
-		['20090101T000000Z', 1230768000], # after leap second
-		['19070809T082454Z', -1969112106], # negative value
-		['19070809T084134Z', -1969111106], # negative value
-		['19700101T000000Z', 0],
-	) {
-		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
-		ok($result == $_->[1], 'should parse iso8601');
-
-		my $dt = DateTime->from_epoch( epoch => $_->[1] );
-		my $dt_8601 = sprintf("%04d%02d%02dT%02d%02d%02dZ", $dt->year, $dt->month, $dt->day, $dt->hour, $dt->min, $dt->sec);
-		ok( $_->[0] eq $dt_8601, "iso8601 $dt_8601 should be correct string");
-	}
-}
-
-# test different formats _parse_iso8601
-{
-	for (
-		['20121225T100000Z', 1356429600],
-		['20130101t000000Z', 1356998400],
-		['20120229 T 000000Z', 1330473600],
-		['2013-02-28T00:00:00Z', 1362009600],
-		['20130228 t 235959z', 1362095999],
-		['20120630T23:59:59  Z', 1341100799], # leap second
-		['  20120701 T 000000 Z', 1341100800], # after leap second
-		['2008 12 31 T 23 59 59Z', 1230767999], # before leap second
-		['2009 01-01T 00:00 00 z', 1230768000], # after leap second
-		['2009 01-01T 00:00 00.123 z', 1230768000],
-		['2009 01-01T 00:00 00,1234 z', 1230768000],
-	) {
-		my $result = App::MtAws::MetaData::_parse_iso8601($_->[0]);
-		ok($result == $_->[1], 'should parse iso8601');
-	}
 }
 
 
@@ -338,6 +301,35 @@ no warnings 'redefine';
 	ok !defined App::MtAws::MetaData::_decode_utf8 undef;
 	ok !$called, "_decode_utf8 retruns undef even without calling Encode::decode";
 }
+
+#
+# testing jobs metadata
+#
+
+ok App::MtAws::MetaData::meta_job_encode("x");
+ok ! defined App::MtAws::MetaData::meta_job_encode("x" x 1024);
+
+for (qw/full 0 x тест µ/, '') {
+	cmp_deeply [App::MtAws::MetaData::meta_job_decode(App::MtAws::MetaData::meta_job_encode($_))], [$_], "should decode jobs metadata";
+}
+cmp_deeply [App::MtAws::MetaData::meta_job_decode('mtijob1 eyJ0eXBlIjoiZnVsbCJ9')], ['full'], "should decode jobs metadata";
+
+{
+	my $without_type = "mtijob1 ".App::MtAws::MetaData::_encode_b64(App::MtAws::MetaData::_encode_json({ x => 'y' }));
+	ok ! defined App::MtAws::MetaData::meta_job_decode($without_type), "should return undef in case there is no type";
+	my @r = App::MtAws::MetaData::meta_job_decode($without_type);
+	is scalar @r, 0, "should return empty list in case there is no type";
+}
+
+ok ! defined App::MtAws::MetaData::meta_job_decode(undef), 'should return undef if input undef';
+ok ! defined App::MtAws::MetaData::meta_job_decode(), 'should return undef if input empty';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob11 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mt1 eyJ0eXBlIjoiZnVsbCJ9'), 'should return undef if wrong marker';
+ok ! defined App::MtAws::MetaData::meta_job_decode('zzz'), 'should return undef if no marker present';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 zzz'), 'should return undef if utf is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 !!!!'), 'should return undef if base64 is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 z+z'), 'should return undef if base64 is broken';
+ok ! defined App::MtAws::MetaData::meta_job_decode('mtijob1 '._encode_base64url('ff')), 'should return undef if json is broken';
 
 sub to_iso8601
 {

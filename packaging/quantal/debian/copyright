@@ -1,23 +1,15 @@
-Format-Specification: http://anonscm.debian.org/viewvc/dep/web/deps/dep5.mdwn?view=markup&pathrev=135
-Maintainer: Victor Efimov <victor@vsespb.ru>
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: App-MtAws
+Upstream-Contact: Victor Efimov <victor@vsespb.ru>
 Source: http://search.cpan.org/dist/App-MtAws/
-Name: App-MtAws
-DISCLAIMER: This copyright info was automatically extracted 
- from the perl module. It may not be accurate, so you better 
- check the module sources in order to ensure the module for its 
- inclusion in Debian or for general legal information. Please, 
- if licensing information is incorrectly generated, file a bug 
- on dh-make-perl.
- NOTE: Don't forget to remove this disclaimer once you are happy
- with this file.
 
 Files: *
-Copyright: Victor Efimov <victor@vsespb.ru>
+Copyright: 2012-2014 Victor Efimov
 License: GPL-3+
 
 Files: debian/*
-Copyright: 2013, Victor Efimov <victor@vsespb.ru>
-License: GPL-3+ 
+Copyright: 2013-2014 Victor Efimov
+License: GPL-3+
 
 License: GPL-3+
  This program is free software; you can redistribute it and/or modify
@@ -27,4 +19,3 @@ License: GPL-3+
  .
  On Debian systems, the complete text of version 3 of the GNU General
  Public License can be found in `/usr/share/common-licenses/GPL-3'.
-

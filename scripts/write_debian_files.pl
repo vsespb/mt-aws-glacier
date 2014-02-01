@@ -34,6 +34,7 @@ sub write_changelog($&)
 	open my $f, ">", $CHANGELOG or confess;
 	for (@{$_changelog}) {
 		next if $_->{re} && $distro !~ $_->{re};
+		next if $distro eq 'trusty' && $_->{upstream_version} le '1.111';
 		my $version;
 		if ($DISTRO_TYPE eq 'ubuntu') {
 		    $version = "$_->{upstream_version}-0ubuntu$_->{package_version}~${distro}1~ppa1";
@@ -81,7 +82,7 @@ sub write_control
 
 	my $is_lucid = $distro =~ /(lucid|squeeze)/i;
 
-	push @build_deps, 'libtest-spec-perl ', 'libhttp-daemon-perl' unless $is_lucid;
+	push @build_deps, 'libtest-spec-perl', 'libhttp-daemon-perl' unless $is_lucid;
 
 	my @deps = qw/libwww-perl libjson-xs-perl/;
 	my @recommends = $is_lucid ?  () : qw/liblwp-protocol-https-perl/;
@@ -104,6 +105,10 @@ Package: $PACKAGE
 Architecture: all
 Depends: \${misc:Depends}, \${perl:Depends}, perl, $deps
 ${recommends_line}Description: mt-aws/glacier - Perl Multithreaded Multipart sync to Amazon Glacier
+ Amazon Glacier is an archive/backup service with very low storage price.
+ However with some caveats in usage and archive retrieval prices.
+ mt-aws-glacier is a client application for Amazon Glacier, written
+ in Perl programming language, for *nix systems.
 END
 
 	close $f or confess
@@ -126,6 +131,68 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.113', 2, 'Sat, 1 Feb 2014 18:10:00 +0400', <<'END';
+  * Rebuild for Ubuntu - remove some extra files from tarrball.
+END
+
+	entry '1.113', 1, 'Sat, 1 Feb 2014 17:50:00 +0400', <<'END';
+  * Fixed: Y2038 problem with file modification time in metadata (i.e. journal and Amazon Glacier servers).
+  Some OSes and filesystems don't support years after 2038 (i.e. Linux 32bit)
+  Some perl versions don't support handling dates after 2038 (i.e. 32bit perl before 5.12 and
+  64bit perl 5.8.8 (RHEL5), 5.10.0 (some SUSE))
+
+  There is not much sense in having files with file modification after Y2038 or before Y1902, however such file can
+  appear in filesystems due to bugs in other software etc.
+
+  Fixing now inconsistency in behaviour with such metadata between different OS/perl versions.
+
+  After this fix file modification time will be restored correctly from Amazon servers to journal (via download-inventory)
+  on all platforms, for all years in range 1000-9999.
+
+  However if your OS/filesystem does not work with such dates, anything except correct date in journal file
+  is not guaranteed.
+
+  Before this fix, such dates could result in lost of filenames and modification time in journal (filename replaced
+  with random token) when restoring inventory (you are affected if you uploaded file on 64bit system with date
+  after Y2038, but then restored on 32bit system).
+
+  * Documentation: Also, note about Y2038 added to "Limitationss" section.
+
+  * CSV inventory parsing - making it 30% slower, but more consistent with what Amazon documented about its format
+  https://forums.aws.amazon.com/thread.jspa?threadID=141807&tstart=0
+
+  * Cosmetic changes to docs
+
+  * CPAN install - on some systems like ARM, some NAS, 32bit OSes decrease number of concurrent tests during install.
+  Might help preventing out-of-memory problems (but makes test slower).
+END
+
+	entry '1.112', 1, 'Tue, 14 Jan 2014 01:34:00 +0400', <<'END';
+  * PPA package for Ubuntu 14.04 added to Ubuntu PPA (+ fixes in metadata of Debian/Ubuntu packages)
+
+  * Workaround: 31 December 2013 Amazon introduced extension to inventory retrieval API: now one can request for just
+  a part of inventory. This, however, can break mt-aws-glacier behaviour in rare circumstances i.e. when you use 3rd
+  party app to request a part of inventory and then run mt-aws-glacier to get full inventory, mt-aws-glacier can
+  download partial inventory instead of full. (details here https://forums.aws.amazon.com/thread.jspa?threadID=143107).
+
+  Releasing workaround now - mt-aws-glacier now tried to check if this is a full inventory (it's still possible for the
+  bug to appear very-very rare circumstances i.e. if 3rd party app will request for part inventory with limit set and
+  then request for continuation without any limits).
+
+  Also, now all inventory jobs raised by mt-aws-glacier have special marker. In the future versions bug will be fully
+  fixed as all non-mtglacier jobs will be disabled.
+
+  * Fixed several brittle tests introduced in v1.110, preventing mtglacier from install via CPAN on some systems:
+  - systems with perl 5.18.1, 5.18.2 and stock version of Digest::SHA
+  - old systems (i suspect RHEL5 without any CPAN modules installed) with old version of File::Temp
+  - Cygwin
+
+  * Documentation: Warning about incompatibility of metadata added to Must Read section
+
+  * Documentation: Fixed - installation instructions for Debian via custom repository improved - lsb_release command,
+  used in install instruction, was not a part of (some?) minimal Debian installs. So some users experienced problems
+  installing mtglacier first time. I suspect users who use FISH shell were affected too.
+END
 
 	entry '1.111', 1, 'Fri, 20 Dec 2013 22:35:00 +0400', <<'END';
   * Brittle test fixed (i386, old Digest::SHA)

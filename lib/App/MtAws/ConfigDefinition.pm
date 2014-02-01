@@ -1,5 +1,5 @@
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -20,7 +20,7 @@
 
 package App::MtAws::ConfigDefinition;
 
-our $VERSION = "1.111";
+our $VERSION = "1.113";
 
 use strict;
 use warnings;
@@ -207,9 +207,9 @@ sub check_https
 	if (present('protocol') and value('protocol') eq 'https') {
 		if (LWP::UserAgent->is_protocol_supported("https")) {
 			# to get LWP version, use LWP->VERSION instead of LWP::UserAgent->VERSION
-			error('LWP::UserAgent 6.x required to use HTTPS') unless LWP->VERSION() >= 6;
+			error('LWP::UserAgent 6.x required to use HTTPS') unless LWP->VERSION() ge '6';
 			require LWP::Protocol::https;
-			error('LWP::Protocol::https 6.x required to use HTTPS') unless LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION >= 6;
+			error('LWP::Protocol::https 6.x required to use HTTPS') unless LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION ge '6';
 		} else {
 			error('IO::Socket::SSL or LWP::Protocol::https is not installed');
 		}

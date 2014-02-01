@@ -1,5 +1,5 @@
 # mt-aws-glacier - Amazon Glacier sync client
-# Copyright (C) 2012-2013  Victor Efimov
+# Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
 # License: GPLv3
 #
@@ -20,7 +20,7 @@
 
 package App::MtAws::Utils;
 
-our $VERSION = '1.111';
+our $VERSION = '1.113';
 
 use strict;
 use warnings;
@@ -32,6 +32,7 @@ use Carp;
 use Encode;
 use LWP::UserAgent;
 use Digest::SHA;
+use Time::Local;
 use Config;
 use bytes ();
 
@@ -45,12 +46,12 @@ our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file
 hex_dump_string is_wide_string
 characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists file_inodev
-is_digest_sha_broken_for_large_data
+is_64bit_os is_64bit_time is_digest_sha_broken_for_large_data is_y2038_supported
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 
 BEGIN {
-	if ($File::Spec::VERSION < 3.13) {
+	if ($File::Spec::VERSION lt '3.13') {
 		our $__orig_abs_to_rel = File::Spec->can("abs2rel");
 		no warnings 'once';
 		*File::Spec::abs2rel = sub {
@@ -313,9 +314,34 @@ sub get_config_var($) # separate function so we can override it in tests
 	$Config{shift()}
 }
 
+sub is_64bit_os
+{
+	get_config_var('longsize') >= 8
+}
+
+sub is_64bit_time
+{
+	is_64bit_os && ($^O =~ /^(freebsd|gnukfreebsd|netbsd|midnightbsd|linux|darwin|solaris)$/) # no OpenBSD for sure
+	# not sure about cygwin, solaris
+}
+
+
 sub is_digest_sha_broken_for_large_data
 {
-	get_config_var('longsize') < 8 && $Digest::SHA::VERSION < 5.62 - 1E-06;
+	!is_64bit_os && $Digest::SHA::VERSION lt '5.62';
+}
+
+our $_is_y2038_supported = undef;
+sub is_y2038_supported
+{
+	return $_is_y2038_supported if defined $_is_y2038_supported;
+	local $SIG{__WARN__} = sub {};
+	$_is_y2038_supported = eval {
+		(timegm(0, 0, 0, 01, 01, 2038) == 2148595200) &&
+		(timegm(0, 0, 0, 01, 01, 4000) == 64063267200) &&
+		(join(",",gmtime(64063267200)) eq "0,0,0,1,1,2100,2,31,0") &&
+		(join(",",gmtime(2148595200)) eq "0,0,0,1,1,138,1,31,0")
+	} || 0;
 }
 
 1;
