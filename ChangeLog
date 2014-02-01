@@ -25,6 +25,9 @@
 
   * Cosmetic changes to docs
 
+  * CPAN install - on some systems like ARM, some NAS, 32bit OSes decrease number of concurrent tests during install.
+  Might help preventing out-of-memory problems (but makes test slower).
+
 ### 2014-01-14 v1.112
 
   * PPA package for Ubuntu 14.04 added to Ubuntu PPA (+ fixes in metadata of Debian/Ubuntu packages)
