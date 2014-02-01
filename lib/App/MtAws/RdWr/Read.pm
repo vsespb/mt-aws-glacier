@@ -20,7 +20,7 @@
 
 package App::MtAws::RdWr::Read;
 
-our $VERSION = '1.111';
+our $VERSION = '1.113';
 
 use Carp;
 use strict;
