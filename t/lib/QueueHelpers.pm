@@ -24,8 +24,7 @@ use strict;
 use warnings;
 use App::MtAws::QueueJobResult;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 our @EXPORT = qw/test_coderef expect_done expect_wait call_callback call_callback_with_attachment/;
 

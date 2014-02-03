@@ -47,7 +47,7 @@ BEGIN {
 	}
 };
 
-use base 'Exporter';
+use Exporter 'import';
 our @EXPORT = qw/lcg_srand lcg_rand lcg_irand lcg_shuffle/;
 
 use Carp;

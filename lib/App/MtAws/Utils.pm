@@ -36,8 +36,7 @@ use Time::Local;
 use Config;
 use bytes ();
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 use constant INVENTORY_TYPE_CSV => 'CSV';
 use constant INVENTORY_TYPE_JSON => 'JSON';

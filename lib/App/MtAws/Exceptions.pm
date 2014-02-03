@@ -32,8 +32,7 @@ use App::MtAws::Utils;
 use Carp;
 eval { require I18N::Langinfo; }; # TODO: test that it's loaded compile time, test that it wont break if failed
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 
 our @EXPORT = qw/exception get_exception is_exception exception_message dump_error get_errno/;

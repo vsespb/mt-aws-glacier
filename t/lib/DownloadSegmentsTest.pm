@@ -23,8 +23,7 @@ package DownloadSegmentsTest;
 use strict;
 use warnings;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 our @EXPORT_OK=qw/test_case_full test_case_lite test_case_random_finish prepare_download_segments prepare_download prepare_mock ONE_MB/;
 
 
@@ -64,9 +63,9 @@ sub prepare_download_segments
 	prepare_mock sub {
 		my %args = (size => $size, archive_id => 'abc', jobid => 'somejob', file_downloads => { 'segment-size' => $segment_size},
 			relfilename => 'def', filename => '/path/def', mtime => 456);
-		
+
 		my $j = App::MtAws::QueueJob::DownloadSegments->new(%args);
-		
+
 		$test_cb->($j, 1, { %args, tempfile => "sometempfilename" });
 	};
 }
@@ -77,9 +76,9 @@ sub prepare_download
 	prepare_mock sub {
 		my %args = (size => $size, archive_id => 'abc', jobid => 'somejob', file_downloads => { 'segment-size' => $segment_size},
 			relfilename => 'def', filename => '/path/def', mtime => 456, treehash => 'wedontneedit');
-		
+
 		my $j = App::MtAws::QueueJob::Download->new(%args);
-		
+
 		$test_cb->($j, 0, { %args, tempfile => "sometempfilename" });
 	}
 }
@@ -88,19 +87,19 @@ sub prepare_download
 sub verify_parts
 {
 	my ($parts, $size, $segment_size, $expected_sizes) = @_;
-	
+
 	my @expected = $expected_sizes ? @$expected_sizes : ();
-	
+
 	# auto check that position that we're got are correct
 	my $expect_position = 0;
 	my $odd_size_seen = 0;
 	for my $part (@$parts) {
 		is $part->{position}, $expect_position;
 		$expect_position += $part->{download_size};
-		
+
 		# manual check that position that we're got are correct
 		is($part->{download_size}, shift @expected, "size matches next size in list") if $expected_sizes; # _original_ sizes
-		
+
 		if ($part->{download_size} != $segment_size * ONE_MB) {
 			ok !$odd_size_seen, "current size down not match segment-size, but it's first time";
 			$odd_size_seen = 1;
@@ -127,7 +126,7 @@ sub verify_res
 			},
 			code => JOB_OK,
 		);
-	
+
 }
 
 # only test part sizes
@@ -136,9 +135,9 @@ sub test_case_lite
 	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
 	$prepare_cb->($size, $segment_size, sub {
 		my ($j, undef, $args) = @_;
-		
+
 		my @parts;
-	
+
 		my $i = 0;
 		while() {
 			confess if $i++ > 1000; # protection
@@ -161,19 +160,19 @@ sub test_case_late_finish
 	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
 	$prepare_cb->($size, $segment_size, sub {
 		my ($j, $check_tmpfile, $args) = @_;
-		
+
 		ok !defined($j->{i_tmp}), "tempfile object is not yet defined" if $check_tmpfile;
-		
+
 		my @parts;
-	
+
 		my $i = 0;
 		while() {
 			confess if $i++ > 1000;
-			
+
 			my $res = $j->next;
-			
+
 			ok $j->{i_tmp}, "tempfile object is defined" if $check_tmpfile;
-			
+
 			if ($res->{code} eq JOB_OK) {
 				verify_res($res, $args);
 				push @parts, { download_size => $res->{task}{args}{download_size}, position => $res->{task}{args}{position}, cb => $res->{task}{cb_task_proxy} };
@@ -206,16 +205,16 @@ sub test_case_early_finish
 	my ($prepare_cb, $size, $segment_size, $expected_sizes) = @_;
 	$prepare_cb->($size, $segment_size, sub {
 		my ($j, $check_tmpfile, $args) = @_;
-		
+
 		ok !defined($j->{i_tmp}), "tempfile object is not yet defined" if $check_tmpfile;
-		
+
 		my @parts;
-	
+
 		my $i = 0;
 		my $remember_tempfile;
 		while() {
 			confess if $i++ > 1000;
-			
+
 			my $res = $j->next;
 
 			if ($check_tmpfile && !$remember_tempfile) {

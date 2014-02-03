@@ -49,7 +49,7 @@
             "Cwd" : "0",
             "Digest::SHA" : "0",
             "Encode" : "0",
-            "Exporter" : "0",
+            "Exporter" : "5.58",
             "File::Basename" : "0",
             "File::Find" : "0",
             "File::Path" : "0",

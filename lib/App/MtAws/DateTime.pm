@@ -30,8 +30,7 @@ use POSIX;
 use Time::Local;
 use App::MtAws::Utils;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 our @EXPORT = qw/epoch_to_iso8601 iso8601_to_epoch/;
 

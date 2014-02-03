@@ -35,8 +35,7 @@ use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use POSIX;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 our @EXPORT_OK = qw/with_forks fork_engine/;
 

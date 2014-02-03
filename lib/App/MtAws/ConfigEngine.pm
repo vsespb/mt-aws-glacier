@@ -32,8 +32,7 @@ use utf8;
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 our @EXPORT = qw/option options positional command validation message
 	mandatory optional seen deprecated validate scope

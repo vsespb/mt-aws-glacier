@@ -28,7 +28,7 @@ filter, include, exclude options allow you to construct a list of RULES to selec
 (II)
 
 --filter
-Adds one or several RULES to the list of rules. 
+Adds one or several RULES to the list of rules.
 One filter value can contain multiple rules, it has same effect as multiple filter values with one RULE each.
 
 --filter='RULE1 RULE2' --filter 'RULE3'
@@ -42,9 +42,9 @@ There can be a space between '+'/'-' and PATTERN.
 
 '+' means INCLUDE PATTERN, '-' means EXCLUDE PATTERN
 
-Note: If RULES contain spaces or wildcards, you must quote it 
+Note: If RULES contain spaces or wildcards, you must quote it
 Note: although, PATTERN can contain spaces, you cannot use if, because RULES separated by a space(s).
-Note: PATTERN can be empty 
+Note: PATTERN can be empty
 
 
 --include=PATTERN
@@ -53,7 +53,7 @@ Adds an INCLUDE PATTERN to list of rules
 --exclude=PATTERN
 Adds an EXCLUDE PATTERN to list of rules
 
-Note: You can use spaces in PATTERNs here 
+Note: You can use spaces in PATTERNs here
 
 (III)
 
@@ -96,7 +96,7 @@ a) directory match EXCLUDE rule without '!' prefix, ending with '/' or '**', or 
 b) AND there is no INCLUDE rules before this exclude RULE
 
 4) When we process both local files and Journal filelist (sync, restore commands), rule applied to BOTH sides.
- 
+
 =cut
 
 package App::MtAws::Filter;
@@ -108,8 +108,7 @@ use warnings;
 use utf8;
 use Carp;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 
 sub new
@@ -117,17 +116,17 @@ sub new
 	my ($class, %args) = @_;
 	my $self = \%args;
 	bless $self, $class;
-	
+
 	$self->_init_substitutions(
 		"\Q**\E" => '.*',
 		"\Q/**/\E" => '(/|/.*/)',
 		"\Q*\E" => '[^/]*',
 		"\Q?\E" => '[^/]'
 	);
-	
+
 	return $self;
 }
-				
+
 sub check_filenames
 {
 	my $self = shift;
@@ -194,7 +193,7 @@ sub _filters_to_pattern
 sub _init_substitutions
 {
 	my $self = shift;
-	
+
 	my %subst = @_; # we treat args as hash
 
 	my (@all);

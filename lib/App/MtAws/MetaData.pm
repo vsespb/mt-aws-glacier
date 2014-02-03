@@ -36,8 +36,7 @@ use App::MtAws::DateTime;
 use constant MAX_SIZE => 1024;
 use constant META_JOB_TYPE_FULL => 'full';
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 our @EXPORT = qw/meta_decode meta_job_decode meta_encode meta_job_encode META_JOB_TYPE_FULL/;
 =pod

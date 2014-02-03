@@ -84,7 +84,7 @@ my $build = Module::Build->new(
 		#
 		'Carp' => 0,
 		'Encode' => 0,
-		'Exporter' => 0,
+		'Exporter' => '5.58', # min. tested version
 		'File::Basename' => 0,
 		'File::Find' => 0,
 		'File::Path' => 0,

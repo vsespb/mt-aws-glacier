@@ -30,8 +30,7 @@ use Carp;
 use JSON::XS;
 use App::MtAws::Utils;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 
 our @EXPORT = qw/ get_data send_data/;
 our @EXPORT_OK = qw/escape unescape encode_data decode_data/;

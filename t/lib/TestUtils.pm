@@ -29,8 +29,7 @@ use App::MtAws::ConfigDefinition;
 use App::MtAws::ConfigEngine;
 use Test::More;
 
-require Exporter;
-use base qw/Exporter/;
+use Exporter 'import';
 use Encode;
 use Carp;
 use IO::Pipe;
