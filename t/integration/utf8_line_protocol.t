@@ -31,9 +31,9 @@ use Test::Deep;
 use Encode;
 use bytes;
 no bytes;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 
 my $str = "Тест";

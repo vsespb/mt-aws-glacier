@@ -27,7 +27,7 @@ use Test::More tests => 86;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use App::MtAws::Utils;
 
 sub assert_partsize($$@) # should have same number of assertions as assert_partsize_error

@@ -31,10 +31,10 @@ use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Iterator;
 use App::MtAws::QueueJob::MultipartPart;
 use QueueHelpers;
-use TestUtils;
+use TestUtils 'w_fatal';
 use LCGRandom;
 
-warning_fatal();
+
 
 
 use Data::Dumper;

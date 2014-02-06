@@ -30,9 +30,9 @@ use JSON::XS;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::Glacier::ListJobs;
 
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

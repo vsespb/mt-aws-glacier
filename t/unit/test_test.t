@@ -28,9 +28,9 @@ use utf8;
 use Test::More tests => 31;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 # Tests of test libraries
 

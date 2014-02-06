@@ -25,12 +25,12 @@ use warnings;
 use Test::More tests => 18;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use App::MtAws::IntermediateFile;
 use Carp;
 use Fcntl qw/SEEK_SET LOCK_EX SEEK_SET/;
 
-warning_fatal();
+
 
 my $rootdir = get_temp_dir();
 

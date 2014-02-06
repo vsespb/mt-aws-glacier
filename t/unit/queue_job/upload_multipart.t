@@ -30,9 +30,9 @@ use UploadMultipartTest;
 use QueueHelpers;
 use App::MtAws::TreeHash;
 use App::MtAws::QueueJobResult;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

@@ -28,12 +28,12 @@ use utf8;
 use Test::More tests => 35;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use LCGRandom;
 use Digest::SHA qw/sha256_hex/;
 use Test::Deep;
 
-warning_fatal();
+
 
 
 ok ! eval { lcg_rand(); 1 };

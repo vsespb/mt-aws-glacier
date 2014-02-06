@@ -36,12 +36,12 @@ use Test::More;
 use Test::Deep;
 
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 use App::MtAws::Journal;
 require App::MtAws::Command::Sync;
 
-warning_fatal();
+
 
 plan tests => 475;
 

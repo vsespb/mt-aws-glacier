@@ -32,10 +32,10 @@ use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::DownloadSegments;
 use QueueHelpers;
 use LCGRandom;
-use TestUtils;
+use TestUtils 'w_fatal';
 use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB prepare_download_segments prepare_mock/;
 
-warning_fatal();
+
 
 #
 # test validation

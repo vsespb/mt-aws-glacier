@@ -33,11 +33,11 @@ use File::Path;
 use File::stat;
 use Encode;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 use App::MtAws::Utils;
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 

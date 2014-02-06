@@ -36,7 +36,7 @@ use App::MtAws::QueueJob::DownloadSegments;
 use App::MtAws::QueueJob::Download;
 use QueueHelpers;
 use LCGRandom;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 use constant ONE_MB => 1024*1024;
 

@@ -26,9 +26,9 @@ use utf8;
 use Test::More tests => 6;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 {
 	fake_config sub {

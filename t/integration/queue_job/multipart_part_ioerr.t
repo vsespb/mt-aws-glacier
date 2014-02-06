@@ -29,9 +29,9 @@ use POSIX;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 
 use App::MtAws::Exceptions;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 my $relfilename = 'multipart_part';

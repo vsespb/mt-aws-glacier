@@ -34,9 +34,9 @@ use File::Path;
 use JournalTest;
 use Encode;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 if(can_work_with_non_utf8_files) {
 	plan tests => 5250;

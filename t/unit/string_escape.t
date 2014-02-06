@@ -31,9 +31,9 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Utils;
 use Encode;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $utfprefix = "(UTF-8)";
 

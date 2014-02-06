@@ -26,12 +26,12 @@ use utf8;
 use Test::More;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use Test::Deep;
 use Data::Dumper;
 use LWP::UserAgent;
 
-warning_fatal();
+
 
 
 

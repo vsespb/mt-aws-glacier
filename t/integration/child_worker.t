@@ -32,12 +32,12 @@ use App::MtAws::ChildWorker;
 use App::MtAws::TreeHash;
 use App::MtAws;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 use File::stat;
 
 my $mtroot = get_temp_dir();
 
-warning_fatal();
+
 
 describe "retrieval_download_job" => sub {
 	it "should deliver correct data" => sub {

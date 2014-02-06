@@ -27,9 +27,9 @@ use Test::More tests => 39;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 sub assert_segment_size($$@)
 {

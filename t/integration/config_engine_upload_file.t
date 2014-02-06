@@ -32,9 +32,9 @@ use Test::MockModule;
 use File::Path;
 use File::stat;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 
 # upload_file command parsing test

@@ -32,11 +32,11 @@ use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Utils;
 use Encode;
 use POSIX;
-use TestUtils;
+use TestUtils 'w_fatal';
 use Carp;
 use Time::HiRes qw/usleep/;
 
-#warning_fatal();
+#
 
 {
 	my $mtroot = get_temp_dir();

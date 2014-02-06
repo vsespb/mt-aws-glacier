@@ -31,9 +31,9 @@ use App::MtAws::Journal;
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
 use Test::MockModule;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $rootdir = 'root_dir';
 

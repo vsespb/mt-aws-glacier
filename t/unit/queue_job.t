@@ -28,11 +28,11 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJob;
 use App::MtAws::QueueJobResult;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 use Data::Dumper;
 
-warning_fatal();
+
 
 sub expect_code
 {

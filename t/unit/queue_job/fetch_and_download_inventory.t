@@ -32,9 +32,9 @@ use App::MtAws::QueueJob::FetchAndDownloadInventory;
 use DeleteTest;
 use QueueHelpers;
 use JobListEmulator;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

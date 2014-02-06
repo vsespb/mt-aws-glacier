@@ -27,13 +27,13 @@ use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
-use TestUtils;
+use TestUtils 'w_fatal';
 use LCGRandom;
 use MyQueueEngine;
 
 use Data::Dumper;
 
-warning_fatal();
+
 
 {
 	{

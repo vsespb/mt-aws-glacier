@@ -32,9 +32,9 @@ use VerifyTest;
 use UploadMultipartTest;
 use DeleteTest;
 use QueueHelpers;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

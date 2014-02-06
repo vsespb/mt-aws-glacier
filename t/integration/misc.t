@@ -25,16 +25,13 @@ use warnings;
 use Test::More tests => 17;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use App::MtAws;
 use App::MtAws::Utils;
 use Config;
 
 use Digest::SHA;
 use Config;
-
-warning_fatal();
-
 
 #
 # test what untested in perl

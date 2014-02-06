@@ -37,9 +37,9 @@ use Carp;
 
 use Digest::SHA qw/sha256_hex/;
 use DateTime;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 # test iso8601_to_epoch
 {

@@ -27,9 +27,9 @@ use Test::More tests => 173;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal(); # TODO: reenable when get rid of GetOpt warning
+ # TODO: reenable when get rid of GetOpt warning
 
 sub assert_options($$@)
 {

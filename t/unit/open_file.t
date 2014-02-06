@@ -42,9 +42,9 @@ BEGIN { *CORE::GLOBAL::binmode = sub(*;$) { push @$BinmodeStack, \@_; CORE::binm
 
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 
 my $mtroot = get_temp_dir();

@@ -32,9 +32,9 @@ use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::ConfigEngine;
 use Carp;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 no warnings 'redefine';
 
 # validation

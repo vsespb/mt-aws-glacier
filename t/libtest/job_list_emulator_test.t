@@ -28,11 +28,11 @@ use utf8;
 use Test::More tests => 14;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use JobListEmulator;
 use Test::Deep;
 
-warning_fatal();
+
 
 
 sub add_page_fixture

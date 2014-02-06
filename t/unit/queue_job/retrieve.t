@@ -30,9 +30,9 @@ use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Retrieve;
 use DeleteTest;
 use QueueHelpers;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

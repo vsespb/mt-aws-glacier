@@ -30,9 +30,9 @@ use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use POSIX;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $meta_coder = JSON::XS->new->utf8;
 

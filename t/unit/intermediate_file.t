@@ -29,7 +29,7 @@ use FindBin;
 use Carp;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 use App::MtAws::IntermediateFile;
 use App::MtAws::Exceptions;
 use File::stat;
@@ -39,7 +39,7 @@ use App::MtAws::Utils;
 
 my $rootdir = get_temp_dir();
 
-warning_fatal();
+
 
 sub slurp
 {

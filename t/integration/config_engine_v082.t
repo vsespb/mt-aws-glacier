@@ -29,9 +29,9 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Test::MockModule;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 # v0.82 regressions test
 

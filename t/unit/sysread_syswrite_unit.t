@@ -39,7 +39,7 @@ BEGIN { *CORE::GLOBAL::sysread = sub(*\$$;$) { &_sysread; }; };
 BEGIN { *CORE::GLOBAL::syswrite = sub(*$;$$) { &_syswrite; }; };
 
 use App::MtAws::Utils;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 
 my $mtroot = get_temp_dir();
@@ -47,7 +47,7 @@ open(my $tmp, ">", "$mtroot/infile") or confess;
 close $tmp;
 open(my $in, "<", "$mtroot/infile") or confess;
 
-warning_fatal();
+
 
 {
 	no warnings 'redefine';

@@ -32,9 +32,9 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Filter;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 # to make sure we're not affected by
 # http://perldoc.perl.org/perl5180delta.html#New-Restrictions-in-Multi-Character-Case-Insensitive-Matching-in-Regular-Expression-Bracketed-Character-Classes

@@ -27,9 +27,9 @@ use Test::More tests => 10;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 
 for (

@@ -25,11 +25,11 @@ use warnings;
 use Test::Simple tests => 45;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use Encode;
 use App::MtAws::Utils;
 
-warning_fatal();
+
 
 use utf8;
 use bytes;

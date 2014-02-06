@@ -30,9 +30,9 @@ use App::MtAws::MetaData;
 use Encode;
 use JSON::XS;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 describe "MetaData" => sub {
 	it "should catch undef in _decode_json" => sub {

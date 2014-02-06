@@ -36,9 +36,9 @@ use Encode;
 use JSON::XS;
 use Data::Dumper;
 use POSIX;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
 
 no warnings 'redefine';

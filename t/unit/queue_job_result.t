@@ -27,9 +27,9 @@ use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJobResult;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my @codes = (JOB_RETRY, JOB_OK, JOB_WAIT, JOB_DONE);
 my $coderef = sub { "dummy" };

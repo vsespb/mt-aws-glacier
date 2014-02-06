@@ -30,9 +30,9 @@ use Scalar::Util qw/weaken/;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::Glacier::Inventory::JSON;
 
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

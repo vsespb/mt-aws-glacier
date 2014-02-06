@@ -33,9 +33,9 @@ use App::MtAws::Exceptions;
 use Test::MockModule;
 use Encode;
 use List::Util qw/min/;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $relfilename = 'def/abc';
 my $rootdir = 'root_dir';

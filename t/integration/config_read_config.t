@@ -33,9 +33,9 @@ use App::MtAws::Utils;
 use File::Path;
 use Encode;
 use POSIX;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 mkpath($mtroot);

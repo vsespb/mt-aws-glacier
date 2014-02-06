@@ -26,7 +26,7 @@ use Test::More tests => 29;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use POSIX;
 use App::MtAws::ForkEngine;
 use App::MtAws::IntermediateFile;
@@ -40,7 +40,7 @@ use Time::HiRes qw/usleep/;
 # test on different Unixes: Linux, FreeBSD and OpenBSD can be different
 # under some BSD there is no "seq" but you can use "jot" instead
 
-warning_fatal();
+
 
 my $rootdir = get_temp_dir();
 

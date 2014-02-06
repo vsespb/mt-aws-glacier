@@ -35,7 +35,7 @@ use Test::More tests => 242;
 use Test::Deep;
 
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 use App::MtAws::Journal;
 use App::MtAws::Exceptions;
@@ -47,7 +47,7 @@ BEGIN { *CORE::GLOBAL::close = sub(;*) { _close($_[0]) }; };
 require App::MtAws::Command::CheckLocalHash;
 
 
-warning_fatal();
+
 
 sub parse_out
 {

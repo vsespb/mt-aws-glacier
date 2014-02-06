@@ -25,14 +25,14 @@ use warnings;
 use Test::More tests => 1;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use App::MtAws::Utils;
 use Carp;
 use Fcntl qw/SEEK_SET LOCK_EX LOCK_UN SEEK_SET/;
 use IO::Pipe;
 use Time::HiRes qw/usleep/;
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 

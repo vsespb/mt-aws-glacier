@@ -34,10 +34,10 @@ use POSIX;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
-use TestUtils;
+use TestUtils 'w_fatal';
 use I18N::Langinfo; # TODO: skip test without that module??
 
-warning_fatal();
+
 
 
 cmp_deeply exception('MyMessage'), { MTEXCEPTION => bool(1), message => 'MyMessage'};

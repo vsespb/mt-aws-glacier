@@ -31,14 +31,14 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Carp;
 use URI;
-use TestUtils;
+use TestUtils 'w_fatal';
 use Test::More;
 use HTTP::Daemon;
 use App::MtAws;
 
 print "# LWP Versions:".LWP->VERSION().",".HTTP::Message->VERSION.",".HTTP::Daemon->VERSION()."\n" unless @ARGV;
 
-warning_fatal();
+
 
 my $proto = 'http';
 

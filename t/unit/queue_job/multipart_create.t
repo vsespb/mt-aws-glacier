@@ -31,9 +31,9 @@ use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartCreate;
 use App::MtAws::Exceptions;
 use QueueHelpers;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 

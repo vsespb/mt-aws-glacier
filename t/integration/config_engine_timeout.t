@@ -27,9 +27,9 @@ use Test::More tests => 54;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 open my $f, ">", "$mtroot/file"; print $f "1"; close $f;

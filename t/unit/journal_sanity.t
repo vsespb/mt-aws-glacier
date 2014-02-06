@@ -28,9 +28,9 @@ use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Utils;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 # Filenames only, no directory name
 
 for (qw!a a/b a/b/c!, qq! a/ b /c!, qq!a / c!, qq!0!, qq! 0!) {

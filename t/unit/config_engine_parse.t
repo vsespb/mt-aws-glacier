@@ -30,9 +30,9 @@ use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use Test::MockModule;
 use Carp;
 use Data::Dumper;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 

@@ -28,9 +28,9 @@ use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::Journal;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $relfilename = 'def/abc';
 my $rootdir = 'root_dir';

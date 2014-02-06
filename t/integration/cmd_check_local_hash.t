@@ -31,9 +31,9 @@ use App::MtAws::Journal;
 use App::MtAws::Exceptions;
 use File::Path;
 use POSIX;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 my $localroot = "$mtroot/cmd_check_local_hash";

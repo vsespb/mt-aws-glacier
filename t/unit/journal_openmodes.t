@@ -33,10 +33,10 @@ use App::MtAws::Exceptions;
 use Test::MockModule;
 use POSIX;
 use Carp;
-use TestUtils;
+use TestUtils 'w_fatal';
 
 
-warning_fatal();
+
 
 my $mtroot = get_temp_dir();
 my $rootdir = 'def';

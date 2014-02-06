@@ -25,10 +25,10 @@ use warnings;
 use Test::More tests => 16;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils;
+use TestUtils 'w_fatal';
 use App::MtAws;
 
-warning_fatal();
+
 
 my @dynamic_modules = map { my $a = $_;  $a =~ s!::!/!g; $a; } qw/
 	Command::Sync

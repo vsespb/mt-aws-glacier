@@ -30,9 +30,9 @@ use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::MultipartFinish;
 use App::MtAws::TreeHash;
 use QueueHelpers;
-use TestUtils;
+use TestUtils 'w_fatal';
 
-warning_fatal();
+
 
 use Data::Dumper;
 
