@@ -81,6 +81,7 @@ sub iso8601_to_epoch
 {
 	my ($str) = @_;
 	 # only _some_ iso8601 format support for now
+	utf8::downgrade($str); # ascii regexps below
 	my ($year, $month, $day, $hour, $min, $sec) =
 		$str =~ /^\s*(\d{4})[\-\s]*(\d{2})[\-\s]*(\d{2})\s*T\s*(\d{2})[\:\s]*(\d{2})[\:\s]*(\d{2})[\,\.\d]{0,10}\s*Z\s*$/i or
 		return;

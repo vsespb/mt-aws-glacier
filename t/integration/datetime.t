@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 91;
+use Test::More tests => 94;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -92,6 +92,13 @@ use TestUtils 'w_fatal';
 	}
 }
 
+for ("2014\x850101T000055Z") {
+	ok(!defined iso8601_to_epoch($_), "should not treat \x85 as space separator");
+	utf8::upgrade($_);
+	ok(!defined iso8601_to_epoch($_), "should not treat \x85 as space separator in upgraded string");
+	ok utf8::is_utf8($_), "should not downgrade source string";
+}
+
 
 # check time converts both ways
 
@@ -117,6 +124,7 @@ ok !defined iso8601_to_epoch("20140132T000000Z");
 ok !defined iso8601_to_epoch("20140101T240000Z");
 ok !defined iso8601_to_epoch("20140101T006000Z");
 ok !defined iso8601_to_epoch("20140101T000063Z");
+
 
 ok !defined iso8601_to_epoch("09990101T000000Z"), "should disallow years before 1000";
 ok defined epoch_to_iso8601(253402300799);
