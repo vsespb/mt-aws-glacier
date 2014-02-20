@@ -20,7 +20,7 @@
 
 package App::MtAws::QueueJob::Verify;
 
-our $VERSION = '1.113';
+our $VERSION = '1.114';
 
 use strict;
 use warnings;

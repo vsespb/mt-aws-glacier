@@ -1,3 +1,17 @@
+libapp-mtaws-perl (1.114-0ubuntu1~precise1~ppa1) precise; urgency=low
+
+  * Fixed: a crash with message:
+  UNEXPECTED ERROR: archive XXXXXX...XXX not found in archive_h
+
+  mtglacier was crashing if --filter/--include/--exclude options applied, and a file, previously deleted in
+  Journal (i.e. with --purge-vault or --delete-removed) excluded by this filter.
+
+  i.e. when file deleted, a record about deletion is appended to Journal (and previously there was a record
+  about creation). when journal is read, creation record is skipped (because filters applied), but deletion record was
+  not checked by filter. thus mtglacier detected it problem with journal consistency (attempt to delete unexistant file)
+
+ -- Victor Efimov <victor@vsespb.ru>  Thu, 20 Feb 2014 16:46:00 +0400
+
 libapp-mtaws-perl (1.113-0ubuntu2~precise1~ppa1) precise; urgency=low
 
   * Rebuild for Ubuntu - remove some extra files from tarrball.

@@ -131,6 +131,17 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.114', 1, 'Thu, 20 Feb 2014 16:46:00 +0400', <<'END';
+  * Fixed: a crash with message:
+  UNEXPECTED ERROR: archive XXXXXX...XXX not found in archive_h
+
+  mtglacier was crashing if --filter/--include/--exclude options applied, and a file, previously deleted in
+  Journal (i.e. with --purge-vault or --delete-removed) excluded by this filter.
+
+  i.e. when file deleted, a record about deletion is appended to Journal (and previously there was a record
+  about creation). when journal is read, creation record is skipped (because filters applied), but deletion record was
+  not checked by filter. thus mtglacier detected it problem with journal consistency (attempt to delete unexistant file)
+END
 	entry '1.113', 2, 'Sat, 1 Feb 2014 18:10:00 +0400', <<'END';
   * Rebuild for Ubuntu - remove some extra files from tarrball.
 END

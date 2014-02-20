@@ -1,3 +1,4 @@
+### 2014-02-20 v1.114
 
   * Fixed: a crash with message:
   UNEXPECTED ERROR: archive XXXXXX...XXX not found in archive_h
@@ -8,7 +9,6 @@
   i.e. when file deleted, a record about deletion is appended to Journal (and previously there was a record
   about creation). when journal is read, creation record is skipped (because filters applied), but deletion record was
   not checked by filter. thus mtglacier detected it problem with journal consistency (attempt to delete unexistant file)
-
 
 ### 2014-02-01 v1.113
 
