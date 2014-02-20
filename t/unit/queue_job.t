@@ -26,9 +26,9 @@ use Test::More tests => 24;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::QueueJob;
 use App::MtAws::QueueJobResult;
-use TestUtils 'w_fatal';
 
 use Data::Dumper;
 

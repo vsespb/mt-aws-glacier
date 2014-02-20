@@ -27,12 +27,12 @@ use Test::Deep;
 use Carp;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::FetchAndDownloadInventory;
 use DeleteTest;
 use QueueHelpers;
 use JobListEmulator;
-use TestUtils 'w_fatal';
 
 
 

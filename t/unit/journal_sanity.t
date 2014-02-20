@@ -27,8 +27,8 @@ use Test::More tests => 5238;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use App::MtAws::Utils;
 use TestUtils 'w_fatal';
+use App::MtAws::Utils;
 
 
 # Filenames only, no directory name

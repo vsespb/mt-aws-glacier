@@ -25,7 +25,6 @@ use warnings;
 use Test::Simple tests => 45;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use TestUtils 'w_fatal';
 use Encode;
 use App::MtAws::Utils;
 
@@ -41,6 +40,7 @@ ok ( bytes::length($str) == 8);
 ok (utf8::is_utf8($str));
 
 use utf8;
+use TestUtils 'w_fatal';
 
 for my $sample ("µ", "Ф", "Xµ", "XФ", "µФ", "XµФ") { # mix of ASCII, Unicode (128..255) and Unicode > 255 chars
 	ok utf8::is_utf8($sample);

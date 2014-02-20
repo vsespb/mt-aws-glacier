@@ -28,12 +28,12 @@ use Data::Dumper;
 use Carp;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::DownloadSegments;
 use DownloadSingleTest;
 use QueueHelpers;
 use LCGRandom;
-use TestUtils 'w_fatal';
 use DownloadSegmentsTest qw/test_case_full test_case_lite test_case_random_finish ONE_MB prepare_download/;
 
 

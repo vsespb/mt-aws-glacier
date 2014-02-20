@@ -26,11 +26,11 @@ use utf8;
 use Test::Spec;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::GlacierRequest;
 use App::MtAws::Exceptions;
 use App::MtAws;
 use Data::Dumper;
-use TestUtils 'w_fatal';
 
 
 my %common_options = (region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault', timeout => 180);

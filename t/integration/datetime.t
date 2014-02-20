@@ -27,6 +27,7 @@ use Test::More tests => 94;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 
 #TODO: rewrite using core Time::Piece ? https://github.com/azumakuniyuki/perl-benchmark-collection/blob/master/module/datetime-vs-time-piece.pl
 use App::MtAws::DateTime;
@@ -37,7 +38,6 @@ use Carp;
 
 use Digest::SHA qw/sha256_hex/;
 use DateTime;
-use TestUtils 'w_fatal';
 
 
 

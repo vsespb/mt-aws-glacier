@@ -22,6 +22,7 @@ package DownloadSegmentsTest;
 
 use strict;
 use warnings;
+use TestUtils 'w_fatal';
 
 use Exporter 'import';
 our @EXPORT_OK=qw/test_case_full test_case_lite test_case_random_finish prepare_download_segments prepare_download prepare_mock ONE_MB/;
@@ -36,7 +37,6 @@ use App::MtAws::QueueJob::DownloadSegments;
 use App::MtAws::QueueJob::Download;
 use QueueHelpers;
 use LCGRandom;
-use TestUtils 'w_fatal';
 
 use constant ONE_MB => 1024*1024;
 

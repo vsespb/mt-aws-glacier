@@ -32,9 +32,9 @@ use FindBin;
 use Carp;
 use POSIX;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
-use TestUtils 'w_fatal';
 use I18N::Langinfo; # TODO: skip test without that module??
 
 

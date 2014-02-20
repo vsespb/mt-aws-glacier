@@ -28,21 +28,23 @@ use Test::More tests => 50;
 use Test::Deep;
 use Encode;
 use FindBin;
+
+# before 'use xxx Utils'
+our $OpenStack = undef;
+our $BinmodeStack = undef;
+sub _open { CORE::open($_[0], $_[1], $_[2]) };
+BEGIN { no warnings 'once'; *CORE::GLOBAL::open = sub(*;$@) { push @$OpenStack, \@_; _open(@_) }; };
+BEGIN { no warnings 'once'; *CORE::GLOBAL::binmode = sub(*;$) { push @$BinmodeStack, \@_; CORE::binmode($_[0]) }; };
+
+
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use Data::Dumper;
 use File::Path;
 
-our $OpenStack = undef;
-our $BinmodeStack = undef;
-
-# before 'use xxx Utils'
-sub _open { CORE::open($_[0], $_[1], $_[2]) };
-BEGIN { *CORE::GLOBAL::open = sub(*;$@) { push @$OpenStack, \@_; _open(@_) }; };
-BEGIN { *CORE::GLOBAL::binmode = sub(*;$) { push @$BinmodeStack, \@_; CORE::binmode($_[0]) }; };
 
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
-use TestUtils 'w_fatal';
 
 
 
@@ -259,4 +261,3 @@ sub create_tmp_file
 }
 
 1;
-

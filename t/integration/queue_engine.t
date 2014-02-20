@@ -26,8 +26,8 @@ use Test::More tests => 90;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use App::MtAws::QueueJobResult;
 use TestUtils 'w_fatal';
+use App::MtAws::QueueJobResult;
 use LCGRandom;
 use MyQueueEngine;
 

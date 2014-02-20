@@ -27,6 +27,7 @@ use Test::More tests => 966;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::MetaData;
 use Carp;
 
@@ -36,7 +37,6 @@ use Encode;
 use JSON::XS;
 use Data::Dumper;
 use POSIX;
-use TestUtils 'w_fatal';
 
 
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)

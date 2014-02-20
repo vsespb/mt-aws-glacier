@@ -27,13 +27,13 @@ use Test::More tests => 127;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::Journal;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use Test::MockModule;
 use Encode;
 use List::Util qw/min/;
-use TestUtils 'w_fatal';
 
 
 

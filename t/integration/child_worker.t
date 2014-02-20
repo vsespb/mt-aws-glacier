@@ -27,12 +27,12 @@ use Test::Spec;
 use Carp;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::GlacierRequest;
 use App::MtAws::ChildWorker;
 use App::MtAws::TreeHash;
 use App::MtAws;
 use Data::Dumper;
-use TestUtils 'w_fatal';
 use File::stat;
 
 my $mtroot = get_temp_dir();

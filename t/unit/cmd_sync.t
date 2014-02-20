@@ -26,6 +26,7 @@ use utf8;
 
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 
 use Carp;
 use List::Util qw/first/;
@@ -36,7 +37,6 @@ use Test::More;
 use Test::Deep;
 
 use Data::Dumper;
-use TestUtils 'w_fatal';
 
 use App::MtAws::Journal;
 require App::MtAws::Command::Sync;

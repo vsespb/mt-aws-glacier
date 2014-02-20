@@ -28,9 +28,9 @@ use Test::More tests => 50;
 use Encode;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 
 use App::MtAws::Utils;
-use TestUtils 'w_fatal';
 
 
 

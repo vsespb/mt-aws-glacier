@@ -26,11 +26,11 @@ use utf8;
 use Test::Simple tests => 198;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::Journal;
 use File::Path;
 use JournalTest;
 use open qw/:std :utf8/; # actually, we use "UTF-8" in other places.. UTF-8 is more strict than utf8 (w/out hypen)
-use TestUtils 'w_fatal';
 
 
 

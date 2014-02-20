@@ -29,10 +29,10 @@ use Test::More tests => 384;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::ConfigEngine;
 use Carp;
 use Data::Dumper;
-use TestUtils 'w_fatal';
 
 
 no warnings 'redefine';

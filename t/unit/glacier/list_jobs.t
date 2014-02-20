@@ -28,9 +28,9 @@ use Carp;
 use FindBin;
 use JSON::XS;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::Glacier::ListJobs;
 
-use TestUtils 'w_fatal';
 
 
 

@@ -25,13 +25,13 @@ use warnings;
 use utf8;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::LineProtocol qw/encode_data decode_data send_data get_data/;
 use Test::More tests => 189;
 use Test::Deep;
 use Encode;
 use bytes;
 no bytes;
-use TestUtils 'w_fatal';
 
 
 

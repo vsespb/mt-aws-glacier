@@ -26,12 +26,12 @@ use Test::More;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use List::Util qw/min max/;
 use App::MtAws::QueueJobResult;
 use App::MtAws::QueueJob::Iterator;
 use App::MtAws::QueueJob::MultipartPart;
 use QueueHelpers;
-use TestUtils 'w_fatal';
 use LCGRandom;
 
 

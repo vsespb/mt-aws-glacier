@@ -28,11 +28,11 @@ use Test::Deep;
 use Carp;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use Test::MockModule;
 use File::Path;
 use File::stat;
 use Data::Dumper;
-use TestUtils 'w_fatal';
 
 
 

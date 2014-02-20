@@ -27,9 +27,9 @@ use Test::Deep;
 use FindBin;
 use POSIX;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
+use TestUtils 'w_fatal';
 use App::MtAws::QueueJob::MultipartPart;
 use App::MtAws::Exceptions;
-use TestUtils 'w_fatal';
 
 
 

@@ -30,10 +30,10 @@ use File::stat;
 use lib map { "$FindBin::RealBin/../$_" } qw{../lib ../../lib};
 use App::MtAws::QueueJob::MultipartCreate;
 use App::MtAws::Exceptions;
-use TestUtils 'w_fatal';
 use App::MtAws::Utils;
 use Encode;
 use utf8;
+use TestUtils 'w_fatal';
 
 
 
