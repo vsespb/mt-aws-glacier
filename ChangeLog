@@ -1,3 +1,7 @@
+
+  * Since v1.113 Ubuntu Raring 13.04 PPA is discontinued (due to End of Life of Ubuntu Raring, launchpad PPA stopped
+  building binaries for it)
+
 ### 2014-02-20 v1.114
 
   * Fixed: a crash with message:
