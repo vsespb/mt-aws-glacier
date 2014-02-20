@@ -209,9 +209,12 @@ sub _delete_archive
 {
 	my ($self, $archive_id, $relfilename) = @_;
 	confess unless defined $archive_id && defined $relfilename;
-	if (!$self->{filter} || $self->{filter}->check_filenames($relfilename)) {
-		$self->{archive_h}{$archive_id} or confess "archive $archive_id not found in archive_h"; # TODO: put it to backlog, process later?
-		delete $self->{archive_h}{$archive_id};
+
+	if ($self->{archive_h}{$archive_id}) {
+		delete $self->{archive_h}{$archive_id}; # archive_id found, deleting it without checking filename filter
+	} else {
+		confess "archive $archive_id not found in archive_h" # not found - confess, unless it's excluded by filter
+			if !$self->{filter} || $self->{filter}->check_filenames($relfilename); # TODO: put it to backlog, process later?
 	}
 }
 
