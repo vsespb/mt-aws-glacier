@@ -199,7 +199,7 @@ sub process_line
 sub _add_archive
 {
 	my ($self, $args) = @_;
-	if (!$self->{filter} || $self->{filter}->check_filenames($args->{relfilename})) {
+	if ($self->check_filenames($args->{relfilename})) {
 		confess "duplicate entry" if $self->{archive_h}{$args->{archive_id}};
 		$self->{archive_h}{$args->{archive_id}} = $args;
 	}
@@ -214,7 +214,7 @@ sub _delete_archive
 		delete $self->{archive_h}{$archive_id}; # archive_id found, deleting it without checking filename filter
 	} else {
 		confess "archive $archive_id not found in archive_h" # not found - confess, unless it's excluded by filter
-			if !$self->{filter} || $self->{filter}->check_filenames($relfilename); # TODO: put it to backlog, process later?
+			if $self->check_filenames($relfilename); # TODO: put it to backlog, process later?
 	}
 }
 
@@ -351,7 +351,7 @@ sub read_files
 			# file can be not existing here (i.e. dangling symlink)
 			my $filename = character_filename(my $binaryfilename = $_);
 			my $orig_relfilename = abs2rel($filename, $self->{root_dir}, allow_rel_base => 1);
-			if (!$self->{filter} || $self->{filter}->check_filenames($orig_relfilename)) {
+			if ($self->check_filenames($orig_relfilename)) {
 				if ($self->_is_file_exists($binaryfilename)) {
 					my $relfilename;
 					confess "Invalid filename: ".hex_dump_string($orig_relfilename)
@@ -441,6 +441,10 @@ sub _can_read_filename_for_mode
 	}
 }
 
-
+sub check_filenames
+{
+	my $self = shift;
+	!$self->{filter} || $self->{filter}->check_filenames(@_)
+}
 
 1;
