@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 45;
+use Test::More tests => 52;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -162,26 +162,53 @@ use App::MtAws::Filter;
 
 
 {
+	for my $f ('abc123', 0) {
+		my $j = App::MtAws::Journal->new('journal_file' => '.');
+		$j->_add_archive({ relfilename => $f, archive_id => 'abc123' });
+		$j->_delete_archive('abc123', $f);
+		cmp_deeply $j->{archive_h}, {}, "_delete_archive should work";
+	}
+}
+
+{
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
 	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
-	$j->_delete_archive('abc123');
-	cmp_deeply $j->{archive_h}, {}, "_delete_archive should work";
+	ok ! eval { $j->_delete_archive('abc123'); 1 }, "_delete_archive should validate arguments";
+	ok ! eval { $j->_delete_archive(); 1 }, "_delete_archive should validate arguments";
 }
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
 	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
 	$j->_add_archive({ relfilename => 'file1', archive_id => 'fff123' });
-	$j->_delete_archive('abc123');
+	$j->_delete_archive('abc123', 'file1');
 	cmp_deeply $j->{archive_h}, { fff123 => { relfilename => 'file1', archive_id => 'fff123' }}, "_delete_archive should work with two archives";
 }
 
 {
 	my $j = App::MtAws::Journal->new('journal_file' => '.');
 	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
-	ok ! defined eval { $j->_delete_archive('zzzz');; 1 }, "_delete_archive should confess";
+	ok ! defined eval { $j->_delete_archive('zzzz', 'file1'); 1 }, "_delete_archive should confess";
 }
 
+{
+	my $filter = App::MtAws::Filter->new();
+	$filter->parse_filters('-file1');
+	my $j = App::MtAws::Journal->new('journal_file' => '.', filter => $filter);
+	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
+	cmp_deeply $j->{archive_h}, {}, "assume filter works";
+	$j->_delete_archive('abc123', 'file1');
+	ok 1, "delete archive should not die if arhive was previously excluded by filter";
+}
+
+{
+	my $filter = App::MtAws::Filter->new();
+	$filter->parse_filters('-wrongfilter');
+	my $j = App::MtAws::Journal->new('journal_file' => '.', filter => $filter);
+	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
+	cmp_deeply $j->{archive_h}, { abc123 => { 'archive_id' => 'abc123', 'relfilename' => 'file1' } }, "assume filter works";
+	ok ! eval { $j->_delete_archive('wrongarchive', 'file1'); 1}, "_delete_archive should confess even if filter exists";
+}
 
 # _add_archive - working with filter
 {
@@ -261,4 +288,3 @@ use App::MtAws::Filter;
 
 
 1;
-

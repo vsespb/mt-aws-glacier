@@ -158,7 +158,7 @@ sub process_line
 		});
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 	} elsif (($ver, $time, $archive_id, $relfilename) = $line =~ /^([ABC])\t([0-9]{1,20})\tDELETED\t(\S+)\t(.*?)$/) {
-		$self->_delete_archive($archive_id); # TODO avoid stuff like $1 $2 $3 etc
+		$self->_delete_archive($archive_id, $relfilename);
 		$self->{used_versions}->{$ver} = 1 unless $self->{used_versions}->{$ver};
 	} elsif (($ver, $time, $archive_id, $job_id) = $line =~ /^([ABC])\t([0-9]{1,20})\tRETRIEVE_JOB\t(\S+)\t(.*?)$/) {
 		$self->_retrieve_job($time+0, $archive_id, $job_id);
@@ -178,8 +178,8 @@ sub process_line
 			treehash => $treehash,
 		});
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
-	} elsif ($line =~ /^[0-9]{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
-		$self->_delete_archive($1);
+	} elsif (($archive_id, $relfilename) = $line =~ /^[0-9]{1,20}\s+DELETED\s+(\S+)\s+(.*?)$/) { # TODO: delete file, parse time too!
+		$self->_delete_archive($archive_id, $relfilename);
 		$self->{used_versions}->{0} = 1 unless $self->{used_versions}->{0};
 	} elsif (($time, $archive_id) = $line =~ /^([0-9]{1,20})\s+RETRIEVE_JOB\s+(\S+)$/) {
 		$self->_retrieve_job($time+0, $archive_id);
@@ -207,9 +207,12 @@ sub _add_archive
 
 sub _delete_archive
 {
-	my ($self, $archive_id) = @_;
-	$self->{archive_h}{$archive_id} or confess "archive $archive_id not found in archive_h"; # TODO: put it to backlog, process later?
-	delete $self->{archive_h}{$archive_id};
+	my ($self, $archive_id, $relfilename) = @_;
+	confess unless defined $archive_id && defined $relfilename;
+	if (!$self->{filter} || $self->{filter}->check_filenames($relfilename)) {
+		$self->{archive_h}{$archive_id} or confess "archive $archive_id not found in archive_h"; # TODO: put it to backlog, process later?
+		delete $self->{archive_h}{$archive_id};
+	}
 }
 
 sub _add_filename

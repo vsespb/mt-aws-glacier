@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 5573;
+use Test::More tests => 6035;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -205,14 +205,16 @@ sub test_all_ok
 		{
 			my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
-			my ($archive_id);
+			my ($archive_id, $relfilename);
 
 			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_delete_archive', sub { (undef, $archive_id) = @_; });
+				mock('_delete_archive', sub { (undef, $archive_id, $relfilename) = @_; });
 
 			$J->process_line("$ver\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
 			ok(defined $archive_id);
 			ok($archive_id eq $data->{archive_id});
+			ok(defined $relfilename);
+			ok($relfilename eq $data->{relfilename});
 			is_deeply($J->{used_versions}, {$ver=>1});
 		}
 
@@ -265,14 +267,16 @@ sub test_all_ok
 	{
 		my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
-		my ($archive_id);
+		my ($archive_id, $relfilename);
 
 		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_delete_archive', sub { (undef, $archive_id) = @_; });
+			mock('_delete_archive', sub { (undef, $archive_id, $relfilename) = @_; });
 
 		$J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}");
 		ok(defined $archive_id);
 		ok($archive_id eq $data->{archive_id});
+		ok(defined $relfilename);
+		ok($relfilename eq $data->{relfilename});
 		is_deeply($J->{used_versions}, {'0'=>1});
 	}
 
