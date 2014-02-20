@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 52;
+use Test::More tests => 55;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -199,6 +199,20 @@ use App::MtAws::Filter;
 	cmp_deeply $j->{archive_h}, {}, "assume filter works";
 	$j->_delete_archive('abc123', 'file1');
 	ok 1, "delete archive should not die if arhive was previously excluded by filter";
+}
+
+{
+	my $filter = App::MtAws::Filter->new();
+	$filter->parse_filters('-wrongfilter');
+	my $j = App::MtAws::Journal->new('journal_file' => '.', filter => $filter);
+	$j->_add_archive({ relfilename => 'file1', archive_id => 'abc123' });
+	cmp_deeply $j->{archive_h}, { abc123 => { 'archive_id' => 'abc123', 'relfilename' => 'file1' } }, "assume filter works";
+	no warnings 'redefine';
+	my $called = 0;
+	local *App::MtAws::Filter::check_filenames = sub { $called = 1};
+	$j->_delete_archive('abc123', 'fileZZZ');
+	cmp_deeply $j->{archive_h}, {}, "deletion works";
+	ok ! $called, "if archive found by id - filter routines should not be called (for perf. reasons)";
 }
 
 {
