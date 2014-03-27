@@ -123,12 +123,14 @@ NOTE: If you've used CPAN installation before, please remove previously installe
 
 Can be installed/updated via PPA  [vsespb/mt-aws-glacier](https://launchpad.net/~vsespb/+archive/mt-aws-glacier):
 
-1.	`sudo add-apt-repository ppa:vsespb/mt-aws-glacier`
+1.	`sudo apt-get update`
+2.	`sudo apt-get install software-properties-common python-software-properties`
+3.	`sudo add-apt-repository ppa:vsespb/mt-aws-glacier`
 
 	(GPG key id/fingerprint would be **D2BFA5E4** and **D7F1BC2238569FC447A8D8249E86E8B2D2BFA5E4**)
 
-2.	`sudo apt-get update`
-3.	`sudo apt-get install libapp-mtaws-perl`
+4.	`sudo apt-get update`
+5.	`sudo apt-get install libapp-mtaws-perl`
 
 ##### Debian 6 (Squeeze)
 
