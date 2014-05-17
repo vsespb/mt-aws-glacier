@@ -179,7 +179,7 @@ sub process
 
 			## no Test::Tabs
 			die <<"END"
-File with same name alredy exists in Journal.
+File with same name already exists in Journal.
 In the current version of mtglacier you are disallowed to store multiple versions of same file.
 Multiversion will be implemented in the future versions.
 END
