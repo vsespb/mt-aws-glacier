@@ -32,13 +32,14 @@ use Digest::SHA qw/sha256_hex/;
 local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
 {
+	local $Digest::SHA::VERSION = '5.47';
 	for my $chunksize (0..7) {
 		for my $messagesize (0..$chunksize*4+1) {
 			my $letter = 'A';
 			my $message = join('', map { $letter++ } 1..$messagesize);
 			my $original_message = $message;
-			my $got = large_sha256_hex($message, $chunksize);
 			my $expected = sha256_hex($message);
+			my $got = large_sha256_hex($message, $chunksize);
 			is $message, $original_message;
 			is $got, $expected, "$chunksize, $messagesize";
 		}
