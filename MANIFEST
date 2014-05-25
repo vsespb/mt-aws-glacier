@@ -72,6 +72,7 @@ t/integration/config_engine_filters.t
 t/integration/config_engine_follow.t
 t/integration/config_engine_leaf.t
 t/integration/config_engine_lwp.t
+t/integration/config_engine_partsize.t
 t/integration/config_engine_segment_size.t
 t/integration/config_engine_sync_new.t
 t/integration/config_engine_timeout.t
