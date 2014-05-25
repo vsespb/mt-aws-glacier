@@ -60,7 +60,7 @@ check_mem($messagesize, $messagesize + $maxoverhead);
 my $expected = sha256_hex($message);
 my $got = large_sha256_hex($message, $chunksize*$onemb);
 is $got, $expected;
-if ($^V lt v5.14) {
+if ($^V lt v5.14 && $Digest::SHA::VERSION le '5.63') {
 	check_mem($messagesize + $chunksize, $messagesize + $chunksize + $maxoverhead);
 } else {
 	check_mem($messagesize, $messagesize + $maxoverhead);
