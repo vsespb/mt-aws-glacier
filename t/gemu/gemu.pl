@@ -509,6 +509,10 @@ sub parse_request
 
 	my $bodyref = \$request->content;
 	my $bodyhash = sha256_hex($$bodyref);
+
+	croak "The value passed in as x-amz-content-sha256 does not match the computed payload hash"
+		if $request->header('x-amz-content-sha256') && $bodyhash ne $request->header('x-amz-content-sha256');
+
 	my $date8601 = $request->header('x-amz-date');
 	defined($date8601)||croak;
 	defined($headers_hash->{'x-amz-date'})||croak;
