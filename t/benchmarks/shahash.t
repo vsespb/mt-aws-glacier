@@ -25,7 +25,7 @@ use warnings;
 use utf8;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use BenchmarkTest tests => 4;
+use BenchmarkTest tests => 5;
 use Test::More;
 use App::MtAws::SHAHash qw/large_sha256_hex/;
 use Digest::SHA qw/sha256_hex/;
@@ -50,20 +50,32 @@ my $messagesize = 100;
 my $chunksize = 70;
 
 check_mem(0, 20);
-my $maxoverhead = int(get_mem()) + 5;
+my $maxoverhead = int(get_mem()) + 7;
+
 
 my $onemb = 1024*1024;
-my $message = '';
-$message .= "x" x $onemb for (1..$messagesize);
-# / whole this stupid code needed to workaround perl memory bugs for old perl versions
-check_mem($messagesize, $messagesize + $maxoverhead);
-my $expected = sha256_hex($message);
-my $got = large_sha256_hex($message, $chunksize*$onemb);
-is $got, $expected;
-if ($^V lt v5.14 && $Digest::SHA::VERSION le '5.63') {
-	check_mem($messagesize + $chunksize, $messagesize + $chunksize + $maxoverhead);
-} else {
+my $expected_mem = undef;
+{
+	our $message = '';
+	$message .= "x" x $onemb for (1..$messagesize);
+	# / whole this stupid code needed to workaround perl memory bugs for old perl versions
 	check_mem($messagesize, $messagesize + $maxoverhead);
+	my $expected = sha256_hex($message);
+	my $got = large_sha256_hex($message, $chunksize*$onemb);
+	is $got, $expected;
+
+	$expected_mem = $messagesize;
+	$expected_mem += $chunksize if ($^V lt v5.14 && $Digest::SHA::VERSION le '5.63');
+
+	check_mem($expected_mem, $expected_mem + $maxoverhead);
+	undef $message;
 }
+
+{
+	my $message = '';
+	$message .= "x" x $onemb for (1..$messagesize);
+	check_mem($expected_mem, $expected_mem + $maxoverhead);
+}
+
 
 1;
