@@ -1,5 +1,3 @@
-#!/usr/bin/env perl
-
 # mt-aws-glacier - Amazon Glacier sync client
 # Copyright (C) 2012-2014  Victor Efimov
 # http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
@@ -20,34 +18,36 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+package App::MtAws::SHAHash;
+
+our $VERSION = '1.114';
+
 use strict;
 use warnings;
-use Test::More;
-use FindBin;
+use Digest::SHA;
 use Carp;
-use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 
-plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
+use Exporter 'import';
+our @EXPORT_OK = qw/large_sha256_hex/;
 
-my $basedir = "$FindBin::RealBin/../..";
-my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/integration/queue_job t/unit/queue_job t/unit/glacier t/lib t/libtest t/benchmarks!;
 
-for my $dir (@dirs) {
-	for my $filename (<$dir/*>) {
-		open my $f, "<", $filename or die $!;
-		my $str = '';
-		local $_;
-		while (<$f>) {
-			$str .= 'E' if /\bExporter\b|\@EXPORT/;
-			$str .= 'D' if /use\s+Test::Deep/;
-		}
-		close $f;
-		$str =~ /D.*E/ and confess
-			"$filename ($str) - ERROR: Test::Deep should never appear before use of Exporter - some bugs in T::D 0.089|0.09[0-9]"
+sub large_sha256_hex
+{
+	return Digest::SHA::sha256_hex($_[0]) if $Digest::SHA::VERSION ge '5.63';
+
+	my $chunksize = $_[1] || 4*1024*1024;
+
+	my $sha = Digest::SHA->new(256);
+	my $size = length($_[0]);
+
+	my $offset = 0;
+	while ($offset < $size) {
+		$sha->add(substr($_[0], $offset, $chunksize));
+		$offset += $chunksize;
 	}
+	$sha->hexdigest;
 }
 
-require Test::Tabs;
-Test::Tabs::all_perl_files_ok(@dirs);
 
 1;

@@ -22,32 +22,28 @@
 
 use strict;
 use warnings;
-use Test::More;
+use utf8;
+use Test::More tests => 256;
 use FindBin;
-use Carp;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use App::MtAws::SHAHash qw/large_sha256_hex/;
+use Digest::SHA qw/sha256_hex/;
 
-plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
+local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
-my $basedir = "$FindBin::RealBin/../..";
-my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/integration/queue_job t/unit/queue_job t/unit/glacier t/lib t/libtest t/benchmarks!;
-
-for my $dir (@dirs) {
-	for my $filename (<$dir/*>) {
-		open my $f, "<", $filename or die $!;
-		my $str = '';
-		local $_;
-		while (<$f>) {
-			$str .= 'E' if /\bExporter\b|\@EXPORT/;
-			$str .= 'D' if /use\s+Test::Deep/;
+{
+	for my $chunksize (0..7) {
+		for my $messagesize (0..$chunksize*4+1) {
+			my $letter = 'A';
+			my $message = join('', map { $letter++ } 1..$messagesize);
+			my $original_message = $message;
+			my $got = large_sha256_hex($message, $chunksize);
+			my $expected = sha256_hex($message);
+			is $message, $original_message;
+			is $got, $expected, "$chunksize, $messagesize";
 		}
-		close $f;
-		$str =~ /D.*E/ and confess
-			"$filename ($str) - ERROR: Test::Deep should never appear before use of Exporter - some bugs in T::D 0.089|0.09[0-9]"
 	}
 }
 
-require Test::Tabs;
-Test::Tabs::all_perl_files_ok(@dirs);
 
 1;

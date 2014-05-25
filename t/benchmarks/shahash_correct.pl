@@ -20,34 +20,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use lib '/home/tav/local-lib/5.014002-x86_64-linux-gnu-thread-multi/Digest-SHA-5.62/lib/perl5/x86_64-linux-gnu-thread-multi';
+
+
 use strict;
 use warnings;
-use Test::More;
+use utf8;
+use Test::More tests => 1;
 use FindBin;
-use Carp;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use App::MtAws::SHAHash qw/large_sha256_hex/;
+use Digest::SHA qw/sha256_hex/;
 
-plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
+local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
-my $basedir = "$FindBin::RealBin/../..";
-my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/integration/queue_job t/unit/queue_job t/unit/glacier t/lib t/libtest t/benchmarks!;
-
-for my $dir (@dirs) {
-	for my $filename (<$dir/*>) {
-		open my $f, "<", $filename or die $!;
-		my $str = '';
-		local $_;
-		while (<$f>) {
-			$str .= 'E' if /\bExporter\b|\@EXPORT/;
-			$str .= 'D' if /use\s+Test::Deep/;
-		}
-		close $f;
-		$str =~ /D.*E/ and confess
-			"$filename ($str) - ERROR: Test::Deep should never appear before use of Exporter - some bugs in T::D 0.089|0.09[0-9]"
-	}
-}
-
-require Test::Tabs;
-Test::Tabs::all_perl_files_ok(@dirs);
-
+# constructing message with $messagesize * MB size
+my $messagesize = 100;
+my $onemb = 1024*1024;
+my $message = '';
+$message .= "x" x $onemb for (1..1024);
+# / whole this stupid code needed to workaround perl memory bugs for old perl versions
+my $got = large_sha256_hex($message);
+is $got, 'e99508f2bd8ee171c7e41eb0370907eeddf47dba62efbcf99dd25e48ee87c4c8';
 1;

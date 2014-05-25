@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 17;
+use Test::More tests => 8;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils 'w_fatal';
@@ -57,32 +57,6 @@ use Config;
 #
 # Utils.pm
 #
-
-sub test_is_digest_sha_broken_for_large_data
-{
-	my ($longsize, $module_version, $result) = @_;
-	no warnings 'redefine';
-	local *App::MtAws::Utils::get_config_var = sub { $longsize };
-	local $Digest::SHA::VERSION = $module_version;
-	if ($result) {
-		ok is_digest_sha_broken_for_large_data();
-	} else {
-		ok !is_digest_sha_broken_for_large_data();
-	}
-}
-
-is is_digest_sha_broken_for_large_data(), $Config{'longsize'} < 8 && $Digest::SHA::VERSION lt '5.62';
-
-test_is_digest_sha_broken_for_large_data(4, '5.61', 1);
-
-test_is_digest_sha_broken_for_large_data(4, '5.62', 0);
-test_is_digest_sha_broken_for_large_data(4, '5.619999999999', 1);
-
-test_is_digest_sha_broken_for_large_data(4, '5.63', 0);
-test_is_digest_sha_broken_for_large_data(8, '5.61', 0);
-test_is_digest_sha_broken_for_large_data(8, '5.62', 0);
-test_is_digest_sha_broken_for_large_data(8, '5.63', 0);
-test_is_digest_sha_broken_for_large_data(4, '5.84_01', 0);
 
 SKIP: {
 	skip "cant test this", 1 unless $^O eq 'linux' && $Config{'longsize'} >= 8;

@@ -22,32 +22,42 @@
 
 use strict;
 use warnings;
-use Test::More;
+use utf8;
+use Test::More tests => 3;
 use FindBin;
-use Carp;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use App::MtAws::SHAHash qw/large_sha256_hex/;
+use Digest::SHA qw/sha256_hex/;
 
-plan skip_all => 'Skipping this test for debian build' if $ENV{MT_DEB_BUILD};
+local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 
-my $basedir = "$FindBin::RealBin/../..";
-my @dirs = map { "$basedir/$_" } qw!lib t/unit t/integration t/integration/queue_job t/unit/queue_job t/unit/glacier t/lib t/libtest t/benchmarks!;
-
-for my $dir (@dirs) {
-	for my $filename (<$dir/*>) {
-		open my $f, "<", $filename or die $!;
-		my $str = '';
-		local $_;
-		while (<$f>) {
-			$str .= 'E' if /\bExporter\b|\@EXPORT/;
-			$str .= 'D' if /use\s+Test::Deep/;
-		}
-		close $f;
-		$str =~ /D.*E/ and confess
-			"$filename ($str) - ERROR: Test::Deep should never appear before use of Exporter - some bugs in T::D 0.089|0.09[0-9]"
-	}
+sub get_mem
+{
+	my (undef, $mem) = `ps -p $$ -o rss`;
+	$mem / 1024;
 }
 
-require Test::Tabs;
-Test::Tabs::all_perl_files_ok(@dirs);
+sub check_mem
+{
+	my ($expected) = @_;
+	my $m = get_mem();
+	ok $m < $expected, "memory - expected $expected, found $m";
+}
+
+# constructing message with $messagesize * MB size
+my $messagesize = 100;
+my $onemb = 1024*1024;
+my $message = '';
+$message .= "x" x $onemb for (1..$messagesize);
+# / whole this stupid code needed to workaround perl memory bugs for old perl versions
+check_mem($messagesize + 20);
+my $expected = sha256_hex($message);
+my $got = large_sha256_hex($message, 70*1024*1024);
+is $got, $expected;
+if ($^V lt v5.14) {
+	check_mem($messagesize + 70 + 20);
+} else {
+	check_mem($messagesize + 20);
+}
 
 1;

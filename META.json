@@ -4,7 +4,7 @@
       "Victor Efimov <vs@vs-dev.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4203",
+   "generated_by" : "Module::Build version 0.4205",
    "license" : [
       "gpl_3"
    ],
@@ -276,6 +276,10 @@
       },
       "App::MtAws::QueueJobResult" : {
          "file" : "lib/App/MtAws/QueueJobResult.pm",
+         "version" : "1.114"
+      },
+      "App::MtAws::SHAHash" : {
+         "file" : "lib/App/MtAws/SHAHash.pm",
          "version" : "1.114"
       },
       "App::MtAws::TreeHash" : {

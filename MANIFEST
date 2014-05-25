@@ -49,6 +49,7 @@ lib/App/MtAws/QueueJob/UploadMultipart.pm
 lib/App/MtAws/QueueJob/Verify.pm
 lib/App/MtAws/QueueJob/VerifyAndUpload.pm
 lib/App/MtAws/QueueJobResult.pm
+lib/App/MtAws/SHAHash.pm
 lib/App/MtAws/TreeHash.pm
 lib/App/MtAws/Utils.pm
 LICENSE
@@ -58,6 +59,9 @@ META.yml
 mtglacier
 mtglacier.pl
 README.md
+t/benchmarks/README.txt
+t/benchmarks/shahash.pl
+t/benchmarks/shahash_correct.pl
 t/integration/byteenc_journal.t
 t/integration/child_worker.t
 t/integration/cmd_check_local_hash.t
@@ -68,7 +72,6 @@ t/integration/config_engine_filters.t
 t/integration/config_engine_follow.t
 t/integration/config_engine_leaf.t
 t/integration/config_engine_lwp.t
-t/integration/config_engine_partsize.t
 t/integration/config_engine_segment_size.t
 t/integration/config_engine_sync_new.t
 t/integration/config_engine_timeout.t
@@ -163,6 +166,7 @@ t/unit/queue_job/upload_multipart.t
 t/unit/queue_job/verify.t
 t/unit/queue_job/verify_and_upload.t
 t/unit/queue_job_result.t
+t/unit/shahash.t
 t/unit/string_escape.t
 t/unit/sysread_syswrite_unit.t
 t/unit/test_test.t

@@ -31,7 +31,6 @@ use File::stat;
 use Carp;
 use Encode;
 use LWP::UserAgent;
-use Digest::SHA;
 use Time::Local;
 use Config;
 use bytes ();
@@ -45,7 +44,7 @@ our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull sysreadfull_chk syswritefull_chk
 hex_dump_string is_wide_string
 characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists file_inodev
-is_64bit_os is_64bit_time is_digest_sha_broken_for_large_data is_y2038_supported
+is_64bit_os is_64bit_time is_y2038_supported
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 
@@ -375,11 +374,6 @@ sub is_64bit_time
 	# not sure about cygwin, solaris
 }
 
-
-sub is_digest_sha_broken_for_large_data
-{
-	!is_64bit_os && $Digest::SHA::VERSION lt '5.62';
-}
 
 our $_is_y2038_supported = undef;
 sub is_y2038_supported
