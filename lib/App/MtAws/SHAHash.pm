@@ -29,10 +29,10 @@ use Digest::SHA;
 use Carp;
 
 use Exporter 'import';
-our @EXPORT = qw/get_sha256_hex/;
+our @EXPORT_OK = qw/large_sha256_hex/;
 
 
-sub get_sha256_hex
+sub large_sha256_hex
 {
 	my $chunksize = $_[1] || 4*1024*1024;
 

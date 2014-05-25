@@ -26,7 +26,7 @@ use utf8;
 use Test::More tests => 256;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
-use App::MtAws::SHAHash;
+use App::MtAws::SHAHash qw/large_sha256_hex/;
 use Digest::SHA qw/sha256_hex/;
 
 local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
@@ -37,7 +37,7 @@ local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 			my $letter = 'A';
 			my $message = join('', map { $letter++ } 1..$messagesize);
 			my $original_message = $message;
-			my $got = get_sha256_hex($message, $chunksize);
+			my $got = large_sha256_hex($message, $chunksize);
 			my $expected = sha256_hex($message);
 			is $message, $original_message;
 			is $got, $expected, "$chunksize, $messagesize";
