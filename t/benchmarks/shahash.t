@@ -72,9 +72,10 @@ my $expected_mem = undef;
 }
 
 {
-	my $message = '';
+	our $message = '';
 	$message .= "x" x $onemb for (1..$messagesize);
-	check_mem($expected_mem, $expected_mem + $maxoverhead);
+	check_mem($messagesize, $expected_mem + $maxoverhead);
+	undef $message;
 }
 
 
