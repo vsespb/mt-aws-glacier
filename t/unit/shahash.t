@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 256;
+use Test::More tests => 261;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use App::MtAws::SHAHash qw/large_sha256_hex/;
@@ -42,6 +42,34 @@ local $SIG{__WARN__} = sub {die "Termination after a warning: $_[0]"};
 			is $message, $original_message;
 			is $got, $expected, "$chunksize, $messagesize";
 		}
+	}
+}
+
+{
+	no warnings 'redefine';
+	{
+		local $Digest::SHA::VERSION = '5.47';
+		local *Digest::SHA::sha256_hex = sub { die };
+		is large_sha256_hex('A', 1), "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd";
+	}
+	{
+		local $Digest::SHA::VERSION = '5.63';
+		local *Digest::SHA::sha256_hex = sub { "mock1" };
+		is large_sha256_hex('A', 1), "mock1";
+	}
+	{
+		local $Digest::SHA::VERSION = '5.47';
+		local *Digest::SHA::sha256_hex = sub { "mock1" };
+		local *App::MtAws::SHAHash::_length = sub { 256*1024*1024 };
+		is large_sha256_hex('A'), "mock1";
+	}
+	{
+		local $Digest::SHA::VERSION = '5.47';
+		local *Digest::SHA::sha256_hex = sub { "mock1" };
+		local *App::MtAws::SHAHash::_length = sub { 256*1024*1024+1 };
+		local *Digest::SHA::new = sub { die "Caught\n" };
+		ok ! eval { large_sha256_hex('A') };
+		like "$@", qr/Caught/;
 	}
 }
 
