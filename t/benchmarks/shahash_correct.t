@@ -20,15 +20,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use lib '/home/tav/local-lib/5.014002-x86_64-linux-gnu-thread-multi/Digest-SHA-5.62/lib/perl5/x86_64-linux-gnu-thread-multi';
-
-
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 1;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
+use BenchmarkTest tests => 1;
+use Test::More;
+
 use App::MtAws::SHAHash qw/large_sha256_hex/;
 use Digest::SHA qw/sha256_hex/;
 
