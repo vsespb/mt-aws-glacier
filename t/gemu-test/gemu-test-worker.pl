@@ -96,7 +96,7 @@ sub with_task
 	local $_current_task = shift;
 
 	eval {
-		alarm 180;
+		alarm 600;
 		shift->();
 		alarm 0;
 	1; } or do {
@@ -1299,6 +1299,7 @@ while () {
 	last if $p == -1;
 	if ($?) {
 		$ok = 0;
+		print STDERR "child terminated with $?\n";
 		kill 'TERM', $_ for keys %pids;
 	} else {
 		delete $pids{$p};
