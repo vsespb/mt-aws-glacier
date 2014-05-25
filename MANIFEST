@@ -61,6 +61,7 @@ mtglacier.pl
 README.md
 t/benchmarks/README.txt
 t/benchmarks/shahash.pl
+t/benchmarks/shahash_correct.pl
 t/integration/byteenc_journal.t
 t/integration/child_worker.t
 t/integration/cmd_check_local_hash.t
