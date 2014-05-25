@@ -176,9 +176,6 @@ assert_fails "check-max-file-size should be used with stdin",
 ##
 
 {
-	no warnings 'redefine';
-	local *App::MtAws::ConfigDefinition::is_digest_sha_broken_for_large_data = sub { 0 };
-	use warnings 'redefine';
 	{
 		for my $partsize (1, 2, 4, 8, 1024, 2048, 4096) {
 			my $edge_size = $partsize * 10_000;
