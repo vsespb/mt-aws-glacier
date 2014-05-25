@@ -131,6 +131,18 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.115', 1, 'Mon, 26 May 2014 00:43:00 +0400', <<'END';
+  * Fixed - crash/error when uploading large files with partsize=1024, when "old" Digest::SHA (< 5.63; shipped with most
+  of current linux distros) is installed. Old Digest::SHA has a bug, there was a workaround for it (i.e. message asking
+  to upgrade module) when it's used with large files on 32bit machines, but apparently seems 64bit machines
+  also affected.
+  Now a message removed, instead workaround code written so it now works with old buggy versions fine (i.e. splits large
+  chunks into smalled ones when feeding Digest::SHA).
+
+  * Since v1.113 Ubuntu Raring 13.04 PPA is discontinued (due to End of Life of Ubuntu Raring, launchpad PPA stopped
+  building binaries for it)
+END
+
 	entry '1.114', 1, 'Thu, 20 Feb 2014 16:46:00 +0400', <<'END';
   * Fixed: a crash with message:
   UNEXPECTED ERROR: archive XXXXXX...XXX not found in archive_h

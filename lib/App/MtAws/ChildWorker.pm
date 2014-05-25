@@ -20,7 +20,7 @@
 
 package App::MtAws::ChildWorker;
 
-our $VERSION = '1.114';
+our $VERSION = '1.115';
 
 use App::MtAws::LineProtocol;
 use App::MtAws::GlacierRequest;

@@ -20,7 +20,7 @@
 
 package App::MtAws::QueueJob::RetrieveInventory;
 
-our $VERSION = '1.114';
+our $VERSION = '1.115';
 
 use strict;
 use warnings;
