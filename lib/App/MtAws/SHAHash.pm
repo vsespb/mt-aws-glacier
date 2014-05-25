@@ -37,9 +37,11 @@ sub large_sha256_hex
 	return Digest::SHA::sha256_hex($_[0]) if $Digest::SHA::VERSION ge '5.63';
 
 	my $chunksize = $_[1] || 4*1024*1024;
+	my $size = length($_[0]);
+
+	return Digest::SHA::sha256_hex($_[0]) if $size <= $chunksize;
 
 	my $sha = Digest::SHA->new(256);
-	my $size = length($_[0]);
 
 	my $offset = 0;
 	while ($offset < $size) {
