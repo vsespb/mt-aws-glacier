@@ -29,11 +29,12 @@ use POSIX;
 use LWP 5.803;
 use LWP::UserAgent;
 use HTTP::Request;
-use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex sha256/;
+use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex/;
 use App::MtAws::MetaData;
 use App::MtAws::Utils;
 use App::MtAws::Exceptions;
 use App::MtAws::HttpSegmentWriter;
+use App::MtAws::SHAHash qw/large_sha256_hex/;
 use Carp;
 
 sub new
@@ -368,7 +369,7 @@ sub _calc_data_hash
 	if (length(${$self->{dataref}}) <= 1048576) {
 		$self->{data_sha256} = $self->{part_final_hash};
 	} else {
-		$self->{data_sha256} = sha256_hex(${$self->{dataref}});
+		$self->{data_sha256} = large_sha256_hex(${$self->{dataref}});
 	}
 }
 
@@ -400,7 +401,7 @@ sub _sign
 
 	my $bodyhash = $self->{data_sha256} ?
 		$self->{data_sha256} :
-		( $self->{dataref} ? sha256_hex(${$self->{dataref}}) : sha256_hex('') );
+		( $self->{dataref} ? large_sha256_hex(${$self->{dataref}}) : sha256_hex('') );
 
 	$self->{params_s} = $self->{params} ? join ('&', map { "$_=$self->{params}->{$_}" } sort keys %{$self->{params}}) : ""; # TODO: proper URI encode
 	my $canonical_query_string = $self->{params_s};
