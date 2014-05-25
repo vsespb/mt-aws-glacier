@@ -5,7 +5,7 @@
   Now a message removed, instead workaround code written so it now works with old buggy versions fine (i.e. splits large
   chunks into smalled ones when feeding Digest::SHA).
 
-  * For old perl versions (<= 5.12) and old Digest::SHA this can increase memory usage (4Mb * --concurrency)
+  * For old perl versions (<= 5.12) and old Digest::SHA this *might* increase memory usage (4Mb * --concurrency)
 
   * Since v1.113 Ubuntu Raring 13.04 PPA is discontinued (due to End of Life of Ubuntu Raring, launchpad PPA stopped
   building binaries for it)
