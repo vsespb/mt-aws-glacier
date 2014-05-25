@@ -54,6 +54,10 @@ check_mem($messagesize + 20);
 my $expected = sha256_hex($message);
 my $got = large_sha256_hex($message, 70*1024*1024);
 is $got, $expected;
-check_mem($messagesize + 20); # faild for perl < 5.14
+if ($^V lt v5.14) {
+	check_mem($messagesize + 70 + 20);
+} else {
+	check_mem($messagesize + 20);
+}
 
 1;
