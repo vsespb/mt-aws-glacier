@@ -1,6 +1,7 @@
-  * Fixed - crash/error when uploading large files with partsize=1024, when old Digest::SHA (< 5.63) is installed
-  Old Digest::SHA has a bug, there was a workaround for it (i.e. message asking to upgrade module) when it's used
-  with large files on 32bit machines, but apparently seems 64bit machines also affected.
+  * Fixed - crash/error when uploading large files with partsize=1024, when "old" Digest::SHA (< 5.63; shipped with most
+  of current linux distros) is installed. Old Digest::SHA has a bug, there was a workaround for it (i.e. message asking
+  to upgrade module) when it's used with large files on 32bit machines, but apparently seems 64bit machines
+  also affected.
   Now a message removed, instead workaround code written so it now works with old buggy versions fine (i.e. splits large
   chunks into smalled ones when feeding Digest::SHA)
 
