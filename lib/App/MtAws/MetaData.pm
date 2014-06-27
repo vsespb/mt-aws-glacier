@@ -39,9 +39,7 @@ use constant META_JOB_TYPE_FULL => 'full';
 use Exporter 'import';
 
 our @EXPORT = qw/meta_decode meta_job_decode meta_encode meta_job_encode META_JOB_TYPE_FULL/;
-=pod
-
-MT-AWS-GLACIER metadata format ('x-amz-archive-description' field).
+=head1 MT-AWS-GLACIER metadata format ('x-amz-archive-description' field).
 
 Function definitions:
 =====================

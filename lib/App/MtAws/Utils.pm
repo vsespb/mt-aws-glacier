@@ -138,9 +138,7 @@ sub abs2rel
 }
 
 
-=pod
-
-open_file(my $f, $filename, %args)
+=head1 open_file(my $f, $filename, %args)
 
 $args{mode} - mode to open, <, > or >>
 $args{use_filename_encoding} - (TRUE) - encode to binary string, (FALSE) - don't tocuh (already a binary string). Default TRUE

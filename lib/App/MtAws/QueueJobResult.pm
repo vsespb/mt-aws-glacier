@@ -126,9 +126,7 @@ sub task(@)
 }
 
 
-=pod
-
-parse_result(@) input is a list concatenation of one or more of the following entities: TASK, JOB, STATE and CODE
+=head1 parse_result(@) input is a list concatenation of one or more of the following entities: TASK, JOB, STATE and CODE
 
 TASK - is a return value of task() function. (i.e. list with 2 items - task object and CODE)
 JOB - is a return value of job() function (i.e. list with 2 items - job object and CODE)
