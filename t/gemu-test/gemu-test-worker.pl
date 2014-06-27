@@ -37,7 +37,7 @@ our $_current_task;
 our $_current_task_stack;
 our $_global_cache = {};
 
-GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE, 'hardlinks' => $HARDLINKS, 'glacierbin=s' => \$GLACIER_BIN);
+GetOptions ("n=i" => \$N, 'verbose' => \$VERBOSE, 'fastmode' => \$FASTMODE, 'state=s' => \$STATE_FILE, 'hardlinks' => \$HARDLINKS, 'glacierbin=s' => \$GLACIER_BIN);
 $N ||= 1;
 
 $ENV{MTGLACIER_FAKE_HOST}='127.0.0.1:9901';
