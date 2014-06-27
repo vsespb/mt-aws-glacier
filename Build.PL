@@ -30,6 +30,7 @@ use lib qw(lib);
 
 
 die "OS unsupported\n" if ($^O eq 'MSWin32');
+warn "**Mt::Aws NOT RECOMMENDED FOR PRODUCTION USE UNDER PERL COMPILED WITH CLANG**\n\n" if ($Config{gccversion} && $Config{gccversion} =~ /\bclang\b/i);
 
 our $MB_VERSION = '0.36';
 
