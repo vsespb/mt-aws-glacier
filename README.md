@@ -968,6 +968,9 @@ machine - journal will contain correct timestamp (same as on 64bit).
 
 * With high partsize*concurrency there is a risk of getting network timeouts HTTP 408/500.
 
+* Currently Perl compiled with Clang is not considered stable (IMHO), at least there are bugs. So `mtglacier` will throw a warning if ran
+on the system where perl compiled with Clang (for any Clang version). Related issue https://github.com/vsespb/mt-aws-glacier/issues/81
+Note that some systems like FreeBSD 10+ ship such Perl by default.
 
 ## Test/Play with it
 
