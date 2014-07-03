@@ -156,7 +156,7 @@ Can be installed/updated via custom repository
 
 6. install/update `LWP::UserAgent` and `LWP::Protocol::https` using [cpanm]
 
-##### Debian 7 (Wheezy)
+##### Debian 7 (Wheezy), including rasbian for Raspberry Pi
 
 Can be installed/updated via custom repository
 
