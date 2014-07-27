@@ -34,7 +34,6 @@ package App::MtAws;
 
 use strict;
 use warnings;
-use Config;
 use utf8;
 use 5.008008; # minumum perl version is 5.8.8
 
@@ -113,9 +112,6 @@ sub main
 	print "MT-AWS-Glacier, Copyright 2012-2014 Victor Efimov http://mt-aws.com/ Version $VERSION$VERSION_MATURITY\n\n";
 
 	warn "**NOT RECOMMENDED FOR PRODUCTION USE UNDER CYGWIN**\n\n" if ($^O eq 'cygwin');
-
-	warn "**NOT RECOMMENDED FOR PRODUCTION USE UNDER PERL COMPILED WITH CLANG**\n\n" if ($Config{gccversion} && $Config{gccversion} =~ /\bclang\b/i);
-
 	die "**DEVELOPMENT VERSION, NOT FOR PRODUCTION USE. EXITING**\n\n" if ($VERSION =~ /_/);
 	warn "**NOT TESTED UNDER PERLIO=stdio**\n\n" if (defined $ENV{PERLIO} && $ENV{PERLIO} =~ /stdio/);
 	die "Will *not* work under Win32\n" if ($^O eq 'MSWin32');
