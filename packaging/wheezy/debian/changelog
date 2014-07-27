@@ -1,3 +1,15 @@
+libapp-mtaws-perl (1.116-0vdebian1~v7~mt1) wheezy; urgency=low
+
+  * Fixed - there can be issue on MacOSX that HTTPS is not working: All requests end up with errors "HTTP connection
+  problem (timeout?)". Found that Apple ships LWP::Protocol::https without Mozilla::CA module (and they have no rights to
+  do so). So now a README install instructions updated and runtime error thrown if Mozilla::CA is missing and yo're trying
+  to use HTTPS. More technical info: http://blogs.perl.org/users/vsespb/2014/07/broken-lwp-in-the-wild.html
+  https://github.com/vsespb/mt-aws-glacier/issues/87
+
+  * Fixed - typo in error message.
+
+ -- Victor Efimov <victor@vsespb.ru>  Sun, 27 Jul 2014 23:16:00 +0400
+
 libapp-mtaws-perl (1.115-0vdebian1~v7~mt1) wheezy; urgency=low
 
   * Fixed - crash/error when uploading large files with partsize=1024, when "old" Digest::SHA (< 5.63; shipped with most

@@ -1,3 +1,5 @@
+### 2014-07-27 v1.116
+
   * Fixed - there can be issue on MacOSX that HTTPS is not working: All requests end up with errors "HTTP connection
   problem (timeout?)". Found that Apple ships LWP::Protocol::https without Mozilla::CA module (and they have no rights to
   do so). So now a README install instructions updated and runtime error thrown if Mozilla::CA is missing and yo're trying

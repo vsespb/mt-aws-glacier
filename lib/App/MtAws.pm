@@ -37,7 +37,7 @@ use warnings;
 use utf8;
 use 5.008008; # minumum perl version is 5.8.8
 
-our $VERSION = '1.115';
+our $VERSION = '1.116';
 our $VERSION_MATURITY = "";
 
 use constant ONE_MB => 1024*1024;

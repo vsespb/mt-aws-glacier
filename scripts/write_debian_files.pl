@@ -131,6 +131,16 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.116', 1, 'Sun, 27 Jul 2014 23:16:00 +0400', <<'END';
+  * Fixed - there can be issue on MacOSX that HTTPS is not working: All requests end up with errors "HTTP connection
+  problem (timeout?)". Found that Apple ships LWP::Protocol::https without Mozilla::CA module (and they have no rights to
+  do so). So now a README install instructions updated and runtime error thrown if Mozilla::CA is missing and yo're trying
+  to use HTTPS. More technical info: http://blogs.perl.org/users/vsespb/2014/07/broken-lwp-in-the-wild.html
+  https://github.com/vsespb/mt-aws-glacier/issues/87
+
+  * Fixed - typo in error message.
+END
+
 	entry '1.115', 1, 'Mon, 26 May 2014 00:43:00 +0400', <<'END';
   * Fixed - crash/error when uploading large files with partsize=1024, when "old" Digest::SHA (< 5.63; shipped with most
   of current linux distros) is installed. Old Digest::SHA has a bug, there was a workaround for it (i.e. message asking
