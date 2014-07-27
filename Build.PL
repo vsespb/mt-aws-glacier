@@ -170,6 +170,7 @@ my $build = Module::Build->new(
 	(
 		recommends => {
 			'LWP::Protocol::https' => 6,
+			'Mozilla::CA' => 0, # should go with LWP::Protocol::https, but missing on some distros
 		}
 	),
 	$ENV{MT_NO_HARNESS} ?

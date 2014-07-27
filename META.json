@@ -41,7 +41,8 @@
       },
       "runtime" : {
          "recommends" : {
-            "LWP::Protocol::https" : "6"
+            "LWP::Protocol::https" : "6",
+            "Mozilla::CA" : "0"
          },
          "requires" : {
             "Carp" : "0",
