@@ -124,7 +124,7 @@ sub check_dir_or_relname
 
 							if (!is_relative_filename($relfilename)) {
 								error(message('filename_inside_dir',
-									'File specified with "option a" should be inside directory specified in %option b%'),
+									'File specified with %option a% should be inside directory specified in %option b%'),
 									a => 'filename', b => 'dir'),
 								undef;
 							} else {
