@@ -362,7 +362,7 @@ need `mt-aws-glacier`, other software most likely will restore your data but loo
 		# protocol=http (default) or https
 		protocol=http
 
-	(you can skip any config option and specify it directly in command line)
+	(you can skip any config option and specify it directly in command line, command line options override same options in config)
 3. Create a vault in specified region, using Amazon Console (`myvault`) or using mtglacier
 
 		./mtglacier create-vault myvault --config glacier.cfg
@@ -850,7 +850,7 @@ Currently it's guaranteed that traversal stop only in case when:
 + 6) Non-ASCII characters in PATTERNS are supported.
 
 ## Additional command line options
-NOTE: Any command line option can be used in config file as well.
+NOTE: Any command line option can be used in config file as well, but options specified on command line override options specified in config.
 
 1. `concurrency` (with `sync`, `upload-file`, `restore`, `restore-completed` commands) - number of parallel upload streams to run. (default 4)
 
