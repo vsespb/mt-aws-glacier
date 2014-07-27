@@ -32,6 +32,7 @@ use App::MtAws::Exceptions;
 use App::MtAws;
 use Data::Dumper;
 
+alarm 60; # in case of bug, some test might deadloop
 
 my %common_options = (region=>'region', key=>'key', secret=>'secret', protocol=>'http', vault=>'vault', timeout => 180);
 describe "new" => sub {
@@ -218,6 +219,28 @@ describe "perform_lwp" => sub {
 					}
 				}, exception 'http_unexpected_reply' => "Unexpected reply from remote server";
 			}
+		};
+	};
+	describe "should detect CA error" => sub {
+		it "should raise exception if CA error found" => sub {
+			my $g = App::MtAws::GlacierRequest->new({%common_options});
+			($g->{method}, $g->{url}) = ('GET', 'test');
+## no Test::Tabs
+			LWP::UserAgent->expects('request')->returns(HTTP::Response->new(500, "Can't verify SSL peers without knowing which Certificate Authorities to trust", ["Client-Warning" => "Internal response"], <<"END"))->once;
+Can't verify SSL peers without knowing which Certificate Authorities to trust
+
+This problem can be fixed by either setting the PERL_LWP_SSL_CA_FILE
+envirionment variable or by installing the Mozilla::CA module.
+
+To disable verification of SSL peers set the PERL_LWP_SSL_VERIFY_HOSTNAME
+envirionment variable to 0.  If you do this you can't be sure that you
+communicate with the expected peer.
+END
+## use Test::Tabs
+			assert_raises_exception sub {
+				$g->perform_lwp();
+			}, exception 'lwp_ssl_ca_exception' =>
+				'Can\'t verify SSL peers without knowing which Certificate Authorities to trust. Probably "Mozilla::CA" module is missing';
 		};
 	};
 };
