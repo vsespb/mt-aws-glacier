@@ -1,3 +1,16 @@
+libapp-mtaws-perl (1.117-0vdebian1~v7~mt1) wheezy; urgency=low
+
+  * Fixed - previous version introduced a check that Mozilla::CA module presents. This could be a bug on some systems
+  (i.e. Debian). Debian decoupled LWP::Protocol::https from Mozilla::CA but patched LWP::Protocol::https so it use system
+  CA store. Thus version v1.116 crashed with error message when trying to use HTTPS (only Debian systems affected where
+  mtglacier installed without CPAN). Now reverting the check on configuration stage and leave only check when we are
+  really getting error that SSL is broken. So it will advice to install Mozilla::CA only on systems where HTTPS indeed
+  broken.
+
+  * Dropping Ubuntu Saucy and Quantal PPA build, as it's EOL and Ubuntu PPA refuses to build packages.
+
+ -- Victor Efimov <victor@vsespb.ru>  Tue, 29 Jul 2014 11:40:00 +0400
+
 libapp-mtaws-perl (1.116-0vdebian1~v7~mt1) wheezy; urgency=low
 
   * Fixed - there can be issue on MacOSX that HTTPS is not working: All requests end up with errors "HTTP connection

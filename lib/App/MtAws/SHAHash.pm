@@ -21,7 +21,7 @@
 
 package App::MtAws::SHAHash;
 
-our $VERSION = '1.116';
+our $VERSION = '1.117';
 
 use strict;
 use warnings;

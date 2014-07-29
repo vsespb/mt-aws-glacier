@@ -131,6 +131,17 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.117', 1, 'Tue, 29 Jul 2014 11:40:00 +0400', <<'END';
+  * Fixed - previous version introduced a check that Mozilla::CA module presents. This could be a bug on some systems
+  (i.e. Debian). Debian decoupled LWP::Protocol::https from Mozilla::CA but patched LWP::Protocol::https so it use system
+  CA store. Thus version v1.116 crashed with error message when trying to use HTTPS (only Debian systems affected where
+  mtglacier installed without CPAN). Now reverting the check on configuration stage and leave only check when we are
+  really getting error that SSL is broken. So it will advice to install Mozilla::CA only on systems where HTTPS indeed
+  broken.
+
+  * Dropping Ubuntu Saucy and Quantal PPA build, as it's EOL and Ubuntu PPA refuses to build packages.
+END
+
 	entry '1.116', 1, 'Sun, 27 Jul 2014 23:16:00 +0400', <<'END';
   * Fixed - there can be issue on MacOSX that HTTPS is not working: All requests end up with errors "HTTP connection
   problem (timeout?)". Found that Apple ships LWP::Protocol::https without Mozilla::CA module (and they have no rights to
