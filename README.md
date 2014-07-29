@@ -251,7 +251,8 @@ To use HTTPS you also need:
 Install the following packages:
 
 Install `LWP::UserAgent` (`p5-libwww-perl`), `JSON::XS` (`p5-json-XS`). For HTTPS support you need `LWP::Protocol::https`, however on MacOS X
-you also need `Mozilla::CA` (it should go with `LWP::Protocol::https`, but it can be missing).
+you probably need `Mozilla::CA` (it should go with `LWP::Protocol::https`, but it can be missing). Try to use HTTPS without `Mozilla::CA` - if it does not work, install
+`Mozilla::CA`
 
 #### Install mt-aws-glacier
 
