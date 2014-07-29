@@ -30,14 +30,15 @@ use TestUtils 'w_fatal';
 use Test::Deep;
 use Data::Dumper;
 use LWP::UserAgent;
-use App::MtAws::Utils;
 
 
 
-if((LWP->VERSION() ge '6') && (LWP::UserAgent->is_protocol_supported("https")) && (LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION ge '6') && is_mozilla_ca_installed()) {
-	plan tests => 25;
+
+
+if((LWP->VERSION() ge '6') && (LWP::UserAgent->is_protocol_supported("https")) && (LWP::Protocol::https->VERSION && LWP::Protocol::https->VERSION ge '6')) {
+	plan tests => 20;
 } else {
-	plan skip_all => 'Test should be performed witht LWP 6+ and LWP::Protocol::https 6+';
+	plan skip_all => 'Test cannot be performed witht LWP 6+ and LWP::Protocol::https 6+';
 }
 
 
@@ -50,7 +51,7 @@ for (
 ) {
 	fake_config  key=>'mykey', secret => 'mysecret', region => 'myregion', protocol => 'https', sub {
 		disable_validations qw/journal secret key filename dir/ => sub {
-			no warnings 'redefine', 'once';
+			no warnings 'redefine';
 
 			my $res = config_create_and_parse(@$_);
 			ok ! defined $res->{errors};
@@ -71,13 +72,6 @@ for (
 				local *LWP::Protocol::https::VERSION = sub { 5 };
 				my $res = config_create_and_parse(@$_);
 				cmp_deeply $res->{errors}, ['LWP::Protocol::https 6.x required to use HTTPS'];
-			}
-
-			{
-				local *App::MtAws::ConfigDefinition::is_mozilla_ca_installed = sub { 0 };
-				my $res = config_create_and_parse(@$_);
-				cmp_deeply $res->{errors},
-					['Mozilla::CA is missing. Some distributions decouple it from LWP::Protocol::https (while they don\'t have right to do so). Please install Mozilla::CA'];
 			}
 		}
 	};

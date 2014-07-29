@@ -44,7 +44,7 @@ our @EXPORT = qw/set_filename_encoding get_filename_encoding binaryfilename
 sanity_relative_filename is_relative_filename abs2rel binary_abs_path open_file sysreadfull syswritefull sysreadfull_chk syswritefull_chk
 hex_dump_string is_wide_string
 characterfilename try_drop_utf8_flag dump_request_response file_size file_mtime file_exists file_inodev
-is_64bit_os is_64bit_time is_y2038_supported is_mozilla_ca_installed
+is_64bit_os is_64bit_time is_y2038_supported
 INVENTORY_TYPE_JSON INVENTORY_TYPE_CSV/;
 
 
@@ -370,11 +370,6 @@ sub is_64bit_time
 {
 	is_64bit_os && ($^O =~ /^(freebsd|gnukfreebsd|netbsd|midnightbsd|linux|darwin|solaris)$/) # no OpenBSD for sure
 	# not sure about cygwin, solaris
-}
-
-sub is_mozilla_ca_installed
-{
-	!! (eval { require Mozilla::CA; 1 } || $ENV{PERL_LWP_SSL_CA_FILE} || $ENV{HTTPS_CA_FILE} || $ENV{PERL_LWP_SSL_CA_PATH} || $ENV{HTTPS_CA_DIR});
 }
 
 
