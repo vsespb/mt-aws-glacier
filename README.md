@@ -720,8 +720,8 @@ See also [Restoring journal](#restoring-journal) for `retrieve-inventory`, `down
 
 ### `list-vaults`
 
-Lists all vaults in region specified by `--region` (with a respect to IAM permissions for listing vaults), prints it to the screen in a machine readable format (which is not
-yet documented here).
+Lists all vaults in region specified by `--region` (with a respect to IAM permissions for listing vaults), prints it to the screen in a machine readable tab separated format (which is not
+yet documented here, one note - LastInventoryDate can be empty string as Amazon API can return it as null).
 
 ### Other commands
 
