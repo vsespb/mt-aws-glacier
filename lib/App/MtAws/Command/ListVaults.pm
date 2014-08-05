@@ -33,7 +33,6 @@ use App::MtAws::QueueJob::ListVaults;
 
 my @fields = qw/
 SizeInBytes
-VaultARN
 CreationDate
 VaultName
 NumberOfArchives
@@ -54,7 +53,7 @@ sub run
 					if (exists $rec->{$field}) {
 						my $value = $rec->{$field};
 						$value = '' unless defined $value;
-						print "MTMSG\t$field\t$value\n";
+						print "MTMSG\t$rec->{VaultARN}\t$field\t$value\n";
 					}
 				}
 			}

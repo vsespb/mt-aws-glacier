@@ -77,8 +77,8 @@ describe "command" => sub {
 
 			my ($res, $out) = run_command({ concurrency => 1});
 			ok $res;
-			ok $out =~ /^MTMSG\tSizeInBytes\t100500$/m;
-			ok $out =~ /^MTMSG\tSizeInBytes\t200500$/m;
+			ok $out =~ m!^MTMSG\tarn:aws:glacier:eu-west-1:112345678901:vaults/xyz\tSizeInBytes\t100500$!m;
+			ok $out =~ m!^MTMSG\tarn:aws:glacier:eu-west-1:112345678901:vaults/def\tSizeInBytes\t200500$!m;
 			ok $out =~ /vaults\/def/m;
 			ok $out =~ /vaults\/xyz/m;
 		};
