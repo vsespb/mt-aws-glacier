@@ -718,6 +718,11 @@ downloads it, converts to journal file and saves to `--new-journal`. Both `CSV` 
 
 See also [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands examples.
 
+### `list-vaults`
+
+Lists all vaults in region specified by `--region` (with a respect to IAM permissions for listing vaults), prints it to the screen in a machine readable format (which is not
+yet documented here).
+
 ### Other commands
 
 See [usage](#usage) for examples of use of the following commands: `purge-vault`, `check-local-hash`, `create-vault`, `delete-vault`.
@@ -1026,7 +1031,7 @@ Something like this (including permissions to create/delete vaults):
 			"Resource":["arn:aws:glacier:eu-west-1:*",
 			  "arn:aws:glacier:us-east-1:*"],
 			"Action":["glacier:CreateVault",
-			  "glacier:DeleteVault"]
+			  "glacier:DeleteVault", "glacier:ListVaults"]
 		}
 		]
 	}
