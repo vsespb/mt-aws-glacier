@@ -72,6 +72,7 @@ my $build = Module::Build->new(
 		'Config' => 0,
 
 		'LWP' => '5.803', # ancient CentOS 5.x version
+		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Request' => 0, # either shipped with LWP, or prereq by LWP, does not contain correct version, sometimes
 		'JSON::XS' => '1',
 
@@ -149,7 +150,6 @@ my $build = Module::Build->new(
 		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => 0,
-		'URI' => '1.10', # even ancient LWP versions require at least 1.10, so we use it too
 		'HTTP::Daemon' => '1.36',
 		$ENV{MT_DEB_BUILD} ? () : ('Test::Tabs' => '0.003'),
 
