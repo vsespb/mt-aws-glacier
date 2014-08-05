@@ -22,7 +22,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 16;
+use Test::More tests => 18;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils 'w_fatal';
@@ -35,6 +35,7 @@ my @dynamic_modules = map { my $a = $_;  $a =~ s!::!/!g; $a; } qw/
 	Command::Retrieve
 	Command::CheckLocalHash
 	Command::DownloadInventory
+	Command::ListVaults
 /;
 
 
