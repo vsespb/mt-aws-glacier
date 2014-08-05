@@ -181,6 +181,12 @@ sub process_task
 		confess unless $r;
 		$result = { };
 		$console_out = "Deleted vault $data->{name}";
+	} elsif ($action eq 'list_vaults') {
+		my $req = App::MtAws::GlacierRequest->new($self->{options});
+		my $r = $req->list_vaults($data->{marker});
+		confess unless $r;
+		$result = { response => $r };
+		$console_out = "Getting vault list (".($data->{marker} ? "next page: $data->{marker}" : "first page").")";
 	} elsif ($action eq 'verify_file') {
 		my $th = App::MtAws::TreeHash->new();
 		my $binaryfilename = binaryfilename $data->{filename};

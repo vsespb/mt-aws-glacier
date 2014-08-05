@@ -371,6 +371,7 @@ sub get_config
 
 		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https)};
 		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https)};
+		command 'list-vaults' => sub { validate(optional('config'), mandatory(@encodings), optional('dry-run'), mandatory(@config_opts), check_https)};
 
 		command 'sync' => sub {
 			validate(mandatory(

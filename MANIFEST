@@ -7,6 +7,7 @@ lib/App/MtAws.pm
 lib/App/MtAws/ChildWorker.pm
 lib/App/MtAws/Command/CheckLocalHash.pm
 lib/App/MtAws/Command/DownloadInventory.pm
+lib/App/MtAws/Command/ListVaults.pm
 lib/App/MtAws/Command/Retrieve.pm
 lib/App/MtAws/Command/Sync.pm
 lib/App/MtAws/ConfigDefinition.pm
@@ -20,6 +21,7 @@ lib/App/MtAws/Glacier/Inventory.pm
 lib/App/MtAws/Glacier/Inventory/CSV.pm
 lib/App/MtAws/Glacier/Inventory/JSON.pm
 lib/App/MtAws/Glacier/ListJobs.pm
+lib/App/MtAws/Glacier/ListVaults.pm
 lib/App/MtAws/GlacierRequest.pm
 lib/App/MtAws/HttpSegmentWriter.pm
 lib/App/MtAws/IntermediateFile.pm
@@ -39,6 +41,7 @@ lib/App/MtAws/QueueJob/DownloadSingle.pm
 lib/App/MtAws/QueueJob/FetchAndDownload.pm
 lib/App/MtAws/QueueJob/FetchAndDownloadInventory.pm
 lib/App/MtAws/QueueJob/Iterator.pm
+lib/App/MtAws/QueueJob/ListVaults.pm
 lib/App/MtAws/QueueJob/MultipartCreate.pm
 lib/App/MtAws/QueueJob/MultipartFinish.pm
 lib/App/MtAws/QueueJob/MultipartPart.pm
@@ -71,6 +74,7 @@ t/integration/config_engine_dryrun.t
 t/integration/config_engine_filters.t
 t/integration/config_engine_follow.t
 t/integration/config_engine_leaf.t
+t/integration/config_engine_list_vaults.t
 t/integration/config_engine_lwp.t
 t/integration/config_engine_partsize.t
 t/integration/config_engine_segment_size.t
@@ -124,6 +128,7 @@ t/libtest/job_list_emulator_test.t
 t/libtest/lcg_random.t
 t/unit/cmd_check_local_hash.t
 t/unit/cmd_download_inventory.t
+t/unit/cmd_list_vaults.t
 t/unit/cmd_retrieve.t
 t/unit/cmd_sync.t
 t/unit/config_engine_new.t
@@ -136,6 +141,7 @@ t/unit/filter.t
 t/unit/glacier/inventory_csv.t
 t/unit/glacier/inventory_json.t
 t/unit/glacier/list_jobs.t
+t/unit/glacier/list_vaults.t
 t/unit/glacier_request.t
 t/unit/intermediate_file.t
 t/unit/journal_add_delete.t
@@ -158,6 +164,7 @@ t/unit/queue_job/download_single.t
 t/unit/queue_job/fetch_and_download.t
 t/unit/queue_job/fetch_and_download_inventory.t
 t/unit/queue_job/iterator.t
+t/unit/queue_job/list_vaults.t
 t/unit/queue_job/multipart_create.t
 t/unit/queue_job/multipart_finish.t
 t/unit/queue_job/multipart_part.t

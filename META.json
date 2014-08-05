@@ -30,7 +30,6 @@
             "Test::Spec" : "0",
             "Test::Tabs" : "0.003",
             "Time::HiRes" : "0",
-            "URI" : "1.10",
             "open" : "0"
          }
       },
@@ -70,6 +69,7 @@
             "PerlIO::encoding" : "0",
             "Time::Local" : "0",
             "Time::localtime" : "0",
+            "URI" : "1.10",
             "bytes" : "0",
             "constant" : "0",
             "integer" : "0",
@@ -96,6 +96,10 @@
       },
       "App::MtAws::Command::DownloadInventory" : {
          "file" : "lib/App/MtAws/Command/DownloadInventory.pm",
+         "version" : "1.117"
+      },
+      "App::MtAws::Command::ListVaults" : {
+         "file" : "lib/App/MtAws/Command/ListVaults.pm",
          "version" : "1.117"
       },
       "App::MtAws::Command::Retrieve" : {
@@ -148,6 +152,10 @@
       },
       "App::MtAws::Glacier::ListJobs" : {
          "file" : "lib/App/MtAws/Glacier/ListJobs.pm",
+         "version" : "1.117"
+      },
+      "App::MtAws::Glacier::ListVaults" : {
+         "file" : "lib/App/MtAws/Glacier/ListVaults.pm",
          "version" : "1.117"
       },
       "App::MtAws::GlacierRequest" : {
@@ -236,6 +244,10 @@
       },
       "App::MtAws::QueueJob::Iterator" : {
          "file" : "lib/App/MtAws/QueueJob/Iterator.pm",
+         "version" : "1.117"
+      },
+      "App::MtAws::QueueJob::ListVaults" : {
+         "file" : "lib/App/MtAws/QueueJob/ListVaults.pm",
          "version" : "1.117"
       },
       "App::MtAws::QueueJob::MultipartCreate" : {

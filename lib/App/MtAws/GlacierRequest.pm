@@ -28,6 +28,7 @@ use utf8;
 use POSIX;
 use LWP 5.803;
 use LWP::UserAgent;
+use URI::Escape;
 use HTTP::Request;
 use Digest::SHA qw/hmac_sha256 hmac_sha256_hex sha256_hex/;
 use App::MtAws::MetaData;
@@ -360,6 +361,17 @@ sub delete_vault
 	return $resp ? $resp->header('x-amzn-RequestId') : undef;
 }
 
+sub list_vaults
+{
+	my ($self, $marker) = @_;
+
+	$self->{url} = "/$self->{account_id}/vaults";
+	$self->{params}->{marker} = $marker if defined($marker);
+	$self->{method} = 'GET';
+
+	my $resp = $self->perform_lwp();
+	return $resp->decoded_content; # TODO: return reference?
+}
 
 
 sub _calc_data_hash
@@ -403,7 +415,7 @@ sub _sign
 		$self->{data_sha256} :
 		( $self->{dataref} ? large_sha256_hex(${$self->{dataref}}) : sha256_hex('') );
 
-	$self->{params_s} = $self->{params} ? join ('&', map { "$_=$self->{params}->{$_}" } sort keys %{$self->{params}}) : ""; # TODO: proper URI encode
+	$self->{params_s} = $self->{params} ? join ('&', map { "$_=".uri_escape($self->{params}->{$_}) } sort keys %{$self->{params}}) : "";
 	my $canonical_query_string = $self->{params_s};
 
 	my $canonical_url = join("\n", $self->{method}, $self->{url}, $canonical_query_string, $canonical_headers, "", $signed_headers, $bodyhash);

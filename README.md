@@ -251,7 +251,8 @@ To use HTTPS you also need:
 Install the following packages:
 
 Install `LWP::UserAgent` (`p5-libwww-perl`), `JSON::XS` (`p5-json-XS`). For HTTPS support you need `LWP::Protocol::https`, however on MacOS X
-you also need `Mozilla::CA` (it should go with `LWP::Protocol::https`, but it can be missing).
+you probably need `Mozilla::CA` (it should go with `LWP::Protocol::https`, but it can be missing). Try to use HTTPS without `Mozilla::CA` - if it does not work, install
+`Mozilla::CA`
 
 #### Install mt-aws-glacier
 
@@ -717,6 +718,11 @@ downloads it, converts to journal file and saves to `--new-journal`. Both `CSV` 
 
 See also [Restoring journal](#restoring-journal) for `retrieve-inventory`, `download-inventory` commands examples.
 
+### `list-vaults`
+
+Lists all vaults in region specified by `--region` (with a respect to IAM permissions for listing vaults), prints it to the screen in a machine readable tab separated format (which is not
+yet documented here, one note - LastInventoryDate can be empty string as Amazon API can return it as null).
+
 ### Other commands
 
 See [usage](#usage) for examples of use of the following commands: `purge-vault`, `check-local-hash`, `create-vault`, `delete-vault`.
@@ -1025,7 +1031,7 @@ Something like this (including permissions to create/delete vaults):
 			"Resource":["arn:aws:glacier:eu-west-1:*",
 			  "arn:aws:glacier:us-east-1:*"],
 			"Action":["glacier:CreateVault",
-			  "glacier:DeleteVault"]
+			  "glacier:DeleteVault", "glacier:ListVaults"]
 		}
 		]
 	}
