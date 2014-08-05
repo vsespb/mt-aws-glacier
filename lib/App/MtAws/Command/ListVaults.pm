@@ -46,9 +46,12 @@ sub run
 		if ($options->{'dry-run'}) {
 			print "Will LIST VAULTS for current account\n"
 		} else {
+			my ($sum_number, $sum_size) = (0, 0);
 			my $ft = App::MtAws::QueueJob::ListVaults->new();
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
 			for my $rec (@{$R->{all_vaults}}) {
+				$sum_number += $rec->{NumberOfArchives};
+				$sum_size += $rec->{SizeInBytes};
 				for my $field (@fields) {
 					if (exists $rec->{$field}) {
 						my $value = $rec->{$field};
@@ -57,6 +60,8 @@ sub run
 					}
 				}
 			}
+			print "MTMSG\ttotal_number_of_archives\t$sum_number\n";
+			print "MTMSG\ttotal_size_of_archives\t$sum_size\n";
 		}
 	}
 }

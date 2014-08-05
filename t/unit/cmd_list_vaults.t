@@ -32,7 +32,7 @@ use Carp;
 use POSIX;
 
 use Test::Spec;
-use Test::More tests => 6;
+use Test::More tests => 8;
 use Test::Deep;
 
 use Data::Dumper;
@@ -81,6 +81,8 @@ describe "command" => sub {
 			ok $out =~ m!^MTMSG\tarn:aws:glacier:eu-west-1:112345678901:vaults/def\tSizeInBytes\t200500$!m;
 			ok $out =~ /vaults\/def/m;
 			ok $out =~ /vaults\/xyz/m;
+			ok $out =~ m!^MTMSG\ttotal_number_of_archives\t300$!m;
+			ok $out =~ m!^MTMSG\ttotal_size_of_archives\t301000$!m;
 		};
 	};
 };
