@@ -1,0 +1,60 @@
+# mt-aws-glacier - Amazon Glacier sync client
+# Copyright (C) 2012-2014  Victor Efimov
+# http://mt-aws.com (also http://vs-dev.com) vs@vs-dev.com
+# License: GPLv3
+#
+# This file is part of "mt-aws-glacier"
+#
+#    mt-aws-glacier is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    mt-aws-glacier is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package App::MtAws::Glacier::ListVaults;
+
+our $VERSION = '1.117';
+
+use strict;
+use warnings;
+use utf8;
+
+use Carp;
+use JSON::XS 1.00;
+
+use App::MtAws::Utils;
+use App::MtAws::MetaData;
+
+
+sub new
+{
+	my $class = shift;
+	my $self = { rawdata => \$_[0] };
+	bless $self, $class;
+	$self;
+}
+
+sub _parse
+{
+	my ($self) = @_;
+	return if $self->{data};
+	$self->{data} = JSON::XS->new->allow_nonref->decode(${ delete $self->{rawdata} || confess });
+
+}
+
+sub get_list_vaults
+{
+	my ($self) = @_;
+	$self->_parse;
+	$self->{data}{Marker}, @{$self->{data}{VaultList}};
+}
+
+
+1;
