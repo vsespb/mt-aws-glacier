@@ -720,8 +720,9 @@ See also [Restoring journal](#restoring-journal) for `retrieve-inventory`, `down
 
 ### `list-vaults`
 
-Lists all vaults in region specified by `--region` (with a respect to IAM permissions for listing vaults), prints it to the screen in a machine readable tab separated format (which is not
-yet documented here, one note - LastInventoryDate can be empty string as Amazon API can return it as null).
+Lists all vaults in region specified by `--region` (with a respect to IAM permissions for listing vaults), prints it to the screen. Default format is human readable, not
+for parsing. Use `--format=mtmsg` for machine readable tab separated format (which is not yet documented here, however it's self-explanatory and backward compatability is guaranteed;
+one note - LastInventoryDate can be empty string as Amazon API can return it as null).
 
 ### Other commands
 
