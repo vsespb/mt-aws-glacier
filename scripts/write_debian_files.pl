@@ -131,6 +131,10 @@ sub copy_files_to_debian
 }
 
 write_changelog $distro, sub {
+	entry '1.120', 1, 'Sat, 09 Aug 2014 23:40:00 +0400', <<'END';
+  * list-vaults command implemented
+END
+
 	entry '1.117', 1, 'Tue, 29 Jul 2014 11:40:00 +0400', <<'END';
   * Fixed - previous version introduced a check that Mozilla::CA module presents. This could be a bug on some systems
   (i.e. Debian). Debian decoupled LWP::Protocol::https from Mozilla::CA but patched LWP::Protocol::https so it use system

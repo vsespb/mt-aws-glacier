@@ -1,3 +1,9 @@
+libapp-mtaws-perl (1.120-0ubuntu1~precise1~ppa1) precise; urgency=low
+
+  * list-vaults command implemented
+
+ -- Victor Efimov <victor@vsespb.ru>  Sat, 09 Aug 2014 23:40:00 +0400
+
 libapp-mtaws-perl (1.117-0ubuntu1~precise1~ppa1) precise; urgency=low
 
   * Fixed - previous version introduced a check that Mozilla::CA module presents. This could be a bug on some systems

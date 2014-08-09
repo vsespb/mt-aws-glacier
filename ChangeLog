@@ -1,3 +1,7 @@
+### 2014-08-09 v1.120
+
+  * list-vaults command implemented
+
 ### 2014-07-29 v1.117
 
   * Fixed - previous version introduced a check that Mozilla::CA module presents. This could be a bug on some systems

@@ -20,7 +20,7 @@
 
 package App::MtAws::DateTime;
 
-our $VERSION = '1.117';
+our $VERSION = '1.120';
 
 use strict;
 use warnings;
