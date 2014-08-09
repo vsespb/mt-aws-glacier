@@ -357,6 +357,8 @@ Commands:
 	  --set-rel-filename - Relative filename to use in Journal (if dir not specified)
 	  --stdin - Upload from STDIN
 	  --check-max-file-size - Specify to ensure there will be less than 10 000 parts
+	list-vaults
+	  --format for-humans|mtmsg
 	version - prints debug information about software installed
 Config format (text file):
 	key=YOURKEY
