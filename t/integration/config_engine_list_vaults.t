@@ -23,7 +23,7 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 6;
+use Test::More tests => 9;
 use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
@@ -50,6 +50,26 @@ for (
 			region => 'myregion',
 			protocol => 'http',
 			config=>'glacier.cfg',
+			format => 'for-humans',
+		}, "$_ result");
+	}
+}
+
+for (
+	qq!list-vaults --config=glacier.cfg --format=mtmsg!,
+){
+	fake_config sub {
+		my ($errors, $warnings, $command, $result) = config_create_and_parse(split(' ', $_));
+		ok( !$errors && !$warnings, "$_ error/warnings");
+		ok ($command eq 'list-vaults', "$_ command");
+		is_deeply($result, {
+			%misc_opts,
+			key=>'mykey',
+			secret => 'mysecret',
+			region => 'myregion',
+			protocol => 'http',
+			config=>'glacier.cfg',
+			format => 'mtmsg',
 		}, "$_ result");
 	}
 }
@@ -69,6 +89,7 @@ for (
 			protocol => 'http',
 			config=>'glacier.cfg',
 			'dry-run' => 1,
+			format => 'for-humans',
 		}, "$_ result");
 	}
 }

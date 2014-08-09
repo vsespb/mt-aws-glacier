@@ -42,6 +42,7 @@ LastInventoryDate
 sub run
 {
 	my ($options, $j) = @_;
+
 	with_forks !$options->{'dry-run'}, $options, sub {
 		if ($options->{'dry-run'}) {
 			print "Will LIST VAULTS for current account\n"
@@ -49,19 +50,43 @@ sub run
 			my ($sum_number, $sum_size) = (0, 0);
 			my $ft = App::MtAws::QueueJob::ListVaults->new();
 			my ($R) = fork_engine->{parent_worker}->process_task($ft, undef);
-			for my $rec (@{$R->{all_vaults}}) {
-				$sum_number += $rec->{NumberOfArchives};
-				$sum_size += $rec->{SizeInBytes};
-				for my $field (@fields) {
-					if (exists $rec->{$field}) {
-						my $value = $rec->{$field};
-						$value = '' unless defined $value;
-						print "MTMSG\t$rec->{VaultARN}\t$field\t$value\n";
+
+			if ($options->{format} eq 'mtmsg') {
+				for my $rec (@{$R->{all_vaults}}) {
+					$sum_number += $rec->{NumberOfArchives};
+					$sum_size += $rec->{SizeInBytes};
+					for my $field (@fields) {
+						if (exists $rec->{$field}) {
+							my $value = $rec->{$field};
+							$value = '' unless defined $value;
+							print "MTMSG\tVAULT_LIST\t$rec->{VaultARN}\t$field\t$value\n";
+						}
 					}
 				}
+				print "MTMSG\tVAULTS_SUMMARY\ttotal_number_of_archives\t$sum_number\n";
+				print "MTMSG\tVAULTS_SUMMARY\ttotal_size_of_archives\t$sum_size\n";
+			} elsif ($options->{format} eq 'for-humans') {
+				print "\n";
+				for my $rec (@{$R->{all_vaults}}) {
+					$sum_number += $rec->{NumberOfArchives};
+					$sum_size += $rec->{SizeInBytes};
+
+					print "Vault $rec->{VaultName} ($rec->{VaultARN})\n";
+					print "Archives: $rec->{NumberOfArchives}, Size: $rec->{SizeInBytes}\n";
+					print "Created: $rec->{CreationDate}\n";
+					if (defined $rec->{LastInventoryDate}) {
+						print "Last inventory generation date: $rec->{LastInventoryDate}\n";
+					} else {
+						print "Never had inventory generation\n";
+					}
+					print "\n";
+				}
+				print "Total archives in all listed vaults: $sum_number\n";
+				print "Total size of archives in all listed vaults: $sum_size\n";
+				print "\n";
+			} else {
+				confess "Unknown --format";
 			}
-			print "MTMSG\ttotal_number_of_archives\t$sum_number\n";
-			print "MTMSG\ttotal_size_of_archives\t$sum_size\n";
 		}
 	}
 }

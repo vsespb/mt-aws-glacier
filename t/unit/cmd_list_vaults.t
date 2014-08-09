@@ -32,7 +32,7 @@ use Carp;
 use POSIX;
 
 use Test::Spec;
-use Test::More tests => 8;
+use Test::More;
 use Test::Deep;
 
 use Data::Dumper;
@@ -52,7 +52,26 @@ sub run_command
 
 describe "command" => sub {
 	describe "list_vaults" => sub {
-		it "should work" => sub {
+
+		sub get_output
+		{
+			my (%add_opts) = @_;
+
+			my $options = {concurrency => 1, %add_opts};
+
+			App::MtAws::Command::ListVaults->expects("with_forks")->returns(sub{
+				my ($flag, $opts, $cb) = @_;
+				is $flag, !$options->{'dry-run'};
+				is $options, $opts;
+				$cb->();
+			});
+
+			App::MtAws::Command::ListVaults->expects("fork_engine")->returns(sub {
+				bless { parent_worker =>
+					bless {}, 'App::MtAws::ParentWorker'
+				}, 'App::MtAws::ForkEngine';
+			})->once;
+
 			App::MtAws::ParentWorker->expects("process_task")->returns(sub {
 				my ($self, $job) = @_;
 				ok $self->isa('App::MtAws::ParentWorker');
@@ -66,7 +85,7 @@ describe "command" => sub {
 						VaultName => "myvault",
 					}, +{
 						CreationDate => "2013-10-01T19:01:19.997Z",
-						LastInventoryDate => "2013-09-01T19:01:19.997Z",
+						LastInventoryDate => undef,
 						NumberOfArchives => 200,
 						SizeInBytes => 200_500,
 						VaultARN => "arn:aws:glacier:eu-west-1:112345678901:vaults/def",
@@ -75,14 +94,31 @@ describe "command" => sub {
 				}
 			} )->once;
 
-			my ($res, $out) = run_command({ concurrency => 1});
+			my ($res, $out) = run_command($options);
 			ok $res;
-			ok $out =~ m!^MTMSG\tarn:aws:glacier:eu-west-1:112345678901:vaults/xyz\tSizeInBytes\t100500$!m;
-			ok $out =~ m!^MTMSG\tarn:aws:glacier:eu-west-1:112345678901:vaults/def\tSizeInBytes\t200500$!m;
+			$out;
+		}
+
+		it "should work in mtmsg format" => sub {
+			my $out = get_output(format => 'mtmsg');
+			ok $out =~ m!^MTMSG\tVAULT_LIST\tarn:aws:glacier:eu-west-1:112345678901:vaults/xyz\tSizeInBytes\t100500$!m;
+			ok $out =~ m!^MTMSG\tVAULT_LIST\tarn:aws:glacier:eu-west-1:112345678901:vaults/def\tSizeInBytes\t200500$!m;
 			ok $out =~ /vaults\/def/m;
 			ok $out =~ /vaults\/xyz/m;
-			ok $out =~ m!^MTMSG\ttotal_number_of_archives\t300$!m;
-			ok $out =~ m!^MTMSG\ttotal_size_of_archives\t301000$!m;
+			ok $out =~ m!^MTMSG\tVAULTS_SUMMARY\ttotal_number_of_archives\t300$!m;
+			ok $out =~ m!^MTMSG\tVAULTS_SUMMARY\ttotal_size_of_archives\t301000$!m;
+		};
+
+		it "should work in for-humans format" => sub {
+			my $out = get_output(format => 'for-humans');
+			ok $out =~ m!^\QVault myvault (arn:aws:glacier:eu-west-1:112345678901:vaults/xyz)\E$!m;
+			ok $out =~ m!^\QVault myvault2 (arn:aws:glacier:eu-west-1:112345678901:vaults/def)\E$!m;
+			ok $out =~ m!^\QArchives: 100, Size: 100500\E$!m;
+			ok $out =~ m!^\QArchives: 200, Size: 200500\E$!m;
+			ok $out =~ m!^\QNever had inventory generation\E$!m;
+			ok $out =~ m!^\QLast inventory generation date: 2013-10-01T19:01:19.997Z\E$!m;
+			ok $out =~ m!Total archives in all listed vaults: 300!m;
+			ok $out =~ m!Total size of archives in all listed vaults: 301000!m;
 		};
 	};
 };

@@ -369,9 +369,18 @@ sub get_config
 			/^[A-Za-z0-9\.\-_]{1,255}$/
 		};
 
+		{
+			my $fh = 'for-humans';
+			my $mt = 'mtmsg';
+			validation(option('format', default => $fh),
+				message(qq{%option a% must be "$fh" or "$mt"}), sub { /^(\Q$fh\E|\Q$mt\E)$/ });
+		}
+
 		command 'create-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https)};
 		command 'delete-vault' => sub { validate(optional('config'), mandatory(@encodings), mandatory('vault-name'), mandatory(@config_opts), check_https)};
-		command 'list-vaults' => sub { validate(optional('config'), mandatory(@encodings), optional('dry-run'), mandatory(@config_opts), check_https)};
+		command 'list-vaults' => sub {
+			validate(optional('config'), mandatory(@encodings), optional('dry-run'), mandatory(@config_opts), check_https, mandatory('format'))
+		};
 
 		command 'sync' => sub {
 			validate(mandatory(
