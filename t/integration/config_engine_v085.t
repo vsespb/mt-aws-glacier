@@ -28,7 +28,6 @@ use Test::Deep;
 use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils 'w_fatal';
-use Test::MockModule;
 use Data::Dumper;
 
 

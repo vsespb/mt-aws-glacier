@@ -34,7 +34,6 @@ use Test::Deep ();
 use Test::Simple ();
 use File::Temp ();
 use Test::More ();
-use Test::MockModule ();
 use LWP::UserAgent ();
 use DateTime ();
 use Test::Spec ();

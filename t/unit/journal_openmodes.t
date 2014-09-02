@@ -31,7 +31,6 @@ use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils 'w_fatal';
 use App::MtAws::Journal;
 use App::MtAws::Exceptions;
-use Test::MockModule;
 use POSIX;
 use Carp;
 
