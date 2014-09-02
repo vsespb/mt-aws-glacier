@@ -29,7 +29,6 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils 'w_fatal';
 use App::MtAws::Journal;
-use Test::MockModule;
 
 
 
@@ -56,10 +55,8 @@ my $data = {
 	my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 	my ($line);
-
-	my $mock = Test::MockModule->new('App::MtAws::Journal');
-	$mock->mock('_write_line', sub { (undef, $line) = @_; });
-	$mock->mock('_time', sub { $data->{time} });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_write_line = sub { (undef, $line) = @_; };
 
 	$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => $data->{mtime}, archive_id => $data->{archive_id}, size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
 	ok($line eq "B\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
@@ -70,10 +67,8 @@ my $data = {
 	my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 	my ($line);
-
-	my $mock = Test::MockModule->new('App::MtAws::Journal');
-	$mock->mock('_write_line', sub { (undef, $line) = @_; });
-	$mock->mock('_time', sub { $data->{time} });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_write_line = sub { (undef, $line) = @_; };
 
 	$J->add_entry({ type=> 'CREATED', time => $data->{time}, mtime => undef, archive_id => $data->{archive_id}, size => $data->{size}, treehash => $data->{treehash}, relfilename => $data->{relfilename} });
 	ok($line eq "B\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\tNONE\t$data->{treehash}\t$data->{relfilename}");
@@ -84,10 +79,8 @@ my $data = {
 	my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 	my ($line);
-
-	my $mock = Test::MockModule->new('App::MtAws::Journal');
-	$mock->mock('_write_line', sub { (undef, $line) = @_; });
-	$mock->mock('_time', sub { $data->{time} });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_write_line = sub { (undef, $line) = @_; };
 
 	$J->add_entry({ type=> 'DELETED', time => $data->{time}, archive_id => $data->{archive_id}, relfilename => $data->{relfilename} });
 	ok($line eq "B\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
@@ -98,10 +91,8 @@ my $data = {
 	my $J = App::MtAws::Journal->new(output_version => 'B', journal_file=>'x', root_dir => $rootdir);
 
 	my ($line);
-
-	my $mock = Test::MockModule->new('App::MtAws::Journal');
-	$mock->mock('_write_line', sub { (undef, $line) = @_; });
-	$mock->mock('_time', sub { $data->{time} });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_write_line = sub { (undef, $line) = @_; };
 
 	$J->add_entry({ type=> 'RETRIEVE_JOB', time => $data->{time}, archive_id => $data->{archive_id}, job_id => $data->{jobid}});
 	ok($line eq "B\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{jobid}");
