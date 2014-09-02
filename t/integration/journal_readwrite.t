@@ -31,7 +31,6 @@ use TestUtils 'w_fatal';
 use App::MtAws::Journal;
 use App::MtAws::Exceptions;
 use App::MtAws::Utils;
-use Test::MockModule;
 
 
 
@@ -181,8 +180,8 @@ sub test_all_ok
 
 			my ($args);
 
-			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_add_filename', sub { (undef, $args) = @_; });
+			no warnings 'redefine';
+			local *App::MtAws::Journal::_add_filename = sub { (undef, $args) = @_; };
 
 			$J->process_line("$ver\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$data->{relfilename}");
 			$J->_index_archives_as_files();
@@ -207,8 +206,8 @@ sub test_all_ok
 
 			my ($archive_id, $relfilename);
 
-			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_delete_archive', sub { (undef, $archive_id, $relfilename) = @_; });
+			no warnings 'redefine';
+			local *App::MtAws::Journal::_delete_archive = sub { (undef, $archive_id, $relfilename) = @_; };
 
 			$J->process_line("$ver\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}");
 			ok(defined $archive_id);
@@ -224,8 +223,8 @@ sub test_all_ok
 
 			my ($time, $archive_id, $job_id);
 
-			(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-				mock('_retrieve_job', sub { (undef, $time, $archive_id, $job_id) = @_; });
+			no warnings 'redefine';
+			local *App::MtAws::Journal::_retrieve_job = sub { (undef, $time, $archive_id, $job_id) = @_; };
 
 			$J->process_line("$ver\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
 			ok is_iv_without_pv $time;
@@ -248,8 +247,8 @@ sub test_all_ok
 
 		my ($args);
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_add_filename', sub { (undef, $args) = @_; });
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_add_filename = sub { (undef, $args) = @_; };
 
 		$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $data->{relfilename}");
 		$J->_index_archives_as_files();
@@ -269,8 +268,8 @@ sub test_all_ok
 
 		my ($archive_id, $relfilename);
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_delete_archive', sub { (undef, $archive_id, $relfilename) = @_; });
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_delete_archive = sub { (undef, $archive_id, $relfilename) = @_; };
 
 		$J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}");
 		ok(defined $archive_id);
@@ -286,8 +285,8 @@ sub test_all_ok
 
 	my ($time, $archive_id, $job_id);
 
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_retrieve_job', sub { (undef, $time, $archive_id, $job_id) = @_; });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_retrieve_job = sub { (undef, $time, $archive_id, $job_id) = @_; };
 
 	$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");
 
@@ -322,8 +321,8 @@ sub test_all_fails_for_create_A
 
 		my $called = 0;
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_add_archive', sub { $called = 1 });
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_add_archive = sub { $called = 1 };
 
 		my %D;
 		$D{$_} = "\t" for (1..7);
@@ -361,8 +360,8 @@ sub test_all_fails_for_create_07
 
 		my $called = 0;
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_add_archive', sub { $called = 1});
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_add_archive = sub { $called = 1 };
 
 		my %D;
 		$D{$_} = ' ' for (1..5);
@@ -395,8 +394,8 @@ sub test_all_fails_for_delete
 
 		my $called = 0;
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_delete_archive', sub { $called = 1});
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_delete_archive = sub { $called = 1 };
 
 		ok ! defined eval { $J->process_line("$ver\t$data->{time}\tDELETED\t$data->{archive_id}\t$data->{relfilename}"); 1; };
 		ok (! $called);
@@ -414,8 +413,8 @@ sub test_all_fails_for_delete
 
 		my $called = 0;
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_delete_archive', sub { $called = 1 });
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_delete_archive = sub { $called = 1 };
 
 		ok ! defined eval { $J->process_line("$data->{time} DELETED $data->{archive_id} $data->{relfilename}"); 1; };
 		ok(! $called);
@@ -438,8 +437,8 @@ sub test_all_fails_for_retrieve
 
 		my $called = 0;
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_retrieve_job', sub { $called =1 });
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_retrieve_job = sub { $called = 1 };
 
 		ok ! defined eval { $J->process_line("$ver\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}"); 1 };
 
@@ -458,8 +457,8 @@ sub test_all_fails_for_retrieve
 
 		my $called = 0;
 
-		(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-			mock('_retrieve_job', sub { $called =1 });
+		no warnings 'redefine';
+		local *App::MtAws::Journal::_retrieve_job = sub { $called = 1 };
 
 		ok ! defined eval { $J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}"); 1; };
 
