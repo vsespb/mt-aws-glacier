@@ -147,7 +147,6 @@ my $build = Module::Build->new(
 		'Test::Simple' => '0.88',
 		'Test::More' => '0.88',
 
-		'Test::MockModule' => 0,
 		'DateTime' => 0,
 		'Test::Spec' => 0,
 		'HTTP::Daemon' => '1.36',
