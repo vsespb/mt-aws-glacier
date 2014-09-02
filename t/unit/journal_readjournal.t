@@ -29,7 +29,6 @@ use FindBin;
 use lib map { "$FindBin::RealBin/$_" } qw{../lib ../../lib};
 use TestUtils 'w_fatal';
 use App::MtAws::Journal;
-use Test::MockModule;
 
 
 
@@ -54,9 +53,8 @@ my $data = {
 	my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 	my ($args);
-
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_add_filename', sub { (undef, $args) = @_;} );
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_add_filename = sub { (undef, $args) = @_;};
 
 	$J->process_line("A\t$data->{time}\tCREATED\t$data->{archive_id}\t$data->{size}\t$data->{mtime}\t$data->{treehash}\t$relfilename");
 	$J->_index_archives_as_files();
@@ -74,8 +72,8 @@ my $data = {
 
 	my ($archive_id, $expected_relfilename);
 
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_delete_archive', sub { (undef, $archive_id, $expected_relfilename) = @_; });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_delete_archive = sub { (undef, $archive_id, $expected_relfilename) = @_; };
 
 	$J->process_line("A\t$data->{time}\tDELETED\t$data->{archive_id}\t$relfilename");
 
@@ -92,8 +90,8 @@ my $data = {
 
 	my ($time, $archive_id, $job_id);
 
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_retrieve_job', sub { (undef, $time, $archive_id, $job_id) = @_; });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_retrieve_job = sub { (undef, $time, $archive_id, $job_id) = @_; };
 
 	$J->process_line("A\t$data->{time}\tRETRIEVE_JOB\t$data->{archive_id}\t$data->{job_id}");
 
@@ -115,9 +113,8 @@ my $data = {
 	my $J = App::MtAws::Journal->new(journal_file=>'x', root_dir => $rootdir);
 
 	my ($args);
-
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_add_filename', sub { (undef, $args) = @_; });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_add_filename = sub { (undef, $args) = @_;};
 
 	$J->process_line("$data->{time} CREATED $data->{archive_id} $data->{size} $data->{treehash} $relfilename");
 	$J->_index_archives_as_files();
@@ -135,8 +132,8 @@ my $data = {
 
 	my ($archive_id, $expected_relfilename);
 
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_delete_archive', sub { (undef, $archive_id, $expected_relfilename) = @_; });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_delete_archive = sub { (undef, $archive_id, $expected_relfilename) = @_; };
 
 	$J->process_line("$data->{time} DELETED $data->{archive_id} $relfilename");
 	ok($archive_id);
@@ -152,8 +149,8 @@ my $data = {
 
 	my ($time, $archive_id, $job_id);
 
-	(my $mock = Test::MockModule->new('App::MtAws::Journal'))->
-		mock('_retrieve_job', sub { (undef, $time, $archive_id, $job_id) = @_; });
+	no warnings 'redefine';
+	local *App::MtAws::Journal::_retrieve_job = sub { (undef, $time, $archive_id, $job_id) = @_; };
 
 	$J->process_line("$data->{time} RETRIEVE_JOB $data->{archive_id}");
 
