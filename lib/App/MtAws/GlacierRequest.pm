@@ -224,7 +224,9 @@ sub retrieval_fetch_job
 	$self->{method} = 'GET';
 
 	my $resp = $self->perform_lwp();
-	return $resp->decoded_content; # TODO: return reference?
+	my $X=$resp->decoded_content;
+	print $X, "\n";
+	return $X; # TODO: return reference?
 }
 
 
