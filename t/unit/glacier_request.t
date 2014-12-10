@@ -68,8 +68,9 @@ describe "new" => sub {
 			($g->{method}, $g->{url}) = ('GET', 'test');
 			my @opts;
 			LWP::UserAgent->expects('new')->returns(sub { @opts = @_; undef});
+			my ($o_timeout, $o_proxy) = @opts;
 			eval{my $resp = $g->perform_lwp();};
-			cmp_deeply [@opts], [qw/LWP::UserAgent timeout/, $timeout];
+			cmp_deeply [$o_timeout], [qw/LWP::UserAgent timeout/, $timeout];
 		}
 	};
 
