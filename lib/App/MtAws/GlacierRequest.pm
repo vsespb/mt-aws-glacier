@@ -466,7 +466,7 @@ sub perform_lwp
 		undef $self->{last_retry_reason};
 		$self->_sign();
 
-		my $ua = LWP::UserAgent->new(timeout => $self->{timeout});
+		my $ua = LWP::UserAgent->new(timeout => $self->{timeout}, env_proxy=>1);
 		$ua->protocols_allowed ( [ 'https' ] ) if $self->{protocol} eq 'https'; # Lets hard code this.
 		$ua->agent("mt-aws-glacier/${App::MtAws::VERSION} (http://mt-aws.com/) "); # use of App::MtAws::VERSION_MATURITY produce warning
 		my $req = undef;
