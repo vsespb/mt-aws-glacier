@@ -219,6 +219,7 @@ sub process_task
 sub comm_error
 {
 	# error message useless here
+	print STDERR "UNEXPECTED ERROR: PARENT SUDDENLY EXITED\n";
 	exit(1);
 }
 
