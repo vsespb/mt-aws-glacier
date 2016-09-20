@@ -114,6 +114,9 @@ sub meta_decode
 	return unless defined $str; # protect from undef $str
 
 	my ($marker, $b64) = _split_meta($str);
+
+	defined $b64 or return $str;
+
 	return unless defined $marker;
 	if ($marker eq 'mt1') {
 		return _decode_filename_and_mtime(_decode_json(_decode_utf8(_decode_b64($b64))));
