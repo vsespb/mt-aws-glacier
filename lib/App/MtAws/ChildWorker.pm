@@ -48,6 +48,9 @@ sub process
 {
 	my ($self) = @_;
 
+	# Ignore SIGPIPE.
+	$SIG{'PIPE'} = 'IGNORE';
+
 	my $tochild = $self->{tochild};
 	my $fromchild = $self->{fromchild};
 	while (1) {
