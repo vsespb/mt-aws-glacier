@@ -543,6 +543,10 @@ sub perform_lwp
 			print "PID $$ HTTP ".$resp->code." This might be normal. Will retry ($dt seconds spent for request)\n";
 			$self->{last_retry_reason} = $resp->code;
 			throttle($i);
+		} elsif ($resp->code =~ /^400$/) {
+			print "PID $$ HTTP ".$resp->code." Unexpected 400 Bad Request response received. Will retry ($dt seconds spent for request)\n";
+			$self->{last_retry_reason} = $resp->code;
+			throttle($i);
 		} elsif (defined($resp->header('X-Died')) && (get_exception($resp->header('X-Died')))) {
 			die $resp->header('X-Died'); # propogate our own exceptions
 		} elsif (defined($resp->header('X-Died')) && length($resp->header('X-Died'))) {
@@ -569,7 +573,7 @@ sub perform_lwp
 				return $resp;
 			}
 		} else {
-			if ($resp->code =~ /^40[03]$/) {
+			if ($resp->code =~ /^403$/) {
 				if ($resp->content_type && $resp->content_type eq 'application/json') {
 					my $json = JSON::XS->new->allow_nonref;
 					my $scalar = eval { $json->decode( $resp->content ); }; # we assume content always in utf8
